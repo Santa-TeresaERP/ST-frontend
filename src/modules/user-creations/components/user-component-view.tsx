@@ -1,12 +1,11 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/app/context/authcontext';
 import { User } from '@/app/lib/interfaces';
 import Modal from './modal-create-user';
 import UserModal from './modal-update-user';
 import DeleteUserModal from './modal-delete-user';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../app/components/ui/card';
+import { Button } from '../../../app/components/ui/button';
 import { PlusCircle, User as UserIcon } from 'lucide-react';
 
 const UserList: React.FC = () => {

@@ -1,38 +1,35 @@
-
-
 'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Mail, Lock } from 'lucide-react'
-import { useAuth } from '@/app/context/authcontext'
+import { Button } from '../../../app/components/ui/button'
+import { Input } from '../../../app/components/ui/input'
+import { Label } from '../../../app/components/ui/label'
+import { Card, CardContent } from '../../../app/components/ui/card'
+import { useAdminLogin } from '../hook/useLogin';
 
-import { Button } from '../ui/button'
-import { Input } from '../ui/input'
-import { Label } from '../ui/label'
-import { Card, CardContent } from '../ui/card'
 
 export default function Component() {
-  const { login } = useAuth()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const router = useRouter()
+  const { loginFn, isPending } = useAdminLogin();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     try {
-      await login(email, password)
-      setError('')
-      router.push('/pages/dashboard')
+      await loginFn({ email, password });
+      setError('');
+      router.push('/pages/dashboard');
     } catch (error) {
-      setError('Contraseña o usuario incorrecto')
-      console.error('Login error:', error)
+      setError('Contraseña o usuario incorrecto');
+      console.error('Login error:', error);
     }
-  }
+  };
 
-  
   return (
     <div className="min-h-screen bg-[url('/fondo-login.png')] bg-cover bg-center flex items-center justify-center p-4">
       <div className="container mx-auto max-w-4xl flex justify-center">
@@ -81,13 +78,14 @@ export default function Component() {
                 </div>
               </div>
               {error && <p className="text-sm text-red-600">{error}</p>}
-              <Button type="submit" className="w-full bg-red-600 hover:bg-red-700">
+              <Button type="submit" className="w-full bg-red-600 hover:bg-red-700" disabled={isPending}>
                 Iniciar Sesión
               </Button>
               <button
                 type="button"
                 className="mx-auto block text-sm text-gray-600 hover:underline"
                 onClick={() => {
+                  // Acción para recuperar contraseña
                 }}
               >
                 ¿Olvidaste tu contraseña?
@@ -119,5 +117,5 @@ export default function Component() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

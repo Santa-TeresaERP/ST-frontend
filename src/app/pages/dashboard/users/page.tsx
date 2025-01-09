@@ -1,5 +1,5 @@
 "use client";
-import UserList from '../../../components/components-user/user-component-view';
+import UserList from '../../../../modules/user-creations/components/user-component-view';
 
 export default function UserListPage() {
   return (

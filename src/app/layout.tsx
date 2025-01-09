@@ -2,7 +2,7 @@
 
 import localFont from "next/font/local";
 import "./globals.css";
-import { AuthProvider } from "./context/authcontext";
+import ReactQueryProvider from "../core/provider/react-query-provider";
 import HeaderClient from "./components/components-header/HeaderClient";
 
 const geistSans = localFont({
@@ -24,10 +24,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <AuthProvider>
-          <HeaderClient />
-          {children}
-        </AuthProvider>
+      <HeaderClient />
+      <ReactQueryProvider>{children}</ReactQueryProvider>
       </body>
     </html>
   );

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+
+echo -e "\e[32mInitialize linter...\e[0m"
+npx eslint
+if [[ $? -ne 0 ]]; then
+    echo -e "\e[32mMany linter bugs have been found[0m"
+else
+    echo -e "\e[32mSuccessfully completed\e[0m"
+fi

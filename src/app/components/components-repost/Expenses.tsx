@@ -7,7 +7,7 @@ interface Expense {
   id: number
   product: string
   quantity: number
-  provider: string
+  provider: string  
   date: string
   total: number
 }

@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog"; 
-import { Button } from "../ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../app/components/ui/dialog"; 
+import { Button } from "../../../app/components/ui/button";
 import { User } from '@/app/lib/interfaces';
 
 type DeleteUserModalProps = {

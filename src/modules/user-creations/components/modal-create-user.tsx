@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
-import Checkbox from "../ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../../app/components/ui/dialog";
+import { Button } from "../../../app/components/ui/button";
+import { Input } from "../../../app/components/ui/input";
+import { Label } from "../../../app/components/ui/label";
+import Checkbox from "../../../app/components/ui/checkbox";
 import { User } from '@/app/lib/interfaces';
 
 type ModuleKeys = 'administrativo' | 'ventas' | 'alquileres';
