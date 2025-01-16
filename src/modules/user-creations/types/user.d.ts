@@ -22,7 +22,6 @@ export interface CreateUserPayload {
   email: string;
   roleId: string;
   password: string;
-  status: boolean;
 }
 
 export interface UpdateUserPayload {
