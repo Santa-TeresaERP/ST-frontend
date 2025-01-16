@@ -1,7 +1,5 @@
 import { z } from 'zod';
 
-import api from '@/core/config/client';
-
 export const ModuleKeysSchema = z.enum(['administrativo', 'ventas', 'alquileres']);
 
 export const ModulesSchema = z.object({
