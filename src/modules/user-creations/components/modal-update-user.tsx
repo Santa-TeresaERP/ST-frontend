@@ -5,20 +5,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "../../../app/components/ui/button";
 import { Input } from "../../../app/components/ui/input";
 import { Label } from "../../../app/components/ui/label";
-import { User } from '@/app/lib/interfaces';
+import { User } from '@/modules/user-creations/types/user';
+import { useUpdateUser } from '@/modules/user-creations/hook/useUsers';
 
 type UserModalProps = {
   isOpen: boolean;
   onClose: () => void;
   user: User | null;
-  onUpdate: (userId: number, userData: Partial<User>) => void;
 };
 
-const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, onUpdate }) => {
+const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
   const [formData, setFormData] = useState<Partial<User>>({});
+  const { mutateAsync: updateUser } = useUpdateUser();
 
   useEffect(() => {
     if (user) {
+      console.log('User data loaded into modal:', user);
       setFormData(user);
     }
   }, [user]);
@@ -27,12 +29,24 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user, onUpdate }
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (user?.id) {
-      onUpdate(user.id, formData);
+      try {
+        console.log('Updating user with data:', formData);
+        const payload = {
+          name: formData.name || "",
+          dni: formData.dni || "",
+          phonenumber: formData.phonenumber?.toString() || "",
+          email: formData.email || "",
+        };
+        await updateUser({ id: user.id.toString(), payload });
+        console.log('User updated successfully');
+        onClose();
+      } catch (error) {
+        console.error('Error updating user:', error);
+      }
     }
-    onClose();
   };
 
   return (
