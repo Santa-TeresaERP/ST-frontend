@@ -1,4 +1,4 @@
-import { User } from '../models/admin/admin-schema';
+import { User } from '@/modules/user-creations/types/user';
 
 export type AuthState = {
     user: User | null;
