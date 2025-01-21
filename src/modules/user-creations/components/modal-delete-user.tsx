@@ -5,11 +5,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../app/c
 import { Button } from "../../../app/components/ui/button";
 import { User } from '@/app/lib/interfaces';
 
+
 type DeleteUserModalProps = {
   isOpen: boolean;
   onClose: () => void;
   user: User | null;
   onDelete: (userId: number) => void;
+  currentUser: User;
 };
 
 const DeleteUserModal: React.FC<DeleteUserModalProps> = ({ isOpen, onClose, user, onDelete }) => {
@@ -27,7 +29,7 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({ isOpen, onClose, user
             <Button type="button" variant="outline" onClick={onClose}>
               Cancelar
             </Button>
-            <Button type="button" className="bg-red-600 hover:bg-red-700 ml-2" onClick={() => onDelete(user.id)}>
+            <Button type="button" className="bg-red-600 hover:bg-red-700 ml-2" onClick={() => onDelete(Number(user.id))}>
               Eliminar
             </Button>
           </div>

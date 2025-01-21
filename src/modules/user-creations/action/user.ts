@@ -23,5 +23,5 @@ export const updateUser = async (id: string, payload: UpdateUserPayload): Promis
 };
 
 export const deleteUser = async (id: string): Promise<void> => {
-  await api.delete(`/users/${id}`);
+  await api.put(`/users/${id}`);
 };
