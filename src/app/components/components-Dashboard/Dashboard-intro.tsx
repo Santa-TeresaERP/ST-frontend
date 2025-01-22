@@ -9,12 +9,12 @@ const Dashboard = () => {
     <div>
       <main className="p-8 bg-gray-100">
         <h2 className="text-xl font-semibold mb-6 text-center">
-          ¡BIENVENID USUARIO!
+          ¡BIENVENIDO USUARIO!
         </h2>
         <DepartmentSection title="Departamento Administrativo" items={[
-          { name: "modules", icon: "usuarioicon1.png" },
+          { name: "Modules", icon: "usuarioicon1.png" },
           { name: "Usuarios", icon: "usuarioicon1.png" },
-          { name: "roles", icon: "usuarioicon1.png" }
+          { name: "Roles", icon: "usuarioicon1.png" }
         ]} />
 
         <DepartmentSection title="Departamento de Ventas" items={[

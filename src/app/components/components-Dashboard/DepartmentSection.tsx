@@ -21,6 +21,12 @@ const DepartmentSection = ({ title, items }: DepartmentSectionProps) => {
       case "Usuarios":
         router.push('/pages/dashboard/users');
         break;
+      case "Modules":
+        router.push('/pages/dashboard/modules');
+        break;
+      case "Roles":
+        router.push('/pages/dashboard/roles');
+        break;  
       case "Repostería":
         router.push('/pages/dashboard/reposteria');
         break;
