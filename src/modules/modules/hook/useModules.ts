@@ -1,5 +1,5 @@
 import { UpdateModulePayload, Module } from "../types/modules";
-import { fetchModules, getModule, updateModules } from "../../modules/action/module";
+import {  fetchModules, getModule, updateModules } from "../action/module";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useFetchModules = () => {

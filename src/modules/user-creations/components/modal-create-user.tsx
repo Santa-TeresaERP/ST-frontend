@@ -6,7 +6,7 @@ import { Button } from "../../../app/components/ui/button";
 import { Input } from "../../../app/components/ui/input";
 import { Label } from "../../../app/components/ui/label";
 import { User } from '@/app/lib/interfaces';
-import { useFetchRoles } from '@/modules/user-creations/hook/useRoles';
+import { useFetchRoles } from '@/modules/roles/hook/useRoles';
 import { userSchema } from '@/modules/auth/models/userValidation';
 import { z } from 'zod';
 

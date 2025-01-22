@@ -1,9 +1,11 @@
 "use client";
 
-export default function Home() {
+import RoleList from '../../../../modules/roles/components/role-component-view';
+
+export default function roleListPage() {
   return (
     <div>
-      <h1>Roles</h1>
+      <RoleList />
     </div>
   );
 }
