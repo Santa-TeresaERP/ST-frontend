@@ -14,7 +14,9 @@ const Dashboard = () => {
           ¡BIENVENIDO {user ? user.name.toUpperCase() : "USUARIO"}!
         </h2>
         <DepartmentSection title="Departamento Administrativo" items={[
-          { name: "Usuarios", icon: "usuarioicon1.png" }
+          { name: "modules", icon: "usuarioicon1.png" },
+          { name: "Usuarios", icon: "usuarioicon1.png" },
+          { name: "roles", icon: "usuarioicon1.png" }
         ]} />
 
         <DepartmentSection title="Departamento de Ventas" items={[
