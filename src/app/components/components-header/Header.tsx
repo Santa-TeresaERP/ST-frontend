@@ -22,7 +22,7 @@ const Header = () => {
     <div className="h-36 w-full bg-[#393939] rounded-b-[1rem] flex flex-col items-center">
       <div className="mx-auto flex justify-between max-w-[2000px] w-full md:p-6 p-3 md:items-center">
         <div onClick={handleBack} className="cursor-pointer">
-          <Image src="/arrowBack.png" alt="Back Icon" width={20} height={20} className="w-10 h-10" />
+          <Image src="/corner-up-left.svg" alt="Back Icon" width={20} height={20} className="w-10 h-10" />
         </div>
 
         <div className="mt-6 md:mt-0">
@@ -30,7 +30,7 @@ const Header = () => {
         </div>
 
         <div onClick={() => setLogoutModalOpen(true)}>
-          <Image src="/userIcon.png" alt="User Icon" width={20} height={20} className="w-10 h-10 cursor-pointer" />
+          <Image src="/user.svg" alt="User Icon" width={20} height={20} className="w-10 h-10 cursor-pointer" />
         </div>
       </div>
       <div className="border-b border-[#BD1400] w-[180px] text-center">

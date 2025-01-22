@@ -1,9 +1,10 @@
 "use client";
+import ModuleList from '../../../../modules/modules/components/module-component-view';
 
 export default function Home() {
   return (
     <div>
-      <h1>Modules</h1>
+      <ModuleList/>
     </div>
   );
 }

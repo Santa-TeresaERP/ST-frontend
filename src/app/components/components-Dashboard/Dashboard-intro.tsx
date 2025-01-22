@@ -12,21 +12,21 @@ const Dashboard = () => {
           ¡BIENVENIDO USUARIO!
         </h2>
         <DepartmentSection title="Departamento Administrativo" items={[
-          { name: "Modules", icon: "usuarioicon1.png" },
-          { name: "Usuarios", icon: "usuarioicon1.png" },
-          { name: "Roles", icon: "usuarioicon1.png" }
+          { name: "Modules", icon: "cuboid.svg" },
+          { name: "Usuarios", icon: "users.svg" },
+          { name: "Roles", icon: "user-cog.svg" }
         ]} />
 
         <DepartmentSection title="Departamento de Ventas" items={[
-          { name: "Repostería", icon: "pasteleria.png" },
-          { name: "Manualidades", icon: "manualidades.png" },
-          { name: "Misa", icon: "misa.png" },
+          { name: "Repostería", icon: "cake-slice.svg" },
+          { name: "Manualidades", icon: "lightbulb.svg" },
+          { name: "Misa", icon: "church.svg" },
         ]} />
 
         <DepartmentSection title="Departamento de Alquileres" items={[
-          { name: "Santa Catalina", icon: "misa.png" },
-          { name: "Goyeneche", icon: "misa.png" },
-          { name: "Santa Marta", icon: "misa.png" },
+          { name: "Santa Catalina", icon: "church.svg" },
+          { name: "Goyeneche", icon: "church.svg" },
+          { name: "Santa Marta", icon: "church.svg" },
         ]} />
       </main>
     </div>
