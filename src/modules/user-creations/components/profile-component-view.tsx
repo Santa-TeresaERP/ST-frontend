@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { useFetchUser } from "@/modules/user-creations/hook/useUsers";
-import { useFetchRoles } from "@/modules/user-creations/hook/useRoles";
+import { useFetchRoles } from "@/modules/roles/hook/useRoles";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";

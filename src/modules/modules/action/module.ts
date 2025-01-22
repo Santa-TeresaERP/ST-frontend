@@ -1,5 +1,5 @@
 import api from '@/core/config/client';
-import { Module , UpdateModulePayload} from '../../modules/types/modules';
+import { Module , UpdateModulePayload} from '../types/modules';
 
 export const fetchModules = async (): Promise<Module[]> =>{
     const response = await api.get<Module[]>('/modules');
