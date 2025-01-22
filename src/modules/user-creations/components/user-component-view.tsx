@@ -24,6 +24,11 @@ const UserList: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const handleProfileClick = (user: User) => {
+    console.log('Profile button clicked for user:', user);
+    setSelectedUser(user);
+    setViewingProfile(true);
+  };
 
   const handleCloseModal = () => {
     console.log('Modal closed');
@@ -91,7 +96,7 @@ const UserList: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {users &&
           users.map((user, index) => (
-            <Card key={user.id || index} className="hover:shadow-lg transition-shadow duration-300">
+            <Card key={user.id || index} className="hover:shadow-lg transition-shadow duration-300" onClick={() => handleProfileClick(user)}>
               <CardHeader className="bg-red-50">
                 <CardTitle className="flex items-center text-red-600">
                   <UserIcon className="mr-2 h-5 w-5" />
