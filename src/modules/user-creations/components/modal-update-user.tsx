@@ -17,6 +17,7 @@ type UserModalProps = {
 const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
   const [formData, setFormData] = useState<Partial<User>>({});
   const { mutateAsync: updateUser } = useUpdateUser();
+  const [showWarning, setShowWarning] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -29,8 +30,12 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowWarning(true);
+  };
+
+  const handleConfirmSubmit = async () => {
     if (user?.id) {
       try {
         console.log('Updating user with data:', formData);
@@ -53,47 +58,53 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{user ? "Editar Usuario" : "Eliminar Usuario"}</DialogTitle>
+          <DialogTitle>Editar Usuario</DialogTitle>
         </DialogHeader>
-        {user ? (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nombre</Label>
-              <Input id="name" name="name" type="text" value={formData.name || ""} onChange={handleInputChange} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Correo Electrónico</Label>
-              <Input id="email" name="email" type="email" value={formData.email || ""} onChange={handleInputChange} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phonenumber">Número de Teléfono</Label>
-              <Input id="phonenumber" name="phonenumber" type="text" value={formData.phonenumber || ""} onChange={handleInputChange} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="dni">DNI</Label>
-              <Input id="dni" name="dni" type="text" value={formData.dni || ""} onChange={handleInputChange} />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancelar
-              </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                Guardar
-              </Button>
-            </DialogFooter>
-          </form>
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-gray-600">¿Estás seguro de que quieres editar este usuario?</p>
-            <div className="mt-4 flex justify-end">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancelar
-              </Button>
-              <Button type="button" className="bg-red-600 hover:bg-red-700 ml-2" onClick={handleSubmit}>
-                Eliminar
-              </Button>
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Nombre</Label>
+            <Input id="name" name="name" type="text" value={formData.name || ""} onChange={handleInputChange} />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Correo Electrónico</Label>
+            <Input id="email" name="email" type="email" value={formData.email || ""} onChange={handleInputChange} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="phonenumber">Número de Teléfono</Label>
+            <Input id="phonenumber" name="phonenumber" type="text" value={formData.phonenumber || ""} onChange={handleInputChange} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="dni">DNI</Label>
+            <Input id="dni" name="dni" type="text" value={formData.dni || ""} onChange={handleInputChange} />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+              Guardar
+            </Button>
+          </DialogFooter>
+        </form>
+        {showWarning && (
+          <Dialog open={showWarning} onOpenChange={() => setShowWarning(false)}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Confirmar Cambios</DialogTitle>
+              </DialogHeader>
+              <div className="text-center py-8">
+                <p className="text-gray-600">¿Estás seguro de que quieres guardar los cambios?</p>
+                <div className="mt-4 flex justify-end">
+                  <Button type="button" variant="outline" onClick={() => setShowWarning(false)}>
+                    Cancelar
+                  </Button>
+                  <Button type="button" className="bg-blue-600 hover:bg-blue-700 ml-2" onClick={handleConfirmSubmit}>
+                    Confirmar
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         )}
       </DialogContent>
     </Dialog>
