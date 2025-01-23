@@ -324,9 +324,11 @@ function FormFields({
           className="w-full p-2 border border-gray-300 rounded-md mt-1"
         />
         {productImage && (
-          <img
+          <Image
             src={productImage}
             alt="Vista previa"
+            width={160}
+            height={160}
             className="mt-2 max-w-full h-40 object-cover"
           />
         )}
