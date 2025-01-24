@@ -7,7 +7,7 @@ import { Input } from "../../../app/components/ui/input";
 import { Label } from "../../../app/components/ui/label";
 import { User } from '@/app/lib/interfaces';
 import { useFetchRoles } from '@/modules/roles/hook/useRoles';
-import { userSchema } from '@/modules/auth/models/userValidation';
+import { userSchema } from '@/modules/user-creations/schemas/userValidation';
 import { z } from 'zod';
 
 type ModalProps = {

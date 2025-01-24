@@ -7,6 +7,8 @@ import { Input } from "../../../app/components/ui/input";
 import { Label } from "../../../app/components/ui/label";
 import { User } from '@/modules/user-creations/types/user';
 import { useUpdateUser } from '@/modules/user-creations/hook/useUsers';
+import { userSchema } from '@/modules/user-creations/schemas/userValidation';
+import { z } from 'zod';
 
 type UserModalProps = {
   isOpen: boolean;
@@ -18,6 +20,7 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
   const [formData, setFormData] = useState<Partial<User>>({});
   const { mutateAsync: updateUser } = useUpdateUser();
   const [showWarning, setShowWarning] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (user) {
@@ -45,6 +48,21 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
           phonenumber: formData.phonenumber?.toString() || "",
           email: formData.email || "",
         };
+
+        // Validar los datos del formulario
+        const result = userSchema.safeParse(payload);
+        if (!result.success) {
+          const validationErrors: Record<string, string> = {};
+          result.error.errors.forEach((error: z.ZodIssue) => {
+            if (error.path.length > 0) {
+              validationErrors[error.path[0] as string] = error.message;
+            }
+          });
+          setErrors(validationErrors);
+          setShowWarning(false);
+          return;
+        }
+
         await updateUser({ id: user.id.toString(), payload });
         console.log('User updated successfully');
         onClose();
@@ -64,18 +82,22 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
           <div className="space-y-2">
             <Label htmlFor="name">Nombre</Label>
             <Input id="name" name="name" type="text" value={formData.name || ""} onChange={handleInputChange} />
+            {errors.name && <p className="text-red-600">{errors.name}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Correo Electrónico</Label>
             <Input id="email" name="email" type="email" value={formData.email || ""} onChange={handleInputChange} />
+            {errors.email && <p className="text-red-600">{errors.email}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="phonenumber">Número de Teléfono</Label>
             <Input id="phonenumber" name="phonenumber" type="text" value={formData.phonenumber || ""} onChange={handleInputChange} />
+            {errors.phonenumber && <p className="text-red-600">{errors.phonenumber}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="dni">DNI</Label>
             <Input id="dni" name="dni" type="text" value={formData.dni || ""} onChange={handleInputChange} />
+            {errors.dni && <p className="text-red-600">{errors.dni}</p>}
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
