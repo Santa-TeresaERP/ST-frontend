@@ -30,3 +30,9 @@ export interface UpdateUserPayload {
   phonenumber: string;
   email: string;
 }
+
+export interface ChangePasswordRequest {
+  userId,
+  currentPassword: string;
+  newPassword: string;
+}

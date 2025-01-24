@@ -1,17 +1,15 @@
 "use client";
 
 import React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../app/components/ui/dialog"; 
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../app/components/ui/dialog";
 import { Button } from "../../../app/components/ui/button";
-import { User } from '@/app/lib/interfaces';
-
+import { User } from '@/modules/user-creations/types/user';
 
 type DeleteUserModalProps = {
   isOpen: boolean;
   onClose: () => void;
   user: User | null;
-  onDelete: (userId: number) => void;
-  currentUser: User;
+  onDelete: (userId: string) => void;
 };
 
 const DeleteUserModal: React.FC<DeleteUserModalProps> = ({ isOpen, onClose, user, onDelete }) => {
@@ -29,7 +27,7 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({ isOpen, onClose, user
             <Button type="button" variant="outline" onClick={onClose}>
               Cancelar
             </Button>
-            <Button type="button" className="bg-red-600 hover:bg-red-700 ml-2" onClick={() => onDelete(Number(user.id))}>
+            <Button type="button" className="bg-red-600 hover:bg-red-700 ml-2" onClick={() => onDelete(user.id)}>
               Eliminar
             </Button>
           </div>

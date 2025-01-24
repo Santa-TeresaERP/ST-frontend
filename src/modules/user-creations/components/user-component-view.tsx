@@ -1,22 +1,25 @@
 "use client";
 import React, { useState } from 'react';
-import { useFetchUsers, useCreateUser, useDeleteUser } from '@/modules/user-creations/hook/useUsers'; // Importar hooks necesarios
+import { useFetchUsers, useCreateUser, useDeleteUser } from '@/modules/user-creations/hook/useUsers';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../app/components/ui/card';
 import { UserIcon } from 'lucide-react';
-import UserModal from './modal-update-user'; // Asegúrate de que la ruta sea correcta
-import UserDetail from './profile-component-view'; // Asegúrate de que la ruta sea correcta
-import Modal from './modal-create-user'; // Importar el modal de creación de usuario
+import UserModal from './modal-update-user';
+import UserDetail from './profile-component-view';
+import Modal from './modal-create-user';
+import DeleteUserModal from './modal-delete-user';
 import { User } from '@/modules/user-creations/types/user';
 import { Button } from '@/app/components/ui/button';
 
 const UserList: React.FC = () => {
-  const { data: users, isLoading, error } = useFetchUsers(); // Hook para obtener la lista de usuarios
-  const createUserMutation = useCreateUser(); // Hook para crear un usuario
-  const deleteUserMutation = useDeleteUser(); // Hook para eliminar un usuario
+  const { data: users, isLoading, error } = useFetchUsers();
+  const createUserMutation = useCreateUser();
+  const deleteUserMutation = useDeleteUser();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [viewingProfile, setViewingProfile] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // Estado para el modal de creación
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
   const handleEditClick = (user: User) => {
     console.log('Edit button clicked for user:', user);
@@ -53,17 +56,24 @@ const UserList: React.FC = () => {
   const handleCreateUser = async (data: Omit<User, 'createdAt' | 'updatedAt'> & { password: string }) => {
     try {
       console.log('Nuevo usuario creado:', data);
-      await createUserMutation.mutateAsync(data); // Usar el hook para crear el usuario
+      await createUserMutation.mutateAsync(data);
       handleCloseCreateModal();
     } catch (error) {
       console.error('Error creating user:', error);
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
+  const handleDeleteUser = (user: User) => {
+    setUserToDelete(user);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteUser = async (userId: string) => {
     try {
       console.log('Eliminando usuario con ID:', userId);
-      await deleteUserMutation.mutateAsync(userId); // Usar el hook para eliminar el usuario
+      await deleteUserMutation.mutateAsync(userId);
+      setIsDeleteModalOpen(false);
+      setUserToDelete(null);
     } catch (error) {
       console.error('Error deleting user:', error);
     }
@@ -127,7 +137,7 @@ const UserList: React.FC = () => {
                     className="bg-red-500 text-white px-4 py-2 ml-2 rounded hover:bg-red-600"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDeleteUser(user.id); // Eliminar usuario
+                      handleDeleteUser(user); // Mostrar modal de confirmación
                     }}
                   >
                     Eliminar
@@ -142,6 +152,14 @@ const UserList: React.FC = () => {
       )}
       
       <Modal isOpen={isCreateModalOpen} onClose={handleCloseCreateModal} onSubmit={handleCreateUser} />
+      {userToDelete && (
+        <DeleteUserModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          user={userToDelete}
+          onDelete={confirmDeleteUser}
+        />
+      )}
     </div>
   );
 };
