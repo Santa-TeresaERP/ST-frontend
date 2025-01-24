@@ -140,6 +140,7 @@ const UserList: React.FC = () => {
       {selectedUser && (
         <UserModal isOpen={isModalOpen} onClose={handleCloseModal} user={selectedUser} />
       )}
+      
       <Modal isOpen={isCreateModalOpen} onClose={handleCloseCreateModal} onSubmit={handleCreateUser} />
     </div>
   );

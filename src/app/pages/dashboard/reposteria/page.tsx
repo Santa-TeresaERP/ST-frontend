@@ -1,10 +1,10 @@
 "use client";
-import OpcionesReposteria from '../../../components/components-repost/OpcionesReposteria';
+import ProductList from '@/modules/products/components/product-component-view'; // Importar el componente de la lista de productos
 
 export default function ReposteriaPage() {
   return (
     <div>
-      <OpcionesReposteria />
+      <ProductList />
     </div>
   );
 }
