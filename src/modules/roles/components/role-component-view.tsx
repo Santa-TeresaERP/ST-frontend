@@ -10,8 +10,10 @@ import { Role } from "@/modules/roles/types/roles";
 import RoleModal from './modal-update-role'; // Import the modal for updating roles
 import PermissionModal from './modal-update-permission'; // Import the modal for updating permissions
 import { Button } from "@/app/components/ui/button";
+import { useQueryClient } from '@tanstack/react-query';
 
 const RoleList: React.FC = () => {
+  const queryClient = useQueryClient();
   const { data: roles, isLoading, error } = useFetchRoles();
   const createRoleMutation = useCreateRole();
   const updateRoleMutation = useUpdateRole();
@@ -51,6 +53,7 @@ const RoleList: React.FC = () => {
     try {
       console.log('Nuevo rol creado:', data);
       await createRoleMutation.mutateAsync(data); // Usar el hook para crear el rol
+      queryClient.invalidateQueries({ queryKey: ['roles'] }); // Invalidar la consulta de roles para obtener la lista actualizada
       handleCloseRoleModal();
     } catch (error) {
       console.error('Error creating role:', error);
@@ -62,6 +65,7 @@ const RoleList: React.FC = () => {
       console.log('Actualizando rol:', data);
       if (data.id) {
         await updateRoleMutation.mutateAsync({ id: data.id, payload: { name: data.name, description: data.description } }); // Usar el hook para actualizar el rol
+        queryClient.invalidateQueries({ queryKey: ['roles'] }); // Invalidar la consulta de roles para obtener la lista actualizada
       } else {
         console.error('Role ID is undefined');
       }
@@ -75,6 +79,7 @@ const RoleList: React.FC = () => {
     try {
       console.log('Actualizando permisos:', data);
       await updatePermissionMutation.mutateAsync({ id: data.id, payload: { ...data.permissions, moduleId: data.id } }); // Usar el hook para actualizar los permisos
+      queryClient.invalidateQueries({ queryKey: ['roles'] }); // Invalidar la consulta de roles para obtener la lista actualizada
       handleClosePermissionModal();
     } catch (error) {
       console.error('Error updating permissions:', error);

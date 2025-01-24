@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "../../../app/components/ui/button";
 import { Input } from "../../../app/components/ui/input";
 import { Label } from "../../../app/components/ui/label";
-import { Role } from '@/modules/roles/types/roles';
+import { Role } from "@/modules/roles/types/roles";
 
 type PermissionModalProps = {
   isOpen: boolean;
@@ -23,13 +23,20 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role
   });
 
   useEffect(() => {
-    if (role) {
-      console.log('Permission data loaded into modal:', role);
+    if (role && role.permissions) {
+      console.log("Permission data loaded into modal:", role);
       setFormData({
-        canRead: role.permissions.canRead,
-        canWrite: role.permissions.canWrite,
-        canUpdate: role.permissions.canUpdate,
-        canDelete: role.permissions.canDelete,
+        canRead: role.permissions.canRead || false,
+        canWrite: role.permissions.canWrite || false,
+        canUpdate: role.permissions.canUpdate || false,
+        canDelete: role.permissions.canDelete || false,
+      });
+    } else {
+      setFormData({
+        canRead: false,
+        canWrite: false,
+        canUpdate: false,
+        canDelete: false,
       });
     }
   }, [role]);
@@ -42,16 +49,16 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role
     e.preventDefault();
     if (role?.id) {
       try {
-        console.log('Updating permission with data:', formData);
+        console.log("Updating permission with data:", formData);
         const payload = {
           id: role.id,
           permissions: formData,
         };
         await onSubmit(payload);
-        console.log('Permission updated successfully');
+        console.log("Permission updated successfully");
         onClose();
       } catch (error) {
-        console.error('Error updating permission:', error);
+        console.error("Error updating permission:", error);
       }
     }
   };
