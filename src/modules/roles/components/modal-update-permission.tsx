@@ -19,6 +19,7 @@ type PermissionModalProps = {
 const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role, modules, onSubmit }) => {
   const [formData, setFormData] = useState<{ [moduleId: string]: { canRead: boolean; canWrite: boolean; canUpdate: boolean; canDelete: boolean } }>({});
   const [selectedModule, setSelectedModule] = useState<string>("");
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   useEffect(() => {
     if (role && role.permissions) {
@@ -56,8 +57,12 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmSubmit = async () => {
     if (role?.id) {
       try {
         const payload = {
@@ -68,6 +73,7 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role
           }))
         };
         await onSubmit(payload);
+        setShowConfirmation(false);
         onClose();
       } catch (error) {
         console.error("Error updating permission:", error);
@@ -76,85 +82,107 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{role ? "Editar Permiso" : "Crear Permiso"}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="module">Módulo</Label>
-            <select
-              id="module"
-              name="module"
-              value={selectedModule}
-              onChange={(e) => setSelectedModule(e.target.value)}
-              required
-              className="w-full p-2 border border-gray-300 rounded"
-            >
-              <option value="">Seleccione un módulo</option>
-              {modules.map((module) => (
-                <option key={module.id} value={module.id}>
-                  {module.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          {selectedModule && (
-            <div className="flex flex-col space-y-2">
-              <div className="flex items-center space-x-2">
-                <Label htmlFor={`canRead-${selectedModule}`}>Leer</Label>
-                <Input
-                  id={`canRead-${selectedModule}`}
-                  name={`canRead-${selectedModule}`}
-                  type="checkbox"
-                  checked={formData[selectedModule]?.canRead || false}
-                  onChange={(e) => handleInputChange("canRead", e.target.checked)}
-                />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Label htmlFor={`canWrite-${selectedModule}`}>Escribir</Label>
-                <Input
-                  id={`canWrite-${selectedModule}`}
-                  name={`canWrite-${selectedModule}`}
-                  type="checkbox"
-                  checked={formData[selectedModule]?.canWrite || false}
-                  onChange={(e) => handleInputChange("canWrite", e.target.checked)}
-                />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Label htmlFor={`canUpdate-${selectedModule}`}>Actualizar</Label>
-                <Input
-                  id={`canUpdate-${selectedModule}`}
-                  name={`canUpdate-${selectedModule}`}
-                  type="checkbox"
-                  checked={formData[selectedModule]?.canUpdate || false}
-                  onChange={(e) => handleInputChange("canUpdate", e.target.checked)}
-                />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Label htmlFor={`canDelete-${selectedModule}`}>Eliminar</Label>
-                <Input
-                  id={`canDelete-${selectedModule}`}
-                  name={`canDelete-${selectedModule}`}
-                  type="checkbox"
-                  checked={formData[selectedModule]?.canDelete || false}
-                  onChange={(e) => handleInputChange("canDelete", e.target.checked)}
-                />
-              </div>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{role ? "Editar Permiso" : "Crear Permiso"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="module">Módulo</Label>
+              <select
+                id="module"
+                name="module"
+                value={selectedModule}
+                onChange={(e) => setSelectedModule(e.target.value)}
+                required
+                className="w-full p-2 border border-gray-300 rounded"
+              >
+                <option value="">Seleccione un módulo</option>
+                {modules.map((module) => (
+                  <option key={module.id} value={module.id}>
+                    {module.name}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-              Guardar
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            {selectedModule && (
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor={`canRead-${selectedModule}`}>Leer</Label>
+                  <Input
+                    id={`canRead-${selectedModule}`}
+                    name={`canRead-${selectedModule}`}
+                    type="checkbox"
+                    checked={formData[selectedModule]?.canRead || false}
+                    onChange={(e) => handleInputChange("canRead", e.target.checked)}
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor={`canWrite-${selectedModule}`}>Escribir</Label>
+                  <Input
+                    id={`canWrite-${selectedModule}`}
+                    name={`canWrite-${selectedModule}`}
+                    type="checkbox"
+                    checked={formData[selectedModule]?.canWrite || false}
+                    onChange={(e) => handleInputChange("canWrite", e.target.checked)}
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor={`canUpdate-${selectedModule}`}>Actualizar</Label>
+                  <Input
+                    id={`canUpdate-${selectedModule}`}
+                    name={`canUpdate-${selectedModule}`}
+                    type="checkbox"
+                    checked={formData[selectedModule]?.canUpdate || false}
+                    onChange={(e) => handleInputChange("canUpdate", e.target.checked)}
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor={`canDelete-${selectedModule}`}>Eliminar</Label>
+                  <Input
+                    id={`canDelete-${selectedModule}`}
+                    name={`canDelete-${selectedModule}`}
+                    type="checkbox"
+                    checked={formData[selectedModule]?.canDelete || false}
+                    onChange={(e) => handleInputChange("canDelete", e.target.checked)}
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                Guardar
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      {showConfirmation && (
+        <Dialog open={showConfirmation} onOpenChange={() => setShowConfirmation(false)}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Confirmación</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p>¿Estás seguro de que deseas {role ? "editar" : "crear"} estos permisos?</p>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setShowConfirmation(false)}>
+                  Cancelar
+                </Button>
+                <Button type="button" className="bg-blue-600 hover:bg-blue-700" onClick={handleConfirmSubmit}>
+                  Confirmar
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 };
 
