@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { Product } from '@/modules/products/types/product';
 import { useFetchCategories } from '@/modules/products/hook/useCategories'; // Importar el hook para obtener categorías
-
+import { z } from 'zod';
+import { productsSchema } from '@/modules/products/Schema/productValidation';
 type ProductModalProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -20,6 +21,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
   const [description, setDescription] = useState(product?.description || '');
   const [image_url, setImageUrl] = useState(product?.image_url || '');
   const [useUrl, setUseUrl] = useState(true); // Estado para cambiar entre URL y subida de imagen
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (product) {
@@ -32,9 +34,24 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
     }
   }, [product]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit({ name, category_id, price, stock, description, image_url });
+    const formData = { name, category_id, price, stock, description, image_url };
+  
+    // Validar los datos del formulario usando Zod
+    const result = productsSchema.safeParse(formData);
+    if (!result.success) {
+      const validationErrors: Record<string, string> = {};
+      result.error.errors.forEach((error: z.ZodIssue) => {
+        if (error.path.length > 0) {
+          validationErrors[error.path[0] as string] = error.message;
+        }
+      });
+      setErrors(validationErrors);
+      return;
+    }
+  
+    await onSubmit(result.data);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,6 +89,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
               className="w-full p-2 border border-gray-300 rounded-md mt-1"
               required
             />
+            {errors.name && <p className="text-red-600">{errors.name}</p>}
           </div>
           <div className="mb-4">
             <label className="block font-semibold text-gray-700">Categoría</label>
@@ -88,6 +106,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                 </option>
               ))}
             </select>
+            {errors.category_id && <p className="text-red-600">{errors.category_id}</p>}
           </div>
           <div className="mb-4">
             <label className="block font-semibold text-gray-700">Precio</label>
@@ -98,6 +117,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
               className="w-full p-2 border border-gray-300 rounded-md mt-1"
               required
             />
+            {errors.price && <p className="text-red-600">{errors.price}</p>}
           </div>
           <div className="mb-4">
             <label className="block font-semibold text-gray-700">Stock</label>
@@ -108,6 +128,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
               className="w-full p-2 border border-gray-300 rounded-md mt-1"
               required
             />
+            {errors.stock && <p className="text-red-600">{errors.stock}</p>}
           </div>
           <div className="mb-4">
             <label className="block font-semibold text-gray-700">Descripción</label>
@@ -117,6 +138,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
               className="w-full p-2 border border-gray-300 rounded-md mt-1"
               required
             />
+            {errors.description && <p className="text-red-600">{errors.description}</p>}
           </div>
           <div className="mb-4">
             <label className="block font-semibold text-gray-700">Imagen</label>
@@ -155,6 +177,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                 required
               />
             )}
+            {errors.image_url && <p className="text-red-600">{errors.image_url}</p>}
           </div>
           <div className="mt-4 flex justify-end">
             <button
@@ -175,6 +198,5 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
       </div>
     </div>
   );
-};
-
+}
 export default ProductModal;
