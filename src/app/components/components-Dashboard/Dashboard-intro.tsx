@@ -1,10 +1,22 @@
 'use client';
 
-import React from 'react';
+
 import DepartmentSection from "../../components/components-Dashboard/DepartmentSection";
+import React from 'react';
+
+import { useAuth } from '@/modules/auth/hook/useAuth';
+
 
 const Dashboard = () => {
+  const { isAuthenticated, isLoading } = useAuth();
 
+  if (isLoading) {
+    return null;
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
   return (
     <div>
       <main className="p-8 bg-gray-100">
