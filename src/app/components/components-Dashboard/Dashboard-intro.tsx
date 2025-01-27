@@ -2,14 +2,17 @@
 
 import React from 'react';
 import DepartmentSection from "../../components/components-Dashboard/DepartmentSection";
+import { useAuthStore } from '@/core/store/auth';
 
 const Dashboard = () => {
+
+  const user = useAuthStore((state) => state.user);
 
   return (
     <div>
       <main className="p-8 bg-gray-100">
         <h2 className="text-xl font-semibold mb-6 text-center">
-          ¡BIENVENIDO USUARIO!
+          ¡BIENVENIDO {user?.name|| 'USUARIO'}!
         </h2>
         <DepartmentSection title="Departamento Administrativo" items={[
           { name: "Modules", icon: "cuboid.svg" },
