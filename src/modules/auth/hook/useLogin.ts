@@ -22,25 +22,27 @@ export const useAdminLogin = () => {
 };
 
 export const useAuthToken = () => {
+  // Inicializamos el estado con null
   const [token, setToken] = useState<string | null>(null);
+  // Añadimos un estado para controlar si ya se ha cargado
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    if (storedToken) {
-      setToken(storedToken);
-    }
+    // Solo ejecutamos en el cliente
+    const storedToken = localStorage.getItem('authToken');
+    setToken(storedToken);
+    setIsLoaded(true);
   }, []);
 
-  const saveToken = (token: string) => {
-    localStorage.setItem('authToken', token);
-    setToken(token);
-
+  const saveToken = (newToken: string) => {
+    localStorage.setItem('authToken', newToken);
+    setToken(newToken);
   };
 
   const removeToken = () => {
-      localStorage.removeItem("authToken");
-      setToken(null);
-    };
-  
-    return { token, saveToken, removeToken };
-  } 
+    localStorage.removeItem("authToken");
+    setToken(null);
+  };
+
+  return { token, saveToken, removeToken, isLoaded };
+};

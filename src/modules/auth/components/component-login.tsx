@@ -16,13 +16,21 @@ export default function Component() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const router = useRouter()
-  const { token, saveToken } = useAuthToken()
+  const { token, saveToken, isLoaded } = useAuthToken()
 
   useEffect(() => {
-    if (token) {
-      router.push('/pages/dashboard')
+    if (isLoaded && token) {
+      router.replace('/pages/dashboard');
     }
-  }, [token, router])
+  }, [isLoaded, token, router]);
+  
+  if (!isLoaded) {
+    return null;
+  }
+  
+  if (token) {
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -30,7 +38,7 @@ export default function Component() {
       const response = await loginFn({ email, password })
       saveToken(response.token)
       setError('')
-      router.push('/pages/dashboard')
+      router.replace('/pages/dashboard')
     } catch (error) {
       setError('Contraseña o usuario incorrecto')
       console.error('Login error:', error)
