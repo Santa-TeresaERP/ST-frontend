@@ -6,56 +6,74 @@ import { Button } from "../../../app/components/ui/button";
 import { Input } from "../../../app/components/ui/input";
 import { Label } from "../../../app/components/ui/label";
 import { Role } from "@/modules/roles/types/roles";
+import { Module } from "@/modules/modules/types/modules";
 
 type PermissionModalProps = {
   isOpen: boolean;
   onClose: () => void;
   role: Role | null;
-  onSubmit: (data: { id: string; permissions: { canRead: boolean; canWrite: boolean; canUpdate: boolean; canDelete: boolean } }) => Promise<void>;
+  modules: Module[];
+  onSubmit: (data: { id: string; permissions: { moduleId: string; canRead: boolean; canWrite: boolean; canUpdate: boolean; canDelete: boolean }[] }) => Promise<void>;
 };
 
-const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role, onSubmit }) => {
-  const [formData, setFormData] = useState<{ canRead: boolean; canWrite: boolean; canUpdate: boolean; canDelete: boolean }>({
-    canRead: false,
-    canWrite: false,
-    canUpdate: false,
-    canDelete: false,
-  });
+const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role, modules, onSubmit }) => {
+  const [formData, setFormData] = useState<{ [moduleId: string]: { canRead: boolean; canWrite: boolean; canUpdate: boolean; canDelete: boolean } }>({});
+  const [selectedModule, setSelectedModule] = useState<string>("");
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   useEffect(() => {
     if (role && role.permissions) {
-      console.log("Permission data loaded into modal:", role);
-      setFormData({
-        canRead: role.permissions.canRead || false,
-        canWrite: role.permissions.canWrite || false,
-        canUpdate: role.permissions.canUpdate || false,
-        canDelete: role.permissions.canDelete || false,
+      const initialFormData: { [moduleId: string]: { canRead: boolean; canWrite: boolean; canUpdate: boolean; canDelete: boolean } } = {};
+      modules.forEach((module) => {
+        initialFormData[module.id] = {
+          canRead: role.permissions[module.id]?.canRead || false,
+          canWrite: role.permissions[module.id]?.canWrite || false,
+          canUpdate: role.permissions[module.id]?.canUpdate || false,
+          canDelete: role.permissions[module.id]?.canDelete || false,
+        };
       });
+      setFormData(initialFormData);
     } else {
-      setFormData({
-        canRead: false,
-        canWrite: false,
-        canUpdate: false,
-        canDelete: false,
+      const initialFormData: { [moduleId: string]: { canRead: boolean; canWrite: boolean; canUpdate: boolean; canDelete: boolean } } = {};
+      modules.forEach((module) => {
+        initialFormData[module.id] = {
+          canRead: false,
+          canWrite: false,
+          canUpdate: false,
+          canDelete: false,
+        };
       });
+      setFormData(initialFormData);
     }
-  }, [role]);
+  }, [role, modules]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.checked });
+  const handleInputChange = (permissionType: string, value: boolean) => {
+    setFormData({
+      ...formData,
+      [selectedModule]: {
+        ...formData[selectedModule],
+        [permissionType]: value,
+      },
+    });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmSubmit = async () => {
     if (role?.id) {
       try {
-        console.log("Updating permission with data:", formData);
         const payload = {
           id: role.id,
-          permissions: formData,
+          permissions: Object.keys(formData).map(moduleId => ({
+            moduleId,
+            ...formData[moduleId]
+          }))
         };
         await onSubmit(payload);
-        console.log("Permission updated successfully");
+        setShowConfirmation(false);
         onClose();
       } catch (error) {
         console.error("Error updating permission:", error);
@@ -64,39 +82,107 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{role ? "Editar Permiso" : "Crear Permiso"}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="canRead">Leer</Label>
-            <Input id="canRead" name="canRead" type="checkbox" checked={formData.canRead} onChange={handleInputChange} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="canWrite">Escribir</Label>
-            <Input id="canWrite" name="canWrite" type="checkbox" checked={formData.canWrite} onChange={handleInputChange} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="canUpdate">Actualizar</Label>
-            <Input id="canUpdate" name="canUpdate" type="checkbox" checked={formData.canUpdate} onChange={handleInputChange} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="canDelete">Eliminar</Label>
-            <Input id="canDelete" name="canDelete" type="checkbox" checked={formData.canDelete} onChange={handleInputChange} />
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-              Guardar
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{role ? "Editar Permiso" : "Crear Permiso"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="module">Módulo</Label>
+              <select
+                id="module"
+                name="module"
+                value={selectedModule}
+                onChange={(e) => setSelectedModule(e.target.value)}
+                required
+                className="w-full p-2 border border-gray-300 rounded"
+              >
+                <option value="">Seleccione un módulo</option>
+                {modules.map((module) => (
+                  <option key={module.id} value={module.id}>
+                    {module.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {selectedModule && (
+              <div className="flex flex-col space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor={`canRead-${selectedModule}`}>Leer</Label>
+                  <Input
+                    id={`canRead-${selectedModule}`}
+                    name={`canRead-${selectedModule}`}
+                    type="checkbox"
+                    checked={formData[selectedModule]?.canRead || false}
+                    onChange={(e) => handleInputChange("canRead", e.target.checked)}
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor={`canWrite-${selectedModule}`}>Escribir</Label>
+                  <Input
+                    id={`canWrite-${selectedModule}`}
+                    name={`canWrite-${selectedModule}`}
+                    type="checkbox"
+                    checked={formData[selectedModule]?.canWrite || false}
+                    onChange={(e) => handleInputChange("canWrite", e.target.checked)}
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor={`canUpdate-${selectedModule}`}>Actualizar</Label>
+                  <Input
+                    id={`canUpdate-${selectedModule}`}
+                    name={`canUpdate-${selectedModule}`}
+                    type="checkbox"
+                    checked={formData[selectedModule]?.canUpdate || false}
+                    onChange={(e) => handleInputChange("canUpdate", e.target.checked)}
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor={`canDelete-${selectedModule}`}>Eliminar</Label>
+                  <Input
+                    id={`canDelete-${selectedModule}`}
+                    name={`canDelete-${selectedModule}`}
+                    type="checkbox"
+                    checked={formData[selectedModule]?.canDelete || false}
+                    onChange={(e) => handleInputChange("canDelete", e.target.checked)}
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                Guardar
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      {showConfirmation && (
+        <Dialog open={showConfirmation} onOpenChange={() => setShowConfirmation(false)}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Confirmación</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p>¿Estás seguro de que deseas {role ? "editar" : "crear"} estos permisos?</p>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setShowConfirmation(false)}>
+                  Cancelar
+                </Button>
+                <Button type="button" className="bg-blue-600 hover:bg-blue-700" onClick={handleConfirmSubmit}>
+                  Confirmar
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 };
 

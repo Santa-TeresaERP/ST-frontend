@@ -22,7 +22,7 @@ export const useCreatePermission = () => {
     mutationFn: createPermission,
     onSuccess: () => queryClient.invalidateQueries({
       queryKey: ["permissions"]
-    })
+    }) 
   });
 };
 
@@ -36,9 +36,14 @@ export const useUpdatePermission = () => {
       id,
       payload
     }) => updatePermission(id, payload),
-    onSuccess: () => queryClient.invalidateQueries({
-      queryKey: ["permissions"]
-    })
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["permissions"]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["roles"]
+      });
+    }
   });
 };
 

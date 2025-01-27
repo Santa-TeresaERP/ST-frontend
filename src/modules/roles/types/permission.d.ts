@@ -22,9 +22,11 @@ export interface CreatePermissionPayload {
 }
 
 export interface UpdatePermissionPayload {
-    moduleId: string;
-    canRead: boolean;
-    canWrite: boolean;
-    canUpdate: boolean;
-    canDelete: boolean;
-}
+    permissions: {
+      moduleId: string;
+      canRead: boolean;
+      canWrite: boolean;
+      canUpdate: boolean;
+      canDelete: boolean;
+    }[];
+  }

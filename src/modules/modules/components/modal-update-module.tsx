@@ -6,7 +6,8 @@ import { Button } from "../../../app/components/ui/button";
 import { Input } from "../../../app/components/ui/input";
 import { Label } from "../../../app/components/ui/label";
 import { Module } from '@/modules/modules/types/modules';
-
+import { moduleSchema } from "@/modules/modules/schemas/moduleValidation";
+import { z } from 'zod';
 
 type ModuleModalProps = {
   isOpen: boolean;
@@ -17,29 +18,50 @@ type ModuleModalProps = {
 
 const ModuleModal: React.FC<ModuleModalProps> = ({ isOpen, onClose, module, onSubmit }) => {
   const [formData, setFormData] = useState<Partial<Module>>({});
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [errors, setErrors] = useState<Partial<Record<keyof Module, string>>>({});
 
   useEffect(() => {
     if (module) {
-      console.log('Module data loaded into modal:', module);
       setFormData(module);
+    } else {
+      setFormData({ name: "", description: "" });
     }
-  }, [module]);
+    setErrors({}); // Clear errors when the modal is opened or the module changes
+  }, [module, isOpen]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    try {
+      moduleSchema.parse(formData);
+      setErrors({}); // Clear validation errors if validation passes
+      setShowConfirmation(true);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors: Partial<Record<keyof Module, string>> = {};
+        error.errors.forEach((err) => {
+          if (err.path.length > 0) {
+            fieldErrors[err.path[0] as keyof Module] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+      }
+    }
+  };
+
+  const handleConfirmSubmit = async () => {
     if (module?.id) {
       try {
-        console.log('Updating module with data:', formData);
         const payload = {
           name: formData.name || "",
           description: formData.description || "",
         };
         await onSubmit({ id: module.id, ...payload });
-        console.log('Module updated successfully');
+        setShowConfirmation(false);
         onClose();
       } catch (error) {
         console.error('Error updating module:', error);
@@ -48,20 +70,36 @@ const ModuleModal: React.FC<ModuleModalProps> = ({ isOpen, onClose, module, onSu
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{module ? "Editar Módulo" : "Crear Módulo"}</DialogTitle>
-        </DialogHeader>
-        {module ? (
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{module ? "Editar Módulo" : "Crear Módulo"}</DialogTitle>
+          </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nombre</Label>
-              <Input id="name" name="name" type="text" value={formData.name || ""} onChange={handleInputChange} />
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                value={formData.name || ""}
+                onChange={handleInputChange}
+                className={errors.name ? 'border-red-500' : ''}
+              />
+              {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Descripción</Label>
-              <Input id="description" name="description" type="text" value={formData.description || ""} onChange={handleInputChange} />
+              <Input
+                id="description"
+                name="description"
+                type="text"
+                value={formData.description || ""}
+                onChange={handleInputChange}
+                className={errors.description ? 'border-red-500' : ''}
+              />
+              {errors.description && <p className="text-red-500 text-sm">{errors.description}</p>}
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>
@@ -72,21 +110,29 @@ const ModuleModal: React.FC<ModuleModalProps> = ({ isOpen, onClose, module, onSu
               </Button>
             </DialogFooter>
           </form>
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-gray-600">¿Estás seguro de que quieres editar este módulo?</p>
-            <div className="mt-4 flex justify-end">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancelar
-              </Button>
-              <Button type="button" className="bg-red-600 hover:bg-red-700 ml-2" onClick={handleSubmit}>
-                Eliminar
-              </Button>
+        </DialogContent>
+      </Dialog>
+      {showConfirmation && (
+        <Dialog open={showConfirmation} onOpenChange={() => setShowConfirmation(false)}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Confirmación</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p>¿Estás seguro de que deseas {module ? "editar" : "crear"} este módulo?</p>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setShowConfirmation(false)}>
+                  Cancelar
+                </Button>
+                <Button type="button" className="bg-blue-600 hover:bg-blue-700" onClick={handleConfirmSubmit}>
+                  Confirmar
+                </Button>
+              </DialogFooter>
             </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 };
 

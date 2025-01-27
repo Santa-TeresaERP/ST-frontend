@@ -3,18 +3,20 @@
 import React, { useState } from "react";
 import { useFetchRoles, useCreateRole, useUpdateRole } from "@/modules/roles/hook/useRoles";
 import { useUpdatePermission } from "@/modules/roles/hook/usePermissions";
+import { useFetchModules } from "@/modules/modules/hook/useModules";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../app/components/ui/card";
 import { Label } from "@/app/components/ui/label";
-import { UserIcon } from 'lucide-react'; // Import the user icon
+import { UserIcon } from 'lucide-react';
 import { Role } from "@/modules/roles/types/roles";
-import RoleModal from './modal-update-role'; // Import the modal for updating roles
-import PermissionModal from './modal-update-permission'; // Import the modal for updating permissions
+import RoleModal from './modal-update-role';
+import PermissionModal from './modal-update-permission';
 import { Button } from "@/app/components/ui/button";
 import { useQueryClient } from '@tanstack/react-query';
 
 const RoleList: React.FC = () => {
   const queryClient = useQueryClient();
   const { data: roles, isLoading, error } = useFetchRoles();
+  const { data: modules } = useFetchModules();
   const createRoleMutation = useCreateRole();
   const updateRoleMutation = useUpdateRole();
   const updatePermissionMutation = useUpdatePermission();
@@ -24,36 +26,31 @@ const RoleList: React.FC = () => {
   const [isCreatingRole, setIsCreatingRole] = useState(false);
 
   const handleEditRoleClick = (role: Role) => {
-    console.log('Edit button clicked for role:', role);
     setSelectedRole(role);
     setIsCreatingRole(false);
     setIsRoleModalOpen(true);
   };
 
   const handleEditPermissionClick = (role: Role) => {
-    console.log('Edit permissions button clicked for role:', role);
     setSelectedRole(role);
     setIsPermissionModalOpen(true);
   };
 
   const handleCloseRoleModal = () => {
-    console.log('Role modal closed');
     setIsRoleModalOpen(false);
     setSelectedRole(null);
     setIsCreatingRole(false);
   };
 
   const handleClosePermissionModal = () => {
-    console.log('Permission modal closed');
     setIsPermissionModalOpen(false);
     setSelectedRole(null);
   };
 
   const handleCreateRole = async (data: { name: string; description: string }) => {
     try {
-      console.log('Nuevo rol creado:', data);
-      await createRoleMutation.mutateAsync(data); // Usar el hook para crear el rol
-      queryClient.invalidateQueries({ queryKey: ['roles'] }); // Invalidar la consulta de roles para obtener la lista actualizada
+      await createRoleMutation.mutateAsync(data);
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
       handleCloseRoleModal();
     } catch (error) {
       console.error('Error creating role:', error);
@@ -62,10 +59,9 @@ const RoleList: React.FC = () => {
 
   const handleUpdateRole = async (data: { id?: string; name: string; description: string }) => {
     try {
-      console.log('Actualizando rol:', data);
       if (data.id) {
-        await updateRoleMutation.mutateAsync({ id: data.id, payload: { name: data.name, description: data.description } }); // Usar el hook para actualizar el rol
-        queryClient.invalidateQueries({ queryKey: ['roles'] }); // Invalidar la consulta de roles para obtener la lista actualizada
+        await updateRoleMutation.mutateAsync({ id: data.id, payload: { name: data.name, description: data.description } });
+        queryClient.invalidateQueries({ queryKey: ['roles'] });
       } else {
         console.error('Role ID is undefined');
       }
@@ -75,11 +71,10 @@ const RoleList: React.FC = () => {
     }
   };
 
-  const handleUpdatePermission = async (data: { id: string; permissions: { canRead: boolean; canWrite: boolean; canUpdate: boolean; canDelete: boolean } }) => {
+  const handleUpdatePermission = async (data: { id: string; permissions: { moduleId: string; canRead: boolean; canWrite: boolean; canUpdate: boolean; canDelete: boolean }[] }) => {
     try {
-      console.log('Actualizando permisos:', data);
-      await updatePermissionMutation.mutateAsync({ id: data.id, payload: { ...data.permissions, moduleId: data.id } }); // Usar el hook para actualizar los permisos
-      queryClient.invalidateQueries({ queryKey: ['roles'] }); // Invalidar la consulta de roles para obtener la lista actualizada
+      await updatePermissionMutation.mutateAsync({ id: data.id, payload: { permissions: data.permissions } });
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
       handleClosePermissionModal();
     } catch (error) {
       console.error('Error updating permissions:', error);
@@ -87,12 +82,10 @@ const RoleList: React.FC = () => {
   };
 
   if (isLoading) {
-    console.log('Loading roles...');
     return <div>Loading...</div>;
   }
 
   if (error) {
-    console.error('Error fetching roles:', error);
     return <div>Error: {error.message}</div>;
   }
 
@@ -152,11 +145,12 @@ const RoleList: React.FC = () => {
           onSubmit={isCreatingRole ? handleCreateRole : handleUpdateRole}
         />
       )}
-      {selectedRole && (
+      {selectedRole && modules && (
         <PermissionModal
           isOpen={isPermissionModalOpen}
           onClose={handleClosePermissionModal}
           role={selectedRole}
+          modules={modules}
           onSubmit={handleUpdatePermission}
         />
       )}
