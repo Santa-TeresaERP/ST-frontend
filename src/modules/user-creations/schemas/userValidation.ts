@@ -22,7 +22,7 @@ export const userSchema = z.object({
     .string()
     .min(5, 'La contraseña debe tener al menos 5 caracteres')
     .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d_-]+$/,
+      /^(?=.*[a-zñ])(?=.*[A-ZÑ])(?=.*\d)[A-Za-zñÑ\d_-]+$/,
       'La contraseña debe contener al menos una letra mayúscula, una letra minúscula, un número y solo los caracteres "_" o "-" permitidos',
     ),
   status: z.boolean().default(true),
