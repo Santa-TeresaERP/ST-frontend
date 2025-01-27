@@ -19,7 +19,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
   const [price, setPrice] = useState(product?.price || 0);
   const [stock, setStock] = useState(product?.stock || 0);
   const [description, setDescription] = useState(product?.description || '');
-  const [image_url, setImageUrl] = useState(product?.image_url || '');
+  const [imagen_url, setImagenUrl] = useState(product?.image_url || '');
   const [useUrl, setUseUrl] = useState(true); // Estado para cambiar entre URL y subida de imagen
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -30,13 +30,13 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
       setPrice(product.price);
       setStock(product.stock);
       setDescription(product.description);
-      setImageUrl(product.image_url);
+      setImagenUrl(product.imagen_url);
     }
   }, [product]);
 
     const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = { name, category_id, price, stock, description, image_url };
+    const formData = { name, category_id, price, stock, description, imagen_url };
   
     // Validar los datos del formulario usando Zod
     const result = productsSchema.safeParse(formData);
@@ -60,7 +60,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
       const reader = new FileReader();
 
       reader.onloadend = () => {
-        setImageUrl(reader.result as string);
+        setImagenUrl(reader.result as string);
       };
 
       reader.readAsDataURL(file);
@@ -164,8 +164,8 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
             {useUrl ? (
               <input
                 type="text"
-                value={image_url}
-                onChange={(e) => setImageUrl(e.target.value)}
+                value={imagen_url}
+                onChange={(e) => setImagenUrl(e.target.value)}
                 className="w-full p-2 border border-gray-300 rounded-md mt-1"
                 required
               />
