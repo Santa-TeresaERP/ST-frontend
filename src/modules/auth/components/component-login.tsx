@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Mail, Lock } from 'lucide-react'
@@ -8,27 +8,34 @@ import { Button } from '../../../app/components/ui/button'
 import { Input } from '../../../app/components/ui/input'
 import { Label } from '../../../app/components/ui/label'
 import { Card, CardContent } from '../../../app/components/ui/card'
-import { useAdminLogin } from '../hook/useLogin';
-
+import { useAdminLogin, useAuthToken } from '../hook/useLogin'
 
 export default function Component() {
-  const { loginFn, isPending } = useAdminLogin();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const router = useRouter();
+  const { loginFn, isPending } = useAdminLogin()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const router = useRouter()
+  const { token, saveToken } = useAuthToken()
+
+  useEffect(() => {
+    if (token) {
+      router.push('/pages/dashboard')
+    }
+  }, [token, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     try {
-      await loginFn({ email, password });
-      setError('');
-      router.push('/pages/dashboard');
+      const response = await loginFn({ email, password })
+      saveToken(response.token)
+      setError('')
+      router.push('/pages/dashboard')
     } catch (error) {
-      setError('Contraseña o usuario incorrecto');
-      console.error('Login error:', error);
+      setError('Contraseña o usuario incorrecto')
+      console.error('Login error:', error)
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-[url('/fondo-login.png')] bg-cover bg-center flex items-center justify-center p-4">
@@ -117,5 +124,5 @@ export default function Component() {
         </Card>
       </div>
     </div>
-  );
+  )
 }
