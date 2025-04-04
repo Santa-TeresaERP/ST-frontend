@@ -101,7 +101,7 @@ const ProductList: React.FC = () => {
     </div>
 
     <div className="rounded-lg bg-white p-4 shadow-sm w-full">
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 justify-center ml-20"> {/* Centramos las tarjetas */}
+      <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-4 justify-center "> {/* Centramos las tarjetas */}
         {filteredProducts?.map((product: Product) => (
           <div
             key={product.id}
