@@ -74,11 +74,11 @@ const ModuleModal: React.FC<ModuleModalProps> = ({ isOpen, onClose, module, onSu
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>{module ? "Editar Módulo" : "Crear Módulo"}</DialogTitle>
+            <DialogTitle className="text-3xl font-bold text-red-800 border-b border-red-800 pb-2 mb-6">{module ? "Editar Módulo" : "Crear Módulo"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nombre</Label>
+              <Label className="text-red-800" htmlFor="name">Nombre</Label>
               <Input
                 id="name"
                 name="name"
@@ -90,14 +90,14 @@ const ModuleModal: React.FC<ModuleModalProps> = ({ isOpen, onClose, module, onSu
               {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Descripción</Label>
+              <Label className="text-red-800" htmlFor="description">Descripción</Label>
               <Input
                 id="description"
                 name="description"
                 type="text"
                 value={formData.description || ""}
                 onChange={handleInputChange}
-                className={errors.description ? 'border-red-500' : ''}
+                className={errors.description ? 'border-red-500' : ''} 
               />
               {errors.description && <p className="text-red-500 text-sm">{errors.description}</p>}
             </div>
@@ -105,7 +105,7 @@ const ModuleModal: React.FC<ModuleModalProps> = ({ isOpen, onClose, module, onSu
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+              <Button type="submit" className="bg-red-800 hover:bg-red-700 text-white">
                 Guardar
               </Button>
             </DialogFooter>
@@ -116,7 +116,7 @@ const ModuleModal: React.FC<ModuleModalProps> = ({ isOpen, onClose, module, onSu
         <Dialog open={showConfirmation} onOpenChange={() => setShowConfirmation(false)}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Confirmación</DialogTitle>
+              <DialogTitle className="text-red-800">Confirmación</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <p>¿Estás seguro de que deseas {module ? "editar" : "crear"} este módulo?</p>
@@ -124,7 +124,7 @@ const ModuleModal: React.FC<ModuleModalProps> = ({ isOpen, onClose, module, onSu
                 <Button type="button" variant="outline" onClick={() => setShowConfirmation(false)}>
                   Cancelar
                 </Button>
-                <Button type="button" className="bg-blue-600 hover:bg-blue-700" onClick={handleConfirmSubmit}>
+                <Button type="button" className="bg-red-800 hover:bg-red-700 text-white" onClick={handleConfirmSubmit}>
                   Confirmar
                 </Button>
               </DialogFooter>
