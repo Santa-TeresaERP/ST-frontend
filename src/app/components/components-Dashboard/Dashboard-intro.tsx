@@ -17,7 +17,7 @@ const Dashboard = () => {
         <DepartmentSection title="Departamento Administrativo" items={[
           { name: "Modules", icon: "cuboid.svg" },
           { name: "Usuarios", icon: "users.svg" },
-          { name: "Roles", icon: "user-cog.svg" }
+          { name: "Roles", icon: "user-cog.svg" },
         ]} />
 
         <DepartmentSection title="Departamento de Ventas" items={[
