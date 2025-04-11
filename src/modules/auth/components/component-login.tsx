@@ -45,7 +45,7 @@ export default function Component() {
             <div className="mb-6 flex flex-col items-center">
               <div className="mb-4 h-24 w-24 relative">
                 <Image
-                  src="/misa.png"
+                  src="/iglesiaIcon.png"
                   alt="Misa Logo"
                   layout="fill"
                   objectFit="contain"
