@@ -86,7 +86,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md mt-1"
+              className="w-full p-2 border-2 border-gray-300 rounded-md mt-1"
               required
             />
             {errors.name && <p className="text-red-600">{errors.name}</p>}
@@ -96,7 +96,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
             <select
               value={category_id}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md mt-1"
+              className="w-full p-2 border-2 border-gray-300 rounded-md mt-1"
               required
             >
               <option value="">Seleccione una categoría</option>
@@ -114,7 +114,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
               type="number"
               value={price}
               onChange={(e) => setPrice(Number(e.target.value))}
-              className="w-full p-2 border border-gray-300 rounded-md mt-1"
+              className="w-full p-2 border-2 border-gray-300 rounded-md mt-1"
               required
             />
             {errors.price && <p className="text-red-600">{errors.price}</p>}
@@ -125,7 +125,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
               type="number"
               value={stock}
               onChange={(e) => setStock(Number(e.target.value))}
-              className="w-full p-2 border border-gray-300 rounded-md mt-1"
+              className="w-full p-2 border-2 border-gray-300 rounded-md mt-1"
               required
             />
             {errors.stock && <p className="text-red-600">{errors.stock}</p>}
@@ -135,7 +135,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md mt-1"
+              className="w-full p-2 border-2 border-gray-300 rounded-md mt-1"
               required
             />
             {errors.description && <p className="text-red-600">{errors.description}</p>}
@@ -166,14 +166,14 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                 type="text"
                 value={imagen_url}
                 onChange={(e) => setImagenUrl(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md mt-1"
+                className="w-full p-2 border-2 border-gray-300 rounded-md mt-1"
                 required
               />
             ) : (
               <input
                 type="file"
                 onChange={handleImageUpload}
-                className="w-full p-2 border border-gray-300 rounded-md mt-1"
+                className="w-full p-2 border-2 border-gray-300 rounded-md mt-1"
                 required
               />
             )}

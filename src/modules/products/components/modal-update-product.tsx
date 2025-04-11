@@ -88,6 +88,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
               type="text"
               value={formData.name}
               onChange={handleInputChange}
+              className="w-full p-2 border-2 border-gray-300 rounded-md mt-1"
               required
             />
           </div>
@@ -99,6 +100,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
               type="text"
               value={formData.description}
               onChange={handleInputChange}
+              className="w-full p-2 border-2 border-gray-300 rounded-md mt-1"
               required
             />
           </div>
@@ -111,6 +113,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
               step="0.01"
               value={formData.price.toFixed(2)}
               onChange={handleInputChange}
+              className="w-full p-2 border-2 border-gray-300 rounded-md mt-1"
               required
               min="0"
             />
@@ -123,6 +126,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
               type="number"
               value={formData.stock}
               onChange={handleInputChange}
+              className="w-full p-2 border-2 border-gray-300 rounded-md mt-1"
               required
               min="0"
             />
@@ -134,7 +138,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
               name="category_id"
               value={formData.category_id}
               onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md mt-1"
+              className="w-full p-2 border-2 border-gray-300 rounded-md mt-1"
               required
             >
               <option value="">Seleccione una categoría</option>
@@ -153,6 +157,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
               type="text"
               value={formData.imagen_url}
               onChange={handleInputChange}
+              className="w-full p-2 border-2 border-gray-300 rounded-md mt-1"
             />
           </div>
           <DialogFooter>
