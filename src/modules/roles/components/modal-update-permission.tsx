@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../../app/components/ui/dialog";
 import { Button } from "../../../app/components/ui/button";
-import { Input } from "../../../app/components/ui/input";
 import { Label } from "../../../app/components/ui/label";
 import { Role } from "@/modules/roles/types/roles";
 import { Module } from "@/modules/modules/types/modules";
+import { Check, ChevronDown, Lock, Shield, ShieldCheck, ShieldHalf, Trash2 } from 'lucide-react';
+import { Card } from "../../../app/components/ui/card";
 
 type PermissionModalProps = {
   isOpen: boolean;
@@ -84,101 +85,149 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>{role ? "Editar Permiso" : "Crear Permiso"}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="module">Módulo</Label>
-              <select
-                id="module"
-                name="module"
-                value={selectedModule}
-                onChange={(e) => setSelectedModule(e.target.value)}
-                required
-                className="w-full p-2 border border-gray-300 rounded"
-              >
-                <option value="">Seleccione un módulo</option>
-                {modules.map((module) => (
-                  <option key={module.id} value={module.id}>
-                    {module.name}
-                  </option>
-                ))}
-              </select>
+        <DialogContent className="sm:max-w-[600px] rounded-lg">
+          <DialogHeader className="border-b pb-4">
+            <div className="flex items-center space-x-3">
+              <ShieldCheck className="h-6 w-6 text-green-600" />
+              <DialogTitle className="text-2xl font-semibold text-black">
+                {role ? `Editar Permisos - ${role.name}` : "Asignar Nuevos Permisos"}
+              </DialogTitle>
             </div>
-            {selectedModule && (
-              <div className="flex flex-col space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Label htmlFor={`canRead-${selectedModule}`}>Leer</Label>
-                  <Input
-                    id={`canRead-${selectedModule}`}
-                    name={`canRead-${selectedModule}`}
-                    type="checkbox"
-                    checked={formData[selectedModule]?.canRead || false}
-                    onChange={(e) => handleInputChange("canRead", e.target.checked)}
-                  />
+          </DialogHeader>
+          
+          <form onSubmit={handleSubmit} className="space-y-6 py-4">
+            <Card className="p-4 border border-gray-400 shadow-sm">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center text-sm font-medium text-gray-700">
+                    <ChevronDown className="h-4 w-4 mr-2" />
+                    Seleccionar Módulo
+                  </Label>
+                  <select
+                    id="module"
+                    name="module"
+                    value={selectedModule}
+                    onChange={(e) => setSelectedModule(e.target.value)}
+                    required
+                    className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-black"
+                  >
+                    <option value="">Seleccione un módulo</option>
+                    {modules.map((module) => (
+                      <option key={module.id} value={module.id}>
+                        {module.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Label htmlFor={`canWrite-${selectedModule}`}>Escribir</Label>
-                  <Input
-                    id={`canWrite-${selectedModule}`}
-                    name={`canWrite-${selectedModule}`}
-                    type="checkbox"
-                    checked={formData[selectedModule]?.canWrite || false}
-                    onChange={(e) => handleInputChange("canWrite", e.target.checked)}
-                  />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Label htmlFor={`canUpdate-${selectedModule}`}>Actualizar</Label>
-                  <Input
-                    id={`canUpdate-${selectedModule}`}
-                    name={`canUpdate-${selectedModule}`}
-                    type="checkbox"
-                    checked={formData[selectedModule]?.canUpdate || false}
-                    onChange={(e) => handleInputChange("canUpdate", e.target.checked)}
-                  />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Label htmlFor={`canDelete-${selectedModule}`}>Eliminar</Label>
-                  <Input
-                    id={`canDelete-${selectedModule}`}
-                    name={`canDelete-${selectedModule}`}
-                    type="checkbox"
-                    checked={formData[selectedModule]?.canDelete || false}
-                    onChange={(e) => handleInputChange("canDelete", e.target.checked)}
-                  />
-                </div>
+
+                {selectedModule && (
+                  <div className="space-y-4 pt-4">
+                    <div className="flex items-center p-3 bg-gray-100 rounded-lg">
+                      <Lock className="h-5 w-5 text-gray-600 mr-3" />
+                      <span className="font-medium text-black">
+                        Permisos del módulo: {modules.find(m => m.id === selectedModule)?.name}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                      {[ 
+                        { id: 'canRead', label: 'Leer', icon: <Shield className="h-5 w-5 text-green-500 mr-3" /> },
+                        { id: 'canWrite', label: 'Escribir', icon: <ShieldHalf className="h-5 w-5 text-blue-500 mr-3" /> },
+                        { id: 'canUpdate', label: 'Actualizar', icon: <ShieldCheck className="h-5 w-5 text-purple-500 mr-3" /> },
+                        { id: 'canDelete', label: 'Eliminar', icon: <Trash2 className="h-5 w-5 text-red-500 mr-3" /> },
+                      ].map((perm) => (
+                        <div key={perm.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-200 transition-colors">
+                          <div className="flex items-center">
+                            {perm.icon}
+                            <Label htmlFor={`${perm.id}-${selectedModule}`} className="font-medium">
+                              {perm.label}
+                            </Label>
+                          </div>
+                          <input
+                            id={`${perm.id}-${selectedModule}`}
+                            type="checkbox"
+                            checked={formData[selectedModule]?.[perm.id as keyof typeof formData[typeof selectedModule]] || false}
+                            onChange={(e) => handleInputChange(perm.id, e.target.checked)}
+                            className="h-5 w-5 rounded border-gray-400 text-green-600 focus:ring-green-500"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
+            </Card>
+
+            <DialogFooter className="border-t pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onClose}
+                className="border-gray-400 text-gray-700 hover:bg-gray-200"
+              >
                 Cancelar
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                Guardar
+              <Button 
+                type="submit" 
+                className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-lg"
+              >
+                <Check className="h-4 w-4 mr-2" />
+                Guardar Permisos
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Confirmación */}
       {showConfirmation && (
         <Dialog open={showConfirmation} onOpenChange={() => setShowConfirmation(false)}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Confirmación</DialogTitle>
+          <DialogContent className="sm:max-w-[425px] rounded-lg">
+            <DialogHeader className="border-b pb-4">
+              <div className="flex items-center space-x-3">
+                <ShieldCheck className="h-6 w-6 text-green-600" />
+                <DialogTitle className="text-xl font-semibold text-black">
+                  Confirmar Cambios
+                </DialogTitle>
+              </div>
             </DialogHeader>
-            <div className="space-y-4">
-              <p>¿Estás seguro de que deseas {role ? "editar" : "crear"} estos permisos?</p>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setShowConfirmation(false)}>
-                  Cancelar
-                </Button>
-                <Button type="button" className="bg-blue-600 hover:bg-blue-700" onClick={handleConfirmSubmit}>
-                  Confirmar
-                </Button>
-              </DialogFooter>
+            <div className="space-y-4 py-4">
+              <p className="text-gray-600">
+                ¿Estás seguro de que deseas {role ? "actualizar" : "asignar"} estos permisos?
+              </p>
+              <div className="bg-gray-100 border-l-4 border-gray-400 p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-gray-700">
+                      Esta acción afectará los permisos de todos los usuarios con este rol.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
+            <DialogFooter className="border-t pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowConfirmation(false)}
+                className="border-gray-400 text-gray-700 hover:bg-gray-200"
+              >
+                Revisar de nuevo
+              </Button>
+              <Button 
+                type="button" 
+                onClick={handleConfirmSubmit}
+                className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-lg"
+              >
+                <Check className="h-4 w-4 mr-2" />
+                Confirmar Cambios
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
