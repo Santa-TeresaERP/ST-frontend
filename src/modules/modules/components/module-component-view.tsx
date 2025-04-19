@@ -49,25 +49,25 @@ const ModuleList: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Gestión de Módulos</h1>
+        <h1 className="text-3xl font-bold text-red-800 border-b border-red-800 pb-2 mb-6">Gestión de Módulos</h1>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {modules &&
           modules.map((module, index) => (
-            <Card key={module.id || index} className="hover:shadow-lg transition-shadow duration-300">
-              <CardHeader className="bg-red-50">
-                <CardTitle className="flex items-center text-red-600">
-                  <Cuboid className="mr-2 h-5 w-5" />
-                  {module.name}
+            <Card key={module.id || index} className="hover:shadow-lg border-gray-700 rounded-t-xl transition-shadow duration-300">
+              <CardHeader className="bg-[#393939] rounded-t-xl">
+                <CardTitle className="flex items-center text-red-700 ">
+                  <Cuboid className="mr-2 h-5 w-5 text-red-500" />
+                  <span className="text-white ">{module.name}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-4">
                 <p className="text-sm text-gray-600 mb-1">
-                  <strong>Descripción:</strong> {module.description}
+                  <strong className='text-red-800'>Descripción:</strong> {module.description}
                 </p>
                 <div className="flex justify-end mt-4">
                   <button
-                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                    className="bg-red-800 text-white px-4 py-2 rounded hover:bg-red-700"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleEditClick(module);
