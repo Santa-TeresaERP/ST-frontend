@@ -3,7 +3,7 @@
 import React from 'react';
 import DepartmentSection from "../../components/components-Dashboard/DepartmentSection";
 import { useAuthStore } from '@/core/store/auth';
-import Header from '../components-header/Header';
+
 
 const Dashboard = () => {
   const user = useAuthStore((state) => state.user);
@@ -36,9 +36,9 @@ const Dashboard = () => {
         ]} />
 
         <DepartmentSection title="Departamento de Ventas" items={[
-          { name: "Repostería", icon: "cake-slice.svg" },
-          { name: "Manualidades", icon: "lightbulb.svg" },
-          { name: "Misa", icon: "church.svg" },
+          { name: "Ventas", icon: "cake-slice.svg" },
+          { name: "Produccion", icon: "lightbulb.svg" },
+          { name: "Inventario", icon: "church.svg" },
         ]} />
 
         <DepartmentSection title="Departamento de Alquileres" items={[

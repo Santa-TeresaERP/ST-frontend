@@ -28,14 +28,14 @@ const DepartmentSection = ({ title, items }: DepartmentSectionProps) => {
       case "Roles":
         router.push('/pages/dashboard/roles');
         break;  
-      case "Repostería":
-        router.push('/pages/dashboard/reposteria');
+      case "Ventas":
+        router.push('/pages/dashboard/ventas');
         break;
-      case "Manualidades":
-        router.push('/pages/dashboard/manualidades');
+      case "Produccion":
+        router.push('/pages/dashboard/produccion');
         break;
-      case "Misa":
-        router.push('/pages/dashboard/misa');
+      case "Inventario":
+        router.push('/pages/dashboard/inventario');
         break;
       case "Santa Catalina":
         router.push('/pages/dashboard/santa-catalina');
