@@ -1,24 +1,50 @@
 import { useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import ModalCreateCategoria from './modal-create-categoria';  
+import ModalDeleteProducto from './modal-delete-producto'; // Importamos el modal de eliminación
 
 const ProductosView = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false); // Control del modal
+  const [isModalOpen, setIsModalOpen] = useState(false); // Control del modal de categoría
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); // Control del modal de eliminación
+  const [productoAEliminar, setProductoAEliminar] = useState<number | null>(null); // Producto seleccionado para eliminar
   const productos = [
     { id: 1, nombre: 'Producto A', categoria: 'Categoría 1', precio: 25.5, stock: 100 },
     { id: 2, nombre: 'Producto B', categoria: 'Categoría 2', precio: 40.0, stock: 80 },
     { id: 3, nombre: 'Producto C', categoria: 'Categoría 3', precio: 15.75, stock: 60 },
   ];
 
-  // Función para abrir el modal
+  // Función para abrir el modal de categoría
   const openModal = () => {
     setIsModalOpen(true);
   };
 
-  // Función para cerrar el modal
+  // Función para cerrar el modal de categoría
   const closeModal = () => {
     setIsModalOpen(false);
   };
+
+  // Función para abrir el modal de eliminación
+  const openDeleteModal = (id: number) => {
+    setProductoAEliminar(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  // Función para cerrar el modal de eliminación
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setProductoAEliminar(null);
+  };
+
+  // Función para eliminar el producto
+  const eliminarProducto = () => {
+    if (productoAEliminar !== null) {
+      const nuevosProductos = productos.filter((producto) => producto.id !== productoAEliminar);
+      console.log(`Producto con ID ${productoAEliminar} eliminado.`);
+      setIsDeleteModalOpen(false);
+      setProductoAEliminar(null);
+    }
+  };
+  
 
   return (
     <div className="min-h-screen bg-gray-100 p-8 font-sans">
@@ -75,7 +101,10 @@ const ProductosView = () => {
                     <button className="text-black hover:text-gray-700 transition-all duration-300 transform hover:scale-105">
                       <Pencil size={18} />
                     </button>
-                    <button className="text-red-600 hover:text-red-700 transition-all duration-300 transform hover:scale-105">
+                    <button
+                      onClick={() => openDeleteModal(producto.id)} // Abrir modal de eliminación
+                      className="text-red-600 hover:text-red-700 transition-all duration-300 transform hover:scale-105"
+                    >
                       <Trash2 size={18} />
                     </button>
                   </div>
@@ -88,6 +117,13 @@ const ProductosView = () => {
 
       {/* Modal para crear categoría */}
       <ModalCreateCategoria isOpen={isModalOpen} onClose={closeModal} />
+
+      {/* Modal de eliminación de producto */}
+      <ModalDeleteProducto
+        isOpen={isDeleteModalOpen}
+        onClose={closeDeleteModal}
+        onConfirm={eliminarProducto}
+      />
     </div>
   );
 };
