@@ -1,11 +1,24 @@
+import { useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
+import ModalCreateCategoria from './modal-create-categoria';  
 
 const ProductosView = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false); // Control del modal
   const productos = [
     { id: 1, nombre: 'Producto A', categoria: 'Categoría 1', precio: 25.5, stock: 100 },
     { id: 2, nombre: 'Producto B', categoria: 'Categoría 2', precio: 40.0, stock: 80 },
     { id: 3, nombre: 'Producto C', categoria: 'Categoría 3', precio: 15.75, stock: 60 },
   ];
+
+  // Función para abrir el modal
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  // Función para cerrar el modal
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 p-8 font-sans">
@@ -27,7 +40,10 @@ const ProductosView = () => {
 
       {/* Botones secundarios */}
       <div className="flex justify-end space-x-6 mb-6 max-w-6xl mx-auto">
-        <button className="bg-red-700 text-white px-6 py-3 rounded-lg hover:bg-red-800 transition-all duration-300 transform hover:scale-105">
+        <button
+          onClick={openModal} // Aquí abres el modal al hacer clic
+          className="bg-red-700 text-white px-6 py-3 rounded-lg hover:bg-red-800 transition-all duration-300 transform hover:scale-105"
+        >
           Categorías
         </button>
         <button className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-900 transition-all duration-300 transform hover:scale-105">
@@ -69,6 +85,9 @@ const ProductosView = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Modal para crear categoría */}
+      <ModalCreateCategoria isOpen={isModalOpen} onClose={closeModal} />
     </div>
   );
 };
