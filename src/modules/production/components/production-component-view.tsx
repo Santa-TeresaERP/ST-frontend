@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import ProductosView from './productos-view';
+import ProductosView from './producto/productos-view';
 
 const ProductionComponentView: React.FC = () => {
   const [selectedView, setSelectedView] = useState('Producto');
