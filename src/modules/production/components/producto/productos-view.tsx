@@ -3,6 +3,8 @@ import { Pencil, Trash2 } from 'lucide-react';
 import ModalCreateCategoria from './modal-create-categoria';
 import ModalDeleteProducto from './modal-delete-producto'; // Modal de eliminación
 import ModalEditProducto from './modal-edit-producto'; // Modal de edición
+import ModalCreateProducto from './modal-create-producto';
+
 
 const ProductosView = () => {
   const [isModalOpen, setIsModalOpen] = useState(false); // Control del modal de categoría
@@ -10,11 +12,21 @@ const ProductosView = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Control del modal de edición
   const [productoAEliminar, setProductoAEliminar] = useState<number | null>(null); // Producto seleccionado para eliminar
   const [productoAEditar, setProductoAEditar] = useState<any>(null); // Producto seleccionado para editar
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [productos, setProductos] = useState([
     { id: 1, nombre: 'Producto A', categoria: 'Categoría 1', precio: 25.5, stock: 100 },
     { id: 2, nombre: 'Producto B', categoria: 'Categoría 2', precio: 40.0, stock: 80 },
     { id: 3, nombre: 'Producto C', categoria: 'Categoría 3', precio: 15.75, stock: 60 },
   ]);
+
+  const openCreateModal = () => setIsCreateModalOpen(true);
+  const closeCreateModal = () => setIsCreateModalOpen(false);
+
+  const saveProductCreate = (nuevoProducto: any) => {
+    setProductos([...productos, nuevoProducto]);
+    console.log('Producto creado:', nuevoProducto);
+    closeCreateModal();
+  };
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
@@ -80,9 +92,13 @@ const ProductosView = () => {
         >
           Categorías
         </button>
-        <button className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-900 transition-all duration-300 transform hover:scale-105">
+        <button
+          onClick={openCreateModal}
+          className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-900 transition-all duration-300 transform hover:scale-105"
+        >
           Registrar Producto
         </button>
+
       </div>
 
       <div className="overflow-x-auto bg-white shadow-2xl rounded-xl max-w-6xl mx-auto">
@@ -118,6 +134,7 @@ const ProductosView = () => {
       </div>
 
       <ModalCreateCategoria isOpen={isModalOpen} onClose={closeModal} />
+      <ModalCreateProducto isOpen={isCreateModalOpen} onClose={closeCreateModal} onSave={saveProductCreate} />
       <ModalDeleteProducto isOpen={isDeleteModalOpen} onClose={closeDeleteModal} onConfirm={() => eliminarProducto(productoAEliminar!)} />
       <ModalEditProducto
         isOpen={isEditModalOpen}
