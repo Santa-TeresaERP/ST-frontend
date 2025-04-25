@@ -10,19 +10,14 @@ const ProductosView = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Control del modal de edición
   const [productoAEliminar, setProductoAEliminar] = useState<number | null>(null); // Producto seleccionado para eliminar
   const [productoAEditar, setProductoAEditar] = useState<any>(null); // Producto seleccionado para editar
-  const productos = [
+  const [productos, setProductos] = useState([
     { id: 1, nombre: 'Producto A', categoria: 'Categoría 1', precio: 25.5, stock: 100 },
     { id: 2, nombre: 'Producto B', categoria: 'Categoría 2', precio: 40.0, stock: 80 },
     { id: 3, nombre: 'Producto C', categoria: 'Categoría 3', precio: 15.75, stock: 60 },
-  ];
+  ]);
 
-  const openModal = () => {
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-  };
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
 
   const openDeleteModal = (id: number) => {
     setProductoAEliminar(id);
@@ -44,12 +39,12 @@ const ProductosView = () => {
     setProductoAEditar(null);
   };
 
-  const eliminarProducto = () => {
-    if (productoAEliminar !== null) {
-      const nuevosProductos = productos.filter((producto) => producto.id !== productoAEliminar);
-      console.log(`Producto con ID ${productoAEliminar} eliminado.`);
-      setIsDeleteModalOpen(false);
-      setProductoAEliminar(null);
+  const eliminarProducto = (id: number) => {
+    if (id !== null) {
+      const nuevosProductos = productos.filter((producto) => producto.id !== id);
+      setProductos(nuevosProductos); // Actualizamos el estado con el nuevo arreglo sin el producto eliminado
+      console.log(`Producto con ID ${id} eliminado.`);
+      closeDeleteModal(); // Cerramos el modal de eliminación
     }
   };
 
@@ -57,9 +52,9 @@ const ProductosView = () => {
     const nuevosProductos = productos.map((producto) =>
       producto.id === productoEditado.id ? productoEditado : producto
     );
+    setProductos(nuevosProductos); // Actualizamos el estado con el producto editado
     console.log('Producto editado:', productoEditado);
-    setIsEditModalOpen(false);
-    setProductoAEditar(null);
+    closeEditModal(); // Cerramos el modal de edición
   };
 
   return (
@@ -123,7 +118,7 @@ const ProductosView = () => {
       </div>
 
       <ModalCreateCategoria isOpen={isModalOpen} onClose={closeModal} />
-      <ModalDeleteProducto isOpen={isDeleteModalOpen} onClose={closeDeleteModal} onDelete={eliminarProducto} />
+      <ModalDeleteProducto isOpen={isDeleteModalOpen} onClose={closeDeleteModal} onConfirm={() => eliminarProducto(productoAEliminar!)} />
       <ModalEditProducto
         isOpen={isEditModalOpen}
         onClose={closeEditModal}
