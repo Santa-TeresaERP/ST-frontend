@@ -95,7 +95,7 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
             <button
               type="button"
               onClick={handleSave}
-              className="bg-red-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-red-700 hover:scale-105 transition-all duration-300 flex items-center space-x-2"
+              className="bg-red-800 text-white px-6 py-3 rounded-lg shadow-md hover:bg-red-600 hover:scale-105 transition-all duration-300 flex items-center space-x-2"
             >
               <Pencil size={20} className="text-white" />
               <span>Guardar</span>

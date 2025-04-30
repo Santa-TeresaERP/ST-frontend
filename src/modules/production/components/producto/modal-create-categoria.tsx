@@ -42,7 +42,7 @@ const ModalCreateCategoria = ({ isOpen, onClose }: ModalCreateCategoriaProps) =>
         {/* Header */}
         <div className="mb-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-3xl font-bold text-black">Categoría</h2>
+            <h2 className="text-3xl font-bold text-red-700">Categoría</h2>
             <button onClick={onClose} className="text-gray-600 hover:text-gray-800 text-3xl font-light">
               &times;
             </button>
@@ -54,7 +54,7 @@ const ModalCreateCategoria = ({ isOpen, onClose }: ModalCreateCategoriaProps) =>
         <div className="flex justify-end mb-6">
           <button
             onClick={agregarCategoria}
-            className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-all duration-300"
+            className="bg-red-800 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-all duration-300"
           >
             Agregar Categoría
           </button>

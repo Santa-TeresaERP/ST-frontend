@@ -46,7 +46,7 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
       <div className="bg-white p-6 rounded-2xl w-[90%] max-w-md shadow-2xl">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center border-b pb-2">
+        <h2 className="text-2xl font-semibold text-red-800 mb-6 text-center pb-2">
           Registrar Nuevo Producto
         </h2>
 
@@ -113,7 +113,7 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
           </button>
           <button
             onClick={handleSubmit}
-            className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition"
+            className="px-4 py-2 rounded-lg bg-red-800 hover:bg-red-600 text-white transition"
           >
             Guardar
           </button>
