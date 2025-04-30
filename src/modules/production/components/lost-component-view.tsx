@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { FiFilter, FiSearch, FiPlus, FiTrash2, FiEdit } from 'react-icons/fi';
 import { LostAttributes } from '../types/lost';
 import { lostValidation } from '@/modules/production/schemas/lostValidation';
+import { FiAlertTriangle } from 'react-icons/fi';
+
 
 const LostComponentView: React.FC = () => {
   // Estado para los datos y filtros
@@ -92,8 +94,10 @@ const LostComponentView: React.FC = () => {
     <div className="space-y-6 p-4 bg-white rounded-lg shadow-md">
       {/* Header con título y controles */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h2 className="text-2xl font-bold text-gray-800">Gestión de Pérdidas</h2>
-        
+         <h2 className="text-3xl font-bold pb-4 flex text-orange-500 items-center gap-2">
+            <FiAlertTriangle size={24} />
+            <span>Gestión de Producción</span>
+        </h2>
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           {/* Barra de búsqueda */}
           <div className="relative flex-grow">
@@ -126,7 +130,7 @@ const LostComponentView: React.FC = () => {
           {/* Botón para agregar */}
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+            className="flex items-center justify-center gap-2 bg-red-800 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
           >
             <FiPlus /> Nueva Pérdida
           </button>
@@ -158,14 +162,14 @@ const LostComponentView: React.FC = () => {
       {/* Tabla de datos */}
       <div className="overflow-x-auto rounded-lg border border-gray-200">
         <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-700 text-white text-xs uppercase sticky top-0">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Producto</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Observaciones</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+              <th className="px-6 py-3 text-left">Producto</th>
+              <th className="px-6 py-3 text-left">Cantidad</th>
+              <th className="px-6 py-3 text-left">Tipo</th>
+              <th className="px-6 py-3 text-left">Observaciones</th>
+              <th className="px-6 py-3 text-left">Fecha</th>
+              <th className="px-6 py-3 text-center">Acciones</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -195,8 +199,8 @@ const LostComponentView: React.FC = () => {
                     {lost.created_at.toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button className="text-blue-600 hover:text-blue-900">
+                    <div className="flex space-x-2 justify-center">
+                      <button className="text-green-600 hover:text-green-800">
                         <FiEdit />
                       </button>
                       <button 
@@ -292,7 +296,7 @@ const LostComponentView: React.FC = () => {
             <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-lg">
               <button
                 type="button"
-                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-800 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
                 onClick={handleAddLostItem}
               >
                 Guardar
