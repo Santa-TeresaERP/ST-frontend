@@ -16,11 +16,11 @@ const ProductosView = () => {
   const [productoAEditar, setProductoAEditar] = useState<any>(null); // Producto seleccionado para editar
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [productos, setProductos] = useState([
-    { id: 1, nombre: 'Producto A', categoria: 'Categoría 1', precio: 25.5, stock: 100 },
-    { id: 2, nombre: 'Producto B', categoria: 'Categoría 2', precio: 40.0, stock: 80 },
-    { id: 3, nombre: 'Producto C', categoria: 'Categoría 3', precio: 15.75, stock: 60 },
+    { id: 1, nombre: 'Producto A', categoria: 'Categoría 1', precio: 25.5, stock: 100, descripcion: 'Este es el producto A'},
+    { id: 2, nombre: 'Producto B', categoria: 'Categoría 2', precio: 40.0, stock: 80, descripcion: 'Este es el producto B'},
+    { id: 3, nombre: 'Producto C', categoria: 'Categoría 3', precio: 15.75, stock: 60, descripcion: 'Este es el producto C'},
   ]);
-
+  
   const openCreateModal = () => setIsCreateModalOpen(true);
   const closeCreateModal = () => setIsCreateModalOpen(false);
 
@@ -106,6 +106,7 @@ const ProductosView = () => {
               <th className="px-4 py-3 text-left">Producto</th>
               <th className="px-4 py-3 text-left">Categoría</th>
               <th className="px-4 py-3 text-left">Precio</th>
+              <th className="px-4 py-3 text-left">Descripción</th>
               <th className="px-4 py-3 text-left">Stock</th>
               <th className="px-4 py-3 text-center">Acciones</th>
             </tr>
@@ -115,7 +116,8 @@ const ProductosView = () => {
               <tr key={producto.id} className="border-b border-gray-200 hover:bg-gray-50">
                 <td className="px-4 py-3">{producto.nombre}</td>
                 <td className="px-4 py-3">{producto.categoria}</td>
-                <td className="px-4 py-3">{producto.precio} $</td>
+                <td className="px-4 py-3">S/. {producto.precio}</td>
+                <td className="px-4 py-3">{producto.descripcion}</td>
                 <td className="px-4 py-3">{producto.stock}</td>
                 <td className="px-4 py-3">
                   <div className="flex space-x-2 justify-center">
