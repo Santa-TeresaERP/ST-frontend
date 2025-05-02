@@ -1,107 +1,273 @@
-import { Pencil, X } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Save, Trash2 } from 'lucide-react';
 
 interface ModalEditProductoProps {
   isOpen: boolean;
   onClose: () => void;
-  producto: { id: number; nombre: string; categoria: string; precio: number; stock: number } | null;
-  onSave: (producto: { id: number; nombre: string; categoria: string; precio: number; stock: number }) => void;
+  onSave: (producto: {
+    id: number;
+    nombre: string;
+    categoria: string;
+    precio: number;
+    descripcion: string;
+    stock: number;
+    imagen: File | null;
+    recursos: { nombre: string; cantidad: string }[];
+  }) => void;
+  producto: {
+    id: number;
+    nombre: string;
+    categoria: string;
+    precio: number;
+    descripcion: string;
+    stock: number;
+    imagen: File | null;
+    recursos: { nombre: string; cantidad: string }[];
+  } | null;
 }
 
-const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, producto, onSave }) => {
+const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, onSave, producto }) => {
   const [nombre, setNombre] = useState('');
   const [categoria, setCategoria] = useState('');
-  const [precio, setPrecio] = useState(0);
-  const [stock, setStock] = useState(0);
+  const [precio, setPrecio] = useState('');
+  const [descripcion, setDescripcion] = useState('');
+  const [stock, setStock] = useState('');
+  const [imagen, setImagen] = useState<File | null>(null);
+  const [recursos, setRecursos] = useState<{ nombre: string; cantidad: string }[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Cargar datos del producto cuando se abre el modal
   useEffect(() => {
     if (producto) {
       setNombre(producto.nombre);
       setCategoria(producto.categoria);
-      setPrecio(producto.precio);
-      setStock(producto.stock);
+      setPrecio(producto.precio.toString());
+      setStock(producto.stock.toString());
+      setDescripcion(producto.descripcion);
+      setImagen(producto.imagen);
+      setRecursos(producto.recursos || []);
     }
   }, [producto]);
 
-  if (!isOpen || !producto) return null;
+  const handleSubmit = () => {
+    if (!nombre || !categoria || !precio || !descripcion || !stock) {
+      alert('Todos los campos son obligatorios.');
+      return;
+    }
 
-  const handleSave = () => {
-    onSave({ id: producto.id, nombre, categoria, precio, stock });
+    const nuevoProducto = {
+      id: producto ? producto.id : Date.now(),
+      nombre,
+      categoria,
+      precio: parseFloat(precio),
+      descripcion,
+      stock: parseInt(stock),
+      imagen,
+      recursos,
+    };
+
+    onSave(nuevoProducto);
     onClose();
+
+    // Reset fields
+    setNombre('');
+    setCategoria('');
+    setPrecio('');
+    setDescripcion('');
+    setStock('');
+    setImagen(null);
+    setRecursos([]);
   };
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setImagen(event.target.files[0]);
+    }
+  };
+
+  const handleAddRecurso = () => {
+    setRecursos([...recursos, { nombre: '', cantidad: '' }]);
+  };
+
+  if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-70 z-50 transition-opacity duration-300">
-      <div className="bg-white rounded-xl shadow-lg p-8 max-w-lg w-full">
-        <h2 className="text-3xl font-semibold text-center text-gray-800 mb-6 flex items-center justify-center">
-          <Pencil size={24} className="mr-2 text-red-600" />
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+      <div className="bg-white p-6 rounded-2xl w-[95%] max-w-5xl shadow-2xl">
+        <h2 className="text-2xl font-semibold text-red-800 mb-6 text-center pb-2">
           Editar Producto
         </h2>
 
-        <form className="space-y-6">
-          <div>
-            <label htmlFor="nombre" className="block text-gray-700">Nombre del Producto</label>
-            <input
-              id="nombre"
-              type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              className="w-full p-3 border border-gray-600 rounded-lg mt-2 bg-gray-100 text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-600"
-            />
+        <div className="flex gap-8">
+          {/* Sección producto */}
+          <div className="flex-1 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nombre del producto
+              </label>
+              <input
+                type="text"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                placeholder="Nombre del producto"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Categoría
+              </label>
+              <input
+                type="text"
+                value={categoria}
+                onChange={(e) => setCategoria(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                placeholder="Categoría"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Precio (S/.)
+              </label>
+              <input
+                type="number"
+                value={precio}
+                onChange={(e) => setPrecio(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                placeholder="Precio"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Descripción
+              </label>
+              <textarea
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                placeholder="Descripción del producto"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Stock disponible
+              </label>
+              <input
+                type="number"
+                value={stock}
+                onChange={(e) => setStock(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                placeholder="Stock"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Imagen del producto
+              </label>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-600 transition"
+              >
+                Subir imagen
+              </button>
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              {imagen && <p className="mt-2 text-sm text-gray-600">Imagen seleccionada: {imagen.name}</p>}
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="categoria" className="block text-gray-700">Categoría</label>
-            <input
-              id="categoria"
-              type="text"
-              value={categoria}
-              onChange={(e) => setCategoria(e.target.value)}
-              className="w-full p-3 border border-gray-600 rounded-lg mt-2 bg-gray-100 text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-600"
-            />
-          </div>
+          {/* Separador vertical */}
+          <div className="w-px bg-gray-300 mx-2"></div>
 
-          <div>
-            <label htmlFor="precio" className="block text-gray-700">Precio</label>
-            <input
-              id="precio"
-              type="number"
-              value={precio}
-              onChange={(e) => setPrecio(parseFloat(e.target.value))}
-              className="w-full p-3 border border-gray-600 rounded-lg mt-2 bg-gray-100 text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-600"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="stock" className="block text-gray-700">Stock</label>
-            <input
-              id="stock"
-              type="number"
-              value={stock}
-              onChange={(e) => setStock(parseInt(e.target.value))}
-              className="w-full p-3 border border-gray-600 rounded-lg mt-2 bg-gray-100 text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-600"
-            />
-          </div>
-
-          <div className="flex justify-between mt-6">
+          {/* Sección recursos */}
+          <div className="flex-1">
+            <h3 className="text-xl font-semibold text-red-700 mb-4">Recursos</h3>
             <button
-              type="button"
-              onClick={onClose}
-              className="bg-gray-600 text-gray-300 px-6 py-3 rounded-lg shadow-md hover:bg-gray-700 hover:scale-105 transition-all duration-300 flex items-center space-x-2"
+              onClick={handleAddRecurso}
+              className="mb-4 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-400"
             >
-              <X size={20} className="text-white" />
-              <span>Cancelar</span>
+              Agregar Recurso
             </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              className="bg-red-800 text-white px-6 py-3 rounded-lg shadow-md hover:bg-red-600 hover:scale-105 transition-all duration-300 flex items-center space-x-2"
-            >
-              <Pencil size={20} className="text-white" />
-              <span>Guardar</span>
-            </button>
+
+            {recursos.map((recurso, index) => (
+              <div key={index} className="border border-gray-300 p-4 rounded-xl mb-3 shadow-sm">
+                <div className="flex flex-wrap items-end gap-4">
+                  <div className="flex-1 min-w-[150px]">
+                    <label className="text-sm font-medium text-gray-700">Recurso</label>
+                    <input
+                      type="text"
+                      value={recurso.nombre}
+                      onChange={(e) => {
+                        const nuevos = [...recursos];
+                        nuevos[index].nombre = e.target.value;
+                        setRecursos(nuevos);
+                      }}
+                      className="w-full p-2 mt-1 border border-gray-300 rounded-md"
+                      placeholder="Nombre del recurso"
+                    />
+                  </div>
+                  <div className="w-[120px]">
+                    <label className="text-sm font-medium text-gray-700">Cantidad</label>
+                    <input
+                      type="number"
+                      value={recurso.cantidad}
+                      onChange={(e) => {
+                        const nuevos = [...recursos];
+                        nuevos[index].cantidad = e.target.value;
+                        setRecursos(nuevos);
+                      }}
+                      className="w-full p-2 mt-1 border border-gray-300 rounded-md"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="flex gap-2 mt-6">
+                    <button
+                      title="Guardar"
+                      className="bg-green-600 hover:bg-green-500 text-white p-2 rounded-full"
+                    >
+                      <Save />
+                    </button>
+                    <button
+                      title="Eliminar"
+                      onClick={() => {
+                        const nuevos = recursos.filter((_, i) => i !== index);
+                        setRecursos(nuevos);
+                      }}
+                      className="bg-red-600 hover:bg-red-500 text-white p-2 rounded-full"
+                    >
+                      <Trash2 />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        </form>
+        </div>
+
+        <div className="flex justify-end mt-6 space-x-4">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="px-4 py-2 rounded-lg bg-red-800 hover:bg-red-600 text-white transition"
+          >
+            Guardar
+          </button>
+        </div>
       </div>
     </div>
   );
