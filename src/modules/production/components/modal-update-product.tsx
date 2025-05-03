@@ -6,9 +6,9 @@ import { Input } from '../../../app/components/ui/input';
 import { Label } from "../../../app/components/ui/label";
 import { Button } from "../../../app/components/ui/button";
 import { Card } from "../../../app/components/ui/card";
-import { Product } from '@/modules/products/types/product';
-import { useFetchCategories } from '@/modules/products/hook/useCategories';
-import { Package, Image as ImageIcon, DollarSign, Layers, Tag, Check, X } from 'lucide-react';
+import { Product } from '@/modules/production/types/products';
+import { useFetchCategories } from '@/modules/production/hook/useCategories';
+import { Package, Image as ImageIcon, DollarSign, Tag, Check, X } from 'lucide-react';
 
 type ProductModalProps = {
   isOpen: boolean;
@@ -25,7 +25,6 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
     price: 0,
     imagen_url: "",
     category_id: "11111111-1111-1111-1111-111111111111",
-    stock: 50,
   });
 
   useEffect(() => {
@@ -34,21 +33,11 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
       setFormData({
         name: product.name || "",
         description: product.description || "",
-        price: product.price || 0,
+        price: Number(product.price) || 0,
         imagen_url: product.imagen_url || "",
         category_id: product.category_id || "11111111-1111-1111-1111-111111111111",
-        stock: product.stock || 50,
       });
-    } else {
-      setFormData({
-        name: "",
-        description: "",
-        price: 0,
-        imagen_url: "",
-        category_id: "11111111-1111-1111-1111-111111111111",
-        stock: 50,
-      });
-    }
+    } 
   }, [product]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -105,7 +94,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                     type="text"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full p-3 borderborder-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     required
                   />
                 </div>
@@ -162,22 +151,6 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="flex items-center text-sm font-medium text-gray-700">
-                    <Layers className="h-4 w-4 mr-2" />
-                    Stock
-                  </Label>
-                  <Input
-                    id="stock"
-                    name="stock"
-                    type="number"
-                    value={formData.stock}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    required
-                    min="0"
-                  />
-                </div>
 
                 <div className="space-y-2">
                   <Label className="flex items-center text-sm font-medium text-gray-700">

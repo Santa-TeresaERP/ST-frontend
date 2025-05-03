@@ -1,6 +1,6 @@
-import { Product, CreateProductPayload, UpdateProductPayload } from "../types/product";
+import { Product, CreateProductPayload, UpdateProductPayload } from "../types/products";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { deleteProduct, createProduct, updateProduct, fetchProducts } from "../action/products";
+import { deleteProduct, createProduct, updateProduct, fetchProducts } from "../../production/action/products";
 
 export const useFetchProducts = () => {
   return useQuery<Product[], Error>({

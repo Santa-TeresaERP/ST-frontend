@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Product } from '@/modules/products/types/product';
-import { useFetchCategories } from '@/modules/products/hook/useCategories';
+import { Product } from '@/modules/production/types/products';
+import { useFetchCategories } from '@/modules/production/hook/useCategories';
 import { z } from 'zod';
-import { productsSchema } from '@/modules/products/Schema/productValidation';
+import { productsSchema } from '@/modules/production/schemas/productValidation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../../app/components/ui/dialog";
 import { Button } from "../../../app/components/ui/button";
 import { Input } from "../../../app/components/ui/input";
@@ -16,7 +16,7 @@ type ProductModalProps = {
   isOpen: boolean;
   onClose: () => void;
   product: Product | null;
-  onSubmit: (data: Omit<Product, 'created_at' | 'updated_at'>) => Promise<void>;
+  onSubmit: (data: Omit<Product, 'created_at' | 'updated_at' | 'stock'>) => Promise<void>;
 };
 
 const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, onSubmit }) => {
@@ -24,7 +24,6 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
   const [name, setName] = useState(product?.name || '');
   const [category_id, setCategoryId] = useState(product?.category_id || '');
   const [price, setPrice] = useState(product?.price || 0);
-  const [stock, setStock] = useState(product?.stock || 0);
   const [description, setDescription] = useState(product?.description || '');
   const [imagen_url, setImagenUrl] = useState(product?.image_url || '');
   const [useUrl, setUseUrl] = useState(true);
@@ -36,7 +35,6 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
       setName(product.name);
       setCategoryId(product.category_id);
       setPrice(product.price);
-      setStock(product.stock);
       setDescription(product.description);
       setImagenUrl(product.imagen_url);
     } else {
@@ -44,7 +42,6 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
       setName('');
       setCategoryId('');
       setPrice(0);
-      setStock(0);
       setDescription('');
       setImagenUrl('');
       setUseUrl(true);
@@ -54,7 +51,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = { name, category_id, price, stock, description, imagen_url };
+    const formData = { name, category_id, price, description, imagen_url };
   
     const result = productsSchema.safeParse(formData);
     if (!result.success) {
@@ -64,21 +61,30 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
           validationErrors[error.path[0] as string] = error.message;
         }
       });
+      console.log('Errores de validación:', validationErrors); // Log para depuración
       setErrors(validationErrors);
       return;
     }
-    
+  
     setShowConfirmation(true);
   };
 
   const handleConfirmSubmit = async () => {
-    const formData = { name, category_id, price, stock, description, imagen_url };
+    const formData = { name, category_id, price, description, imagen_url };
+    console.log('Payload enviado al backend:', formData); // Log para depuración
     try {
       await onSubmit(formData);
       setShowConfirmation(false);
       onClose();
-    } catch (error) {
-      console.error('Error submitting product:', error);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Error al crear el producto:', error.message);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        alert(`Error: ${'response' in error && (error as any).response?.data?.message || 'No se pudo crear el producto'}`);
+      } else {
+        console.error('Error desconocido:', error);
+        alert('Error: No se pudo crear el producto');
+      }
     }
   };
 
@@ -177,26 +183,6 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                       </div>
                     )}
                   </div>
-
-                  <div className="space-y-2">
-                    <Label className="flex items-center text-sm font-medium text-gray-700">
-                      <Package className="h-4 w-4 mr-2" />
-                      Stock
-                    </Label>
-                    <Input
-                      type="number"
-                      value={stock}
-                      onChange={(e) => setStock(Number(e.target.value))}
-                      className={`w-full p-3 border ${errors.stock ? 'border-red-500' : 'border-gray-400'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-black`}
-                      required
-                    />
-                    {errors.stock && (
-                      <div className="flex items-center text-red-500 text-sm mt-1">
-                        <AlertTriangle className="h-4 w-4 mr-1" />
-                        {errors.stock}
-                      </div>
-                    )}
-                  </div>
                 </div>
               </Card>
 
@@ -254,6 +240,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                         </span>
                       </label>
                     </div>
+                    
                     {useUrl ? (
                       <Input
                         type="text"
@@ -262,6 +249,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, product, o
                         className={`w-full p-3 border ${errors.image_url ? 'border-red-500' : 'border-gray-400'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-black`}
                         required
                       />
+                      
                     ) : (
                       <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-400 rounded-lg p-4">
                         <input

@@ -10,11 +10,6 @@ export const productsSchema = z.object({
 
   price: z.number().positive('El precio debe ser un número positivo'),
 
-  stock: z
-    .number()
-    .int('El stock debe ser un número entero')
-    .nonnegative('El stock no puede ser negativo'),
-
   description: z
     .string()
     .max(255, 'La descripción no debe exceder los 255 caracteres')

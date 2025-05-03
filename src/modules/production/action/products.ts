@@ -1,5 +1,5 @@
 import api from '@/core/config/client';
-import { CreateProductPayload, Product, UpdateProductPayload } from '../types/product';
+import { CreateProductPayload, Product, UpdateProductPayload } from '../types/products';
 
 
 export const fetchProducts = async (): Promise<Product[]> =>{
