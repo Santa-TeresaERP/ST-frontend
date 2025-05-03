@@ -1,21 +1,21 @@
 import api from '@/core/config/client';
-import { Categorie, UpdateCategoriePayload, CreateCategoriePayload } from '../../production/types/categories';
+import { Category, CreateCategoryPayload, UpdateCategoryPayload } from '../types/categories';
 
-export const fetchCategories = async (): Promise<Categorie[]> =>{
-    const response = await api.get<Categorie[]>('/categories');
-    return response.data;
-}
+export const fetchCategories = async (): Promise<Category[]> => {
+  const response = await api.get<Category[]>('/categories');
+  return response.data;
+};
 
-export const createCategories = async (payload: UpdateCategoriePayload): Promise<Categorie> =>{
-    const response = await api.post<Categorie>('/categories', payload);
-    return response.data;
-}
+export const createCategory = async (payload: CreateCategoryPayload): Promise<Category> => {
+  const response = await api.post<Category>('/categories', payload);
+  return response.data;
+};
 
-export const updateCategories = async (id: string, payload: CreateCategoriePayload): Promise<Categorie> =>{
-    const response = await api.patch<Categorie>(`/categories/${id}`, payload);
-    return response.data;
-}
+export const updateCategory = async (id: string, payload: UpdateCategoryPayload): Promise<Category> => {
+  const response = await api.patch<Category>(`/categories/${id}`, payload);
+  return response.data;
+};
 
-export const deleteCategories = async (id: string): Promise<void> =>{
-    await api.delete(`/categories/${id}`);
-}
+export const deleteCategory = async (id: string): Promise<void> => {
+  await api.delete(`/categories/${id}`);
+};

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import ProductComponentView from './producto/productos-views';
+import ProductComponentView from './product/products-views';
 import ProductionStatsComponentView from './production/production-stats-component-view';
 import LostComponentView from './lost-component-view';
 import { FiBox, FiTrendingUp, FiAlertTriangle } from 'react-icons/fi';

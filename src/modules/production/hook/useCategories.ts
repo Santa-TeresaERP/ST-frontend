@@ -1,46 +1,34 @@
-import { Categorie, UpdateCategoriePayload, CreateCategoriePayload } from "../types/categories";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { deleteCategories, createCategories, updateCategories, fetchCategories } from "../../production/action/categories";
+import { Category, CreateCategoryPayload, UpdateCategoryPayload } from '../types/categories';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchCategories, createCategory, updateCategory, deleteCategory } from '../action/categories';
 
 export const useFetchCategories = () => {
-    return useQuery<Categorie[], Error>({
-        queryKey: ["categories"],
-        queryFn: fetchCategories
-    });
-    }
+  return useQuery<Category[], Error>({
+    queryKey: ['categories'],
+    queryFn: fetchCategories,
+  });
+};
 
-export const useCreateCategories = () => {
-    const queryClient = useQueryClient();
-    return useMutation<Categorie, Error, CreateCategoriePayload>({
-        mutationFn: createCategories,
-        onSuccess: () => queryClient.invalidateQueries({
-            queryKey: ["categories"]
-        })
-    });
-    }
+export const useCreateCategory = () => {
+  const queryClient = useQueryClient();
+  return useMutation<Category, Error, CreateCategoryPayload>({
+    mutationFn: createCategory,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
+  });
+};
 
-export const useUpdateCategories = () => {
-    const queryClient = useQueryClient();
-    return useMutation<Categorie, Error, {
-        id: string;
-        payload: UpdateCategoriePayload;
-    }>({
-        mutationFn: ({
-            id,
-            payload
-        }) => updateCategories(id, payload),
-        onSuccess: () => queryClient.invalidateQueries({
-            queryKey: ["categories"]
-        })
-    });
-    }
+export const useUpdateCategory = () => {
+  const queryClient = useQueryClient();
+  return useMutation<Category, Error, { id: string; payload: UpdateCategoryPayload }>({
+    mutationFn: ({ id, payload }) => updateCategory(id, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
+  });
+};
 
-export const useDeleteCategories = () => {
-    const queryClient = useQueryClient();
-    return useMutation<void, Error, string>({
-        mutationFn: deleteCategories,
-        onSuccess: () => queryClient.invalidateQueries({
-            queryKey: ["categories"]
-        })
-    });
-}
+export const useDeleteCategory = () => {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: deleteCategory,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
+  });
+};

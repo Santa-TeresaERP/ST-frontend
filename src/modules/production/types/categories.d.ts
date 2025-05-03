@@ -1,21 +1,21 @@
-import { zod } from 'zod';
+import { z } from 'zod';
 
-export const CategorieSchema = zod.object({
-    id: zod.string(),
-    name: zod.string(),
-    description: zod.string(),
-    created_at: zod.string(),
-    updated_at: zod.string(),
+export const CategorySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
 });
 
-export type Categorie = zod.infer<typeof CategorieSchema>;
+export type Category = z.infer<typeof CategorySchema>;
 
-export interface CreateCategoriePayload {
-    name: string;
-    description: string;
+export interface CreateCategoryPayload {
+  name: string;
+  description: string;
 }
 
-export interface UpdateCategoriePayload {
-    name: string;
-    description: string;
+export interface UpdateCategoryPayload {
+  name: string;
+  description: string;
 }

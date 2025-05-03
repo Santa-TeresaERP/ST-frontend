@@ -1,9 +1,9 @@
-import { z } from 'zod'
+import { z } from 'zod';
 
-export const productsSchema = z.object({
+export const productSchema = z.object({
   name: z
     .string()
-    .min(1, 'El nombre del producto no puede estar vacío') // Agregado para que el nombre no esté vacío
+    .min(1, 'El nombre del producto no puede estar vacío')
     .max(50, 'El nombre del producto no debe exceder los 50 caracteres'),
 
   category_id: z.string().uuid('El ID de la categoría debe ser un UUID válido'),
@@ -16,4 +16,5 @@ export const productsSchema = z.object({
     .optional(),
 
   imagen_url: z.string().url('La URL de la imagen debe ser válida').optional(),
-})
+});
+

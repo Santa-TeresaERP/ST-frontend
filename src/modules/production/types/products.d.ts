@@ -1,30 +1,30 @@
-import { zod } from 'zod';
+import { z } from 'zod';
 
-export const ProductSchema = zod.object({
-    id: zod.string(),
-    name: zod.string(),
-    category_id: zod.string(),
-    price: zod.number(),
-    description: zod.string(),
-    imagen_url: zod.string(),
-    created_at: zod.date().optional(),
-    updated_at: zod.date().optional(),
+export const ProductSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  category_id: z.string(),
+  price: z.number(),
+  description: z.string(),
+  imagen_url: z.string(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
 });
 
-export type Product = zod.infer<typeof ProductSchema>;
+export type Product = z.infer<typeof ProductSchema>;
 
 export interface CreateProductPayload {
-    name: string;
-    category_id: string;
-    price: number;
-    description: string;
-    imagen_url: string;
+  name: string;
+  category_id: string;
+  price: number;
+  description: string;
+  imagen_url: string;
 }
 
 export interface UpdateProductPayload {
-    name: string;
-    category_id: string;
-    price: number;
-    description: string;
-    imagen_url: string;
+  name: string;
+  category_id: string;
+  price: number;
+  description: string;
+  imagen_url: string;
 }
