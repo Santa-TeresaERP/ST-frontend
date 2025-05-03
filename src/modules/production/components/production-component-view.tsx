@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import ProductComponentView from './product-component-view';
-import ProductionStatsComponentView from './production-stats-component-view';
+import ProductComponentView from './producto/productos-views';
+import ProductionStatsComponentView from './production/production-stats-component-view';
 import LostComponentView from './lost-component-view';
 import { FiBox, FiTrendingUp, FiAlertTriangle } from 'react-icons/fi';
 
@@ -11,12 +11,12 @@ const ProductionComponentView: React.FC = () => {
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">Panel de Producción</h1>
-        <p className="text-gray-600">Gestión completa de productos, producción y pérdidas</p>
+        <h1 className="text-5xl font-bold text-center text-red-700 pb-4">Panel de Producción</h1>
+        <p className="text-gray-600 text-center">Gestión completa de productos, producción y pérdidas</p>
       </div>
 
       {/* Navigation Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 p-9">
         <button
           onClick={() => setSelectedView('producto')}
           className={`p-6 rounded-xl shadow-sm transition-all duration-300 transform hover:scale-105 ${
@@ -84,7 +84,7 @@ const ProductionComponentView: React.FC = () => {
       {/* Content Area */}
       <div className="bg-white rounded-2xl shadow-md overflow-hidden">
         {selectedView === 'producto' && <ProductComponentView />}
-        {selectedView === 'produccion' && <ProductionStatsComponentView />}
+        {selectedView === 'produccion' && <ProductionStatsComponentView data={[]} />}
         {selectedView === 'perdidas' && <LostComponentView />}
       </div>
     </div>
