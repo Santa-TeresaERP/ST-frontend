@@ -123,15 +123,15 @@ const ProductosView = () => {
                   <div className="flex space-x-2 justify-center">
                     <button 
                       onClick={() => openEditModal(producto)}
-                      className="p-1 hover:bg-blue-50 rounded-full text-green-600 hover:text-green-800"
+                      className="p-1 hover:bg-blue-50 rounded-full"
                     >
-                      <FiEdit />
+                      <FiEdit className="text-green-600 hover:text-green-800" size={14} />
                     </button>
                     <button 
                       onClick={() => openDeleteModal(producto.id)}
                       className="p-1 hover:bg-red-50 rounded-full"
                     >
-                      <Trash2 className="text-red-600 hover:text-red-800" size={18} />
+                      <Trash2 className="text-red-600 hover:text-red-800" size={14} />
                     </button>
                   </div>
                 </td>

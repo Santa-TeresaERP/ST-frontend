@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ProductComponentView from './producto/productos-views';
 import ProductionStatsComponentView from './production/production-stats-component-view';
-import LostComponentView from './lost-component-view';
+import LostComponentView from './perdidas/lost-component-view';
 import { FiBox, FiTrendingUp, FiAlertTriangle } from 'react-icons/fi';
 
 const ProductionComponentView: React.FC = () => {

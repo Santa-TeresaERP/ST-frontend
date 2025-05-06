@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { FiFilter, FiSearch, FiPlus, FiTrash2, FiEdit } from 'react-icons/fi';
-import { LostAttributes } from '../types/lost';
+import { FiFilter, FiSearch, FiPlus, FiTrash2, FiEdit, FiAlertTriangle } from 'react-icons/fi';
+import { LostAttributes } from '../../types/lost';
 import { lostValidation } from '@/modules/production/schemas/lostValidation';
-import { FiAlertTriangle } from 'react-icons/fi';
-
+import AddLostModal from './AddLostModal';
+import EditLostModal from './EditLostModal';
+import DeleteConfirmationModal from './DeleteConfirmationModal';
 
 const LostComponentView: React.FC = () => {
   // Estado para los datos y filtros
@@ -37,6 +38,9 @@ const LostComponentView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<LostAttributes | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [newLostItem, setNewLostItem] = useState<Omit<LostAttributes, 'id'>>({
     product_id: '',
@@ -85,9 +89,37 @@ const LostComponentView: React.FC = () => {
     });
   };
 
+  // Manejar editar registro
+  const handleEditItem = (item: LostAttributes) => {
+    setSelectedItem(item);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateItem = () => {
+    if (!selectedItem) return;
+
+    const validation = lostValidation(selectedItem);
+    if (!validation.success) {
+      setValidationError(validation.error.errors[0].message);
+      return;
+    }
+
+    setValidationError(null);
+    setLostData(lostData.map(item => item.id === selectedItem.id ? selectedItem : item));
+    setIsEditModalOpen(false);
+    setSelectedItem(null);
+  };
+
   // Manejar eliminar registro
   const handleDeleteItem = (id: string) => {
     setLostData(lostData.filter(item => item.id !== id));
+    setIsDeleteModalOpen(false);
+    setSelectedItem(null);
+  };
+
+  const openDeleteConfirmation = (item: LostAttributes) => {
+    setSelectedItem(item);
+    setIsDeleteModalOpen(true);
   };
 
   return (
@@ -200,14 +232,17 @@ const LostComponentView: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2 justify-center">
-                      <button className="text-green-600 hover:text-green-800">
-                        <FiEdit />
+                      <button 
+                        onClick={() => handleEditItem(lost)}
+                        className="p-1 rounded-full"
+                      >
+                        <FiEdit className="text-green-600 hover:text-green-800" size={14} />
                       </button>
                       <button 
-                        onClick={() => handleDeleteItem(lost.id)}
-                        className="text-red-600 hover:text-red-900"
+                        onClick={() => openDeleteConfirmation(lost)}
+                        className="p-1 rounded-full"
                       >
-                        <FiTrash2 />
+                        <FiTrash2 className="text-red-600 hover:text-red-800" size={14} />
                       </button>
                     </div>
                   </td>
@@ -224,96 +259,35 @@ const LostComponentView: React.FC = () => {
         </table>
       </div>
 
-      {/* Modal para agregar nueva pérdida */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Registrar Nueva Pérdida</h3>
-              
-              {validationError && (
-                <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">
-                  {validationError}
-                </div>
-              )}
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">ID Producto</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={newLostItem.product_id}
-                    onChange={(e) => setNewLostItem({...newLostItem, product_id: e.target.value})}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
-                  <input
-                    type="number"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={newLostItem.quantity}
-                    onChange={(e) => setNewLostItem({...newLostItem, quantity: parseInt(e.target.value) || 0})}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Pérdida</label>
-                  <select
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={newLostItem.lost_type}
-                    onChange={(e) => setNewLostItem({...newLostItem, lost_type: e.target.value})}
-                  >
-                    <option value="">Seleccionar tipo</option>
-                    <option value="Daño">Daño</option>
-                    <option value="Pérdida">Pérdida</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
-                  <textarea
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows={3}
-                    value={newLostItem.observations || ''}
-                    onChange={(e) => setNewLostItem({...newLostItem, observations: e.target.value})}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
-                  <input
-                    type="date"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={newLostItem.created_at.toISOString().split('T')[0]}
-                    onChange={(e) => setNewLostItem({...newLostItem, created_at: new Date(e.target.value)})}
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-lg">
-              <button
-                type="button"
-                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-800 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
-                onClick={handleAddLostItem}
-              >
-                Guardar
-              </button>
-              <button
-                type="button"
-                className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                onClick={() => {
-                  setIsAddModalOpen(false);
-                  setValidationError(null);
-                }}
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Modales */}
+      <AddLostModal
+        isOpen={isAddModalOpen}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setValidationError(null);
+        }}
+        onSubmit={handleAddLostItem}
+        newLostItem={newLostItem}
+        setNewLostItem={setNewLostItem}
+        validationError={validationError}
+      />
+
+      {selectedItem && (
+        <>
+          <EditLostModal
+            isOpen={isEditModalOpen}
+            onClose={() => setIsEditModalOpen(false)}
+            onSave={handleUpdateItem}
+            lost={selectedItem || null} // Asegúrate de manejar el caso null
+          />
+
+          <DeleteConfirmationModal
+            isOpen={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+            onConfirm={() => selectedItem && handleDeleteItem(selectedItem.id)}
+            itemName={`la pérdida del producto ${selectedItem.product_id}`}
+          />
+        </>
       )}
     </div>
   );

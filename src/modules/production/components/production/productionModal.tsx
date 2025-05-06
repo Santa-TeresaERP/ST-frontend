@@ -6,6 +6,7 @@ interface ProductionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (production: Omit<ProductionData, 'id'>) => void;
+  plants: string[];
 }
 
 export interface ProductionFormData {
