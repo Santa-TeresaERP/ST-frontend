@@ -2,7 +2,11 @@ import React, { useState } from 'react';
 import ProductionModal from './productionModal';
 import EditProductionModal from './editProductionModal';
 import DeleteConfirmationModal from './deleteConfirmationModal';
-import {FiTrendingUp} from 'react-icons/fi';
+import {FiPlus, FiTrendingUp} from 'react-icons/fi';
+import { Trash2 } from 'lucide-react';
+import { FiEdit } from 'react-icons/fi';
+import PlantModal from './planModal';
+import { Plant } from './planModal';
 
 export interface ProductionData {
   id: string;
@@ -23,6 +27,8 @@ const ProductionView: React.FC<ProductionTableViewProps> = ({ data = [] }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productionToDelete, setProductionToDelete] = useState<string | null>(null);
+  const [isPlantModalOpen, setIsPlantModalOpen] = useState(false);
+  const [plants, setPlants] = useState<string[]>(['Santa Teresa', 'Santa Catalina']);
   const [productions, setProductions] = useState<ProductionData[]>(data.length > 0 ? data : [
     
     {
@@ -30,7 +36,7 @@ const ProductionView: React.FC<ProductionTableViewProps> = ({ data = [] }) => {
       produccion: 'Aceite de Oliva Extra Virgen',
       cantidad: 1500,
       descripcion: 'Lote de producción primavera 2023',
-      planta: 'Santa Catalina',
+      planta: 'Santa Teresa',
       fecha: '2023-04-15',
       perdidas: 50
     },
@@ -39,7 +45,7 @@ const ProductionView: React.FC<ProductionTableViewProps> = ({ data = [] }) => {
       produccion: 'Aceitunas Verdes',
       cantidad: 3200,
       descripcion: 'Envasado para exportación',
-      planta: 'Santa Catalina',
+      planta: 'Santa Teresa',
       fecha: '2023-04-18'
     }
   ]);
@@ -79,26 +85,36 @@ const ProductionView: React.FC<ProductionTableViewProps> = ({ data = [] }) => {
     setIsEditModalOpen(true);
   };
 
+  const handleSavePlants = (newPlants: Plant[]) => {
+    setPlants(newPlants.map(plant => plant.nombre));
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg shadow">
-      <div className="flex justify-between items-center mb-6">
-      <h2 className="text-3xl font-bold pb-4 flex text-green-700 items-center gap-2">
-        <FiTrendingUp size={24} />
-        <span>Gestión de Producción</span>
-      </h2>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-red-800 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center"
-        >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          Registrar Producción
-        </button>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-3xl font-bold pb-4 flex text-green-700 items-center gap-2">
+          <FiTrendingUp size={24} />
+          <span>Gestión de Producción</span>
+        </h2>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setIsPlantModalOpen(true)}
+            className="bg-red-800 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center"
+          >
+            Plantas
+          </button>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-white hover:bg-gray-300 text-black border border-gray-300 px-4 py-2 rounded-lg flex items-center"
+          >
+            <FiPlus className="mr-2" />
+            Registrar Producción
+          </button>
+        </div>
       </div>
 
       <div className="rounded-xl overflow-hidden border border-gray-200 shadow">
-        <table className="w-full border-collapse">
+        <table className="w-full border-collapse text-gray-600 text-sm ">
           <thead className="bg-gray-700 text-white text-xs uppercase sticky top-0">
             <tr>
               <th className="px-4 py-3 text-left">Producción</th>
@@ -111,31 +127,27 @@ const ProductionView: React.FC<ProductionTableViewProps> = ({ data = [] }) => {
           </thead>
           <tbody>
             {productions.map((item) => (
-              <tr key={item.id} className="border-b border-gray-200 hover:bg-gray-50">
+              <tr key={item.id} className="border-b border-gray-200 text-sm hover:bg-gray-50">
                 <td className="px-6 py-4">{item.produccion}</td>
                 <td className="px-6 py-4">{item.cantidad}</td>
                 <td className="px-6 py-4">{item.descripcion}</td>
                 <td className="px-6 py-4">{item.planta}</td>
                 <td className="px-6 py-4">{item.fecha}</td>
                 <td className="px-6 py-4 flex justify-center space-x-2">
-                  <button
-                    onClick={() => handleEdit(item)}
-                    className="text-green-600 hover:text-green-800 p-1 rounded-full hover:bg-blue-50"
-                    title="Editar"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-50"
-                    title="Eliminar"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+                  <div className="flex space-x-2 justify-center">
+                      <button 
+                        onClick={() => handleEdit(item)}
+                        className="p-1 rounded-full"
+                      >
+                        <FiEdit className="text-green-600 hover:text-green-800" size={14} />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(item.id)}
+                        className="p-1 rounded-full"
+                      >
+                        <Trash2 className="text-red-600 hover:text-red-800" size={14} />
+                      </button>
+                    </div>
                 </td>
               </tr>
             ))}
@@ -147,6 +159,7 @@ const ProductionView: React.FC<ProductionTableViewProps> = ({ data = [] }) => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleAddProduction}
+        plants={plants} // Pasa las plantas al modal de producción
       />
 
       {currentProduction && (
@@ -155,6 +168,7 @@ const ProductionView: React.FC<ProductionTableViewProps> = ({ data = [] }) => {
           onClose={() => setIsEditModalOpen(false)}
           onSave={handleEditProduction}
           production={currentProduction}
+          plants={plants} // Pasa las plantas al modal de edición
         />
       )}
 
@@ -163,6 +177,12 @@ const ProductionView: React.FC<ProductionTableViewProps> = ({ data = [] }) => {
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={confirmDelete}
         itemName={productions.find(p => p.id === productionToDelete)?.produccion}
+      />
+
+      <PlantModal
+        isOpen={isPlantModalOpen}
+        onClose={() => setIsPlantModalOpen(false)}
+        onSave={handleSavePlants}
       />
     </div>
   );
