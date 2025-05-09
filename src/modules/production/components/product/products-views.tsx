@@ -5,6 +5,7 @@ import ModalEditProducto from './modal-edit-product';
 import ModalCreateProducto from './modal-create-product';
 import ModalCreateCategoria from './modal-create-category';
 import { useFetchProducts, useDeleteProduct } from '@/modules/production/hook/useProducts';
+import { FiBox } from 'react-icons/fi';
 
 const ProductosView = () => {
   const { data: productos, isLoading, error } = useFetchProducts();
@@ -62,9 +63,10 @@ const ProductosView = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gradient bg-clip-text text-transparent bg-gradient-to-r from-red-600 to-red-800">
-            Gestión de Productos
-          </h1>
+        <h1 className="text-3xl font-bold pb-4 flex text-blue-500 items-center gap-2">
+          <FiBox size={24} />
+          <span>Gestión de Productos</span>
+        </h1>
           <p className="text-gray-500 mt-1">Administra tu catálogo de productos</p>
         </div>
         
