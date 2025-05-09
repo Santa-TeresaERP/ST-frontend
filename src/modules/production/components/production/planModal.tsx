@@ -13,7 +13,7 @@ interface PlantModalProps {
   onSave: (plants: Plant[]) => void;
 }
 
-const PlantModal: React.FC<PlantModalProps> = ({ isOpen, onClose, onSave }) => {
+const PlantModal: React.FC<PlantModalProps> = ({ isOpen, onClose}) => {
   const [plants, setPlants] = useState<Plant[]>([]);
 
   const agregarPlanta = () => {
