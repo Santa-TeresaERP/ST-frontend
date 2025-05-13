@@ -1,19 +1,13 @@
 import React from 'react';
 import { Trash2, X } from 'lucide-react';
 
-interface DeleteConfirmationModalProps {
+interface ModalDeleteProductionProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  itemName?: string;
 }
 
-const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
-  isOpen,
-  onClose,
-  onConfirm,
-  itemName = 'este registro'
-}) => {
+const ModalDeleteProduction: React.FC<ModalDeleteProductionProps> = ({ isOpen, onClose, onConfirm, }) => {
   if (!isOpen) return null;
 
   return (
@@ -50,4 +44,4 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
   );
 };
 
-export default DeleteConfirmationModal;
+export default ModalDeleteProduction;

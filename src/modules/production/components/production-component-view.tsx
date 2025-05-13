@@ -84,7 +84,7 @@ const ProductionComponentView: React.FC = () => {
       {/* Content Area */}
       <div className="bg-white rounded-2xl shadow-md overflow-hidden">
         {selectedView === 'producto' && <ProductComponentView />}
-        {selectedView === 'produccion' && <ProductionStatsComponentView data={[]} />}
+        {selectedView === 'produccion' && <ProductionStatsComponentView />}
         {selectedView === 'perdidas' && <LostComponentView />}
       </div>
     </div>
