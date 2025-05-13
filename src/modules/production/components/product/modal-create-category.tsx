@@ -14,6 +14,8 @@ const ModalCreateCategoria = ({ isOpen, onClose }: ModalCreateCategoriaProps) =>
   const [editingCategory, setEditingCategory] = useState<{ id: string; name: string; description: string } | null>(null);
   const [newCategories, setNewCategories] = useState<{ name: string; description: string }[]>([]);
   const [categoriesInUse, setCategoriesInUse] = useState<Set<string>>(new Set());
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<{id: string, name: string} | null>(null);
   
   // Hooks para categorías
   const createCategoryMutation = useCreateCategory();
@@ -67,32 +69,36 @@ const ModalCreateCategoria = ({ isOpen, onClose }: ModalCreateCategoriaProps) =>
     }
   };
 
-// Modifica las funciones de esta manera:
-const handleEditar = (id: string, name: string, description: string) => {
-  setEditingCategory({ id, name, description });
-};
+  const handleEditar = (id: string, name: string, description: string) => {
+    setEditingCategory({ id, name, description });
+  };
 
-const handleEliminar = async (id: string) => {
-  if (categoriesInUse.has(id)) {
-    alert('No se puede eliminar esta categoría porque está asignada a uno o más productos.');
-    return;
-  }
-
-  if (!confirm('¿Estás seguro de que deseas eliminar esta categoría?')) return;
-
-  try {
-    await deleteCategoryMutation.mutateAsync(id);
-    refetch();
-    alert('Categoría eliminada correctamente.');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
-    if (error.response?.data?.error) {
-      alert(`Error: ${error.response.data.error}`);
-    } else {
-      alert('Error desconocido. Por favor, intenta nuevamente.');
+  const openDeleteModal = (id: string, name: string) => {
+    if (categoriesInUse.has(id)) {
+      alert('No se puede eliminar esta categoría porque está asignada a uno o más productos.');
+      return;
     }
-    console.error('Error al eliminar la categoría:', error.response?.data || error.message);
-  }
+    setCategoryToDelete({id, name});
+    setShowDeleteModal(true);
+  };
+
+  const handleEliminar = async () => {
+    if (!categoryToDelete) return;
+
+    try {
+      await deleteCategoryMutation.mutateAsync(categoryToDelete.id);
+      refetch();
+      setShowDeleteModal(false);
+      setCategoryToDelete(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      if (error.response?.data?.error) {
+        alert(`Error: ${error.response.data.error}`);
+      } else {
+        alert('Error desconocido. Por favor, intenta nuevamente.');
+      }
+      console.error('Error al eliminar la categoría:', error.response?.data || error.message);
+    }
   };
 
   const handleActualizar = async () => {
@@ -258,26 +264,26 @@ const handleEliminar = async (id: string) => {
                           </div>
                         </div>
                         <div className="flex justify-end mt-4 space-x-3">
-  <button
-    onClick={() => handleEditar(cat.id, cat.name, cat.description)}
-    className="p-2 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200"
-    title="Editar"
-  >
-    <Edit size={20} />
-  </button>
-  <button
-    onClick={() => handleEliminar(cat.id)}
-    className={`p-2 rounded-lg transition-colors duration-200 ${
-      isAssigned 
-        ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
-        : 'text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100'
-    }`}
-    title={isAssigned ? "Categoría en uso - No eliminable" : "Eliminar"}
-    disabled={isAssigned}
-  >
-    {isAssigned ? <Ban size={20} /> : <Trash2 size={20} />}
-  </button>
-</div>
+                          <button
+                            onClick={() => handleEditar(cat.id, cat.name, cat.description)}
+                            className="p-2 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200"
+                            title="Editar"
+                          >
+                            <Edit size={20} />
+                          </button>
+                          <button
+                            onClick={() => openDeleteModal(cat.id, cat.name)}
+                            className={`p-2 rounded-lg transition-colors duration-200 ${
+                              isAssigned 
+                                ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                                : 'text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100'
+                            }`}
+                            title={isAssigned ? "Categoría en uso - No eliminable" : "Eliminar"}
+                            disabled={isAssigned}
+                          >
+                            {isAssigned ? <Ban size={20} /> : <Trash2 size={20} />}
+                          </button>
+                        </div>
                       </div>
                     );
                   })
@@ -403,6 +409,55 @@ const handleEliminar = async (id: string) => {
                   className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white shadow-md hover:shadow-lg transition-all duration-200"
                 >
                   Guardar Cambios
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Confirmación para Eliminar */}
+        {showDeleteModal && categoryToDelete && (
+          <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md transform transition-all duration-300">
+              <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-t-xl p-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-white">Confirmar Eliminación</h2>
+                  <button 
+                    onClick={() => setShowDeleteModal(false)} 
+                    className="p-2 rounded-full hover:bg-red-800 transition-colors duration-200 text-white"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="p-6 space-y-4">
+                <div className="flex justify-center">
+                  <div className="bg-red-100 p-4 rounded-full">
+                    <Trash2 className="h-10 w-10 text-red-600" />
+                  </div>
+                </div>
+                <p className="text-center text-gray-700">
+                  ¿Estás seguro de que deseas eliminar la categoría <span className="font-semibold">&quot;{categoryToDelete.name}&quot;</span>?
+                </p>
+                <p className="text-center text-sm text-gray-500">
+                  Esta acción no se puede deshacer.
+                </p>
+              </div>
+              
+              <div className="flex justify-center space-x-4 p-6 border-t border-gray-200">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-5 py-2.5 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors duration-200"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleEliminar}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                >
+                  <Trash2 size={18} />
+                  <span>Eliminar</span>
                 </button>
               </div>
             </div>

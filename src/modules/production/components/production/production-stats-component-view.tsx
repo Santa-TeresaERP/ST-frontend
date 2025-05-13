@@ -4,7 +4,7 @@ import ModalDeleteProduction from './modal-delete-production';
 import ModalCreateProduction from './modal-create-production';
 import ModalEditProduction from './modal-edit-production';
 import ModalCreatePlant from './modal-create-plant';
-import { useFetchProductions, useDeleteProduction } from '../../hook/useProduction';
+import { useFetchProductions, useDeleteProduction } from '../../hook/useProductions';
 
 // Definimos una interfaz correcta para el tipo Production
 interface Production {

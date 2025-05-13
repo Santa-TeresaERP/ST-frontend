@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { FiX } from 'react-icons/fi';
 import { Trash2, Save, Plus, X, Check } from 'lucide-react';
-import { useFetchProductions } from '../../hook/useProduction';
+import { useFetchProductions } from '../../hook/useProductions';
 import { useFetchPlants, useCreatePlant, useUpdatePlant, useDeletePlant } from '../../hook/usePlants';
 
 interface ModalCreatePlantProps {
@@ -15,6 +14,8 @@ const ModalCreatePlant = ({ isOpen, onClose }: ModalCreatePlantProps) => {
   const [editingPlant, setEditingPlant] = useState<{id: string, plant_name: string, address: string} | null>(null);
   const [newPlants, setNewPlants] = useState<{plant_name: string, address: string}[]>([]);
   const [plantsInUse, setPlantsInUse] = useState<Set<string>>(new Set());
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [plantToDelete, setPlantToDelete] = useState<{id: string, name: string} | null>(null);
   
   // Hooks para plantas
   const createPlantMutation = useCreatePlant();
@@ -72,26 +73,31 @@ const ModalCreatePlant = ({ isOpen, onClose }: ModalCreatePlantProps) => {
     setEditingPlant({ id, plant_name, address });
   };
 
-  const handleEliminar = async (id: string) => {
-    // Verificar si la planta está en uso
+  const openDeleteModal = (id: string, name: string) => {
     if (isPlantInUse(id)) {
       alert('No se puede eliminar esta planta porque está asignada a una o más producciones.');
       return;
     }
+    setPlantToDelete({id, name});
+    setShowDeleteModal(true);
+  };
 
-    if (window.confirm('¿Estás seguro de que deseas eliminar esta planta?')) {
-      try {
-        await deletePlantMutation.mutateAsync(id);
-        refetch();
-        alert('Planta eliminada correctamente.');
-      } catch (error: any) {
-        if (error.response?.data?.error) {
-          alert(`Error: ${error.response.data.error}`);
-        } else {
-          alert('Error desconocido. Por favor, intenta nuevamente.');
-        }
-        console.error('Error al eliminar la planta:', error.response?.data || error.message);
+  const handleEliminar = async () => {
+    if (!plantToDelete) return;
+
+    try {
+      await deletePlantMutation.mutateAsync(plantToDelete.id);
+      refetch();
+      setShowDeleteModal(false);
+      setPlantToDelete(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      if (error.response?.data?.error) {
+        alert(`Error: ${error.response.data.error}`);
+      } else {
+        alert('Error desconocido. Por favor, intenta nuevamente.');
       }
+      console.error('Error al eliminar la planta:', error.response?.data || error.message);
     }
   };
 
@@ -277,7 +283,7 @@ const ModalCreatePlant = ({ isOpen, onClose }: ModalCreatePlantProps) => {
                             <Save size={20} />
                           </button>
                           <button
-                            onClick={() => handleEliminar(plant.id ?? '')}
+                            onClick={() => openDeleteModal(plant.id ?? '', plant.plant_name ?? '')}
                             className={`p-2 rounded-lg transition-colors duration-200 ${
                               isInUse
                                 ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
@@ -412,6 +418,55 @@ const ModalCreatePlant = ({ isOpen, onClose }: ModalCreatePlantProps) => {
                   className="px-5 py-3 rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white shadow-md hover:shadow-lg transition-all duration-200"
                 >
                   Guardar Cambios
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Confirmación para Eliminar */}
+        {showDeleteModal && plantToDelete && (
+          <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md transform transition-all duration-300">
+              <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-t-xl p-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-white">Confirmar Eliminación</h2>
+                  <button 
+                    onClick={() => setShowDeleteModal(false)} 
+                    className="p-2 rounded-full hover:bg-red-800 transition-colors duration-200 text-white"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="p-6 space-y-4">
+                <div className="flex justify-center">
+                  <div className="bg-red-100 p-4 rounded-full">
+                    <Trash2 className="h-10 w-10 text-red-600" />
+                  </div>
+                </div>
+                <p className="text-center text-gray-700">
+                  ¿Estás seguro de que deseas eliminar la planta <span className="font-semibold">&quot;{plantToDelete.name}&quot;</span>?
+                </p>
+                <p className="text-center text-sm text-gray-500">
+                  Esta acción no se puede deshacer.
+                </p>
+              </div>
+              
+              <div className="flex justify-center space-x-4 p-6 border-t border-gray-200">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-5 py-2.5 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors duration-200"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleEliminar}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                >
+                  <Trash2 size={18} />
+                  <span>Eliminar</span>
                 </button>
               </div>
             </div>

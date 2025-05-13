@@ -1,6 +1,6 @@
-import { Plant, CreatePlantPayload, UpdatePlantPayload } from '../types/plants';
+import { Plant, CreatePlantPayload, UpdatePlantPayload } from '../types/plantProductions';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchPlants, createPlant, updatePlant, deletePlant } from '../action/plants';
+import { fetchPlants, createPlant, updatePlant, deletePlant } from '../action/plantProductions';
 
 export const useFetchPlants = () => {
   return useQuery<Plant[], Error>({

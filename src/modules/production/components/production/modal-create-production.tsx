@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useCreateProduction } from '../../hook/useProduction';
+import { useCreateProduction } from '../../hook/useProductions';
 import { useFetchPlants } from '../../hook/usePlants';
-import { Plus, X, Trash2 } from 'lucide-react';
+import { useFetchProducts } from '../../hook/useProducts'; // Importar el hook para obtener productos
+import { X } from 'lucide-react';
 
 interface ModalCreateProductionProps {
   isOpen: boolean;
@@ -9,7 +10,7 @@ interface ModalCreateProductionProps {
 }
 
 const ModalCreateProduction: React.FC<ModalCreateProductionProps> = ({ isOpen, onClose }) => {
-  const [produccion, setProduccion] = useState('');
+  const [producto, setProducto] = useState('');
   const [cantidad, setCantidad] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [planta, setPlanta] = useState('');
@@ -17,28 +18,28 @@ const ModalCreateProduction: React.FC<ModalCreateProductionProps> = ({ isOpen, o
 
   const createProductionMutation = useCreateProduction();
   const { data: plantas, isLoading: isLoadingPlantas, error: errorPlantas } = useFetchPlants();
+  const { data: productos, isLoading: isLoadingProductos, error: errorProductos } = useFetchProducts(); // Obtener productos
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!produccion || !cantidad || !descripcion || !planta || !fecha) {
+
+    if (!producto || !cantidad || !descripcion || !planta || !fecha) {
       alert('Por favor, completa todos los campos obligatorios.');
       return;
     }
-    
+
     const nuevaProduccion = {
-      production_id: '', // Provide a valid production_id value here
-      productId: produccion,
+      productId: producto,
       quantityProduced: Number(cantidad),
       productionDate: fecha,
       observation: descripcion,
-      plant_id: planta
+      plant_id: planta,
     };
-    
+
     try {
       await createProductionMutation.mutateAsync(nuevaProduccion);
       // Limpiar el formulario
-      setProduccion('');
+      setProducto('');
       setCantidad('');
       setDescripcion('');
       setPlanta('');
@@ -48,9 +49,9 @@ const ModalCreateProduction: React.FC<ModalCreateProductionProps> = ({ isOpen, o
       console.error('Error al crear la producción:', error);
     }
   };
-  
+
   if (!isOpen) return null;
-  
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
@@ -70,14 +71,26 @@ const ModalCreateProduction: React.FC<ModalCreateProductionProps> = ({ isOpen, o
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
             <label className="block text-gray-700 mb-2">Producto*</label>
-            <input
-              type="text"
-              name="produccion"
-              value={produccion}
-              onChange={(e) => setProduccion(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-              required
-            />
+            {isLoadingProductos ? (
+              <div className="animate-pulse bg-gray-200 h-10 rounded-lg"></div>
+            ) : errorProductos ? (
+              <p className="text-red-500 text-sm">Error al cargar productos</p>
+            ) : (
+              <select
+                name="producto"
+                value={producto}
+                onChange={(e) => setProducto(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                required
+              >
+                <option value="">Seleccione un producto</option>
+                {productos?.map((prod) => (
+                  <option key={prod.id} value={prod.id}>
+                    {prod.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           <div>
             <label className="block text-gray-700 mb-2">Cantidad Producida*</label>

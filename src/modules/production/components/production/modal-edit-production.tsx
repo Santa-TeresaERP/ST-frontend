@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useUpdateProduction } from '../../hook/useProduction';
+import { useUpdateProduction } from '../../hook/useProductions';
 import { useFetchPlants } from '../../hook/usePlants';
 import { X } from 'lucide-react';
 
