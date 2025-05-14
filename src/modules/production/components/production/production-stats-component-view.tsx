@@ -6,10 +6,14 @@ import ModalEditProduction from './modal-edit-production';
 import ModalCreatePlant from './modal-create-plant';
 import { useFetchProductions, useDeleteProduction } from '../../hook/useProductions';
 import { Production } from '../../types/productions';
+import { useFetchProducts } from '../../hook/useProducts';
+import { useFetchPlants } from '../../hook/usePlants';
 
 const ProductionView = () => {
   const { data: productions, isLoading, error } = useFetchProductions();
   const deleteProductionMutation = useDeleteProduction();
+  const { data: products } = useFetchProducts();
+  const { data: plants } = useFetchPlants();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -17,15 +21,34 @@ const ProductionView = () => {
   const [isPlantModalOpen, setIsPlantModalOpen] = useState(false);
   const [selectedProduction, setSelectedProduction] = useState<Production | null>(null);
 
+  // Obtener el nombre de la planta
+  const getPlantName = (plantId: string): string => {
+    const plant = plants?.find((plt) => plt.id === plantId);
+    return plant ? plant.plant_name : 'Planta no encontrada';
+  };
+
+  // Obtener el nombre del producto
+  const getProductName = (productId: string): string => {
+    const product = products?.find((prod) => prod.id === productId);
+    return product ? product.name : 'Producto no encontrado';
+  };
+
+  // Manejar la eliminación de una producción
   const handleDeleteProduction = async () => {
-    if (selectedProduction) {
-      try {
-        await deleteProductionMutation.mutateAsync(selectedProduction.id);
-        setIsDeleteModalOpen(false);
-        setSelectedProduction(null);
-      } catch (error) {
-        console.error('Error al eliminar la producción:', error);
-      }
+    if (!selectedProduction || !selectedProduction.id) {
+      console.error('No se puede eliminar: la producción seleccionada no tiene un ID válido.');
+      alert('Error: No se puede eliminar esta producción porque no tiene un ID válido.');
+      return;
+    }
+
+    try {
+      console.log('Eliminando producción con ID:', selectedProduction.id); // Depuración
+      await deleteProductionMutation.mutateAsync(selectedProduction.id);
+      setIsDeleteModalOpen(false);
+      setSelectedProduction(null);
+    } catch (error) {
+      console.error('Error al eliminar la producción:', error);
+      alert('Hubo un error al intentar eliminar la producción.');
     }
   };
 
@@ -56,7 +79,7 @@ const ProductionView = () => {
             >
               <path
                 fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293-1.293a1 1 0 00-1.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
                 clipRule="evenodd"
               />
             </svg>
@@ -122,26 +145,23 @@ const ProductionView = () => {
               </tr>
             </thead>
             <tbody>
-              {productions?.map((production, index) => (
+              {productions?.map((production) => (
                 <tr
-                  key={production.id || `production-${index}`}
+                  key={production.id} // Usar production_id como clave única
                   className="border-b border-gray-200 hover:bg-gray-50"
                 >
-                  <td className="px-6 py-4">{production.productId || 'N/A'}</td>
+                  <td className="px-6 py-4">{getProductName(production.productId)}</td>
                   <td className="px-6 py-4">{production.quantityProduced}</td>
                   <td className="px-6 py-4">
                     {production.observation || 'Sin descripción'}
                   </td>
-                  <td className="px-6 py-4">{production.plant_id || 'N/A'}</td>
+                  <td className="px-6 py-4">{getPlantName(production.plant_id)}</td>
                   <td className="px-6 py-4">
-                    {new Date(production.productionDate).toLocaleDateString(
-                      'es-ES',
-                      {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                      }
-                    )}
+                    {new Date(production.productionDate).toLocaleDateString('es-ES', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex space-x-2 justify-center">
@@ -157,8 +177,13 @@ const ProductionView = () => {
                       </button>
                       <button
                         onClick={() => {
-                          setSelectedProduction(production);
-                          setIsDeleteModalOpen(true);
+                          if (production.id) {
+                            setSelectedProduction(production); // Configura correctamente la producción seleccionada
+                            setIsDeleteModalOpen(true);
+                          } else {
+                            console.error('La producción no tiene un ID válido.');
+                            alert('Error: No se puede eliminar esta producción porque no tiene un ID válido.');
+                          }
                         }}
                         className="p-2 text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 rounded-lg transition-colors duration-200"
                         title="Eliminar"
@@ -180,17 +205,17 @@ const ProductionView = () => {
         onClose={() => setIsCreateModalOpen(false)}
       />
       <ModalEditProduction
-  isOpen={isEditModalOpen}
-  onClose={() => setIsEditModalOpen(false)}
-  production={
-    selectedProduction
-      ? {
-          ...selectedProduction,
-          observation: selectedProduction.observation || '', // Aseguramos que observation sea un string
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        production={
+          selectedProduction
+            ? {
+                ...selectedProduction,
+                observation: selectedProduction.observation || '', // Aseguramos que observation sea un string
+              }
+            : null
         }
-      : null
-  }
-/>
+      />
       <ModalDeleteProduction
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
