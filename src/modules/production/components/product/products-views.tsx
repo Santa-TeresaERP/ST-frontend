@@ -187,7 +187,13 @@ const ProductosView = () => {
                 <div className="mt-4 flex justify-end space-x-2">
                   <Tooltip content="Editar producto" side="top">
                     <button
-                      onClick={() => handleEditClick(producto)}
+                      onClick={() =>
+                        handleEditClick({
+                          ...producto,
+                          description: producto.description || '',
+                          imagen_url: producto.imagen_url || '',
+                        })
+                      }
                       className="p-2 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200"
                     >
                       <Edit size={18} />
@@ -199,7 +205,13 @@ const ProductosView = () => {
                     side="top"
                   >
                     <button
-                      onClick={() => handleDeleteClick(producto)}
+                      onClick={() =>
+                        handleDeleteClick({
+                          ...producto,
+                          description: producto.description || '',
+                          imagen_url: producto.imagen_url || '',
+                        })
+                      }
                       disabled={isLinked}
                       className={`p-2 rounded-lg transition-colors duration-200 ${
                         isLinked

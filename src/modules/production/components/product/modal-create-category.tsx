@@ -12,10 +12,11 @@ const ModalCreateCategoria = ({ isOpen, onClose }: ModalCreateCategoriaProps) =>
   const [newCategory, setNewCategory] = useState({ name: '', description: '' });
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<{ id: string; name: string; description: string } | null>(null);
-  const [newCategories, setNewCategories] = useState<{ name: string; description: string }[]>([]);
   const [categoriesInUse, setCategoriesInUse] = useState<Set<string>>(new Set());
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<{id: string, name: string} | null>(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   
   // Hooks para categorías
   const createCategoryMutation = useCreateCategory();
@@ -60,9 +61,15 @@ const ModalCreateCategoria = ({ isOpen, onClose }: ModalCreateCategoriaProps) =>
         description: newCategory.description.trim(),
       });
       
-      setNewCategories(prev => [newCategory, ...prev]);
+      setSuccessMessage(`Categoría "${newCategory.name}" creada exitosamente`);
+      setShowSuccessMessage(true);
       setShowAddModal(false);
       refetch();
+      
+      // Ocultar el mensaje después de 3 segundos
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 3000);
     } catch (error) {
       console.error('Error al guardar la categoría:', error);
       alert('No se pudo guardar la categoría. Intenta nuevamente.');
@@ -145,6 +152,30 @@ const ModalCreateCategoria = ({ isOpen, onClose }: ModalCreateCategoriaProps) =>
           </div>
         </div>
 
+        {/* Mensaje de éxito al crear categoría */}
+        {showSuccessMessage && (
+          <div className="mb-6 animate-fade-in">
+            <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <Check className="h-5 w-5 text-green-500" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-green-800">
+                    {successMessage}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowSuccessMessage(false)}
+                  className="ml-auto -mx-1.5 -my-1.5 bg-green-50 text-green-500 rounded-lg focus:ring-2 focus:ring-green-400 p-1.5 hover:bg-green-100 inline-flex h-8 w-8"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Botón Agregar con efecto hover */}
         <div className="flex justify-end mb-8">
           <button
@@ -158,44 +189,6 @@ const ModalCreateCategoria = ({ isOpen, onClose }: ModalCreateCategoriaProps) =>
 
         {/* Sección de Categorías */}
         <div className="space-y-8">
-          {/* Categorías Nuevas */}
-          {newCategories.length > 0 && (
-            <div>
-              <div className="flex items-center mb-4">
-                <span className="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
-                <h3 className="text-xl font-semibold text-gray-800">Nuevas Categorías</h3>
-                <span className="ml-2 bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                  {newCategories.length} nueva(s)
-                </span>
-              </div>
-              
-              <div className="grid gap-4">
-                {newCategories.map((cat, index) => (
-                  <div
-                    key={`new-${index}`}
-                    className="bg-white border-2 border-green-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-200 bg-gradient-to-br from-green-50 to-white"
-                  >
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Nombre</label>
-                        <p className="text-lg font-medium text-gray-800 flex items-center">
-                          {cat.name} 
-                          <span className="ml-2 text-green-500">
-                            <Check size={18} />
-                          </span>
-                        </p>
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Descripción</label>
-                        <p className="text-gray-600">{cat.description || <span className="text-gray-400">Sin descripción</span>}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Categorías Existentes */}
           <div>
             <div className="flex items-center mb-4">
@@ -414,6 +407,7 @@ const ModalCreateCategoria = ({ isOpen, onClose }: ModalCreateCategoriaProps) =>
             </div>
           </div>
         )}
+
 
         {/* Modal de Confirmación para Eliminar */}
         {showDeleteModal && categoryToDelete && (

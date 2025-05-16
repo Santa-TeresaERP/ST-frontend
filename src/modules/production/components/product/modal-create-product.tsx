@@ -18,6 +18,12 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
   const [precio, setPrecio] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [imagen, setImagen] = useState('');
+  const [, setErrors] = useState({
+    nombre: '', 
+    categoria: '',
+    precio: '',
+    descripcion: '',
+  });
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [newIngredient, setNewIngredient] = useState<Ingredient>({
     quantity_required: '',
@@ -41,13 +47,16 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
   };
 
   const handleSubmit = async () => {
-    if (!nombre || !categoria || !precio || !descripcion) {
-      alert('Todos los campos son obligatorios.');
-      return;
-    }
+    const newErrors = {
+      nombre: !nombre ? 'El nombre es obligatorio.' : '',
+      categoria: !categoria ? 'La categoría es obligatoria.' : '',
+      precio: !precio ? 'El precio es obligatorio.' : '',
+      descripcion: !descripcion ? 'La descripción es obligatoria.' : '',
+    };
 
-    if (ingredients.length === 0) {
-      alert('Debe agregar al menos un ingrediente para la receta.');
+    setErrors(newErrors);
+
+    if (Object.values(newErrors).some((error) => error)) {
       return;
     }
 
@@ -56,7 +65,7 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
       category_id: categoria,
       price: parseFloat(precio),
       description: descripcion,
-      imagen_url: imagen,
+      ...(imagen && { imagen_url: imagen }),
       recipe: ingredients.map((ingredient) => ({
         quantity_required: ingredient.quantity_required,
       })),
@@ -67,6 +76,7 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
       onClose();
     } catch (error) {
       console.error('Error al crear el producto:', error);
+      alert('Error al crear el producto. Por favor, intenta nuevamente.');
     }
   };
 
