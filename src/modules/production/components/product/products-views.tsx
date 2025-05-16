@@ -27,44 +27,53 @@ const ProductosView = () => {
     imagen_url: string;
   } | null>(null);
 
-  // Verificar si el producto está vinculado a una producción
   const isProductLinkedToProduction = (productId: string): boolean => {
-    return producciones?.some((production) => production.productId === productId) || false;
+    return producciones?.some(production => production.productId === productId) ?? false;
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleDeleteClick = (product: any) => {
-    if (isProductLinkedToProduction(product.id)) {
-      return; // No hacer nada si está vinculado
-    }
+  const handleDeleteClick = (product: typeof selectedProduct) => {
+    if (!product || isProductLinkedToProduction(product.id)) return;
+    
     setSelectedProduct(product);
     setIsDeleteModalOpen(true);
   };
 
-  if (isLoading)
+  const handleEditClick = (product: typeof selectedProduct) => {
+    if (!product) return;
+    
+    setSelectedProduct({
+      ...product,
+      category_id: product.category_id || '',
+      imagen_url: product.imagen_url || ''
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    if (isProductLinkedToProduction(productId)) {
+      alert('No se puede eliminar este producto porque está vinculado a una producción.');
+      return;
+    }
+
+    try {
+      await deleteProductMutation.mutateAsync(productId);
+      setIsDeleteModalOpen(false);
+      setSelectedProduct(null);
+    } catch (error) {
+      console.error('Error al eliminar el producto:', error);
+      alert('Hubo un error al intentar eliminar el producto.');
+    }
+  };
+
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="animate-spin h-12 w-12 text-red-600" />
       </div>
     );
-    
-    const handleDeleteProduct = async (productId: string) => {
-      if (isProductLinkedToProduction(productId)) {
-        alert('No se puede eliminar este producto porque está vinculado a una producción.');
-        return;
-      }
-    
-      try {
-        await deleteProductMutation.mutateAsync(productId);
-        setIsDeleteModalOpen(false); // Cerrar el modal
-        setSelectedProduct(null); // Limpiar el producto seleccionado
-      } catch (error) {
-        console.error('Error al eliminar el producto:', error);
-        alert('Hubo un error al intentar eliminar el producto.');
-      }
-    };
+  }
 
-  if (error)
+  if (error) {
     return (
       <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg mx-6 my-8">
         <div className="flex">
@@ -84,6 +93,7 @@ const ProductosView = () => {
         </div>
       </div>
     );
+  }
 
   return (
     <div className="p-6 md:p-8">
@@ -124,7 +134,7 @@ const ProductosView = () => {
             <div
               key={producto.id}
               className={`bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden border ${
-                isLinked ? 'border-yellow-200' : 'border-gray-100'
+                isLinked ? 'border-yellow-200 bg-yellow-50' : 'border-gray-100'
               } relative`}
             >
               {isLinked && (
@@ -175,23 +185,17 @@ const ProductosView = () => {
                 </div>
 
                 <div className="mt-4 flex justify-end space-x-2">
-                  <button
-                    onClick={() => {
-                      setSelectedProduct({
-                        ...producto,
-                        category_id: producto.category_id || '',
-                        imagen_url: producto.imagen_url || '',
-                      });
-                      setIsEditModalOpen(true);
-                    }}
-                    className="p-2 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200"
-                    title="Editar"
-                  >
-                    <Edit size={18} />
-                  </button>
+                  <Tooltip content="Editar producto" side="top">
+                    <button
+                      onClick={() => handleEditClick(producto)}
+                      className="p-2 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200"
+                    >
+                      <Edit size={18} />
+                    </button>
+                  </Tooltip>
                   
                   <Tooltip 
-                    content={isLinked ? "Este producto no puede eliminarse porque está en producción" : "Eliminar producto"}
+                    content={isLinked ? "Este producto está en producción y no puede eliminarse" : "Eliminar producto"}
                     side="top"
                   >
                     <button
@@ -202,7 +206,6 @@ const ProductosView = () => {
                           ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
                           : 'text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100'
                       }`}
-                      title={isLinked ? "No se puede eliminar" : "Eliminar"}
                     >
                       <Trash2 size={18} />
                     </button>
@@ -219,23 +222,26 @@ const ProductosView = () => {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
       />
+      
       <ModalEditProducto
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         producto={selectedProduct}
       />
+      
       <ModalDeleteProducto
-  isOpen={isDeleteModalOpen}
-  onClose={() => {
-    setIsDeleteModalOpen(false);
-    setSelectedProduct(null); // Limpiar el producto seleccionado al cerrar el modal
-  }}
-  onConfirm={() => {
-    if (selectedProduct?.id) {
-      handleDeleteProduct(selectedProduct.id); // Llamar a la función de eliminación
-    }
-  }}
-/>
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setSelectedProduct(null);
+        }}
+        onConfirm={() => {
+          if (selectedProduct?.id) {
+            handleDeleteProduct(selectedProduct.id);
+          }
+        }}
+      />
+      
       <ModalCreateCategoria
         isOpen={isCategoryModalOpen}
         onClose={() => setIsCategoryModalOpen(false)}

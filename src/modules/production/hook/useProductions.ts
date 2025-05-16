@@ -32,3 +32,4 @@ export const useDeleteProduction = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['productions'] }),
   });
 };
+
