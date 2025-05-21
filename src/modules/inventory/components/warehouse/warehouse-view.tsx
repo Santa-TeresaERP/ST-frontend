@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { FiFilter, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import ModalCreateProductWarehouse from './product/modal-create-product-warehouse';
-
+import ModalEditProductWarehouse from './product/modal-edit-product-warehouse';
+import ModalDeleteProductWarehouse from './product/modal-delete-product-warehouse';
 
 type Movement = {
   id: number;
@@ -23,29 +24,43 @@ const WarehouseView: React.FC = () => {
   const [filtroTipo, setFiltroTipo] = useState<'todos' | 'producto' | 'recurso'>('todos');
   const [agregarTipo, setAgregarTipo] = useState<'producto' | 'recurso'>('producto');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [productoEditar, setProductoEditar] = useState<Movement | null>(null);
+  const [productoEliminar, setProductoEliminar] = useState<Movement | null>(null);
 
   const movimientosFiltrados = movimientos.filter((m) =>
     filtroTipo === 'todos' ? true : m.tipo === filtroTipo
   );
 
   const handleEdit = (id: number) => {
-    console.log('Editar movimiento', id);
+    const producto = movimientos.find((m) => m.id === id);
+    if (producto) {
+      setProductoEditar(producto);
+    }
   };
 
   const handleDelete = (id: number) => {
-    if (window.confirm('¿Estás seguro de eliminar este movimiento?')) {
-      setMovimientos((prev) => prev.filter((m) => m.id !== id));
+    const producto = movimientos.find((m) => m.id === id);
+    if (producto) {
+      setProductoEliminar(producto);
     }
+  };
+
+  const confirmDeleteProduct = () => {
+    if (productoEliminar) {
+      setMovimientos(prev => prev.filter(m => m.id !== productoEliminar.id));
+      setProductoEliminar(null);
+    }
+  };
+
+  const cancelDeleteProduct = () => {
+    setProductoEliminar(null);
   };
 
   const toggleAgregarTipo = (tipo: 'producto' | 'recurso') => {
     setAgregarTipo(tipo);
     if (tipo === 'producto') {
-      // Abrir modal sólo para producto
       setIsModalOpen(true);
     } else {
-      // Si deseas alguna acción para recurso, la puedes manejar aquí
-      // Por ejemplo, cerrar modal si estaba abierto
       setIsModalOpen(false);
     }
   };
@@ -57,9 +72,16 @@ const WarehouseView: React.FC = () => {
       nombre: producto.nombre,
       cantidad: producto.cantidad,
       almacen: producto.almacen,
-      fechaEntrada: new Date().toISOString().slice(0, 10), // yyyy-mm-dd actual
+      fechaEntrada: new Date().toISOString().slice(0, 10),
     };
     setMovimientos(prev => [...prev, nuevoMovimiento]);
+  };
+
+  const handleUpdateProduct = (productoActualizado: Movement) => {
+    setMovimientos(prev =>
+      prev.map(m => (m.id === productoActualizado.id ? productoActualizado : m))
+    );
+    setProductoEditar(null);
   };
 
   return (
@@ -185,6 +207,25 @@ const WarehouseView: React.FC = () => {
         <ModalCreateProductWarehouse
           onClose={() => setIsModalOpen(false)}
           onCreate={handleCreateProduct}
+        />
+      )}
+
+      {/* Modal para editar producto */}
+      {productoEditar && (
+        <ModalEditProductWarehouse
+          producto={productoEditar}
+          onClose={() => setProductoEditar(null)}
+          onUpdate={handleUpdateProduct}
+        />
+      )}
+
+      {/* Modal para eliminar producto */}
+      {productoEliminar && (
+        <ModalDeleteProductWarehouse
+          isOpen={!!productoEliminar}
+          onClose={cancelDeleteProduct}
+          onConfirm={confirmDeleteProduct}
+          productName={productoEliminar.nombre}
         />
       )}
     </div>
