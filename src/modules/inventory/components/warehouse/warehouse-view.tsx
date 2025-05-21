@@ -83,6 +83,7 @@ const WarehouseView: React.FC = () => {
     );
     setProductoEditar(null);
   };
+  
 
   return (
     <div className="p-6 space-y-4 bg-gray-50 min-h-screen">

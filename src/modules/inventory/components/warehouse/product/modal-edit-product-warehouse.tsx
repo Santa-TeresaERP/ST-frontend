@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { X, Save } from 'lucide-react';
 
 type Producto = {
+  id: number;
   nombre: string;
   cantidad: number;
   almacen: string;
+  fechaEntrada: string;
 };
 
 type ModalEditProductWarehouseProps = {
@@ -36,7 +38,14 @@ const ModalEditProductWarehouse: React.FC<ModalEditProductWarehouseProps> = ({
     }
 
     setError('');
-    onUpdate({ nombre: nombre.trim(), cantidad, almacen });
+    // Enviamos el producto con la fecha original para no perderla
+    onUpdate({ 
+      id: producto.id, 
+      nombre: nombre.trim(), 
+      cantidad, 
+      almacen,
+      fechaEntrada: producto.fechaEntrada, 
+    });
     onClose();
   };
 
