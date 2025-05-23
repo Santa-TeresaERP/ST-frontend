@@ -6,7 +6,14 @@ export const recipeProductResourceSchema = z.object({
     .string()
     .min(1, 'La cantidad requerida no puede estar vacía')
     .max(50, 'La cantidad requerida no debe exceder los 50 caracteres'),
-
+  unit: z
+    .string()
+    .min(1, 'La unidad no puede estar vacía')
+    .max(20, 'La unidad no debe exceder los 20 caracteres'), // Nuevo campo
+  resource_id: z
+    .string()
+    .uuid('El ID del recurso debe ser un UUID válido')
+    .optional(), // Nuevo campo opcional
 });
 
 export const recipeSchema = z.object({

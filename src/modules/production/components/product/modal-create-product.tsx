@@ -5,6 +5,8 @@ import { Plus, X, Trash2 } from 'lucide-react';
 
 interface Ingredient {
   quantity_required: string;
+  unit: string; // Nuevo campo
+  resource_id?: string; // Nuevo campo opcional
 }
 
 interface ModalCreateProductoProps {
@@ -21,19 +23,32 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [newIngredient, setNewIngredient] = useState<Ingredient>({
     quantity_required: '',
+    unit: '',
+    resource_id: '',
+  });
+  const [errors, setErrors] = useState({
+    nombre: '',
+    categoria: '',
+    precio: '',
+    descripcion: '',
+    ingredient: '',
   });
 
   const createProductMutation = useCreateProduct();
   const { data: categorias, isLoading: isLoadingCategorias, error: errorCategorias } = useFetchCategories();
 
   const handleAddIngredient = () => {
-    if (!newIngredient.quantity_required) {
-      alert('El campo "Cantidad requerida" es obligatorio.');
+    if (!newIngredient.quantity_required || !newIngredient.unit) {
+      setErrors((prev) => ({
+        ...prev,
+        ingredient: 'La cantidad requerida y la unidad son obligatorias.',
+      }));
       return;
     }
 
     setIngredients((prev) => [...prev, newIngredient]);
-    setNewIngredient({ quantity_required: '' });
+    setNewIngredient({ quantity_required: '', unit: '', resource_id: '' });
+    setErrors((prev) => ({ ...prev, ingredient: '' })); // Limpiar errores
   };
 
   const handleRemoveIngredient = (index: number) => {
@@ -41,13 +56,25 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
   };
 
   const handleSubmit = async () => {
-    if (!nombre || !categoria || !precio || !descripcion) {
-      alert('Todos los campos son obligatorios.');
+    const newErrors = {
+      nombre: !nombre ? 'El nombre es obligatorio.' : '',
+      categoria: !categoria ? 'La categoría es obligatoria.' : '',
+      precio: !precio ? 'El precio es obligatorio.' : '',
+      descripcion: !descripcion ? 'La descripción es obligatoria.' : '',
+      ingredient: errors.ingredient, // Preserve the current ingredient error state
+    };
+
+    setErrors(newErrors);
+
+    if (Object.values(newErrors).some((error) => error)) {
       return;
     }
 
     if (ingredients.length === 0) {
-      alert('Debe agregar al menos un ingrediente para la receta.');
+      setErrors((prev) => ({
+        ...prev,
+        ingredient: 'Debe agregar al menos un ingrediente.',
+      }));
       return;
     }
 
@@ -56,9 +83,11 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
       category_id: categoria,
       price: parseFloat(precio),
       description: descripcion,
-      imagen_url: imagen,
+      ...(imagen && { imagen_url: imagen }),
       recipe: ingredients.map((ingredient) => ({
         quantity_required: ingredient.quantity_required,
+        unit: ingredient.unit,
+        ...(ingredient.resource_id && { resource_id: ingredient.resource_id }),
       })),
     };
 
@@ -67,6 +96,7 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
       onClose();
     } catch (error) {
       console.error('Error al crear el producto:', error);
+      alert('Error al crear el producto. Por favor, intenta nuevamente.');
     }
   };
 
@@ -100,6 +130,7 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200"
                 placeholder="Ej: Pizza Margarita"
               />
+              {errors.nombre && <p className="text-red-500 text-sm mt-1">{errors.nombre}</p>}
             </div>
 
             <div>
@@ -122,6 +153,7 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
                   ))}
                 </select>
               )}
+              {errors.categoria && <p className="text-red-500 text-sm mt-1">{errors.categoria}</p>}
             </div>
 
             <div>
@@ -137,6 +169,7 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
                   step="0.01"
                 />
               </div>
+              {errors.precio && <p className="text-red-500 text-sm mt-1">{errors.precio}</p>}
             </div>
 
             <div>
@@ -148,6 +181,7 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
                 placeholder="Descripción detallada del producto"
                 rows={3}
               />
+              {errors.descripcion && <p className="text-red-500 text-sm mt-1">{errors.descripcion}</p>}
             </div>
 
             <div>
@@ -181,6 +215,32 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
                   />
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Unidad*</label>
+                  <input
+                    type="text"
+                    value={newIngredient.unit}
+                    onChange={(e) =>
+                      setNewIngredient({ ...newIngredient, unit: e.target.value })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200"
+                    placeholder="Ej: gramos, litros"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">ID del recurso (opcional)</label>
+                  <input
+                    type="text"
+                    value={newIngredient.resource_id || ''}
+                    onChange={(e) =>
+                      setNewIngredient({ ...newIngredient, resource_id: e.target.value })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200"
+                    placeholder="ID del recurso (opcional)"
+                  />
+                </div>
+
                 <button
                   onClick={handleAddIngredient}
                   className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
@@ -200,7 +260,9 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
                         key={index}
                         className="flex justify-between items-center p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-150"
                       >
-                        <span className="text-gray-800">{ingredient.quantity_required}</span>
+                        <span className="text-gray-800">
+                          {ingredient.quantity_required} ({ingredient.unit})
+                        </span>
                         <button
                           onClick={() => handleRemoveIngredient(index)}
                           className="text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-50 transition-colors duration-150"
