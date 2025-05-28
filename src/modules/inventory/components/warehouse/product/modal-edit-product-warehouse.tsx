@@ -69,7 +69,7 @@ const ModalEditProductWarehouse: React.FC<ModalEditProductWarehouseProps> = ({
 
           {/* Campo: Nombre */}
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Nombre del Producto*</label>
+            <label className="block text-gray-700 mb-1 font-medium text-left">Nombre del Producto*</label>
             <input
               type="text"
               value={nombre}
@@ -81,7 +81,7 @@ const ModalEditProductWarehouse: React.FC<ModalEditProductWarehouseProps> = ({
 
           {/* Campo: Cantidad */}
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Cantidad*</label>
+            <label className="block text-gray-700 mb-1 font-medium text-left">Cantidad*</label>
             <input
               type="number"
               min={1}
@@ -94,7 +94,7 @@ const ModalEditProductWarehouse: React.FC<ModalEditProductWarehouseProps> = ({
 
           {/* Campo: Almacén */}
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Almacén*</label>
+            <label className="block text-gray-700 mb-1 font-medium text-left">Almacén*</label>
             <select
               value={almacen}
               onChange={(e) => setAlmacen(e.target.value)}
