@@ -5,6 +5,7 @@ interface ModalEditResourceProps {
   recurso: {
     id: number;
     nombre: string;
+    unidad: string;
     cantidad: number;
     precioUnitario?: number;
     precioTotal?: number;
@@ -12,7 +13,7 @@ interface ModalEditResourceProps {
     fechaEntrada: string;
   };
   onClose: () => void;
-  onUpdate: (recurso: { id: number; nombre: string; cantidad: number; precioUnitario: number; precioTotal?: number; proveedor: string; fechaCompra: string; }) => void;
+  onUpdate: (recurso: { id: number; nombre: string; unidad:string, cantidad: number; precioUnitario: number; precioTotal?: number; proveedor: string; fechaCompra: string; }) => void;
 }
 
 const ModalEditResource: React.FC<ModalEditResourceProps> = ({
@@ -21,14 +22,15 @@ const ModalEditResource: React.FC<ModalEditResourceProps> = ({
   onUpdate,
 }) => {
   const [nombre, setNombre] = useState(recurso.nombre);
-  const [unidad, setUnidad] = useState(recurso.cantidad);
+  const [unidad, setUnidad] = useState(recurso.unidad);
+  const [cantidad, setCantidad] = useState(recurso.cantidad);
   const [precioUnitario, setPrecioUnitario] = useState(recurso.precioUnitario || 0);
   const [proveedor, setProveedor] = useState(recurso.proveedor || '');
   const [fechaCompra, setFechaCompra] = useState(recurso.fechaEntrada);
   const [error, setError] = useState('');
 
   const precioTotal = useMemo(() => {
-    return unidad * precioUnitario;
+    return cantidad * precioUnitario;
   }, [unidad, precioUnitario]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -38,7 +40,7 @@ const ModalEditResource: React.FC<ModalEditResourceProps> = ({
       setError('El nombre es obligatorio.');
       return;
     }
-    if (unidad <= 0) {
+    if (cantidad <= 0) {
       setError('La unidad debe ser mayor a 0.');
       return;
     }
@@ -51,7 +53,8 @@ const ModalEditResource: React.FC<ModalEditResourceProps> = ({
     onUpdate({
       id: recurso.id,
       nombre: nombre.trim(),
-      cantidad: unidad,
+      unidad: unidad.trim(),
+      cantidad,
       precioUnitario,
       precioTotal,
       proveedor: proveedor.trim(),
@@ -88,17 +91,32 @@ const ModalEditResource: React.FC<ModalEditResourceProps> = ({
           </div>
 
           <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-gray-700 mb-1 font-medium">Unidad*</label>
+              <label className="block text-gray-700 mb-1 font-medium">Cantidad*</label>
               <input
                 type="number"
                 min={1}
-                value={unidad}
-                onChange={(e) => setUnidad(Number(e.target.value))}
+                value={cantidad}
+                onChange={(e) => setCantidad(Number(e.target.value))}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
                 placeholder="Cantidad"
               />
             </div>
+
+            <div>
+              <label className="block text-gray-700 mb-1 font-medium">Unidad*</label>
+              <input
+                type="text"
+                value={unidad}
+                onChange={(e) => setUnidad(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                placeholder="Unidad de medida"
+              />
+            </div>
+          </div>
+
+            
             <div>
               <label className="block text-gray-700 mb-1 font-medium">Precio Unitario*</label>
               <input
