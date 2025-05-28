@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trash2, Edit, List, Plus, Loader2 } from 'lucide-react';
 import ModalDeleteProduction from './modal-delete-production';
 import ModalCreateProduction from './modal-create-production';
 import ModalEditProduction from './modal-edit-production';
 import ModalCreatePlant from './modal-create-plant';
+import ModalFilterProduction from './modal-filter-production'; // Importar el modal de filtros
 import { useFetchProductions, useDeleteProduction } from '../../hook/useProductions';
 import { Production } from '../../types/productions';
 import { useFetchProducts } from '../../hook/useProducts';
@@ -19,7 +20,14 @@ const ProductionView = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isPlantModalOpen, setIsPlantModalOpen] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false); // Estado para el modal de filtros
   const [selectedProduction, setSelectedProduction] = useState<Production | null>(null);
+  const [filteredProductions, setFilteredProductions] = useState<Production[]>([]); // Estado para las producciones filtradas
+
+  // Sincronizar las producciones filtradas con los datos originales
+  useEffect(() => {
+    setFilteredProductions(productions || []);
+  }, [productions]);
 
   // Obtener el nombre de la planta
   const getPlantName = (plantId: string): string => {
@@ -50,6 +58,23 @@ const ProductionView = () => {
       console.error('Error al eliminar la producción:', error);
       alert('Hubo un error al intentar eliminar la producción.');
     }
+  };
+
+  // Lógica para aplicar los filtros
+  const handleApplyFilters = (filters: { startDate: string; endDate: string; plant: string }) => {
+    const { startDate, endDate, plant } = filters;
+
+    const filtered = productions?.filter((production) => {
+      const productionDate = new Date(production.productionDate); // Fecha de producción
+      const isWithinDateRange =
+        (!startDate || productionDate >= new Date(startDate)) &&
+        (!endDate || productionDate <= new Date(endDate));
+      const matchesPlant = !plant || production.plant_id === plant;
+
+      return isWithinDateRange && matchesPlant;
+    });
+
+    setFilteredProductions(filtered || []);
   };
 
   const handleOpenCreateModal = () => {
@@ -111,6 +136,13 @@ const ProductionView = () => {
 
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <button
+            onClick={() => setIsFilterModalOpen(true)} // Abrir el modal de filtros
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-700 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-500 transition-all duration-300 shadow-md hover:shadow-lg"
+          >
+            <List size={18} />
+            <span>Filtrar Producción</span>
+          </button>
+          <button
             onClick={handleOpenCreateModal}
             className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-500 transition-all duration-300 shadow-md hover:shadow-lg"
           >
@@ -145,7 +177,7 @@ const ProductionView = () => {
               </tr>
             </thead>
             <tbody>
-              {productions?.map((production) => (
+              {filteredProductions.map((production) => (
                 <tr
                   key={production.id} // Usar production_id como clave única
                   className="border-b border-gray-200 hover:bg-gray-50"
@@ -200,6 +232,15 @@ const ProductionView = () => {
       </div>
 
       {/* Modales */}
+      <ModalFilterProduction
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        plants={plants?.map((plant) => ({
+          id: plant.id,
+          name: plant.plant_name, // Renombrar plant_name a name
+        })) || []} // Pasa las plantas disponibles transformadas
+        onFilter={handleApplyFilters}
+      />
       <ModalCreateProduction
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}

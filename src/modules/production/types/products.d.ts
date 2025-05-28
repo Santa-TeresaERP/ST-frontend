@@ -8,7 +8,7 @@ export const ProductSchema = z.object({
   price: z.preprocess((val) => Number(val), z.number()), // Convertir a número si viene como string
   description: z.string().optional(), // Hacer opcional para coincidir con el backend
   imagen_url: z.string().optional(), // Hacer opcional para coincidir con el backend
-  createdAt: z.date().optional(),
+  createdAt: z.date(),
   updatedAt: z.date().optional(),
 });
 

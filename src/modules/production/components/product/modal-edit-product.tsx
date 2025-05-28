@@ -22,6 +22,7 @@ interface ModalEditProductoProps {
     imagen_url: string;
     recipe?: Ingredient[]; // Receta del producto
   } | null;
+  categories: { id: string; name: string; description: string; createdAt?: Date; updatedAt?: Date }[]; // Agregar esta propiedad
 }
 
 const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, producto }) => {
