@@ -1,15 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { X, Save } from 'lucide-react';
 
 type ModalNuevoRecursoProps = {
   onClose: () => void;
   onCreate: (recurso: { 
     nombre: string; 
-    unidad: number; 
-    precioUnitario: number;
-    precioTotal?: number;   
-    proveedor: string;
-    fechaCompra: string;
+    almacen: string;
+    cantidad: number; 
   }) => void;
 };
 
@@ -18,18 +15,9 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
   onCreate,
 }) => {
   const [nombre, setNombre] = useState('');
-  const [unidad, setUnidad] = useState<number | ''>('');
-  const [precioUnitario, setPrecioUnitario] = useState<number | ''>('');
-  const [proveedor, setProveedor] = useState('');
-  const [fechaCompra, setFechaCompra] = useState('');
+  const [almacen, setAlmacen] = useState('Cerro Colorado'); // Valor inicial ajustado
+  const [cantidad, setCantidad] = useState<number | ''>('');
   const [error, setError] = useState('');
-
-  const precioTotal = useMemo(() => {
-    if (unidad !== '' && precioUnitario !== '') {
-      return Number(unidad) * Number(precioUnitario);
-    }
-    return 0;
-  }, [unidad, precioUnitario]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,22 +26,20 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
       setError('El nombre es obligatorio.');
       return;
     }
-    if (unidad === '' || unidad <= 0) {
-      setError('La unidad debe ser mayor a 0.');
+    if (!almacen.trim()) {
+      setError('El almacén es obligatorio.');
       return;
     }
-    if (precioUnitario === '' || precioUnitario <= 0) {
-      setError('El precio unitario debe ser mayor a 0.');
+    if (cantidad === '' || cantidad <= 0) {
+      setError('La cantidad debe ser mayor a 0.');
       return;
     }
 
     setError('');
     onCreate({ 
       nombre: nombre.trim(), 
-      unidad: Number(unidad), 
-      precioUnitario: Number(precioUnitario),
-      proveedor: proveedor.trim(),
-      fechaCompra
+      almacen: almacen.trim(),
+      cantidad: Number(cantidad),
     });
     onClose();
   };
@@ -86,57 +72,31 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-gray-700 mb-1 font-medium">Unidad*</label>
-              <input
-                type="number"
-                min={1}
-                value={unidad}
-                onChange={(e) => setUnidad(e.target.value === '' ? '' : Number(e.target.value))}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="Cantidad"
-              />
-            </div>
-            <div>
-              <label className="block text-gray-700 mb-1 font-medium">Precio Unitario*</label>
-              <input
-                type="number"
-                min={0.01}
-                step={0.01}
-                value={precioUnitario}
-                onChange={(e) => setPrecioUnitario(e.target.value === '' ? '' : Number(e.target.value))}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="Precio por unidad"
-              />
-            </div>
-          </div>
-
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Proveedor</label>
+            <label className="block text-gray-700 mb-1 font-medium">Cantidad*</label>
             <input
-              type="text"
-              value={proveedor}
-              onChange={(e) => setProveedor(e.target.value)}
+              type="number"
+              min={1}
+              value={cantidad}
+              onChange={(e) => setCantidad(e.target.value === '' ? '' : Number(e.target.value))}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-              placeholder="Nombre del proveedor"
+              placeholder="Ejemplo: 40"
             />
           </div>
 
-          <div className="bg-gray-100 p-3 rounded-lg">
-            <label className="block text-gray-500 mb-1 text-sm">Precio Total</label>
-            <p className="text-lg font-semibold">S/ {precioTotal.toFixed(2)}</p>
+          <div>
+            <label className="block text-gray-700 mb-1 font-medium">Almacén*</label>
+            <select
+              value={almacen}
+              onChange={(e) => setAlmacen(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+            >
+              <option value="Cerro Colorado">Cerro Colorado</option>
+              <option value="Santa Catalina">Santa Catalina</option>
+              <option value="San Juan">San Juan</option>
+            </select>
           </div>
 
-          <div>
-            <label className="block text-gray-700 mb-1 font-medium">Fecha de compra</label>
-            <input
-              type="date"
-              value={fechaCompra}
-              onChange={(e) => setFechaCompra(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-            />
-          </div>
 
           <div className="flex justify-end space-x-3 pt-4">
             <button

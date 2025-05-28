@@ -24,11 +24,12 @@ const ModalDeleteResource: React.FC<ModalDeleteResourceProps> = ({
           <div className="bg-red-200 rounded-full p-4 mb-4">
             <Trash2 size={24} className="text-red-600" />
           </div>
-          Eliminar Recurso {/* Cambiado de "Eliminar Producto" */}
+          Eliminar Recurso 
         </h2>
         <p className="text-center text-gray-600 mb-8">
-          ¿Estás seguro de que deseas eliminar <strong>{resourceName || 'este recurso'}</strong>? Esta acción no se puede deshacer.
-          {/* Cambiado texto de producto a recurso */}
+          ¿Estás seguro de que deseas eliminar el {' '}
+          <strong className="text-red-600 uppercase">RECURSO</strong>{' '}
+          <strong>{resourceName || 'este recurso'}</strong>? Esta acción no se puede deshacer.
         </p>
         <div className="flex justify-center space-x-8">
           <button
