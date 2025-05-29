@@ -7,20 +7,20 @@ import {
   deleteRecipe,
 } from '../action/recipes';
 import {
+  Recipe,
   CreateRecipePayload,
-  RecipeAttributes,
   UpdateRecipePayload,
 } from '../types/recipes';
 
 export const useFetchRecipes = () => {
-  return useQuery<RecipeAttributes[], Error>({
+  return useQuery<Recipe[], Error>({
     queryKey: ['recipes'],
     queryFn: fetchRecipes,
   });
 };
 
 export const useFetchRecipeById = (id: string) => {
-  return useQuery<RecipeAttributes, Error>({
+  return useQuery<Recipe, Error>({
     queryKey: ['recipe', id],
     queryFn: () => fetchRecipeById(id),
     enabled: !!id,
@@ -29,7 +29,7 @@ export const useFetchRecipeById = (id: string) => {
 
 export const useCreateRecipe = () => {
   const queryClient = useQueryClient();
-  return useMutation<RecipeAttributes, Error, CreateRecipePayload>({
+  return useMutation<Recipe, Error, CreateRecipePayload>({
     mutationFn: createRecipe,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recipes'] }),
   });
@@ -37,7 +37,7 @@ export const useCreateRecipe = () => {
 
 export const useUpdateRecipe = () => {
   const queryClient = useQueryClient();
-  return useMutation<RecipeAttributes, Error, { id: string; payload: UpdateRecipePayload }>({
+  return useMutation<Recipe, Error, { id: string; payload: UpdateRecipePayload }>({
     mutationFn: ({ id, payload }) => updateRecipe(id, payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: 'recipes' })
   });

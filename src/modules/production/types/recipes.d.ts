@@ -1,30 +1,26 @@
-export interface RecipeProductResourceAttributes {
-  id: string;
-  product_id: string;
-  quantity_required: string;
-  unit: string; // Nuevo campo
-  resource_id?: string; // Nuevo campo opcional
-  createdAt?: Date;
-  updatedAt?: Date;
-}
+import { z } from 'zod';
 
-export interface RecipeAttributes {
-  id: string;
-  name: string;
-  description: string;
-  products: RecipeProductResourceAttributes[];
-  createdAt?: Date;
-  updatedAt?: Date;
-}
+export const RecipeSchema = z.object({
+  id: z.string(),
+  product_id: z.string(),
+  quantity_required: z.string(),
+  unit: z.string(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+export type Recipe = z.infer<typeof RecipeProductResourceSchema>;
 
 export interface CreateRecipePayload {
-  name: string;
-  description: string;
-  products: RecipeProductResourceAttributes[];
+  product_id: string;
+  quantity_required: string;
+  unit: string;
+  resource_id?: string;
 }
 
 export interface UpdateRecipePayload {
-  name?: string;
-  description?: string;
-  products?: RecipeProductResourceAttributes[];
+  product_id?: string;
+  quantity_required: string;
+  unit: string;
+  resource_id: string;
 }
