@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { useCreateProduct } from '@/modules/production/hook/useProducts';
 import { useFetchCategories } from '@/modules/production/hook/useCategories';
+import { useCreateRecipe } from '@/modules/production/hook/useRecipes';
+import { useFetchResources } from '@/modules/inventory/hook/useResources';
 import { Plus, X, Trash2 } from 'lucide-react';
+import { Resource } from '@/modules/inventory/types/resource';
 
 interface Ingredient {
   quantity_required: string;
@@ -33,9 +36,10 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
     descripcion: '',
     ingredient: '',
   });
-
+  const createRecipeMutation = useCreateRecipe();
   const createProductMutation = useCreateProduct();
   const { data: categorias, isLoading: isLoadingCategorias, error: errorCategorias } = useFetchCategories();
+  const { data: recursos, isLoading: isLoadingRecursos, error: errorRecursos } = useFetchResources();
 
   const handleAddIngredient = () => {
     if (!newIngredient.quantity_required || !newIngredient.unit) {
@@ -50,11 +54,13 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
     setNewIngredient({ quantity_required: '', unit: '', resource_id: '' });
     setErrors((prev) => ({ ...prev, ingredient: '' })); // Limpiar errores
   };
+  
 
   const handleRemoveIngredient = (index: number) => {
     setIngredients((prev) => prev.filter((_, i) => i !== index));
   };
 
+  
   const handleSubmit = async () => {
     const newErrors = {
       nombre: !nombre ? 'El nombre es obligatorio.' : '',
@@ -84,16 +90,24 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
       price: parseFloat(precio),
       description: descripcion,
       ...(imagen && { imagen_url: imagen }),
-      recipe: ingredients.map((ingredient) => ({
-        quantity_required: ingredient.quantity_required,
-        unit: ingredient.unit,
-        ...(ingredient.resource_id && { resource_id: ingredient.resource_id }),
-      })),
     };
 
     try {
-      await createProductMutation.mutateAsync(nuevoProducto);
-      onClose();
+      // 1. Crear producto
+      const productoCreado = await createProductMutation.mutateAsync(nuevoProducto);
+
+      // 2. Crear recetas asociadas (uno por cada ingrediente)
+      const product_id = productoCreado.id;
+      await Promise.all(
+        ingredients.map((ingredient) =>
+          createRecipeMutation.mutateAsync({
+            product_id, // <-- este campo es obligatorio
+            quantity_required: ingredient.quantity_required,
+            unit: ingredient.unit,
+            resource_id: ingredient.resource_id,
+          })
+        )
+      );
     } catch (error) {
       console.error('Error al crear el producto:', error);
       alert('Error al crear el producto. Por favor, intenta nuevamente.');
@@ -146,7 +160,8 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200"
                 >
                   <option value="">Seleccione una categoría</option>
-                  {categorias?.map((cat) => (
+                  {Array.isArray(categorias) &&
+                  categorias?.map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.name}
                     </option>
@@ -202,6 +217,7 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Receta del Producto</h3>
               
               <div className="space-y-4">
+                {/* ...cantidad y unidad... */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Cantidad requerida*</label>
                   <input
@@ -229,16 +245,27 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">ID del recurso (opcional)</label>
-                  <input
-                    type="text"
-                    value={newIngredient.resource_id || ''}
-                    onChange={(e) =>
-                      setNewIngredient({ ...newIngredient, resource_id: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200"
-                    placeholder="ID del recurso (opcional)"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Recurso*</label>
+                  {isLoadingRecursos ? (
+                    <div className="animate-pulse bg-gray-200 h-10 rounded-lg"></div>
+                  ) : errorRecursos ? (
+                    <p className="text-red-500 text-sm">Error al cargar recursos</p>
+                  ) : (
+                    <select
+                      value={newIngredient.resource_id || ''}
+                      onChange={(e) =>
+                        setNewIngredient({ ...newIngredient, resource_id: e.target.value })
+                      }
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200"
+                    >
+                      <option value="">Seleccione un recurso</option>
+                      {recursos?.map((recurso: Resource) => (
+                        <option key={recurso.id} value={recurso.id}>
+                          {recurso.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 <button

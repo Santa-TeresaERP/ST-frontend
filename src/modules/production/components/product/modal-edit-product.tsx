@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useUpdateProduct } from '@/modules/production/hook/useProducts';
 import { useFetchCategories } from '@/modules/production/hook/useCategories';
+import { useCreateRecipe, useUpdateRecipe, useDeleteRecipe } from '@/modules/production/hook/useRecipes';
+import { useFetchResources } from '@/modules/inventory/hook/useResources';
 import { Plus, Trash2, X, Edit, Check } from 'lucide-react';
+import { Resource } from '@/modules/inventory/types/resource';
 
 interface Ingredient {
-  id?: string; // ID del ingrediente para identificarlo en el CRUD
+  id?: string;
   quantity_required: string;
   unit: string;
   resource_id?: string;
@@ -20,8 +23,18 @@ interface ModalEditProductoProps {
     price: number;
     description: string;
     imagen_url: string;
-    recipe?: Ingredient[]; // Receta del producto
+    recipe?: Ingredient[];
+    RecipeProductResources?: {
+      id: string; // <-- Add this line
+      quantity_required: string;
+      unit: string;
+      recipe_product_conections: {
+        resource: Resource;
+      }[];
+    }[];
   } | null;
+
+
 }
 
 const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, producto }) => {
@@ -31,7 +44,7 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
   const [descripcion, setDescripcion] = useState('');
   const [imagen, setImagen] = useState('');
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null); // Para editar un ingrediente existente
+  const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
   const [newIngredient, setNewIngredient] = useState<Ingredient>({
     quantity_required: '',
     unit: '',
@@ -46,7 +59,22 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
   });
 
   const updateProductMutation = useUpdateProduct();
+  const createRecipeMutation = useCreateRecipe();
+  const updateRecipeMutation = useUpdateRecipe();
+  const deleteRecipeMutation = useDeleteRecipe();
+  const [editingResourceId, setEditingResourceId] = useState<string | null>(null);
+  const [editedResource, setEditedResource] = useState<{
+    quantity_required: string;
+    unit: string;
+    resource_id: string;
+  }>({
+    quantity_required: '',
+    unit: '',
+    resource_id: '',
+  });
+
   const { data: categorias, isLoading: isLoadingCategorias, error: errorCategorias } = useFetchCategories();
+  const { data: recursos, isLoading: isLoadingRecursos, error: errorRecursos } = useFetchResources();
 
   useEffect(() => {
     if (producto) {
@@ -55,46 +83,81 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
       setDescripcion(producto.description);
       setImagen(producto.imagen_url);
       setCategoria(producto.category_id);
-      setIngredients(producto.recipe || []); // Cargar la receta si existe
+      setIngredients(producto.recipe || []);
     }
   }, [producto]);
 
   const handleAddIngredient = () => {
-    if (!newIngredient.quantity_required || !newIngredient.unit) {
+    if (!newIngredient.quantity_required || !newIngredient.unit || !newIngredient.resource_id) {
       setErrors((prev) => ({
         ...prev,
-        ingredient: 'La cantidad requerida y la unidad son obligatorias.',
+        ingredient: 'La cantidad requerida, la unidad y el recurso son obligatorios.',
       }));
       return;
     }
-
-    setIngredients((prev) => [...prev, { ...newIngredient, id: crypto.randomUUID() }]); // Generar un ID único para el nuevo ingrediente
+    setIngredients((prev) => [...prev, { ...newIngredient, id: crypto.randomUUID() }]);
     setNewIngredient({ quantity_required: '', unit: '', resource_id: '' });
-    setErrors((prev) => ({ ...prev, ingredient: '' })); // Limpiar errores
+    setErrors((prev) => ({ ...prev, ingredient: '' }));
   };
 
-  const handleEditIngredient = (ingredient: Ingredient) => {
-    setEditingIngredient(ingredient); // Cargar el ingrediente en edición
-  };
 
   const handleUpdateIngredient = () => {
     if (!editingIngredient?.quantity_required || !editingIngredient.unit) {
       alert('La cantidad requerida y la unidad son obligatorias.');
       return;
     }
-
     setIngredients((prev) =>
       prev.map((ingredient) =>
         ingredient.id === editingIngredient.id ? editingIngredient : ingredient
       )
     );
-    setEditingIngredient(null); // Limpiar el estado de edición
+    setEditingIngredient(null);
   };
 
-  const handleRemoveIngredient = (id: string) => {
-    setIngredients((prev) => prev.filter((ingredient) => ingredient.id !== id));
+
+  // Para editar una receta (recibe el objeto receta)
+  const handleEditRecipe = (recipe: any) => { 
+    setEditingResourceId(recipe.id);
+    setEditedResource({
+      quantity_required: recipe.quantity_required,
+      unit: recipe.unit,
+      resource_id: recipe.recipe_product_conections[0]?.resource.id ?? '', // O muestra un select para elegir recurso
+    });
   };
 
+  // Guardar cambios en la receta
+  const handleSaveRecipe = (recipeId: string) => {
+    updateRecipeMutation.mutate(
+      { id: recipeId, payload: editedResource }, // id en la URL, resto en el body
+      {
+        onSuccess: () => {
+          setEditingResourceId(null);
+        },
+        onError: (error) => {
+          alert('Error al actualizar la receta: ' + error.message);
+        },
+      }
+    );
+  };
+
+  // Eliminar una receta
+  const handleRemoveRecipe = (recipeId: string, productId: string) => {
+    if (window.confirm('¿Seguro que deseas eliminar esta receta?')) {
+      deleteRecipeMutation.mutate(
+        { id: recipeId, product_id: productId },
+        {
+          onSuccess: () => {
+            // Puedes actualizar el producto o recargar las recetas si es necesario
+          },
+          onError: (error) => {
+            alert('Error al eliminar la receta: ' + error.message);
+          },
+        }
+      );
+    }
+  };
+
+  
   const handleSubmit = async () => {
     const newErrors = {
       nombre: !nombre ? 'El nombre es obligatorio.' : '',
@@ -116,17 +179,27 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
       price: parseFloat(precio),
       description: descripcion,
       imagen_url: imagen,
-      recipe: ingredients.map((ingredient) => ({
-        id: ingredient.id, // Incluir el ID del ingrediente si existe
-        quantity_required: ingredient.quantity_required,
-        unit: ingredient.unit,
-        ...(ingredient.resource_id && { resource_id: ingredient.resource_id }),
-      })),
     };
 
     try {
       if (producto) {
+        // 1. Actualizar producto
         await updateProductMutation.mutateAsync({ id: producto.id, payload: productoActualizado });
+
+        // 2. Crear nuevas recetas (solo las que no tienen id)
+        await Promise.all(
+          ingredients
+            .filter((ingredient) => !ingredient.id)
+            .map((ingredient) =>
+              createRecipeMutation.mutateAsync({
+                product_id: producto.id,
+                quantity_required: ingredient.quantity_required,
+                unit: ingredient.unit,
+                resource_id: ingredient.resource_id,
+              })
+            )
+        );
+
         onClose();
       }
     } catch (error) {
@@ -264,16 +337,27 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">ID del recurso (opcional)</label>
-                  <input
-                    type="text"
-                    value={newIngredient.resource_id || ''}
-                    onChange={(e) =>
-                      setNewIngredient({ ...newIngredient, resource_id: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                    placeholder="ID del recurso (opcional)"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Recurso*</label>
+                  {isLoadingRecursos ? (
+                    <div className="animate-pulse bg-gray-200 h-10 rounded-lg"></div>
+                  ) : errorRecursos ? (
+                    <p className="text-red-500 text-sm">Error al cargar recursos</p>
+                  ) : (
+                    <select
+                      value={newIngredient.resource_id || ''}
+                      onChange={(e) =>
+                        setNewIngredient({ ...newIngredient, resource_id: e.target.value })
+                      }
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                    >
+                      <option value="">Seleccione un recurso</option>
+                      {recursos?.map((recurso: Resource) => (
+                        <option key={recurso.id} value={recurso.id}>
+                          {recurso.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 <button
@@ -286,34 +370,81 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
               </div>
 
               {/* Lista de ingredientes */}
-              {ingredients.length > 0 && (
-                <div className="mt-6">
-                  <h4 className="text-md font-medium text-gray-700 mb-3">Ingredientes agregados</h4>
-                  <ul className="space-y-2">
-                    {ingredients.map((ingredient, index) => (
+              {producto?.RecipeProductResources && (
+                <div className="mb-6">
+                  <h4 className="text-md font-medium text-gray-700 mb-2">Recetas relacionadas a este producto:</h4>
+                  <ul className="list-disc pl-5">
+                    {producto.RecipeProductResources.map((rpr, idx) => (
                       <li
-                        key={ingredient.id || index}
-                        className="flex justify-between items-center p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-150"
+                        key={rpr.recipe_product_conections[0]?.resource?.id ?? idx}
+                        className="text-gray-800 flex items-center justify-between"
                       >
-                        <span className="text-gray-800">
-                          {ingredient.quantity_required} ({ingredient.unit})
-                        </span>
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleEditIngredient(ingredient)}
-                            className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-50 transition-colors duration-150"
-                            title="Editar ingrediente"
-                          >
-                            <Edit size={18} />
-                          </button>
-                          <button
-                            onClick={() => handleRemoveIngredient(ingredient.id!)}
-                            className="text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-50 transition-colors duration-150"
-                            title="Eliminar ingrediente"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
+                        {editingResourceId === rpr.id ? (
+                          <div className="flex items-center gap-2 w-full">
+                            <input
+                              type="text"
+                              value={editedResource.quantity_required}
+                              onChange={e => setEditedResource(prev => ({ ...prev, quantity_required: e.target.value }))}
+                              className="border px-2 py-1 rounded w-1/4"
+                              placeholder="Cantidad"
+                            />
+                            <input
+                              type="text"
+                              value={editedResource.unit}
+                              onChange={e => setEditedResource(prev => ({ ...prev, unit: e.target.value }))}
+                              className="border px-2 py-1 rounded w-1/4"
+                              placeholder="Unidad"
+                            />
+                            <select
+                              value={editedResource.resource_id}
+                              onChange={e => setEditedResource(prev => ({ ...prev, resource_id: e.target.value }))}
+                              className="border px-2 py-1 rounded w-1/4"
+                            >
+                              <option value="">Seleccione un recurso</option>
+                              {recursos?.map((recurso: Resource) => (
+                                <option key={recurso.id} value={recurso.id}>
+                                  {recurso.name}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              onClick={() => handleSaveRecipe(rpr.id)}
+                              className="text-green-600 hover:text-green-800 p-1 rounded-full"
+                              title="Guardar"
+                            >
+                              <Check size={18} />
+                            </button>
+                            <button
+                              onClick={() => setEditingResourceId(null)}
+                              className="text-gray-600 hover:text-gray-800 p-1 rounded-full"
+                              title="Cancelar"
+                            >
+                              <X size={18} />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <span>
+                              {rpr?.quantity_required ?? ''} {rpr?.unit ?? ''} - {rpr.recipe_product_conections[0]?.resource?.name ?? 'Sin recurso'}
+                            </span>
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleEditRecipe(rpr)}
+                                className="text-blue-600 hover:text-blue-800 p-1 rounded-full"
+                                title="Editar receta"
+                              >
+                                <Edit size={18} />
+                              </button>
+                              <button
+                                onClick={() => handleRemoveRecipe(rpr.id, producto.id)}
+                                className="text-red-600 hover:text-red-800 p-1 rounded-full"
+                                title="Eliminar receta"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -356,18 +487,29 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">ID del recurso (opcional)</label>
-                      <input
-                        type="text"
-                        value={editingIngredient.resource_id || ''}
-                        onChange={(e) =>
-                          setEditingIngredient((prev) =>
-                            prev ? { ...prev, resource_id: e.target.value } : null
-                          )
-                        }
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                        placeholder="ID del recurso (opcional)"
-                      />
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Recurso*</label>
+                      {isLoadingRecursos ? (
+                        <div className="animate-pulse bg-gray-200 h-10 rounded-lg"></div>
+                      ) : errorRecursos ? (
+                        <p className="text-red-500 text-sm">Error al cargar recursos</p>
+                      ) : (
+                        <select
+                          value={editingIngredient.resource_id || ''}
+                          onChange={(e) =>
+                            setEditingIngredient((prev) =>
+                              prev ? { ...prev, resource_id: e.target.value } : null
+                            )
+                          }
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                        >
+                          <option value="">Seleccione un recurso</option>
+                          {recursos?.map((recurso: Resource) => (
+                            <option key={recurso.id} value={recurso.id}>
+                              {recurso.name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </div>
 
                     <button
