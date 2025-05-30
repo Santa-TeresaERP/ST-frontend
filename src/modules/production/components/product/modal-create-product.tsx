@@ -2,9 +2,7 @@ import React, { useState } from 'react';
 import { useCreateProduct } from '@/modules/production/hook/useProducts';
 import { useFetchCategories } from '@/modules/production/hook/useCategories';
 import { useCreateRecipe } from '@/modules/production/hook/useRecipes';
-import { useFetchResources } from '@/modules/inventory/hook/useResources';
 import { Plus, X, Trash2 } from 'lucide-react';
-import { Resource } from '@/modules/inventory/types/resource';
 
 interface Ingredient {
   quantity_required: string;
@@ -39,7 +37,6 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
   const createRecipeMutation = useCreateRecipe();
   const createProductMutation = useCreateProduct();
   const { data: categorias, isLoading: isLoadingCategorias, error: errorCategorias } = useFetchCategories();
-  const { data: recursos, isLoading: isLoadingRecursos, error: errorRecursos } = useFetchResources();
 
   const handleAddIngredient = () => {
     if (!newIngredient.quantity_required || !newIngredient.unit) {
@@ -245,27 +242,16 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Recurso*</label>
-                  {isLoadingRecursos ? (
-                    <div className="animate-pulse bg-gray-200 h-10 rounded-lg"></div>
-                  ) : errorRecursos ? (
-                    <p className="text-red-500 text-sm">Error al cargar recursos</p>
-                  ) : (
-                    <select
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Recurso*</label>
+                    <input
+                      type="text"
                       value={newIngredient.resource_id || ''}
                       onChange={(e) =>
                         setNewIngredient({ ...newIngredient, resource_id: e.target.value })
                       }
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200"
-                    >
-                      <option value="">Seleccione un recurso</option>
-                      {recursos?.map((recurso: Resource) => (
-                        <option key={recurso.id} value={recurso.id}>
-                          {recurso.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+                      placeholder="Ej: Harina, Azúcar, etc."
+                    />
                 </div>
 
                 <button
