@@ -1,11 +1,25 @@
 import React from 'react';
-import { Trash2, X } from 'lucide-react';
+// Verified Icons import path
+import { Trash2, X, Loader2 } from 'lucide-react'; 
+// Verified UI component import paths
+import { Button } from '@/app/components/ui/button'; 
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from "@/app/components/ui/alert-dialog"; // Verified AlertDialog import path
 
 interface ModalDeleteResourceProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
-  resourceName?: string; 
+  onConfirm: () => Promise<void>; // Make confirm async
+  resourceName?: string;
+  isDeleting: boolean; // Add loading state
 }
 
 const ModalDeleteResource: React.FC<ModalDeleteResourceProps> = ({
@@ -13,42 +27,65 @@ const ModalDeleteResource: React.FC<ModalDeleteResourceProps> = ({
   onClose,
   onConfirm,
   resourceName,
+  isDeleting,
 }) => {
-  if (!isOpen) return null;
 
+  const handleConfirm = async () => {
+    await onConfirm();
+    // Parent should handle closing on success
+  };
+
+  // Using verified AlertDialog component
   return (
-    <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 transition-opacity duration-300">
-      <div className="bg-white rounded-xl shadow-lg p-8 max-w-lg w-full">
-        <h2 className="text-3xl font-semibold text-center text-gray-800 mb-6 flex flex-col items-center">
-          {/* Icono dentro de un círculo rojo claro */}
-          <div className="bg-red-200 rounded-full p-4 mb-4">
-            <Trash2 size={24} className="text-red-600" />
-          </div>
-          Eliminar Recurso {/* Cambiado de "Eliminar Producto" */}
-        </h2>
-        <p className="text-center text-gray-600 mb-8">
-          ¿Estás seguro de que deseas eliminar <strong>{resourceName || 'este recurso'}</strong>? Esta acción no se puede deshacer.
-          {/* Cambiado texto de producto a recurso */}
-        </p>
-        <div className="flex justify-center space-x-8">
-          <button
-            onClick={onConfirm}
-            className="bg-red-800 text-white px-8 py-3 rounded-lg shadow-md hover:bg-red-600 hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2"
-          >
-            <Trash2 size={20} />
-            <span>Eliminar</span>
-          </button>
-          <button
-            onClick={onClose}
-            className="bg-gray-300 text-gray-700 px-8 py-3 rounded-lg shadow-md hover:bg-gray-400 hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2"
-          >
-            <X size={20} />
-            <span>Cancelar</span>
-          </button>
-        </div>
-      </div>
-    </div>
+    <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <AlertDialogContent className="dark:bg-gray-800">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex flex-col items-center text-center dark:text-white">
+            {/* Using verified Icon */}
+            <div className="bg-red-100 dark:bg-red-900/30 rounded-full p-3 mb-3">
+              <Trash2 size={24} className="text-red-600 dark:text-red-400" />
+            </div>
+            Eliminar Recurso
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-center dark:text-gray-400">
+            ¿Estás seguro de que deseas eliminar el recurso "<strong>{resourceName || 'seleccionado'}</strong>"?
+            Esta acción no se puede deshacer.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="mt-4">
+          {/* Using verified Button for Cancel */}
+          <AlertDialogCancel asChild>
+            <Button variant="ghost" onClick={onClose} disabled={isDeleting} className="dark:text-gray-300 dark:hover:bg-gray-700">
+              Cancelar
+            </Button>
+          </AlertDialogCancel>
+          {/* Using verified Button for Confirm */}
+          <AlertDialogAction asChild>
+            <Button 
+              variant="destructive" 
+              onClick={handleConfirm} 
+              disabled={isDeleting}
+              className="bg-red-700 hover:bg-red-800 dark:bg-red-600 dark:hover:bg-red-700 disabled:opacity-50"
+            >
+              {isDeleting ? (
+                <>
+                  {/* Using verified Icon */}
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Eliminando...
+                </>
+              ) : (
+                <>
+                  {/* Using verified Icon */}
+                  <Trash2 size={18} className="mr-2"/> Eliminar
+                </>
+              )}
+            </Button>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
 
 export default ModalDeleteResource;
+
