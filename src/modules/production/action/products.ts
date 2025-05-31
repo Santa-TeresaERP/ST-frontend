@@ -6,7 +6,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
   return response.data;
 };
 
-export const createProduct = async (payload: CreateProductPayload): Promise<Product> => {
+export const createProduct = async (payload: FormData): Promise<Product> => {
   const response = await api.post<Product>('/products', payload);
   return response.data;
 };

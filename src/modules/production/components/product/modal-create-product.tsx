@@ -19,7 +19,7 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
   const [categoria, setCategoria] = useState('');
   const [precio, setPrecio] = useState('');
   const [descripcion, setDescripcion] = useState('');
-  const [imagen, setImagen] = useState('');
+  const [imagen, setImagen] = useState<File | null>(null);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [newIngredient, setNewIngredient] = useState<Ingredient>({
     quantity_required: '',
@@ -33,6 +33,7 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
     descripcion: '',
     ingredient: '',
   });
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const createProductMutation = useCreateProduct();
   const { data: categorias, isLoading: isLoadingCategorias, error: errorCategorias } = useFetchCategories();
@@ -78,21 +79,33 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
       return;
     }
 
-    const nuevoProducto = {
-      name: nombre,
-      category_id: categoria,
-      price: parseFloat(precio),
-      description: descripcion,
-      ...(imagen && { imagen_url: imagen }),
-      recipe: ingredients.map((ingredient) => ({
-        quantity_required: ingredient.quantity_required,
-        unit: ingredient.unit,
-        ...(ingredient.resource_id && { resource_id: ingredient.resource_id }),
-      })),
-    };
+    const formData = new FormData();
+    formData.append('name', nombre);
+    formData.append('category_id', categoria);
+    formData.append('price', precio); // Ensure precio is a string when appending to FormData if needed, or handle conversion on backend. The backend already parseFloat(req.body.price).
+    formData.append('description', descripcion);
+
+    // Handle ingredients: Stringify the recipe array for FormData
+    // The backend will need to parse this JSON string.
+    // Alternatively, you might need to append each ingredient field by field
+    // if the backend expects it that way for FormData (e.g., recipe[0][quantity_required], recipe[0][unit], etc.)
+    // For now, let's assume sending it as a JSON string is acceptable.
+    // If not, this part will need refinement based on backend expectations.
+    formData.append('recipe', JSON.stringify(ingredients.map((ingredient) => ({
+      quantity_required: ingredient.quantity_required,
+      unit: ingredient.unit,
+      ...(ingredient.resource_id && { resource_id: ingredient.resource_id }),
+    }))));
+
+    // Append the image file if it exists
+    if (imagen) { // 'imagen' is now a File object or null
+      formData.append('image', imagen); // The key 'image' must match multer's field name
+    }
 
     try {
-      await createProductMutation.mutateAsync(nuevoProducto);
+      // The 'nuevoProducto' variable is no longer used here.
+      // We pass formData directly.
+      await createProductMutation.mutateAsync(formData);
       onClose();
     } catch (error) {
       console.error('Error al crear el producto:', error);
@@ -187,12 +200,36 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Imagen del producto</label>
               <input
-                type="text"
-                value={imagen}
-                onChange={(e) => setImagen(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200"
-                placeholder="URL de la imagen"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  setFileError(null); // Reset file error on new selection
+                  const file = e.target.files && e.target.files[0];
+                  if (file) {
+                    // Validate file type (optional, as accept="image/*" already helps)
+                    if (!file.type.startsWith('image/')) {
+                      setFileError('Por favor, seleccione un archivo de imagen.');
+                      setImagen(null);
+                      e.target.value = ''; // Reset file input
+                      return;
+                    }
+                    // Validate file size (e.g., 5MB limit)
+                    const maxSizeInBytes = 5 * 1024 * 1024; // 5MB
+                    if (file.size > maxSizeInBytes) {
+                      setFileError('El archivo es demasiado grande. El máximo es 5MB.');
+                      setImagen(null);
+                      e.target.value = ''; // Reset file input
+                      return;
+                    }
+                    setImagen(file);
+                  } else {
+                    setImagen(null);
+                  }
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
               />
+              {fileError && <p className="text-red-500 text-sm mt-1">{fileError}</p>}
+              {/* Optional: Add a preview for the selected image here */}
             </div>
           </div>
 
