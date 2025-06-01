@@ -1,38 +1,16 @@
-// src/modules/users/types/user.ts
-import { z } from 'zod';
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+import { userSchema } from '../schemas/userValidation';
 
-export const UserSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  dni: z.string(),
-  phonenumber: z.string(),
-  email: z.string(),
-  roleId: z.string(),
-  createdAt: z.string().optional(),
-  updatedAt: z.string().optional(),
-  status: z.boolean(),
-});
+export type User = z.infer<typeof userSchema>;
 
-export type User = z.infer<typeof UserSchema>;
-
-export interface CreateUserPayload {
-  name: string;
-  dni: string;
-  phonenumber: string;
-  email: string;
-  roleId: string;
+export interface CreateUserPayload extends Omit<User, 'id' | 'createdAt' | 'updatedAt' | 'status'> {
   password: string;
 }
 
-export interface UpdateUserPayload {
-  name: string;
-  dni: string;
-  phonenumber: string;
-  email: string;
-}
+export interface UpdateUserPayload extends Partial<Omit<User, 'id' | 'roleId' | 'password' | 'createdAt' | 'updatedAt' | 'status'>> {}
 
 export interface ChangePasswordRequest {
-  userId,
+  userId: string;
   currentPassword: string;
   newPassword: string;
 }
