@@ -83,7 +83,7 @@ const ModalEditSupplier: React.FC<ModalEditSupplierProps> = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl relative">
-        <div className="bg-[#8B0000] text-white p-5 rounded-t-2xl flex items-center justify-center relative">
+        <div className="bg-emerald-600  text-white p-5 rounded-t-2xl flex items-center justify-center relative">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <Edit2 size={24} />
             Editar Proveedor
@@ -106,7 +106,7 @@ const ModalEditSupplier: React.FC<ModalEditSupplierProps> = ({
                 type="text"
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-600  focus:outline-none"
               />
             </div>
 
@@ -122,7 +122,7 @@ const ModalEditSupplier: React.FC<ModalEditSupplierProps> = ({
                   const val = e.target.value;
                   if (/^\d{0,9}$/.test(val)) setRuc(val);
                 }}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-600  focus:outline-none"
               />
             </div>
 
@@ -132,7 +132,7 @@ const ModalEditSupplier: React.FC<ModalEditSupplierProps> = ({
                 type="text"
                 value={contacto}
                 onChange={(e) => setContacto(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
               />
             </div>
 
@@ -142,7 +142,7 @@ const ModalEditSupplier: React.FC<ModalEditSupplierProps> = ({
                 type="email"
                 value={correo}
                 onChange={(e) => setCorreo(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
               />
             </div>
 
@@ -152,7 +152,7 @@ const ModalEditSupplier: React.FC<ModalEditSupplierProps> = ({
                 type="text"
                 value={direccion}
                 onChange={(e) => setDireccion(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
               />
             </div>
 
@@ -165,7 +165,7 @@ const ModalEditSupplier: React.FC<ModalEditSupplierProps> = ({
                   const val = e.target.value;
                   if (/^\d{0,15}$/.test(val)) setTelefono(val);
                 }}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
               />
             </div>
           </div>
@@ -180,7 +180,7 @@ const ModalEditSupplier: React.FC<ModalEditSupplierProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-[#8B0000] text-white rounded-lg hover:bg-red-900 transition flex items-center gap-2"
+              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition flex items-center gap-2"
             >
               <Save size={18} /> Guardar Cambios
             </button>

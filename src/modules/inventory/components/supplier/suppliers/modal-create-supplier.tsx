@@ -87,7 +87,7 @@ const ModalCreateSupplier: React.FC<ModalCreateSupplierProps> = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl relative">
-        <div className="bg-[#8B0000] text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
+        <div className="bg-emerald-600 text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
           <UserPlus size={26} />
           <h2 className="text-2xl font-semibold text-center">Nuevo Proveedor</h2>
           <button
@@ -112,7 +112,7 @@ const ModalCreateSupplier: React.FC<ModalCreateSupplierProps> = ({
                 type="text"
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
                 placeholder="Nombre del proveedor"
                 autoFocus
               />
@@ -126,7 +126,7 @@ const ModalCreateSupplier: React.FC<ModalCreateSupplierProps> = ({
                 type="text"
                 value={contacto}
                 onChange={(e) => setContacto(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-600  focus:outline-none"
                 placeholder="Nombre de contacto"
               />
             </div>
@@ -145,7 +145,7 @@ const ModalCreateSupplier: React.FC<ModalCreateSupplierProps> = ({
                     setRuc(val);
                   }
                 }}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-600  focus:outline-none"
                 placeholder="Número de RUC"
               />
             </div>
@@ -158,7 +158,7 @@ const ModalCreateSupplier: React.FC<ModalCreateSupplierProps> = ({
                 type="email"
                 value={correo}
                 onChange={(e) => setCorreo(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-600  focus:outline-none"
                 placeholder="Correo electrónico"
               />
             </div>
@@ -171,7 +171,7 @@ const ModalCreateSupplier: React.FC<ModalCreateSupplierProps> = ({
                 type="text"
                 value={direccion}
                 onChange={(e) => setDireccion(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-600  focus:outline-none"
                 placeholder="Dirección del proveedor"
               />
             </div>
@@ -189,7 +189,7 @@ const ModalCreateSupplier: React.FC<ModalCreateSupplierProps> = ({
                     setTelefono(val);
                   }
                 }}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#8B0000] focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-600 focus:outline-none"
                 placeholder="Número de teléfono"
               />
             </div>
@@ -205,7 +205,7 @@ const ModalCreateSupplier: React.FC<ModalCreateSupplierProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-[#8B0000] text-white rounded-lg hover:bg-[#700000] transition flex items-center gap-2"
+              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition flex items-center gap-2"
             >
               <Save size={18} /> Aceptar
             </button>

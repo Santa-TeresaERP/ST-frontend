@@ -91,7 +91,7 @@ const SupplierView: React.FC = () => {
 
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900 transition flex items-center gap-2"
+            className="px-4 py-2 bg-emerald-600 text-white rounded-full hover:bg-emerald-700 transition flex items-center gap-2"
           >
             <FiPlus /> Nuevo Proveedor
           </button>
@@ -112,7 +112,7 @@ const SupplierView: React.FC = () => {
 
         <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="bg-gray-800 text-white">
+            <thead className="bg-emerald-600 text-white">
               <tr>
                 <th className="px-4 py-2 text-center">Nombre</th>
                 <th className="px-4 py-2 text-center">RUC</th>

@@ -3,6 +3,7 @@ import { FiEdit2, FiTrash2, FiFileText, FiSearch } from 'react-icons/fi';
 import ModalNuevoRecurso from './resource/modal-create-resource-resourcehouse';
 import ModalEditResource from './resource/modal-edit-resource-resourcehouse';
 import ModalDeleteResource from './resource/modal-delete-resource-resourcehouse';
+import { Users } from 'lucide-react';
 
 type Resource = {
   id: number;
@@ -109,22 +110,23 @@ const ResourcesView: React.FC = () => {
   return (
     <div className="p-6 space-y-4 bg-gray-50 min-h-screen">
       <div className="flex justify-start">
-        <h2 className="text-4xl font-semibold text-yellow-500">
+        <h2 className="text-4xl font-semibold text-orange-500">
           Recursos
         </h2>
       </div>
 
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-2">
-          <FiFileText size={24} className="text-yellow-500" />
+          <FiFileText size={24} className="text-orange-500" />
           <span className="text-lg font-medium">Gestión de Recursos</span>
         </div>
 
+        
         <button
           onClick={() => setIsModalOpen(true)}
-          className="px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 transition flex items-center gap-2"
+          className="px-4 py-2 bg-orange-500 rounded-full text-white font-bold hover:bg-orange-600 transition flex items-center gap-2"
         >
-          Agregar Recurso
+          <Users size={18} /> Agregar Recurso
         </button>
       </div>
 
@@ -144,7 +146,7 @@ const ResourcesView: React.FC = () => {
 
       <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-800 text-white">
+          <thead className="bg-orange-500 text-white">
             <tr>
               <th className="px-4 py-2 text-left">Nombre</th>
               <th className="px-4 py-2 text-left">Unidades</th>

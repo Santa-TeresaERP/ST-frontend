@@ -5,6 +5,7 @@ import CreateMovementProduct from './movement/product/create-movement-product';
 import EditMovementProduct from './movement/product/edit-movement-product';
 import DeleteMovementProduct from './movement/product/delete-movement-product';
 import { WarehouseMovementProductAttributes } from '../../types/movementProduct';
+import { Repeat } from 'lucide-react';
 
 // Importa los componentes de recurso
 import CreateMovementResource from './movement/resource/create-movement-resource';
@@ -47,15 +48,15 @@ const MovementComponentView: React.FC = () => {
     <div className="p-6 space-y-4 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-semibold text-red-700">
+        <h2 className="text-3xl font-semibold text-gray-700">
           Movimientos de {selectedType === 'producto' ? 'Productos' : 'Recursos'}
         </h2>
         <div className="flex gap-2">
           <button
             className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
               selectedType === 'producto'
-                ? 'bg-red-700 text-white'
-                : 'bg-white text-red-700 border border-red-700'
+                ? 'bg-gray-600 text-white'
+                : 'bg-white text-gray-700 border border-gray-700'
             }`}
             onClick={() => setSelectedType('producto')}
           >
@@ -74,14 +75,21 @@ const MovementComponentView: React.FC = () => {
         </div>
       </div>
 
+        {/* Subheader */}
+      <div className="flex items-center space-x-2 text-gray-600">
+        <Repeat size={24} className="text-gray-700" />
+        <span className="text-lg font-medium">Gestión de movimientos del almacén</span>
+      </div>
+
       {/* Acciones y Filtro */}
       <div className="flex justify-end items-center space-x-6">
+        
         <div className="flex items-center space-x-3 select-none">
           <button
             onClick={() => setShowCreate(true)}
             className={`px-4 py-2 rounded-full font-semibold transition-colors duration-300 flex items-center gap-2 ${
               selectedType === 'producto'
-                ? 'bg-red-700 text-white hover:bg-red-800'
+                ? 'bg-gray-600 text-white hover:bg-gray-800'
                 : 'bg-orange-500 text-white hover:bg-orange-600'
             }`}
           >
@@ -89,11 +97,11 @@ const MovementComponentView: React.FC = () => {
           </button>
         </div>
         <div className="relative inline-flex items-center shadow-sm rounded-xl bg-white">
-          <Filter className="absolute left-4 text-red-700 pointer-events-none" size={20} />
+          <Filter className="absolute left-4 text-gray-700 pointer-events-none" size={20} />
           <input
             type="text"
-            className="pl-11 pr-6 py-3 rounded-xl border border-red-700 text-gray-700 text-base
-                       focus:outline-none focus:ring-2 focus:ring-red-700 focus:border-transparent
+            className="pl-11 pr-6 py-3 rounded-xl border border-gray-700 text-gray-700 text-base
+                       focus:outline-none focus:ring-2 focus:ring-gray-700 focus:border-transparent
                        hover:bg-gray-200 transition duration-300 min-w-[200px]"
             placeholder={`Buscar por ${selectedType === 'producto' ? 'producto, almacén o tienda' : 'recurso, almacén o tienda'}...`}
             value={searchTerm}
@@ -151,27 +159,29 @@ const MovementComponentView: React.FC = () => {
           <>
             {loading && <p>Cargando movimientos...</p>}
             {error && <p className="text-red-500">{error.message}</p>}
-            {!loading && filteredMovements.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">
-                {searchTerm ? 'No se encontraron movimientos que coincidan con la búsqueda' : 'No hay movimientos registrados.'}
-              </div>
-            ) : (
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-800 text-white">
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-600 text-white">
+                <tr>
+                  <th className="px-4 py-2 text-center">ID</th>
+                  <th className="px-4 py-2 text-center">Almacén</th>
+                  <th className="px-4 py-2 text-center">Tienda</th>
+                  <th className="px-4 py-2 text-center">Producto</th>
+                  <th className="px-4 py-2 text-center">Tipo</th>
+                  <th className="px-4 py-2 text-center">Cantidad</th>
+                  <th className="px-4 py-2 text-center">Fecha</th>
+                  <th className="px-4 py-2 text-center">Observaciones</th>
+                  <th className="px-4 py-2 text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredMovements.length === 0 ? (
                   <tr>
-                    <th className="px-4 py-2 text-center">ID</th>
-                    <th className="px-4 py-2 text-center">Almacén</th>
-                    <th className="px-4 py-2 text-center">Tienda</th>
-                    <th className="px-4 py-2 text-center">Producto</th>
-                    <th className="px-4 py-2 text-center">Tipo</th>
-                    <th className="px-4 py-2 text-center">Cantidad</th>
-                    <th className="px-4 py-2 text-center">Fecha</th>
-                    <th className="px-4 py-2 text-center">Observaciones</th>
-                    <th className="px-4 py-2 text-center">Acciones</th>
+                    <td colSpan={9} className="px-4 py-2 text-center text-gray-500">
+                      {searchTerm ? 'No se encontraron movimientos que coincidan con la búsqueda' : 'No hay movimientos registrados.'}
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {filteredMovements.map((mov) => (
+                ) : (
+                  filteredMovements.map((mov) => (
                     <tr key={mov.movement_id} className="hover:bg-gray-50 border-t">
                       <td className="px-4 py-2 text-center">{mov.movement_id}</td>
                       <td className="px-4 py-2 text-center">{mov.warehouse_id}</td>
@@ -192,10 +202,10 @@ const MovementComponentView: React.FC = () => {
                         <DeleteMovementProduct id={mov.movement_id} onDeleted={fetchMovements} />
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  ))
+                )}
+              </tbody>
+            </table>
           </>
         )}
         {/* Tabla de recursos */}
@@ -203,26 +213,28 @@ const MovementComponentView: React.FC = () => {
           <>
             {loadingResource && <p>Cargando movimientos de recursos...</p>}
             {errorResource && <p className="text-red-500">{errorResource.message}</p>}
-            {filteredResourceMovements.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">
-                {searchTerm ? 'No se encontraron movimientos que coincidan con la búsqueda' : 'No hay movimientos de recursos registrados.'}
-              </div>
-            ) : (
-              <table className="min-w-full text-sm">
-                <thead className="bg-orange-500 text-white">
+            <table className="min-w-full text-sm">
+              <thead className="bg-orange-500 text-white">
+                <tr>
+                  <th className="px-4 py-2 text-center">ID</th>
+                  <th className="px-4 py-2 text-center">Recurso</th>
+                  <th className="px-4 py-2 text-center">Almacén</th>
+                  <th className="px-4 py-2 text-center">Tipo</th>
+                  <th className="px-4 py-2 text-center">Cantidad</th>
+                  <th className="px-4 py-2 text-center">Fecha</th>
+                  <th className="px-4 py-2 text-center">Observaciones</th>
+                  <th className="px-4 py-2 text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredResourceMovements.length === 0 ? (
                   <tr>
-                    <th className="px-4 py-2 text-center">ID</th>
-                    <th className="px-4 py-2 text-center">Recurso</th>
-                    <th className="px-4 py-2 text-center">Almacén</th>
-                    <th className="px-4 py-2 text-center">Tipo</th>
-                    <th className="px-4 py-2 text-center">Cantidad</th>
-                    <th className="px-4 py-2 text-center">Fecha</th>
-                    <th className="px-4 py-2 text-center">Observaciones</th>
-                    <th className="px-4 py-2 text-center">Acciones</th>
+                    <td colSpan={8} className="px-4 py-2 text-center text-gray-500">
+                      {searchTerm ? 'No se encontraron movimientos que coincidan con la búsqueda' : 'No hay movimientos de recursos registrados.'}
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {filteredResourceMovements.map((mov) => (
+                ) : (
+                  filteredResourceMovements.map((mov) => (
                     <tr key={mov.movement_id} className="hover:bg-orange-50 border-t">
                       <td className="px-4 py-2 text-center">{mov.movement_id}</td>
                       <td className="px-4 py-2 text-center">{mov.resource_id}</td>
@@ -242,10 +254,10 @@ const MovementComponentView: React.FC = () => {
                         <DeleteMovementResource id={mov.movement_id} onDeleted={fetchResourceMovements} />
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  ))
+                )}
+              </tbody>
+            </table>
           </>
         )}
       </div>

@@ -61,8 +61,8 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md relative">
-        <div className="bg-red-800 text-white p-5 rounded-t-2xl flex items-center justify-center relative">
-          <h2 className="text-lg font-semibold text-center">Nuevo Recurso</h2>
+        <div className="bg-orange-500 text-white p-5 rounded-t-2xl flex items-center justify-center relative">
+          <h2 className="text-3xl font-semibold text-center">Nuevo Recurso</h2>
           <button
             onClick={onClose}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-200"
@@ -72,7 +72,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5 text-left">
-          {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
+          {error && <p className="text-sm text-yellow-600 font-medium">{error}</p>}
 
           <div>
             <label className="block text-gray-700 mb-1 font-medium">Nombre*</label>
@@ -80,7 +80,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
               type="text"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
               placeholder="Nombre del recurso"
               autoFocus
             />
@@ -94,7 +94,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
                 min={1}
                 value={unidad}
                 onChange={(e) => setUnidad(e.target.value === '' ? '' : Number(e.target.value))}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
                 placeholder="Cantidad"
               />
             </div>
@@ -106,7 +106,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
                 step={0.01}
                 value={precioUnitario}
                 onChange={(e) => setPrecioUnitario(e.target.value === '' ? '' : Number(e.target.value))}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
                 placeholder="Precio por unidad"
               />
             </div>
@@ -118,7 +118,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
               type="text"
               value={proveedor}
               onChange={(e) => setProveedor(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
               placeholder="Nombre del proveedor"
             />
           </div>
@@ -134,7 +134,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
               type="date"
               value={fechaCompra}
               onChange={(e) => setFechaCompra(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
             />
           </div>
 
@@ -148,7 +148,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2"
+              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition flex items-center gap-2"
             >
               <Save size={18} /> Aceptar
             </button>
