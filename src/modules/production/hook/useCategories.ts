@@ -1,6 +1,6 @@
 import { Category, CreateCategoryPayload, UpdateCategoryPayload } from '../types/categories';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchCategories, createCategory, updateCategory, deleteCategory } from '../action/categories';
+import { fetchCategories, fetchCategory, createCategory, updateCategory, deleteCategory } from '../action/categories';
 
 export const useFetchCategories = () => {
   return useQuery<Category[], Error>({
@@ -8,6 +8,14 @@ export const useFetchCategories = () => {
     queryFn: fetchCategories,
   });
 };
+
+export const useFetchCategory  = (id: string) => {
+  return useQuery<Category, Error>({
+    queryKey: ['categories', id],
+    queryFn: () => fetchCategory(id),
+    enabled: !!id, // Solo ejecutar si id está definido
+  });
+}
 
 export const useCreateCategory = () => {
   const queryClient = useQueryClient();

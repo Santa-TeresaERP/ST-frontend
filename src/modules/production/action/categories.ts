@@ -6,6 +6,11 @@ export const fetchCategories = async (): Promise<Category[]> => {
   return response.data;
 };
 
+export const fetchCategory = async (id: string): Promise<Category> => {
+  const response = await api.get<Category>(`/categories/${id}`);
+  return response.data;
+};
+
 export const createCategory = async (payload: CreateCategoryPayload): Promise<Category> => {
   const response = await api.post<Category>('/categories', payload);
   return response.data;
