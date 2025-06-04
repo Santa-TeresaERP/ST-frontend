@@ -5,8 +5,10 @@ import { productSchema } from '../../schemas/productValidation';
 import { Category } from '../../types/categories';
 import { useFetchCategories } from '../../hook/useCategories';
 import { useUpdateProduct } from '../../hook/useProducts';
-import { useCreateRecipe, useDeleteRecipe, useFetchRecipeById} from '../../hook/useRecipes';
+import { useCreateRecipe, useDeleteRecipe, useFetchRecipeByProductId} from '../../hook/useRecipes';
 import { useFetchResources } from '@/modules/inventory/hook/useResources';
+import { Recipe } from '../../types/recipes';
+import { Resource } from '@/modules/inventory/types/resource';
 
 // Props del modal de edición de producto
 interface ModalEditProductoProps {
@@ -42,10 +44,11 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
   });
 
   const [recipes, setRecipes] = useState<  
-  { id?: string; resource_id: string; unit: string; quantity_required: number; resource?: any }[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  { id?: string; resource_id: string; unit: string; quantity_required: number; resource?: Resource }[]
   >([]);
   const { data: recursos} = useFetchResources();
-  const { data: recetaActual, refetch: refetchReceta } = useFetchRecipeById(formData.id); // formData.id = product_id
+  const { data: recetasProducto, refetch: refetchReceta } = useFetchRecipeByProductId(formData.id); // formData.id = product_id// formData.id = product_id
   const createRecipe = useCreateRecipe();
   const deleteRecipe = useDeleteRecipe();
 
@@ -59,33 +62,34 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
   const { mutateAsync: updateProduct } = useUpdateProduct();
 
   // Efecto para cargar los datos del producto al abrir el modal
-  useEffect(() => {
-    if (producto) {
-      setFormData({
-        id: producto.id || '',
-        name: producto.name || '',
-        category_id: producto.category_id || '',
-        price: producto.price || 0,
-        description: producto.description || '',
-        imagen_url: producto.imagen_url || '',
-      });
-    }
-    setErrors({});
-    // Cargar ingredientes de la receta si hay recetaActual
-    if (recetaActual && recetaActual.recipe_product_conections) {
-      setRecipes(
-        recetaActual.recipe_product_conections.map((conn: any) => ({
-          id: conn.recipe_id,
-          resource_id: conn.resource_id,
-          unit: conn.unit, // <-- Cambiado aquí
-          quantity_required: conn.quantity_required, // <-- Cambiado aquí
-          resource: conn.resource,
-        }))
-      );
-    } else {
-      setRecipes([]);
-    }
-  }, [producto, isOpen, recetaActual]);
+useEffect(() => {
+  if (producto) {
+    setFormData({
+      id: producto.id || '',
+      name: producto.name || '',
+      category_id: producto.category_id || '',
+      price: producto.price || 0,
+      description: producto.description || '',
+      imagen_url: producto.imagen_url || '',
+    });
+  }
+  setErrors({});
+  // Cargar ingredientes de la receta si hay recetas asociadas al producto
+  if (recetasProducto && recetasProducto.length > 0) {
+    setRecipes(
+      recetasProducto.map((receta: Recipe) => ({
+        id: receta.id,
+        resource_id: receta.resourceId,
+        unit: receta.unit,
+        quantity_required: receta.quantity,
+        resource: receta.resource, // Incluye el objeto resource si viene con la receta
+      }))
+    );
+  } else {
+    setRecipes([]);
+  }
+}, [producto, isOpen, recetasProducto]);
+// ...existing code...
 
     // Maneja cambios en el formulario de ingrediente
   const handleIngredienteChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -97,10 +101,10 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
   const handleAgregarIngrediente = async () => {
     if (!recipe.resource_id || !recipe.unit || !recipe.quantity_required) return;
     const payload = {
-      product_id: formData.id,
+      productId: formData.id,
       resource_id: recipe.resource_id,
       unit: recipe.unit,
-      quantity_required: String(recipe.quantity_required),
+      quantity: String(recipe.quantity_required),
     };
     await createRecipe.mutateAsync(payload);
     setRecipe({ resource_id: '', unit: '', quantity_required: 1 });
@@ -295,7 +299,7 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
                   className="flex-1 px-2 py-1 border rounded"
                 >
                   <option value="">Seleccione recurso</option>
-                  {recursos?.map((recurso: any) => (
+                  {recursos?.map((recurso: Resource) => (
                     <option key={recurso.id} value={recurso.id}>
                       {recurso.name}
                     </option>
@@ -331,9 +335,14 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
               </div>
               {/* Lista de recursos asociados a la receta */}
               <div>
+                {recipes.length === 0 && (
+                  <p className="text-gray-500 text-sm">No hay recursos asociados a la receta.</p>
+                )}
                 {recipes.map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-2 border-b py-1">
+                  <div key={idx} className="flex items-center gap-4 border-b py-1">
                     <span className="flex-1">{item.resource?.name || 'Recurso'}</span>
+                    <span className="w-20 text-center">{item.unit}</span>
+                    <span className="w-16 text-center">{item.quantity_required}</span>
                     <button
                       type="button"
                       className="text-red-500 px-2"

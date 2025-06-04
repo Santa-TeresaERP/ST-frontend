@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   fetchRecipes,
   fetchRecipeById,
+  fetchRecipeByProd,
   createRecipe,
   updateRecipe,
   deleteRecipe,
@@ -26,6 +27,14 @@ export const useFetchRecipeById = (id: string) => {
     enabled: !!id,
   });
 };
+
+export const useFetchRecipeByProductId = (productId: string) => {
+  return useQuery<Recipe[], Error>({
+    queryKey: ['recipe', 'product', productId],
+    queryFn: () => fetchRecipeByProd(productId),
+    enabled: !!productId,
+  });
+}
 
 export const useCreateRecipe = () => {
   const queryClient = useQueryClient();

@@ -159,6 +159,7 @@ const WarehouseView: React.FC = () => {
                        focus:outline-none focus:ring-2 focus:ring-red-700 focus:border-transparent
                        hover:bg-gray-200 transition duration-300 cursor-pointer appearance-none min-w-[160px]"
             value={filtroTipo}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onChange={(e) => setFiltroTipo(e.target.value as any)}
           >
             <option value="todos">Todos</option>
