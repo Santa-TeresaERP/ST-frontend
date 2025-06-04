@@ -1,146 +1,166 @@
 import React, { useState, useEffect } from 'react';
-import { useUpdateProduct } from '@/modules/production/hook/useProducts';
-import { useFetchCategories } from '@/modules/production/hook/useCategories';
-import { Plus, Trash2, X, Edit, Check } from 'lucide-react';
+import { X } from 'lucide-react';
+import { z } from 'zod';
+import { productSchema } from '../../schemas/productValidation';
+import { Category } from '../../types/categories';
+import { useFetchCategories } from '../../hook/useCategories';
+import { useUpdateProduct } from '../../hook/useProducts';
+import { useCreateRecipe, useDeleteRecipe, useFetchRecipeById} from '../../hook/useRecipes';
+import { useFetchResources } from '@/modules/inventory/hook/useResources';
 
-interface Ingredient {
-  id?: string; // ID del ingrediente para identificarlo en el CRUD
-  quantity_required: string;
-  unit: string;
-  resource_id?: string;
-}
-
+// Props del modal de edición de producto
 interface ModalEditProductoProps {
   isOpen: boolean;
   onClose: () => void;
-  producto: {
-    id: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  producto: any;
+  onSubmit?: (data: {
+    id?: string;
     name: string;
-    category_id: string;
+    category_id: Category['id'];
     price: number;
     description: string;
     imagen_url: string;
-    recipe?: Ingredient[]; // Receta del producto
-  } | null;
+  }) => Promise<void>;
 }
 
-const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, producto }) => {
-  const [nombre, setNombre] = useState('');
-  const [categoria, setCategoria] = useState('');
-  const [precio, setPrecio] = useState('');
-  const [descripcion, setDescripcion] = useState('');
-  const [imagen, setImagen] = useState('');
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null); // Para editar un ingrediente existente
-  const [newIngredient, setNewIngredient] = useState<Ingredient>({
-    quantity_required: '',
-    unit: '',
-    resource_id: '',
+const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, producto, onSubmit }) => {
+  // Estado para los datos del formulario
+  const [formData, setFormData] = React.useState({
+    id: '',
+    name: '',
+    category_id: '',
+    price: 0,
+    description: '',
+    imagen_url: '',
   });
-  const [errors, setErrors] = useState({
-    nombre: '',
-    categoria: '',
-    precio: '',
-    descripcion: '',
-    ingredient: '',
+  
+  const [recipe, setRecipe] = useState({
+    unit: '',
+    quantity_required: 0,
+    resource_id:'',    
   });
 
-  const updateProductMutation = useUpdateProduct();
+  const [recipes, setRecipes] = useState<  
+  { id?: string; resource_id: string; unit: string; quantity_required: number; resource?: any }[]
+  >([]);
+  const { data: recursos} = useFetchResources();
+  const { data: recetaActual, refetch: refetchReceta } = useFetchRecipeById(formData.id); // formData.id = product_id
+  const createRecipe = useCreateRecipe();
+  const deleteRecipe = useDeleteRecipe();
+
+  // Estado para los errores de validación
+  const [errors, setErrors] = useState<Partial<Record<keyof typeof formData, string>>>({});
+
+  // Hook para obtener las categorías
   const { data: categorias, isLoading: isLoadingCategorias, error: errorCategorias } = useFetchCategories();
 
+  // Hook para actualizar el producto
+  const { mutateAsync: updateProduct } = useUpdateProduct();
+
+  // Efecto para cargar los datos del producto al abrir el modal
   useEffect(() => {
     if (producto) {
-      setNombre(producto.name);
-      setPrecio(producto.price.toString());
-      setDescripcion(producto.description);
-      setImagen(producto.imagen_url);
-      setCategoria(producto.category_id);
-      setIngredients(producto.recipe || []); // Cargar la receta si existe
+      setFormData({
+        id: producto.id || '',
+        name: producto.name || '',
+        category_id: producto.category_id || '',
+        price: producto.price || 0,
+        description: producto.description || '',
+        imagen_url: producto.imagen_url || '',
+      });
     }
-  }, [producto]);
-
-  const handleAddIngredient = () => {
-    if (!newIngredient.quantity_required || !newIngredient.unit) {
-      setErrors((prev) => ({
-        ...prev,
-        ingredient: 'La cantidad requerida y la unidad son obligatorias.',
-      }));
-      return;
+    setErrors({});
+    // Cargar ingredientes de la receta si hay recetaActual
+    if (recetaActual && recetaActual.recipe_product_conections) {
+      setRecipes(
+        recetaActual.recipe_product_conections.map((conn: any) => ({
+          id: conn.recipe_id,
+          resource_id: conn.resource_id,
+          unit: conn.unit, // <-- Cambiado aquí
+          quantity_required: conn.quantity_required, // <-- Cambiado aquí
+          resource: conn.resource,
+        }))
+      );
+    } else {
+      setRecipes([]);
     }
+  }, [producto, isOpen, recetaActual]);
 
-    setIngredients((prev) => [...prev, { ...newIngredient, id: crypto.randomUUID() }]); // Generar un ID único para el nuevo ingrediente
-    setNewIngredient({ quantity_required: '', unit: '', resource_id: '' });
-    setErrors((prev) => ({ ...prev, ingredient: '' })); // Limpiar errores
+    // Maneja cambios en el formulario de ingrediente
+  const handleIngredienteChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setRecipe({ ...recipe, [name]: name === 'quantity_required' ? Number(value) : value });
   };
 
-  const handleEditIngredient = (ingredient: Ingredient) => {
-    setEditingIngredient(ingredient); // Cargar el ingrediente en edición
-  };
-
-  const handleUpdateIngredient = () => {
-    if (!editingIngredient?.quantity_required || !editingIngredient.unit) {
-      alert('La cantidad requerida y la unidad son obligatorias.');
-      return;
-    }
-
-    setIngredients((prev) =>
-      prev.map((ingredient) =>
-        ingredient.id === editingIngredient.id ? editingIngredient : ingredient
-      )
-    );
-    setEditingIngredient(null); // Limpiar el estado de edición
-  };
-
-  const handleRemoveIngredient = (id: string) => {
-    setIngredients((prev) => prev.filter((ingredient) => ingredient.id !== id));
-  };
-
-  const handleSubmit = async () => {
-    const newErrors = {
-      nombre: !nombre ? 'El nombre es obligatorio.' : '',
-      categoria: !categoria ? 'La categoría es obligatoria.' : '',
-      precio: !precio ? 'El precio es obligatorio.' : '',
-      descripcion: !descripcion ? 'La descripción es obligatoria.' : '',
-      ingredient: ingredients.length === 0 ? 'Debe agregar al menos un ingrediente.' : '',
+  // Agrega un ingrediente (crea receta si no existe, o actualiza si existe)
+  const handleAgregarIngrediente = async () => {
+    if (!recipe.resource_id || !recipe.unit || !recipe.quantity_required) return;
+    const payload = {
+      product_id: formData.id,
+      resource_id: recipe.resource_id,
+      unit: recipe.unit,
+      quantity_required: String(recipe.quantity_required),
     };
+    await createRecipe.mutateAsync(payload);
+    setRecipe({ resource_id: '', unit: '', quantity_required: 1 });
+    refetchReceta();
+  };
 
-    setErrors(newErrors);
-
-    if (Object.values(newErrors).some((error) => error)) {
-      return;
+  // Elimina un ingrediente de la receta
+  const handleEliminarIngrediente = async (conn: any) => {
+    if (conn.id && conn.resource_id) {
+      await deleteRecipe.mutateAsync({ id: conn.id, product_id: formData.id });
+      refetchReceta();
     }
+  };
 
-    const productoActualizado = {
-      name: nombre,
-      category_id: categoria,
-      price: parseFloat(precio),
-      description: descripcion,
-      imagen_url: imagen,
-      recipe: ingredients.map((ingredient) => ({
-        id: ingredient.id, // Incluir el ID del ingrediente si existe
-        quantity_required: ingredient.quantity_required,
-        unit: ingredient.unit,
-        ...(ingredient.resource_id && { resource_id: ingredient.resource_id }),
-      })),
-    };
+  // Maneja los cambios en los inputs del formulario
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    setFormData({ ...formData, [e.target.name]: e.target.type === 'number' ? Number(e.target.value) : e.target.value });
+  };
 
+  // Maneja el envío del formulario
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      if (producto) {
-        await updateProductMutation.mutateAsync({ id: producto.id, payload: productoActualizado });
-        onClose();
+      // Validación de datos con Zod
+      const dataToValidate = { ...formData, price: Number(formData.price) };
+      productSchema.parse(dataToValidate);
+      setErrors({});
+      // Si hay función onSubmit, la ejecuta
+      if (onSubmit) {
+        await onSubmit(dataToValidate);
       }
+      // Actualiza el producto si tiene id
+      if (formData.id) {
+        await updateProduct({ id: formData.id, payload: dataToValidate });
+      }
+      // Cierra el modal si todo salió bien
+      onClose();
     } catch (error) {
-      console.error('Error al actualizar el producto:', error);
-      alert('Error al actualizar el producto. Por favor, intenta nuevamente.');
+      // Si hay errores de validación, los muestra
+      if (error instanceof z.ZodError) {
+        const fieldErrors: Partial<Record<keyof typeof formData, string>> = {};
+        error.errors.forEach((err) => {
+          if (err.path.length > 0) {
+            fieldErrors[err.path[0] as keyof typeof formData] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+      }
     }
   };
 
+  // Si el modal no está abierto, no renderiza nada
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        {/* Header con gradiente */}
+        {/* Header del modal */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 rounded-t-2xl">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-white">Editar Producto</h2>
@@ -153,251 +173,179 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
           </div>
         </div>
 
+        {/* Contenido principal del modal */}
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Columna izquierda - Datos del producto */}
           <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Nombre del producto*</label>
-              <input
-                type="text"
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                placeholder="Nombre del producto"
-              />
-              {errors.nombre && <p className="text-red-500 text-sm mt-1">{errors.nombre}</p>}
-            </div>
+            {/* Formulario de edición */}
+            <form onSubmit={handleSubmit}>
+              {/* Campo: Nombre */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Nombre del producto*</label>
+                <input
+                  type="text"
+                  name="name"
+                  onChange={handleInputChange}
+                  value={formData.name}
+                  className={`w-full px-4 py-2 border ${errors.name ? 'border-red-500' : 'border-gray-400'} border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200`}
+                  placeholder="Nombre del producto"
+                />
+                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Categoría*</label>
-              {isLoadingCategorias ? (
-                <div className="animate-pulse bg-gray-200 h-10 rounded-lg"></div>
-              ) : errorCategorias ? (
-                <p className="text-red-500 text-sm">Error al cargar categorías</p>
-              ) : (
-                <select
-                  value={categoria}
-                  onChange={(e) => setCategoria(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                >
-                  <option value="">Seleccione una categoría</option>
-                  {categorias?.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              )}
-              {errors.categoria && <p className="text-red-500 text-sm mt-1">{errors.categoria}</p>}
-            </div>
+              {/* Campo: Categoría */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Categoría*</label>
+                {isLoadingCategorias ? (
+                  <div className="animate-pulse bg-gray-200 h-10 rounded-lg"></div>
+                ) : errorCategorias ? (
+                  <p className="text-red-500 text-sm">Error al cargar categorías</p>
+                ) : (
+                  <>
+                  <select
+                    id="category_id"
+                    name="category_id"
+                    required
+                    onChange={handleInputChange}
+                    value={formData.category_id}
+                    className={`w-full px-4 py-2 border ${errors.category_id ? 'border-red-500' : 'border-gray-400'} border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200`}
+                  >
+                    <option value="">Seleccione una categoría</option>
+                    {categorias?.map((cat: Category) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.category_id && <p className="text-red-500 text-xs mt-1">{errors.category_id}</p>}
+                  </>
+                )}
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Precio (S/.)*</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">S/.</span>
+              {/* Campo: Precio */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Precio (S/.)*</label>
                 <input
                   type="number"
-                  value={precio}
-                  onChange={(e) => setPrecio(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                  name="price"
+                  onChange={handleInputChange}
+                  value={formData.price}
+                  className={`w-full px-4 py-2 border ${errors.price ? 'border-red-500' : 'border-gray-400'} border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200`}
                   placeholder="0.00"
-                  step="0.01"
                 />
+                {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
               </div>
-              {errors.precio && <p className="text-red-500 text-sm mt-1">{errors.precio}</p>}
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Descripción*</label>
-              <textarea
-                value={descripcion}
-                onChange={(e) => setDescripcion(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                placeholder="Descripción detallada del producto"
-                rows={3}
-              />
-              {errors.descripcion && <p className="text-red-500 text-sm mt-1">{errors.descripcion}</p>}
-            </div>
+              {/* Campo: Descripción */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Descripción*</label>
+                <textarea
+                  name="description"
+                  onChange={handleInputChange}
+                  value={formData.description}
+                  className={`w-full px-4 py-2 border ${errors.description ? 'border-red-500' : 'border-gray-400'} border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200`}
+                  placeholder="Descripción detallada del producto"
+                  rows={3}
+                />
+                {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Imagen del producto</label>
-              <input
-                type="text"
-                value={imagen}
-                onChange={(e) => setImagen(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                placeholder="URL de la imagen"
-              />
-            </div>
+              {/* Campo: Imagen */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Imagen del producto</label>
+                <input
+                  type="text"
+                  name="imagen_url"
+                  onChange={handleInputChange}
+                  value={formData.imagen_url}
+                  className={`w-full px-4 py-2 border ${errors.imagen_url ? 'border-red-500' : 'border-gray-400'} border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200`}
+                  placeholder="URL de la imagen"
+                />
+                {errors.imagen_url && <p className="text-red-500 text-xs mt-1">{errors.imagen_url}</p>}
+              </div>
+
+              {/* Footer con botones */}
+              <div className="flex justify-end space-x-4 p-6 border-t border-gray-200">
+                <button
+                  onClick={onClose}
+                  type="button"
+                  className="px-6 py-2.5 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors duration-200"
+                >
+                  Cancelar
+                </button>
+                <button
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md hover:shadow-lg transition-all duration-200"
+                  type="submit"
+                >
+                  Guardar Cambios
+                </button>
+              </div>
+            </form>
           </div>
 
-          {/* Columna derecha - Receta */}
+          {/* Columna derecha - Receta (puedes agregar aquí los campos de ingredientes) */}
           <div className="space-y-6">
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Receta del Producto</h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Cantidad requerida*</label>
-                  <input
-                    type="text"
-                    value={newIngredient.quantity_required}
-                    onChange={(e) =>
-                      setNewIngredient({ ...newIngredient, quantity_required: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                    placeholder="Ej: 200g de harina"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Unidad*</label>
-                  <input
-                    type="text"
-                    value={newIngredient.unit}
-                    onChange={(e) =>
-                      setNewIngredient({ ...newIngredient, unit: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                    placeholder="Ej: gramos, litros"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">ID del recurso (opcional)</label>
-                  <input
-                    type="text"
-                    value={newIngredient.resource_id || ''}
-                    onChange={(e) =>
-                      setNewIngredient({ ...newIngredient, resource_id: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                    placeholder="ID del recurso (opcional)"
-                  />
-                </div>
-
-                <button
-                  onClick={handleAddIngredient}
-                  className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
+              {/* Formulario para agregar ingrediente */}
+              <div className="flex flex-col md:flex-row gap-2 mb-4">
+                <select
+                  name="resource_id"
+                  value={recipe.resource_id}
+                  onChange={handleIngredienteChange}
+                  className="flex-1 px-2 py-1 border rounded"
                 >
-                  <Plus size={18} />
-                  <span>Agregar Ingrediente</span>
+                  <option value="">Seleccione recurso</option>
+                  {recursos?.map((recurso: any) => (
+                    <option key={recurso.id} value={recurso.id}>
+                      {recurso.name}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  name="unit"
+                  value={recipe.unit}
+                  onChange={handleIngredienteChange}
+                  className="w-32 px-2 py-1 border rounded"
+                  placeholder="Unidad"
+                />
+                <input
+                  type="number"
+                  min={1}
+                  name="quantity_required"
+                  value={recipe.quantity_required}
+                  onChange={handleIngredienteChange}
+                  className="w-24 px-2 py-1 border rounded"
+                  placeholder="Cantidad"
+                />
+              </div>
+              {/* Botón para agregar recurso */}
+              <div className="mb-4">
+                <button
+                  type="button"
+                  className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  onClick={handleAgregarIngrediente}
+                >
+                  Agregar recurso
                 </button>
               </div>
-
-              {/* Lista de ingredientes */}
-              {ingredients.length > 0 && (
-                <div className="mt-6">
-                  <h4 className="text-md font-medium text-gray-700 mb-3">Ingredientes agregados</h4>
-                  <ul className="space-y-2">
-                    {ingredients.map((ingredient, index) => (
-                      <li
-                        key={ingredient.id || index}
-                        className="flex justify-between items-center p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-150"
-                      >
-                        <span className="text-gray-800">
-                          {ingredient.quantity_required} ({ingredient.unit})
-                        </span>
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleEditIngredient(ingredient)}
-                            className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-50 transition-colors duration-150"
-                            title="Editar ingrediente"
-                          >
-                            <Edit size={18} />
-                          </button>
-                          <button
-                            onClick={() => handleRemoveIngredient(ingredient.id!)}
-                            className="text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-50 transition-colors duration-150"
-                            title="Eliminar ingrediente"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Edición de ingrediente */}
-              {editingIngredient && (
-                <div className="mt-6 bg-gray-100 p-4 rounded-lg">
-                  <h4 className="text-md font-medium text-gray-700 mb-3">Editar Ingrediente</h4>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Cantidad requerida*</label>
-                      <input
-                        type="text"
-                        value={editingIngredient.quantity_required}
-                        onChange={(e) =>
-                          setEditingIngredient((prev) =>
-                            prev ? { ...prev, quantity_required: e.target.value } : null
-                          )
-                        }
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                        placeholder="Ej: 200g de harina"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Unidad*</label>
-                      <input
-                        type="text"
-                        value={editingIngredient.unit}
-                        onChange={(e) =>
-                          setEditingIngredient((prev) =>
-                            prev ? { ...prev, unit: e.target.value } : null
-                          )
-                        }
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                        placeholder="Ej: gramos, litros"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">ID del recurso (opcional)</label>
-                      <input
-                        type="text"
-                        value={editingIngredient.resource_id || ''}
-                        onChange={(e) =>
-                          setEditingIngredient((prev) =>
-                            prev ? { ...prev, resource_id: e.target.value } : null
-                          )
-                        }
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                        placeholder="ID del recurso (opcional)"
-                      />
-                    </div>
-
+              {/* Lista de recursos asociados a la receta */}
+              <div>
+                {recipes.map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-2 border-b py-1">
+                    <span className="flex-1">{item.resource?.name || 'Recurso'}</span>
                     <button
-                      onClick={handleUpdateIngredient}
-                      className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200"
+                      type="button"
+                      className="text-red-500 px-2"
+                      onClick={() => handleEliminarIngrediente(item)}
                     >
-                      <Check size={18} />
-                      <span>Guardar Cambios</span>
+                      Eliminar
                     </button>
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Footer con botones */}
-        <div className="flex justify-end space-x-4 p-6 border-t border-gray-200">
-          <button
-            onClick={onClose}
-            className="px-6 py-2.5 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors duration-200"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md hover:shadow-lg transition-all duration-200"
-          >
-            Guardar Cambios
-          </button>
         </div>
       </div>
     </div>
