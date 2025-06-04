@@ -29,44 +29,47 @@ const ModalEditProductWarehouse: React.FC<ModalEditProductWarehouseProps> = ({
     e.preventDefault();
 
     if (!nombre.trim()) {
-      setError('El nombre es obligatorio.');
-      return;
+      return setError('El nombre es obligatorio.');
     }
-    if (cantidad <= 0) {
-      setError('La cantidad debe ser mayor a 0.');
-      return;
+
+    if (!cantidad || cantidad <= 0) {
+      return setError('La cantidad debe ser mayor a 0.');
     }
 
     setError('');
-    // Enviamos el producto con la fecha original para no perderla
-    onUpdate({ 
-      id: producto.id, 
-      nombre: nombre.trim(), 
-      cantidad, 
+
+    onUpdate({
+      ...producto,
+      nombre: nombre.trim(),
+      cantidad,
       almacen,
-      fechaEntrada: producto.fechaEntrada, 
     });
+
     onClose();
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md relative">
-        <div className="bg-red-800 text-white p-5 rounded-t-2xl flex items-center justify-center relative">
-          <h2 className="text-lg font-semibold text-center">Editar Producto del Almacén</h2>
+        {/* Encabezado */}
+        <div className="bg-red-800 text-white p-5 rounded-t-2xl flex justify-center items-center relative">
+          <h2 className="text-lg font-semibold">Editar Producto del Almacén</h2>
           <button
             onClick={onClose}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-200"
+            aria-label="Cerrar modal"
+            className="absolute right-4 top-1/2 -translate-y-1/2 hover:text-gray-200"
           >
             <X size={22} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 text-left">
+        {/* Formulario */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
 
+          {/* Campo: Nombre */}
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Nombre del Producto*</label>
+            <label className="block text-gray-700 mb-1 font-medium text-left">Nombre del Producto*</label>
             <input
               type="text"
               value={nombre}
@@ -76,8 +79,9 @@ const ModalEditProductWarehouse: React.FC<ModalEditProductWarehouseProps> = ({
             />
           </div>
 
+          {/* Campo: Cantidad */}
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Cantidad*</label>
+            <label className="block text-gray-700 mb-1 font-medium text-left">Cantidad*</label>
             <input
               type="number"
               min={1}
@@ -88,8 +92,9 @@ const ModalEditProductWarehouse: React.FC<ModalEditProductWarehouseProps> = ({
             />
           </div>
 
+          {/* Campo: Almacén */}
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Almacén*</label>
+            <label className="block text-gray-700 mb-1 font-medium text-left">Almacén*</label>
             <select
               value={almacen}
               onChange={(e) => setAlmacen(e.target.value)}
@@ -101,6 +106,7 @@ const ModalEditProductWarehouse: React.FC<ModalEditProductWarehouseProps> = ({
             </select>
           </div>
 
+          {/* Botones */}
           <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"

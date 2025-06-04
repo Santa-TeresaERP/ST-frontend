@@ -1,18 +1,18 @@
 import React from 'react';
 import { Trash2, X } from 'lucide-react';
 
-interface ModalDeleteResourceProps {
+interface ModalDeleteSupplierProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  resourceName?: string; 
+  supplierName?: string; 
 }
 
-const ModalDeleteResource: React.FC<ModalDeleteResourceProps> = ({
+const ModalDeleteSupplier: React.FC<ModalDeleteSupplierProps> = ({
   isOpen,
   onClose,
   onConfirm,
-  resourceName,
+  supplierName,
 }) => {
   if (!isOpen) return null;
 
@@ -24,12 +24,10 @@ const ModalDeleteResource: React.FC<ModalDeleteResourceProps> = ({
           <div className="bg-red-200 rounded-full p-4 mb-4">
             <Trash2 size={24} className="text-red-600" />
           </div>
-          Eliminar Recurso 
+          Eliminar Proveedor
         </h2>
         <p className="text-center text-gray-600 mb-8">
-          ¿Estás seguro de que deseas eliminar el {' '}
-          <strong className="text-red-600 uppercase">RECURSO</strong>{' '}
-          <strong>{resourceName || 'este recurso'}</strong>? Esta acción no se puede deshacer.
+          ¿Estás seguro de que deseas eliminar <strong>{supplierName || 'este proveedor'}</strong>? Esta acción no se puede deshacer.
         </p>
         <div className="flex justify-center space-x-8">
           <button
@@ -52,4 +50,4 @@ const ModalDeleteResource: React.FC<ModalDeleteResourceProps> = ({
   );
 };
 
-export default ModalDeleteResource;
+export default ModalDeleteSupplier;
