@@ -1,122 +1,102 @@
 import React, { useState } from 'react';
-import { X, Save } from 'lucide-react';
+import { useCreateWarehouseResource } from '@/modules/inventory/hook/useWarehouseResources';
+import { CreateWarehouseResourcePayload } from '@/modules/inventory/types/warehouseResource';
 
-type ModalNuevoRecursoProps = {
+type ModalCreateWarehousesProps = {
+  open: boolean; 
   onClose: () => void;
-  onCreate: (recurso: { 
-    nombre: string; 
-    almacen: string;
-    cantidad: number; 
-  }) => void;
+  onCreate: (newResource: CreateWarehouseResourcePayload) => Promise<void>; // Callback para recargar la lista después de crear
+  onSuccess: () => void; // Callback para manejar el éxito
+  resourceType: 'producto' | 'recurso';
 };
 
-const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
-  onClose,
-  onCreate,
-}) => {
-  const [nombre, setNombre] = useState('');
-  const [almacen, setAlmacen] = useState('Cerro Colorado'); // Valor inicial ajustado
-  const [cantidad, setCantidad] = useState<number | ''>('');
-  const [error, setError] = useState('');
+const ModalCreateWarehouses: React.FC<ModalCreateWarehousesProps> = ({ onClose, onSuccess }) => {
+  const [warehouse_id, setWarehouseId] = useState('');
+  const [resource_id, setResourceId] = useState('');
+  const [quantity, setQuantity] = useState<number | ''>('');
+  const [entry_date, setEntryDate] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const createResource = useCreateWarehouseResource();
 
-    if (!nombre.trim()) {
-      setError('El nombre es obligatorio.');
-      return;
-    }
-    if (!almacen.trim()) {
-      setError('El almacén es obligatorio.');
-      return;
-    }
-    if (cantidad === '' || cantidad <= 0) {
-      setError('La cantidad debe ser mayor a 0.');
+  const handleCreate = async () => {
+    if (!warehouse_id || !resource_id || !quantity || !entry_date) {
+      alert('Por favor, complete todos los campos obligatorios.');
       return;
     }
 
-    setError('');
-    onCreate({ 
-      nombre: nombre.trim(), 
-      almacen: almacen.trim(),
-      cantidad: Number(cantidad),
+    const payload: CreateWarehouseResourcePayload = {
+      warehouse_id,
+      resource_id,
+      quantity: Number(quantity),
+      entry_date: new Date(entry_date),
+    };
+
+    createResource.mutate(payload, {
+      onSuccess: () => {
+        alert('Recurso creado exitosamente.');
+        onSuccess(); // Recargar la lista
+        onClose();
+      },
+      onError: (error) => {
+        console.error('Error al crear el recurso:', error);
+        alert('Hubo un error al crear el recurso.');
+      },
     });
-    onClose();
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md relative">
-        <div className="bg-red-800 text-white p-5 rounded-t-2xl flex items-center justify-center relative">
-          <h2 className="text-lg font-semibold text-center">Nuevo Recurso</h2>
-          <button
-            onClick={onClose}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-200"
-          >
-            <X size={22} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 text-left">
-          {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
-
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-lg max-w-lg w-full p-6">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Crear Nuevo Recurso</h2>
+        <div className="space-y-4">
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Nombre*</label>
+            <label className="block text-gray-700 font-medium">ID Almacén</label>
             <input
               type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-              placeholder="Nombre del recurso"
-              autoFocus
+              className="w-full border rounded px-3 py-2"
+              value={warehouse_id}
+              onChange={(e) => setWarehouseId(e.target.value)}
             />
           </div>
-
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Cantidad*</label>
+            <label className="block text-gray-700 font-medium">ID Recurso</label>
+            <input
+              type="text"
+              className="w-full border rounded px-3 py-2"
+              value={resource_id}
+              onChange={(e) => setResourceId(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-gray-700 font-medium">Cantidad</label>
             <input
               type="number"
-              min={1}
-              value={cantidad}
-              onChange={(e) => setCantidad(e.target.value === '' ? '' : Number(e.target.value))}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-              placeholder="Ejemplo: 40"
+              className="w-full border rounded px-3 py-2"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value ? Number(e.target.value) : '')}
             />
           </div>
-
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Almacén*</label>
-            <select
-              value={almacen}
-              onChange={(e) => setAlmacen(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-            >
-              <option value="Cerro Colorado">Cerro Colorado</option>
-              <option value="Santa Catalina">Santa Catalina</option>
-              <option value="San Juan">San Juan</option>
-            </select>
+            <label className="block text-gray-700 font-medium">Fecha de Entrada</label>
+            <input
+              type="date"
+              className="w-full border rounded px-3 py-2"
+              value={entry_date}
+              onChange={(e) => setEntryDate(e.target.value)}
+            />
           </div>
-
-
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2"
-            >
-              <Save size={18} /> Aceptar
-            </button>
-          </div>
-        </form>
+        </div>
+        <div className="mt-6 flex justify-end space-x-4">
+          <button onClick={onClose} className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded">
+            Cancelar
+          </button>
+          <button onClick={handleCreate} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+            Crear
+          </button>
+        </div>
       </div>
     </div>
   );
 };
 
-export default ModalNuevoRecurso;
+export default ModalCreateWarehouses;

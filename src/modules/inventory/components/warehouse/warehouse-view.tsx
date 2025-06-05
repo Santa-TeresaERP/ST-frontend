@@ -1,43 +1,78 @@
 import React, { useState } from 'react';
-import { Filter, Home, PlusCircle, Package, Users, Edit, Trash } from 'lucide-react';
-
-type Movement = {
-  id: number;
-  tipo: 'producto' | 'recurso';
-  nombre: string;
-  almacen: string;
-  cantidad: number;
-  fechaEntrada: string;
-};
-
-const initialMovimientos: Movement[] = [
-  { id: 1, tipo: 'producto', nombre: 'Harina de Trigo', almacen: 'Cerro Colorado', cantidad: 150, fechaEntrada: '2025-05-15' },
-  { id: 2, tipo: 'recurso', nombre: 'Mano de Obra', almacen: 'Santa Catalina', cantidad: 8, fechaEntrada: '2025-05-17' },
-  { id: 3, tipo: 'producto', nombre: 'Azúcar', almacen: 'San Juan', cantidad: 300, fechaEntrada: '2025-05-18' },
-];
+import { Filter, Home, Package, Users, Edit, Trash, PlusCircle } from 'lucide-react';
+import {
+  useFetchWarehouseResources,
+  useCreateWarehouseResource,
+  useUpdateWarehouseResource,
+  useDeleteWarehouseResource,
+} from '@/modules/inventory/hook/useWarehouseResources';
+import { WarehouseResourceAttributes } from '@/modules/inventory/types/warehouseResource';
+import ModalCreateWarehouses from './resource/modal-create-resource-warehouse';
+import ModalEditWarehouses from './resource/modal-edit-resource-warehouse';
+import ModalDeleteWarehouses from './resource/modal-delete-resource-warehouse';
 
 const WarehouseView: React.FC = () => {
-  const [movimientos, setMovimientos] = useState<Movement[]>(initialMovimientos);
+  const { data: resources, isLoading, error } = useFetchWarehouseResources();
+  const createResource = useCreateWarehouseResource();
+  const updateResource = useUpdateWarehouseResource();
+  const deleteResource = useDeleteWarehouseResource();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreate, setShowCreate] = useState(false);
-  const [editing, setEditing] = useState<Movement | null>(null);
+  const [editingResource, setEditingResource] = useState<string | null>(null);
+  const [deletingResource, setDeletingResource] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<'producto' | 'recurso'>('producto');
 
-  // Filtrar movimientos por nombre, almacen o tipo
-  const filteredMovimientos = movimientos.filter(
-    (m) =>
-      (selectedType === 'producto' ? m.tipo === 'producto' : m.tipo === 'recurso') &&
-      (m.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.almacen.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Filtrar recursos por término de búsqueda
+  const filteredResources = resources?.filter((resource) => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      resource.warehouse_id.toLowerCase().includes(searchLower) ||
+      resource.resource_id.toLowerCase().includes(searchLower) ||
+      resource.quantity.toString().includes(searchLower) ||
+      new Date(resource.entry_date).toLocaleDateString().toLowerCase().includes(searchLower)
+    );
+  });
+
+  const handleCreate = async (newResource: Omit<WarehouseResourceAttributes, 'id'>) => {
+    createResource.mutate(newResource, {
+      onSuccess: () => setShowCreate(false),
+    });
+  };
+
+  const handleEdit = async (id: string, updates: Partial<Omit<WarehouseResourceAttributes, 'id'>>) => {
+    updateResource.mutate({ id, payload: updates }, {
+      onSuccess: () => setEditingResource(null),
+    });
+  };
+
+  const handleDelete = async (id: string) => {
+    deleteResource.mutate(id, {
+      onSuccess: () => setDeletingResource(null),
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 bg-red-50 text-red-500 rounded-lg">
+        Error al cargar los recursos: {error.message}
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-4 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-semibold text-blue-700">
-          Movimientos de Almacén
-        </h2>
+        <h2 className="text-3xl font-semibold text-blue-700">Gestión de Almacén</h2>
         <div className="flex gap-2">
           <button
             className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
@@ -63,92 +98,137 @@ const WarehouseView: React.FC = () => {
       </div>
 
       {/* Subheader */}
-      <div className="flex items-center space-x-2 text-gray-600">
-        <Home size={24} className="text-blue-700" />
-        <span className="text-lg font-medium">Gestión de movimientos del almacén</span>
+      <div className="flex justify-between items-center">
+        <div className="flex items-center space-x-2 text-gray-600">
+          <Home size={24} className="text-blue-700" />
+          <span className="text-lg font-medium">Lista de {selectedType === 'producto' ? 'productos' : 'recursos'}</span>
+        </div>
+        <button
+          onClick={() => setShowCreate(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded-full font-semibold bg-blue-700 text-white hover:bg-blue-800"
+        >
+          <PlusCircle size={18} /> Crear {selectedType === 'producto' ? 'Producto' : 'Recurso'}
+        </button>
       </div>
 
-      {/* Acciones y Filtro */}
-      <div className="flex justify-end items-center space-x-6">
-        <div className="flex items-center space-x-3 select-none">
-          <button
-            onClick={() => setShowCreate(true)}
-            className={`px-4 py-2 rounded-full font-semibold transition-colors duration-300 flex items-center gap-2 ${
-              selectedType === 'producto'
-                ? 'bg-blue-700 text-white hover:bg-blue-800'
-                : 'bg-gray-300 text-gray-700 cursor-not-allowed'
-            }`}
-            disabled={selectedType !== 'producto'}
-          >
-            <PlusCircle size={18} /> Crear {selectedType === 'producto' ? 'Producto' : 'Recurso'}
-          </button>
-        </div>
-        <div className="relative inline-flex items-center shadow-sm rounded-xl bg-white">
-          <Filter className="absolute left-4 text-blue-700 pointer-events-none" size={20} />
-          <input
-            type="text"
-            className="pl-11 pr-6 py-3 rounded-xl border border-blue-700 text-gray-700 text-base
-                       focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-transparent
-                       hover:bg-gray-200 transition duration-300 min-w-[200px]"
-            placeholder={`Buscar por ${selectedType === 'producto' ? 'producto o almacén' : 'recurso o almacén'}...`}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+      {/* Filter */}
+      <div className="relative inline-flex items-center shadow-sm rounded-xl bg-white">
+        <Filter className="absolute left-4 text-blue-700 pointer-events-none" size={20} />
+        <input
+          type="text"
+          className="pl-11 pr-6 py-3 rounded-xl border border-blue-700 text-gray-700 text-base
+                     focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-transparent
+                     hover:bg-gray-200 transition duration-300 min-w-[200px]"
+          placeholder={`Buscar por ${selectedType === 'producto' ? 'producto' : 'recurso'}, almacén, cantidad o fecha...`}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
-      {/* Tabla de movimientos */}
+      {/* Table */}
       <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
-        {/* Aquí podrías poner el modal de creación/edición si lo tienes */}
-        {/* {showCreate && ...}
-            {editing && ...}
-        */}
-        {filteredMovimientos.length === 0 ? (
-          <div className="text-center py-4 text-gray-500">
-            {searchTerm
-              ? 'No se encontraron movimientos que coincidan con la búsqueda'
-              : `No hay movimientos de ${selectedType === 'producto' ? 'productos' : 'recursos'} registrados.`}
-          </div>
-        ) : (
+        {selectedType === 'producto' ? (
           <table className="min-w-full text-sm">
-            <thead className={selectedType === 'producto' ? 'bg-blue-800 text-white' : 'bg-orange-500 text-white'}>
+            <thead className="bg-blue-800 text-white">
               <tr>
-                <th className="px-4 py-2 text-center">Nombre</th>
-                <th className="px-4 py-2 text-center">Almacén</th>
-                <th className="px-4 py-2 text-center">Cantidad</th>
-                <th className="px-4 py-2 text-center">Fecha de Entrada</th>
-                <th className="px-4 py-2 text-center">Acciones</th>
+                <th className="px-4 py-2 text-left">ID Almacén</th>
+                <th className="px-4 py-2 text-left">ID Producto</th>
+                <th className="px-4 py-2 text-left">Cantidad</th>
+                <th className="px-4 py-2 text-left">Fecha de Entrada</th>
+                <th className="px-4 py-2 text-left">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {filteredMovimientos.map((m) => (
-                <tr key={m.id} className="hover:bg-gray-50 border-t">
-                  <td className="px-4 py-2 text-center">{m.nombre}</td>
-                  <td className="px-4 py-2 text-center">{m.almacen}</td>
-                  <td className="px-4 py-2 text-center">{m.cantidad}</td>
-                  <td className="px-4 py-2 text-center">{m.fechaEntrada}</td>
-                  <td className="px-4 py-2 flex justify-center space-x-2">
-                    <button
-                      onClick={() => setEditing(m)}
-                      className="text-blue-600 hover:text-blue-800"
-                      title="Editar"
-                    >
-                      <Edit size={18} />
-                    </button>
-                    <button
-                      onClick={() => {/* handle delete aquí */}}
-                      className="text-red-600 hover:text-red-800"
-                      title="Eliminar"
-                    >
-                      <Trash size={18} />
-                    </button>
+              <tr>
+                <td colSpan={5} className="text-center py-4 text-gray-500">
+                  No hay productos registrados.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        ) : (
+          <table className="min-w-full text-sm">
+            <thead className="bg-orange-500 text-white">
+              <tr>
+                <th className="px-4 py-2 text-left">ID Almacén</th>
+                <th className="px-4 py-2 text-left">ID Recurso</th>
+                <th className="px-4 py-2 text-left">Cantidad</th>
+                <th className="px-4 py-2 text-left">Fecha de Entrada</th>
+                <th className="px-4 py-2 text-left">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredResources && filteredResources.length > 0 ? (
+                filteredResources.map((resource) => (
+                  <tr key={resource.id} className="hover:bg-gray-50 border-t">
+                    <td className="px-4 py-2">{resource.warehouse_id}</td>
+                    <td className="px-4 py-2">{resource.resource_id}</td>
+                    <td className="px-4 py-2">{resource.quantity}</td>
+                    <td className="px-4 py-2">{new Date(resource.entry_date).toLocaleDateString()}</td>
+                    <td className="px-4 py-2 flex space-x-2">
+                      <button
+                        onClick={() => setEditingResource(resource.id!)}
+                        className="text-blue-600 hover:text-blue-800"
+                        title="Editar"
+                      >
+                        <Edit size={18} />
+                      </button>
+                      <button
+                        onClick={() => setDeletingResource(resource.id!)}
+                        className="text-red-600 hover:text-red-800"
+                        title="Eliminar"
+                      >
+                        <Trash size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="text-center py-4 text-gray-500">
+                    {searchTerm
+                      ? "No se encontraron recursos que coincidan con la búsqueda"
+                      : "No hay recursos registrados"}
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         )}
       </div>
+
+      {/* Modals */}
+      {showCreate && (
+        <ModalCreateWarehouses
+          open={showCreate}
+          onClose={() => setShowCreate(false)}
+          onCreate={handleCreate}
+          onSuccess={() => { } } resourceType={'producto'}        />
+      )}
+
+      {editingResource && (
+        <ModalEditWarehouses
+          open={!!editingResource}
+          onClose={() => setEditingResource(null)}
+          onEdit={handleEdit}
+          resourceId={editingResource}
+        />
+      )}
+
+      {deletingResource && (
+        <ModalDeleteWarehouses
+          open={!!deletingResource}
+          onClose={() => setDeletingResource(null)}
+          onDelete={() => {
+            if (deletingResource) {
+              return handleDelete(deletingResource);
+            }
+            return undefined;
+          }}
+          onSuccess={() => {}}
+          resourceId={deletingResource}
+        />
+      )}
     </div>
   );
 };

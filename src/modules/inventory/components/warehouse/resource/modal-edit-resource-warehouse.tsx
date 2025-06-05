@@ -1,132 +1,175 @@
-import React, { useState } from 'react';
-import { X, Save } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useFetchWarehouseResource } from '@/modules/inventory/hook/useWarehouseResources';
+import { WarehouseResourceAttributes } from '@/modules/inventory/types/warehouseResource';
+import { validateWarehouseResource } from '@/modules/inventory/schemas/warehouseResourceValidation';
 
-interface ModalEditResourceProps {
-  recurso: {
-    id: number;
-    nombre: string;
-    almacen: string;
-    cantidad: number;
-    fechaEntrada: string;
-  };
+interface ModalEditWarehousesProps {
+  open: boolean;
   onClose: () => void;
-  onUpdate: (recurso: {
-    id: number;
-    nombre: string;
-    almacen: string;
-    cantidad: number;
-  }) => void;
+  onEdit: (id: string, updates: Partial<Omit<WarehouseResourceAttributes, 'id'>>) => void;
+  resourceId: string;
+  onSuccess?: () => void;
 }
 
-const ModalEditResource: React.FC<ModalEditResourceProps> = ({
-  recurso,
+const ModalEditWarehouses: React.FC<ModalEditWarehousesProps> = ({
+  open,
   onClose,
-  onUpdate,
+  onEdit,
+  resourceId,
 }) => {
-  const [nombre, setNombre] = useState(recurso.nombre);
-  const [almacen, setAlmacen] = useState(recurso.almacen);
-  const [cantidad, setCantidad] = useState(recurso.cantidad);
-  const [error, setError] = useState('');
+  const { data: resource } = useFetchWarehouseResource(resourceId);
+  const [formData, setFormData] = useState<Partial<Omit<WarehouseResourceAttributes, 'id'>>>({
+    warehouse_id: '',
+    resource_id: '',
+    quantity: 0,
+    entry_date: new Date(),
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    console.log('Editing resource ID:', resourceId);
+    if (resource) {
+      setFormData({
+        warehouse_id: resource.warehouse_id,
+        resource_id: resource.resource_id,
+        quantity: resource.quantity,
+        entry_date: resource.entry_date,
+      });
+    }
+  }, [resource, resourceId]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'quantity' ? Number(value) : value,
+    }));
+  };
+
+  const handleDateChange = (date: Date | null) => {
+    if (date) {
+      setFormData(prev => ({
+        ...prev,
+        entry_date: date,
+      }));
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!nombre.trim()) {
-      setError('El nombre es obligatorio.');
-      return;
-    }
-    if (!almacen.trim()) {
-      setError('El almacén es obligatorio.');
-      return;
-    }
-    if (cantidad <= 0) {
-      setError('La cantidad debe ser mayor a 0.');
+    
+    const validation = validateWarehouseResource(formData);
+    if (!validation.success) {
+      const newErrors: Record<string, string> = {};
+      validation.error.issues.forEach(issue => {
+        newErrors[issue.path[0]] = issue.message;
+      });
+      setErrors(newErrors);
       return;
     }
 
-    setError('');
-    onUpdate({
-      id: recurso.id,
-      nombre: nombre.trim(),
-      almacen: almacen.trim(),
-      cantidad,
-      fechaEntrada: recurso.fechaEntrada, 
-    });
+    onEdit(resourceId, formData);
   };
 
+  if (!open) return null;
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md relative">
-        <div className="bg-red-800 text-white p-5 rounded-t-2xl flex items-center justify-center relative">
-          <h2 className="text-lg font-semibold text-center">Editar Recurso del Almacén</h2>
-          <button
-            onClick={onClose}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-200"
-          >
-            <X size={22} />
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold text-blue-700">Editar Recurso</h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            &times;
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 text-left">
-          {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
+        {!resource ? (
+          <div className="text-center py-4">Cargando recurso...</div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">ID Almacén</label>
+              <input
+                type="text"
+                name="warehouse_id"
+                value={formData.warehouse_id || ''}
+                onChange={handleChange}
+                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
+                  errors.warehouse_id ? 'border-red-500' : 'border'
+                }`}
+              />
+              {errors.warehouse_id && (
+                <p className="mt-1 text-sm text-red-600">{errors.warehouse_id}</p>
+              )}
+            </div>
 
-          <div>
-            <label className="block text-gray-700 mb-1 font-medium">Nombre*</label>
-            <input
-              type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-              placeholder="Nombre del recurso"
-              autoFocus
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">ID Recurso</label>
+              <input
+                type="text"
+                name="resource_id"
+                value={formData.resource_id || ''}
+                onChange={handleChange}
+                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
+                  errors.resource_id ? 'border-red-500' : 'border'
+                }`}
+              />
+              {errors.resource_id && (
+                <p className="mt-1 text-sm text-red-600">{errors.resource_id}</p>
+              )}
+            </div>
 
-          <div>
-            <label className="block text-gray-700 mb-1 font-medium">Almacén*</label>
-            <select
-              value={almacen}
-              onChange={(e) => setAlmacen(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-            >
-              <option value="">Selecciona un almacén</option>
-              <option value="Cerro Colorado">Cerro Colorado</option>
-              <option value="Santa Catalina">Santa Catalina</option>
-              <option value="San Juan">San Juan</option>
-            </select>
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Cantidad</label>
+              <input
+                type="number"
+                name="quantity"
+                value={formData.quantity || 0}
+                onChange={handleChange}
+                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
+                  errors.quantity ? 'border-red-500' : 'border'
+                }`}
+              />
+              {errors.quantity && (
+                <p className="mt-1 text-sm text-red-600">{errors.quantity}</p>
+              )}
+            </div>
 
-          <div>
-            <label className="block text-gray-700 mb-1 font-medium">Cantidad*</label>
-            <input
-              type="number"
-              min={1}
-              value={cantidad}
-              onChange={(e) => setCantidad(Number(e.target.value))}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-              placeholder="Cantidad disponible"
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Fecha de Entrada</label>
+              <input
+                type="date"
+                value={formData.entry_date ? new Date(formData.entry_date).toISOString().split('T')[0] : ''}
+                onChange={(e) => handleDateChange(new Date(e.target.value))}
+                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
+                  errors.entry_date ? 'border-red-500' : 'border'
+                }`}
+              />
+              {errors.entry_date && (
+                <p className="mt-1 text-sm text-red-600">{errors.entry_date}</p>
+              )}
+            </div>
 
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2"
-            >
-              <Save size={18} /> Guardar
-            </button>
-          </div>
-        </form>
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              >
+                Guardar Cambios
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
 };
 
-export default ModalEditResource;
+export default ModalEditWarehouses;

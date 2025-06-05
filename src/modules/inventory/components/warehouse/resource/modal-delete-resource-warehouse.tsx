@@ -1,50 +1,43 @@
 import React from 'react';
-import { Trash2, X } from 'lucide-react';
+import { useDeleteWarehouseResource } from '@/modules/inventory/hook/useWarehouseResources';
 
-interface ModalDeleteResourceProps {
-  isOpen: boolean;
+type ModalDeleteWarehousesProps = {
+  
+  open: boolean;
   onClose: () => void;
-  onConfirm: () => void;
-  resourceName?: string; 
-}
+  onSuccess: () => void; // Callback para recargar la lista después de eliminar
+  resourceId: string;
+  onDelete: () => void | Promise<void>;
+};
 
-const ModalDeleteResource: React.FC<ModalDeleteResourceProps> = ({
-  isOpen,
-  onClose,
-  onConfirm,
-  resourceName,
-}) => {
-  if (!isOpen) return null;
+const ModalDeleteWarehouses: React.FC<ModalDeleteWarehousesProps> = ({ onClose, onSuccess, resourceId }) => {
+  const deleteResource = useDeleteWarehouseResource();
+
+  const handleDelete = async () => {
+    deleteResource.mutate(resourceId, {
+      onSuccess: () => {
+        alert('Recurso eliminado exitosamente.');
+        onSuccess(); // Recargar la lista
+        onClose();
+      },
+      onError: (error) => {
+        console.error('Error al eliminar el recurso:', error);
+        alert('Hubo un error al eliminar el recurso.');
+      },
+    });
+  };
 
   return (
-    <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 transition-opacity duration-300">
-      <div className="bg-white rounded-xl shadow-lg p-8 max-w-lg w-full">
-        <h2 className="text-3xl font-semibold text-center text-gray-800 mb-6 flex flex-col items-center">
-          {/* Icono dentro de un círculo rojo claro */}
-          <div className="bg-red-200 rounded-full p-4 mb-4">
-            <Trash2 size={24} className="text-red-600" />
-          </div>
-          Eliminar Recurso 
-        </h2>
-        <p className="text-center text-gray-600 mb-8">
-          ¿Estás seguro de que deseas eliminar el {' '}
-          <strong className="text-red-600 uppercase">RECURSO</strong>{' '}
-          <strong>{resourceName || 'este recurso'}</strong>? Esta acción no se puede deshacer.
-        </p>
-        <div className="flex justify-center space-x-8">
-          <button
-            onClick={onConfirm}
-            className="bg-red-800 text-white px-8 py-3 rounded-lg shadow-md hover:bg-red-600 hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2"
-          >
-            <Trash2 size={20} />
-            <span>Eliminar</span>
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-lg max-w-sm w-full p-6">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Eliminar Recurso</h2>
+        <p className="text-gray-700 mb-6">¿Estás seguro de que deseas eliminar este recurso? Esta acción no se puede deshacer.</p>
+        <div className="flex justify-end space-x-4">
+          <button onClick={onClose} className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded">
+            Cancelar
           </button>
-          <button
-            onClick={onClose}
-            className="bg-gray-300 text-gray-700 px-8 py-3 rounded-lg shadow-md hover:bg-gray-400 hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2"
-          >
-            <X size={20} />
-            <span>Cancelar</span>
+          <button onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
+            Eliminar
           </button>
         </div>
       </div>
@@ -52,4 +45,4 @@ const ModalDeleteResource: React.FC<ModalDeleteResourceProps> = ({
   );
 };
 
-export default ModalDeleteResource;
+export default ModalDeleteWarehouses;
