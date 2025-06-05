@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
-import ModalCreateCategoria from './modal-create-categoria';
-import ModalDeleteProducto from './modal-delete-producto'; // Modal de eliminación
-import ModalEditProducto from './modal-edit-producto'; // Modal de edición
-import ModalCreateProducto from './modal-create-producto';
+import ModalCreateCategoria from '@/modules/production/components/product/modal-create-category';
+import ModalDeleteProducto from '@/modules/production/components/production/modal-delete-production'; // Modal de eliminación
+import ModalEditProducto from '@/modules/production/components/production/modal-edit-production'; // Modal de edición
+import ModalCreateProducto from '@/modules/production/components/production/modal-create-production';
 
 
 const ProductosView = () => {
@@ -139,7 +140,7 @@ const ProductosView = () => {
       <ModalEditProducto
         isOpen={isEditModalOpen}
         onClose={closeEditModal}
-        producto={productoAEditar}
+        production={productoAEditar}
         onSave={saveProduct}
       />
     </div>

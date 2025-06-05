@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import { useCreateProduction } from '../../hook/useProductions';
 import { useFetchPlants } from '../../hook/usePlants';
@@ -7,6 +8,7 @@ import { X } from 'lucide-react';
 interface ModalCreateProductionProps {
   isOpen: boolean;
   onClose: () => void;
+  onSave?: (nuevoProducto: any) => void;
 }
 
 const ModalCreateProduction: React.FC<ModalCreateProductionProps> = ({ isOpen, onClose }) => {
