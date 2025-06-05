@@ -5,7 +5,8 @@ type ModalNuevoRecursoProps = {
   onClose: () => void;
   onCreate: (recurso: { 
     nombre: string; 
-    unidad: number; 
+    unidad: string; 
+    cantidad: number;
     precioUnitario: number;
     precioTotal?: number;   
     proveedor: string;
@@ -18,18 +19,19 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
   onCreate,
 }) => {
   const [nombre, setNombre] = useState('');
-  const [unidad, setUnidad] = useState<number | ''>('');
+  const [cantidad, setUnidad] = useState<number | ''>('');
+  const [unidad, setUnidadMedida] = useState('');
   const [precioUnitario, setPrecioUnitario] = useState<number | ''>('');
   const [proveedor, setProveedor] = useState('');
   const [fechaCompra, setFechaCompra] = useState('');
   const [error, setError] = useState('');
 
   const precioTotal = useMemo(() => {
-    if (unidad !== '' && precioUnitario !== '') {
-      return Number(unidad) * Number(precioUnitario);
+    if (cantidad !== '' && precioUnitario !== '') {
+      return Number(cantidad) * Number(precioUnitario);
     }
     return 0;
-  }, [unidad, precioUnitario]);
+  }, [cantidad, precioUnitario]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,8 +40,12 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
       setError('El nombre es obligatorio.');
       return;
     }
-    if (unidad === '' || unidad <= 0) {
+    if (cantidad === '' || cantidad <= 0) {
       setError('La unidad debe ser mayor a 0.');
+      return;
+    }
+    if (!unidad.trim()) {
+      setError('La unidad de medida es obligatoria.');
       return;
     }
     if (precioUnitario === '' || precioUnitario <= 0) {
@@ -50,7 +56,8 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
     setError('');
     onCreate({ 
       nombre: nombre.trim(), 
-      unidad: Number(unidad), 
+      unidad: unidad.trim(),
+      cantidad: Number(unidad),
       precioUnitario: Number(precioUnitario),
       proveedor: proveedor.trim(),
       fechaCompra
@@ -86,16 +93,26 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-gray-700 mb-1 font-medium">Unidad*</label>
+              <label className="block text-gray-700 mb-1 font-medium">Cantidad*</label>
               <input
                 type="number"
                 min={1}
-                value={unidad}
+                value={cantidad}
                 onChange={(e) => setUnidad(e.target.value === '' ? '' : Number(e.target.value))}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
                 placeholder="Cantidad"
+              />
+            </div>
+            <div>
+              <label className="block text-gray-700 mb-1 font-medium">Unidad*</label>
+              <input
+                type="text"
+                value={unidad}
+                onChange={(e) => setUnidadMedida(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                placeholder="Ej. kg, litros, metros"
               />
             </div>
             <div>
@@ -110,6 +127,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
                 placeholder="Precio por unidad"
               />
             </div>
+
           </div>
 
           <div>

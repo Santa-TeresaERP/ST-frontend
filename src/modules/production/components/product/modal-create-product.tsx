@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useCreateProduct } from '@/modules/production/hook/useProducts';
 import { useFetchCategories } from '@/modules/production/hook/useCategories';
+import { useCreateRecipe } from '@/modules/production/hook/useRecipes';
 import { Plus, X, Trash2 } from 'lucide-react';
 
 interface Ingredient {
@@ -34,7 +35,7 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
     descripcion: '',
     ingredient: '',
   });
-
+  const createRecipeMutation = useCreateRecipe();
   const createProductMutation = useCreateProduct();
   const { data: categorias, isLoading: isLoadingCategorias, error: errorCategorias } = useFetchCategories();
 
@@ -51,11 +52,13 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
     setNewIngredient({ quantity_required: '', unit: '', resource_id: '' });
     setErrors((prev) => ({ ...prev, ingredient: '' })); // Limpiar errores
   };
+  
 
   const handleRemoveIngredient = (index: number) => {
     setIngredients((prev) => prev.filter((_, i) => i !== index));
   };
 
+  
   const handleSubmit = async () => {
     const newErrors = {
       nombre: !nombre ? 'El nombre es obligatorio.' : '',
@@ -85,16 +88,24 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
       price: parseFloat(precio),
       description: descripcion,
       ...(imagen && { imagen_url: imagen }),
-      recipe: ingredients.map((ingredient) => ({
-        quantity_required: ingredient.quantity_required,
-        unit: ingredient.unit,
-        ...(ingredient.resource_id && { resource_id: ingredient.resource_id }),
-      })),
     };
 
     try {
-      await createProductMutation.mutateAsync(nuevoProducto);
-      onClose();
+      // 1. Crear producto
+      const productoCreado = await createProductMutation.mutateAsync(nuevoProducto);
+
+      // 2. Crear recetas asociadas (uno por cada ingrediente)
+      const product_id = productoCreado.id;
+      await Promise.all(
+        ingredients.map((ingredient) =>
+          createRecipeMutation.mutateAsync({
+            product_id, // <-- este campo es obligatorio
+            quantity_required: ingredient.quantity_required,
+            unit: ingredient.unit,
+            resource_id: ingredient.resource_id,
+          })
+        )
+      );
     } catch (error) {
       console.error('Error al crear el producto:', error);
       alert('Error al crear el producto. Por favor, intenta nuevamente.');
@@ -147,7 +158,8 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200"
                 >
                   <option value="">Seleccione una categoría</option>
-                  {categorias?.map((cat) => (
+                  {Array.isArray(categorias) &&
+                  categorias?.map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.name}
                     </option>
@@ -203,6 +215,7 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Receta del Producto</h3>
               
               <div className="space-y-4">
+                {/* ...cantidad y unidad... */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Cantidad requerida*</label>
                   <input
@@ -230,16 +243,16 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">ID del recurso (opcional)</label>
-                  <input
-                    type="text"
-                    value={newIngredient.resource_id || ''}
-                    onChange={(e) =>
-                      setNewIngredient({ ...newIngredient, resource_id: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200"
-                    placeholder="ID del recurso (opcional)"
-                  />
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Recurso*</label>
+                    <input
+                      type="text"
+                      value={newIngredient.resource_id || ''}
+                      onChange={(e) =>
+                        setNewIngredient({ ...newIngredient, resource_id: e.target.value })
+                      }
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200"
+                      placeholder="Ej: Harina, Azúcar, etc."
+                    />
                 </div>
 
                 <button
@@ -286,17 +299,107 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
             onClick={onClose}
             className="px-6 py-2.5 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors duration-200"
           >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white shadow-md hover:shadow-lg transition-all duration-200"
-          >
-            Guardar Producto
+            <X size={24} />
           </button>
         </div>
       </div>
+
+      <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Columna izquierda - Datos del producto */}
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Nombre del producto*</label>
+            <input
+              type="text"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200"
+              placeholder="Ej: Pizza Margarita"
+            />
+            {errors.nombre && <p className="text-red-500 text-sm mt-1">{errors.nombre}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Categoría*</label>
+            {isLoadingCategorias ? (
+              <div className="animate-pulse bg-gray-200 h-10 rounded-lg"></div>
+            ) : errorCategorias ? (
+              <p className="text-red-500 text-sm">Error al cargar categorías</p>
+            ) : (
+              <select
+                value={categoria}
+                onChange={(e) => setCategoria(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200"
+              >
+                <option value="">Seleccione una categoría</option>
+                {categorias?.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            {errors.categoria && <p className="text-red-500 text-sm mt-1">{errors.categoria}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Precio (S/.)*</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">S/.</span>
+              <input
+                type="number"
+                value={precio}
+                onChange={(e) => setPrecio(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200"
+                placeholder="0.00"
+                step="0.01"
+              />
+            </div>
+            {errors.precio && <p className="text-red-500 text-sm mt-1">{errors.precio}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Descripción*</label>
+            <textarea
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200"
+              placeholder="Descripción detallada del producto"
+              rows={3}
+            />
+            {errors.descripcion && <p className="text-red-500 text-sm mt-1">{errors.descripcion}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Imagen del producto</label>
+            <input
+              type="text"
+              value={imagen}
+              onChange={(e) => setImagen(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200"
+              placeholder="URL de la imagen"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Footer con botones */}
+      <div className="flex justify-end space-x-4 p-6 border-t border-gray-200">
+        <button
+          onClick={onClose}
+          className="px-6 py-2.5 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors duration-200"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={handleSubmit}
+          className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white shadow-md hover:shadow-lg transition-all duration-200"
+        >
+          Guardar Producto
+        </button>
+      </div>
     </div>
+  </div>
   );
 };
 

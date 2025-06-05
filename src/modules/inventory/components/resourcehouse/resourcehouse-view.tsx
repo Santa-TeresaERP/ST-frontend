@@ -8,6 +8,7 @@ type Resource = {
   id: number;
   nombre: string;
   cantidad: number;
+  unidad: string;
   precioUnitario: number;
   precioTotal: number;
   proveedor: string;
@@ -15,8 +16,8 @@ type Resource = {
 };
 
 const initialResources: Resource[] = [
-  { id: 1, nombre: 'Mano de Obra', cantidad: 8, precioUnitario: 150, precioTotal: 1200, proveedor: 'Contratistas SAC', fechaEntrada: '2025-05-17' },
-  { id: 2, nombre: 'Materiales de construcción', cantidad: 50, precioUnitario: 80, precioTotal: 4000, proveedor: 'Constructores SA', fechaEntrada: '2025-05-18' },
+  { id: 1, nombre: 'Mano de Obra', unidad: 'horas', cantidad: 8, precioUnitario: 150, precioTotal: 1200, proveedor: 'Contratistas SAC', fechaEntrada: '2025-05-17' },
+  { id: 2, nombre: 'Materiales de construcción', unidad: 'kilogramos', cantidad: 50, precioUnitario: 80, precioTotal: 4000, proveedor: 'Constructores SA', fechaEntrada: '2025-05-18' },
 ];
 
 const ResourcesView: React.FC = () => {
@@ -61,18 +62,20 @@ const ResourcesView: React.FC = () => {
 
   const handleCreateResource = (recurso: { 
     nombre: string; 
-    unidad: number; 
+    unidad: string; 
     precioUnitario: number;
     precioTotal?: number;
     proveedor: string;
     fechaCompra: string;
+    cantidad: number;
   }) => {
     const nuevoRecurso: Resource = {
       id: resources.length > 0 ? Math.max(...resources.map(r => r.id)) + 1 : 1,
       nombre: recurso.nombre,
-      cantidad: recurso.unidad,
+      cantidad: recurso.cantidad,
+      unidad: recurso.unidad,
       precioUnitario: recurso.precioUnitario,
-      precioTotal: recurso.precioTotal ?? recurso.precioUnitario * recurso.unidad,
+      precioTotal: recurso.precioTotal ?? recurso.precioUnitario * recurso.cantidad,
       proveedor: recurso.proveedor,
       fechaEntrada: recurso.fechaCompra || new Date().toISOString().slice(0, 10),
     };
@@ -83,6 +86,7 @@ const ResourcesView: React.FC = () => {
   const handleUpdateResource = (recursoActualizado: {
     id: number;
     nombre: string;
+    unidad: string;
     cantidad: number;
     precioUnitario: number;
     proveedor: string;
@@ -94,6 +98,7 @@ const ResourcesView: React.FC = () => {
           ? {
               ...r,
               nombre: recursoActualizado.nombre,
+              unidad: recursoActualizado.unidad,
               cantidad: recursoActualizado.cantidad,
               precioUnitario: recursoActualizado.precioUnitario,
               precioTotal: recursoActualizado.precioUnitario * recursoActualizado.cantidad,
@@ -148,6 +153,7 @@ const ResourcesView: React.FC = () => {
             <tr>
               <th className="px-4 py-2 text-left">Nombre</th>
               <th className="px-4 py-2 text-left">Unidades</th>
+              <th className="px-4 py-2 text-left">Cantidad</th>
               <th className="px-4 py-2 text-left">Precio Unitario</th>
               <th className="px-4 py-2 text-left">Precio Total</th>
               <th className="px-4 py-2 text-left">Proveedor</th>
@@ -166,6 +172,7 @@ const ResourcesView: React.FC = () => {
               filteredResources.map((r) => (
                 <tr key={r.id} className="hover:bg-gray-50 border-t">
                   <td className="px-4 py-2 text-left">{r.nombre}</td>
+                  <td className="px-4 py-2 text-left">{r.unidad}</td>
                   <td className="px-4 py-2 text-left">{r.cantidad}</td>
                   <td className="px-4 py-2 text-left">
                     {`S/ ${r.precioUnitario.toFixed(2)}`}

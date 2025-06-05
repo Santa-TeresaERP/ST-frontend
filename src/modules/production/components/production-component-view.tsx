@@ -5,7 +5,20 @@ import LostComponentView from './lost/lost-component-view';
 import { FiBox, FiTrendingUp, FiAlertTriangle } from 'react-icons/fi';
 
 const ProductionComponentView: React.FC = () => {
-  const [selectedView, setSelectedView] = useState<'producto' | 'produccion' | 'perdidas'>('producto');
+  // Estado para controlar la vista seleccionada
+  const [selectedView, setSelectedView] = useState('Producto');
+
+  // Función para manejar el cambio de vista
+  const handleViewChange = (view: string) => {
+    setSelectedView(view);
+  };
+
+  // Datos de ejemplo para la tabla
+  const data = [
+    { id: 1, producto: 'Producto A', produccion: 100, perdidas: 5 },
+    { id: 2, producto: 'Producto B', produccion: 200, perdidas: 10 },
+    { id: 3, producto: 'Producto C', produccion: 150, perdidas: 8 },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -18,11 +31,9 @@ const ProductionComponentView: React.FC = () => {
       {/* Navigation Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 p-9">
         <button
-          onClick={() => setSelectedView('producto')}
-          className={`p-6 rounded-xl shadow-sm transition-all duration-300 transform hover:scale-105 ${
-            selectedView === 'producto'
-              ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
-              : 'bg-white border border-gray-200 hover:border-blue-300'
+          onClick={() => handleViewChange('Producto')}
+          className={`px-4 py-2 rounded ${
+            selectedView === 'Producto' ? 'bg-blue-500 text-white' : 'bg-gray-200'
           }`}
         >
           <div className="flex items-center space-x-4">
@@ -39,11 +50,9 @@ const ProductionComponentView: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setSelectedView('produccion')}
-          className={`p-6 rounded-xl shadow-sm transition-all duration-300 transform hover:scale-105 ${
-            selectedView === 'produccion'
-              ? 'bg-gradient-to-r from-green-500 to-green-600 text-white'
-              : 'bg-white border border-gray-200 hover:border-green-300'
+          onClick={() => handleViewChange('Producción')}
+          className={`px-4 py-2 rounded ${
+            selectedView === 'Producción' ? 'bg-blue-500 text-white' : 'bg-gray-200'
           }`}
         >
           <div className="flex items-center space-x-4">
@@ -60,11 +69,9 @@ const ProductionComponentView: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setSelectedView('perdidas')}
-          className={`p-6 rounded-xl shadow-sm transition-all duration-300 transform hover:scale-105 ${
-            selectedView === 'perdidas'
-              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
-              : 'bg-white border border-gray-200 hover:border-orange-300'
+          onClick={() => handleViewChange('Pérdidas')}
+          className={`px-4 py-2 rounded ${
+            selectedView === 'Pérdidas' ? 'bg-blue-500 text-white' : 'bg-gray-200'
           }`}
         >
           <div className="flex items-center space-x-4">
