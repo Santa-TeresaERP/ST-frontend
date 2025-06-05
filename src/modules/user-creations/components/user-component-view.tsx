@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from 'react';
 import { useFetchUsers, useCreateUser, useDeleteUser } from '@/modules/user-creations/hook/useUsers';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../app/components/ui/card';
 import UserModal from './modal-update-user';
 import UserDetail from './profile-component-view';
 import Modal from './modal-create-user';

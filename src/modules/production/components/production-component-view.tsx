@@ -1,4 +1,8 @@
 import React, { useState } from 'react';
+import ProductComponentView from './product/products-views';
+import ProductionStatsComponentView from './production/production-stats-component-view';
+import LostComponentView from './lost/lost-component-view';
+import { FiBox, FiTrendingUp, FiAlertTriangle } from 'react-icons/fi';
 
 const ProductionComponentView: React.FC = () => {
   // Estado para controlar la vista seleccionada
@@ -84,27 +88,11 @@ const ProductionComponentView: React.FC = () => {
         </button>
       </div>
 
-      {/* Tabla de datos */}
-      <div>
-        <h2 className="text-xl font-bold">{`Vista actual: ${selectedView}`}</h2>
-        <table className="w-full border-collapse border border-gray-300">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border border-gray-300 px-4 py-2 text-left">Producto</th>
-              <th className="border border-gray-300 px-4 py-2 text-left">Producción</th>
-              <th className="border border-gray-300 px-4 py-2 text-left">Pérdidas</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((item) => (
-              <tr key={item.id}>
-                <td className="border border-gray-300 px-4 py-2">{item.producto}</td>
-                <td className="border border-gray-300 px-4 py-2">{item.produccion}</td>
-                <td className="border border-gray-300 px-4 py-2">{item.perdidas}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Content Area */}
+      <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+        {selectedView === 'producto' && <ProductComponentView />}
+        {selectedView === 'produccion' && <ProductionStatsComponentView />}
+        {selectedView === 'perdidas' && <LostComponentView />}
       </div>
     </div>
   );

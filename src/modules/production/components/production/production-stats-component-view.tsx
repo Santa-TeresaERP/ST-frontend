@@ -1,168 +1,229 @@
 import React, { useState } from 'react';
-import ProductionModal from './productionModal';
-import EditProductionModal from './editProductionModal';
-import DeleteConfirmationModal from './deleteConfirmationModal';
-import {FiTrendingUp} from 'react-icons/fi';
+import { Trash2, Edit, List, Plus, Loader2 } from 'lucide-react';
+import ModalDeleteProduction from './modal-delete-production';
+import ModalCreateProduction from './modal-create-production';
+import ModalEditProduction from './modal-edit-production';
+import ModalCreatePlant from './modal-create-plant';
+import { useFetchProductions, useDeleteProduction } from '../../hook/useProductions';
+import { Production } from '../../types/productions';
+import { useFetchProducts } from '../../hook/useProducts';
+import { useFetchPlants } from '../../hook/usePlants';
 
-export interface ProductionData {
-  id: string;
-  produccion: string;
-  cantidad: number;
-  descripcion: string;
-  planta: string;
-  fecha: string;
-  perdidas?: number;
-}
+const ProductionView = () => {
+  const { data: productions, isLoading, error } = useFetchProductions();
+  const deleteProductionMutation = useDeleteProduction();
+  const { data: products } = useFetchProducts();
+  const { data: plants } = useFetchPlants();
 
-interface ProductionTableViewProps {
-  data?: ProductionData[];
-}
-
-const ProductionView: React.FC<ProductionTableViewProps> = ({ data = [] }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [productionToDelete, setProductionToDelete] = useState<string | null>(null);
-  const [productions, setProductions] = useState<ProductionData[]>(data.length > 0 ? data : [
-    
-    {
-      id: '1',
-      produccion: 'Aceite de Oliva Extra Virgen',
-      cantidad: 1500,
-      descripcion: 'Lote de producción primavera 2023',
-      planta: 'Santa Catalina',
-      fecha: '2023-04-15',
-      perdidas: 50
-    },
-    {
-      id: '2',
-      produccion: 'Aceitunas Verdes',
-      cantidad: 3200,
-      descripcion: 'Envasado para exportación',
-      planta: 'Santa Catalina',
-      fecha: '2023-04-18'
+  const [isPlantModalOpen, setIsPlantModalOpen] = useState(false);
+  const [selectedProduction, setSelectedProduction] = useState<Production | null>(null);
+
+  // Obtener el nombre de la planta
+  const getPlantName = (plantId: string): string => {
+    const plant = plants?.find((plt) => plt.id === plantId);
+    return plant ? plant.plant_name : 'Planta no encontrada';
+  };
+
+  // Obtener el nombre del producto
+  const getProductName = (productId: string): string => {
+    const product = products?.find((prod) => prod.id === productId);
+    return product ? product.name : 'Producto no encontrado';
+  };
+
+  // Manejar la eliminación de una producción
+  const handleDeleteProduction = async () => {
+    if (!selectedProduction || !selectedProduction.id) {
+      console.error('No se puede eliminar: la producción seleccionada no tiene un ID válido.');
+      alert('Error: No se puede eliminar esta producción porque no tiene un ID válido.');
+      return;
     }
-  ]);
-  const [currentProduction, setCurrentProduction] = useState<ProductionData | null>(null);
 
-  const handleAddProduction = (newProduction: Omit<ProductionData, 'id'>) => {
-    const productionWithId = {
-      ...newProduction,
-      id: Math.random().toString(36).substr(2, 9),
-      cantidad: Number(newProduction.cantidad)
-    };
-    setProductions([...productions, productionWithId]);
-    setIsModalOpen(false);
-  };
-
-  const handleEditProduction = (editedProduction: ProductionData) => {
-    setProductions(productions.map(prod => 
-      prod.id === editedProduction.id ? editedProduction : prod
-    ));
-    setIsEditModalOpen(false);
-  };
-
-  const handleDelete = (id: string) => {
-    setProductionToDelete(id);
-    setIsDeleteModalOpen(true);
-  };
-
-  const confirmDelete = () => {
-    if (productionToDelete) {
-      setProductions(productions.filter(prod => prod.id !== productionToDelete));
+    try {
+      console.log('Eliminando producción con ID:', selectedProduction.id); // Depuración
+      await deleteProductionMutation.mutateAsync(selectedProduction.id);
+      setIsDeleteModalOpen(false);
+      setSelectedProduction(null);
+    } catch (error) {
+      console.error('Error al eliminar la producción:', error);
+      alert('Hubo un error al intentar eliminar la producción.');
     }
-    setProductionToDelete(null);
   };
 
-  const handleEdit = (production: ProductionData) => {
-    setCurrentProduction(production);
-    setIsEditModalOpen(true);
+  const handleOpenCreateModal = () => {
+    setIsCreateModalOpen(true);
   };
+
+  const handleOpenPlantModal = () => {
+    setIsPlantModalOpen(true);
+  };
+
+  if (isLoading)
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="animate-spin h-12 w-12 text-green-600" />
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg mx-6 my-8">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <svg
+              className="h-5 w-5 text-red-500"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293-1.293a1 1 0 00-1.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-red-800">
+              Error al cargar los datos de producción
+            </h3>
+            <p className="text-sm text-red-700 mt-1">
+              Por favor, intenta nuevamente más tarde.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow">
-      <div className="flex justify-between items-center mb-6">
-      <h2 className="text-3xl font-bold pb-4 flex text-green-700 items-center gap-2">
-        <FiTrendingUp size={24} />
-        <span>Gestión de Producción</span>
-      </h2>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-red-800 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center"
-        >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          Registrar Producción
-        </button>
+    <div className="p-6 md:p-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gradient bg-clip-text text-transparent bg-gradient-to-r from-red-600 to-red-800">
+            Panel de Producción
+          </h1>
+          <p className="text-gray-500 mt-1">
+            Gestión completa de productos, producción y pérdidas
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <button
+            onClick={handleOpenCreateModal}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-500 transition-all duration-300 shadow-md hover:shadow-lg"
+          >
+            <Plus size={18} />
+            <span>Registrar Producción</span>
+          </button>
+          <button
+            onClick={handleOpenPlantModal}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-700 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-500 transition-all duration-300 shadow-md hover:shadow-lg"
+          >
+            <List size={18} />
+            <span>Plantas</span>
+          </button>
+        </div>
       </div>
 
-      <div className="rounded-xl overflow-hidden border border-gray-200 shadow">
-        <table className="w-full border-collapse">
-          <thead className="bg-gray-700 text-white text-xs uppercase sticky top-0">
-            <tr>
-              <th className="px-4 py-3 text-left">Producción</th>
-              <th className="px-4 py-3 text-left">Cantidad</th>
-              <th className="px-4 py-3 text-left">Descripción</th>
-              <th className="px-4 py-3 text-left">Planta</th>
-              <th className="px-4 py-3 text-left">Fecha</th>
-              <th className="px-4 py-3 text-center">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {productions.map((item) => (
-              <tr key={item.id} className="border-b border-gray-200 hover:bg-gray-50">
-                <td className="px-6 py-4">{item.produccion}</td>
-                <td className="px-6 py-4">{item.cantidad}</td>
-                <td className="px-6 py-4">{item.descripcion}</td>
-                <td className="px-6 py-4">{item.planta}</td>
-                <td className="px-6 py-4">{item.fecha}</td>
-                <td className="px-6 py-4 flex justify-center space-x-2">
-                  <button
-                    onClick={() => handleEdit(item)}
-                    className="text-green-600 hover:text-green-800 p-1 rounded-full hover:bg-blue-50"
-                    title="Editar"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-50"
-                    title="Eliminar"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </td>
+      {/* Tabla de producción */}
+      <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 mb-8">
+        <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50">
+          <h2 className="text-lg font-semibold text-gray-700">Gestión de Producción</h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-gray-600 text-sm">
+            <thead className="bg-gray-700 text-white text-xs uppercase">
+              <tr>
+                <th className="px-6 py-3 text-left">Producto</th>
+                <th className="px-6 py-3 text-left">Cantidad</th>
+                <th className="px-6 py-3 text-left">Descripción</th>
+                <th className="px-6 py-3 text-left">Planta</th>
+                <th className="px-6 py-3 text-left">Fecha</th>
+                <th className="px-6 py-3 text-center">Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {productions?.map((production) => (
+                <tr
+                  key={production.id} // Usar production_id como clave única
+                  className="border-b border-gray-200 hover:bg-gray-50"
+                >
+                  <td className="px-6 py-4">{getProductName(production.productId)}</td>
+                  <td className="px-6 py-4">{production.quantityProduced}</td>
+                  <td className="px-6 py-4">
+                    {production.observation || 'Sin descripción'}
+                  </td>
+                  <td className="px-6 py-4">{getPlantName(production.plant_id)}</td>
+                  <td className="px-6 py-4">
+                    {new Date(production.productionDate).toLocaleDateString('es-ES', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex space-x-2 justify-center">
+                      <button
+                        onClick={() => {
+                          setSelectedProduction(production);
+                          setIsEditModalOpen(true);
+                        }}
+                        className="p-2 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200"
+                        title="Editar"
+                      >
+                        <Edit size={18} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (production.id) {
+                            setSelectedProduction(production); // Configura correctamente la producción seleccionada
+                            setIsDeleteModalOpen(true);
+                          } else {
+                            console.error('La producción no tiene un ID válido.');
+                            alert('Error: No se puede eliminar esta producción porque no tiene un ID válido.');
+                          }
+                        }}
+                        className="p-2 text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 rounded-lg transition-colors duration-200"
+                        title="Eliminar"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <ProductionModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleAddProduction}
+      {/* Modales */}
+      <ModalCreateProduction
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
       />
-
-      {currentProduction && (
-        <EditProductionModal
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          onSave={handleEditProduction}
-          production={currentProduction}
-        />
-      )}
-
-      <DeleteConfirmationModal
+      <ModalEditProduction
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        production={
+          selectedProduction
+            ? {
+                ...selectedProduction,
+                observation: selectedProduction.observation || '', // Aseguramos que observation sea un string
+              }
+            : null
+        }
+      />
+      <ModalDeleteProduction
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={confirmDelete}
-        itemName={productions.find(p => p.id === productionToDelete)?.produccion}
+        onConfirm={handleDeleteProduction}
+      />
+      <ModalCreatePlant
+        isOpen={isPlantModalOpen}
+        onClose={() => setIsPlantModalOpen(false)}
       />
     </div>
   );

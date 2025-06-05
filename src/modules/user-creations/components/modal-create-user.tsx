@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "../../../app/components/ui/button";
 import { Input } from "../../../app/components/ui/input";
 import { Label } from "../../../app/components/ui/label";
-import { User } from '@/app/lib/interfaces';
+import { User } from '@/modules/user-creations/types/user';
 import { useFetchRoles } from '@/modules/roles/hook/useRoles';
 import { userSchema } from '@/modules/user-creations/schemas/userValidation';
 import { z } from 'zod';
