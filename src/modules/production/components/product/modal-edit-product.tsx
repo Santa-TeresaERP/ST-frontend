@@ -5,7 +5,7 @@ import { productSchema } from '../../schemas/productValidation';
 import { Category } from '../../types/categories';
 import { useFetchCategories } from '../../hook/useCategories';
 import { useUpdateProduct } from '../../hook/useProducts';
-import { useCreateRecipe, useDeleteRecipe, useFetchRecipeByProductId} from '../../hook/useRecipes';
+import { useCreateRecipe, useUpdateRecipe, useDeleteRecipe, useFetchRecipeByProductId} from '../../hook/useRecipes';
 import { useFetchResources } from '@/modules/inventory/hook/useResources';
 import { Recipe } from '../../types/recipes';
 import { Resource } from '@/modules/inventory/types/resource';
@@ -50,6 +50,7 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
   const { data: recursos} = useFetchResources();
   const { data: recetasProducto, refetch: refetchReceta } = useFetchRecipeByProductId(formData.id); // formData.id = product_id// formData.id = product_id
   const createRecipe = useCreateRecipe();
+  const updateRecipe = useUpdateRecipe();
   const deleteRecipe = useDeleteRecipe();
 
   // Estado para los errores de validación
@@ -57,6 +58,8 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
 
   // Hook para obtener las categorías
   const { data: categorias, isLoading: isLoadingCategorias, error: errorCategorias } = useFetchCategories();
+
+  const [editRecipe, setEditRecipe] = useState<Recipe | null>(null);
 
   // Hook para actualizar el producto
   const { mutateAsync: updateProduct } = useUpdateProduct();
@@ -97,14 +100,15 @@ useEffect(() => {
     setRecipe({ ...recipe, [name]: name === 'quantity_required' ? Number(value) : value });
   };
 
+
   // Agrega un ingrediente (crea receta si no existe, o actualiza si existe)
   const handleAgregarIngrediente = async () => {
     if (!recipe.resource_id || !recipe.unit || !recipe.quantity_required) return;
     const payload = {
       productId: formData.id,
-      resource_id: recipe.resource_id,
+      resourceId: recipe.resource_id,
       unit: recipe.unit,
-      quantity: String(recipe.quantity_required),
+      quantity: recipe.quantity_required,
     };
     await createRecipe.mutateAsync(payload);
     setRecipe({ resource_id: '', unit: '', quantity_required: 1 });
@@ -112,9 +116,9 @@ useEffect(() => {
   };
 
   // Elimina un ingrediente de la receta
-  const handleEliminarIngrediente = async (conn: any) => {
+  const handleEliminarIngrediente = async (conn: Recipe) => {
     if (conn.id && conn.resource_id) {
-      await deleteRecipe.mutateAsync({ id: conn.id, product_id: formData.id });
+      await deleteRecipe.mutateAsync({ id: conn.id });
       refetchReceta();
     }
   };
@@ -297,6 +301,7 @@ useEffect(() => {
                   value={recipe.resource_id}
                   onChange={handleIngredienteChange}
                   className="flex-1 px-2 py-1 border rounded"
+                  disabled={editRecipe !== null} // <-- Solo editable al agregar, no al editar
                 >
                   <option value="">Seleccione recurso</option>
                   {recursos?.map((recurso: Resource) => (
@@ -325,13 +330,49 @@ useEffect(() => {
               </div>
               {/* Botón para agregar recurso */}
               <div className="mb-4">
-                <button
-                  type="button"
-                  className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-                  onClick={handleAgregarIngrediente}
-                >
-                  Agregar recurso
-                </button>
+                {editRecipe === null ? (
+                  <button
+                    className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    onClick={handleAgregarIngrediente}
+                    type="button"
+                  >
+                    Agregar recurso
+                  </button>
+                ) : (
+                  <button
+                    className="px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                    onClick={async () => {
+                      if (!recipe.resource_id || !recipe.unit || !recipe.quantity_required) return;
+                      await updateRecipe.mutateAsync({
+                        id: editRecipe.id,
+                        payload: {
+                          productId: formData.id,
+                          resourceId: recipe.resource_id,
+                          unit: recipe.unit,
+                          quantity: recipe.quantity_required,
+                        }
+                      });
+                      setRecipe({ resource_id: '', unit: '', quantity_required: 1 });
+                      setEditRecipe(null);
+                      refetchReceta();
+                    }}
+                    type="button"
+                  >
+                    Guardar recurso
+                  </button>
+                )}
+                {editRecipe !== null && (
+                  <button
+                    className="ml-2 px-4 py-1 bg-gray-400 text-white rounded hover:bg-gray-500"
+                    onClick={() => {
+                      setRecipe({ resource_id: '', unit: '', quantity_required: 1 });
+                      setEditRecipe(null);
+                    }}
+                    type="button"
+                  >
+                    Cancelar
+                  </button>
+                )}
               </div>
               {/* Lista de recursos asociados a la receta */}
               <div>
@@ -345,6 +386,19 @@ useEffect(() => {
                     <span className="w-16 text-center">{item.quantity_required}</span>
                     <button
                       type="button"
+                      className="text-blue-600 px-2"
+                      onClick={() => {
+                        setRecipe({
+                          resource_id: item.resource_id,
+                          unit: item.unit,
+                          quantity_required: item.quantity_required,
+                        });
+                        setEditRecipe(item);
+                      }}
+                    >
+                      Editar
+                    </button>
+                    <button
                       className="text-red-500 px-2"
                       onClick={() => handleEliminarIngrediente(item)}
                     >
