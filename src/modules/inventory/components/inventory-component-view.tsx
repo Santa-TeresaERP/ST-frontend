@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
-import { Repeat, Home, Users, Truck } from 'lucide-react';
-import WarehouseView from './warehouse/warehouse-view';
-import ResourceView from './resourcehouse/resourcehouse-view';
-import SuppliersView from './supplier/supplier.view';
+import React, { useState } from 'react'
+import { Repeat, Home, Users, Truck, Plus } from 'lucide-react'
+
+import WarehouseView from './warehouse/warehouse-view'
+import ResourceView from './resourcehouse/resourcehouse-view'
+import SuppliersView from './supplier/supplier.view'
+import WarehouseProductForm from './warehouse/product/WarehouseProductForm'
+import WarehouseProductList from './warehouse/product/WarehouseProductList'
 
 const InventoryComponentView: React.FC = () => {
-  const [selectedView, setSelectedView] = useState<'movimientos' | 'almacen' | 'recursos' | 'proveedores'>('movimientos');
+  const [selectedView, setSelectedView] = useState<
+    'movimientos' | 'almacen' | 'recursos' | 'proveedores' | 'crear-producto'
+  >('movimientos')
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -16,7 +21,7 @@ const InventoryComponentView: React.FC = () => {
       </div>
 
       {/* Navigation Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 p-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8 p-6">
         {/* Movimientos */}
         <button
           onClick={() => setSelectedView('movimientos')}
@@ -57,7 +62,7 @@ const InventoryComponentView: React.FC = () => {
           </div>
         </button>
 
-        {/* Recursos (anaranjado suave) */}
+        {/* Recursos */}
         <button
           onClick={() => setSelectedView('recursos')}
           className={`p-6 rounded-xl shadow-sm transition-all duration-300 transform hover:scale-105 ${
@@ -77,7 +82,7 @@ const InventoryComponentView: React.FC = () => {
           </div>
         </button>
 
-        {/* Proveedores (verde grisáceo) */}
+        {/* Proveedores */}
         <button
           onClick={() => setSelectedView('proveedores')}
           className={`p-6 rounded-xl shadow-sm transition-all duration-300 transform hover:scale-105 ${
@@ -96,6 +101,26 @@ const InventoryComponentView: React.FC = () => {
             </div>
           </div>
         </button>
+
+        {/* Crear producto */}
+        <button
+          onClick={() => setSelectedView('crear-producto')}
+          className={`p-6 rounded-xl shadow-sm transition-all duration-300 transform hover:scale-105 ${
+            selectedView === 'crear-producto'
+              ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white'
+              : 'bg-white border border-gray-200 hover:border-purple-400'
+          }`}
+        >
+          <div className="flex items-center space-x-4">
+            <div className={`p-3 rounded-lg ${selectedView === 'crear-producto' ? 'bg-purple-400' : 'bg-purple-100 text-purple-600'}`}>
+              <Plus size={24} />
+            </div>
+            <div className="text-left">
+              <h3 className="font-semibold">Crear producto</h3>
+              <p className="text-sm opacity-80">Nuevo ingreso en almacén</p>
+            </div>
+          </div>
+        </button>
       </div>
 
       {/* Content Area */}
@@ -104,9 +129,15 @@ const InventoryComponentView: React.FC = () => {
         {selectedView === 'almacen' && <WarehouseView />}
         {selectedView === 'recursos' && <ResourceView />}
         {selectedView === 'proveedores' && <SuppliersView />}
+        {selectedView === 'crear-producto' && (
+          <div className="space-y-8">
+            <WarehouseProductForm />
+            <WarehouseProductList />
+          </div>
+        )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default InventoryComponentView;
+export default InventoryComponentView
