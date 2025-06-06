@@ -4,26 +4,23 @@ import { zodResolver } from '@hookform/resolvers/zod';
 // Verified Icons import path
 import { X, Save, Loader2 } from 'lucide-react'; 
 // Verified Schema/Types import paths (assuming correct relative path)
-import { ResourceValidationSchema } from '../../schemas/resourceValidation';
-import { CreateResourcePayload } from '../../types/resource';
+import { ResourceValidationSchema } from '../../../schemas/resourceValidation';
+import { CreateResourcePayload } from '../../../types/resource';
 // Verified UI component import paths
 import { Input } from '@/app/components/ui/input'; 
 import { Button } from '@/app/components/ui/button';
 import { Label } from '@/app/components/ui/label';
-import { Textarea } from '@/app/components/ui/textarea'; 
-// Select component import path (verified existence, uncomment if needed for supplier)
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
+// Removed import for non-existent Textarea component
+// import { Textarea } from '@/app/components/ui/textarea'; 
 
 type ModalNuevoRecursoProps = {
   isOpen: boolean;
   onClose: () => void;
   onCreate: (payload: CreateResourcePayload) => Promise<void>;
   isCreating: boolean;
-  // Add suppliers list if needed for a dropdown
   // suppliers: { id: string; name: string }[]; 
 };
 
-// Define the form type based on the validation schema
 type ResourceFormData = Zod.infer<typeof ResourceValidationSchema>;
 
 const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
@@ -39,13 +36,12 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
     formState: { errors },
     reset,
   } = useForm<ResourceFormData>({
-    // Verified resolver import
     resolver: zodResolver(ResourceValidationSchema),
     defaultValues: {
       name: '',
-      unit_price: '', // Keep as string for input
+      unit_price: '',
       type_unit: '',
-      total_cost: undefined, // Use undefined for number inputs initially
+      total_cost: undefined,
       supplier_id: null,
       observation: '',
       purchase_date: '',
@@ -53,27 +49,24 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
   });
 
   const onSubmit = async (data: ResourceFormData) => {
-    // Convert necessary fields before sending
     const payload: CreateResourcePayload = {
       ...data,
-      unit_price: data.unit_price, // Keep as string if backend expects string
-      total_cost: Number(data.total_cost), // Ensure it's a number
-      supplier_id: data.supplier_id || null, // Handle empty selection
+      unit_price: data.unit_price,
+      total_cost: Number(data.total_cost),
+      supplier_id: data.supplier_id || null,
       observation: data.observation || null,
     };
     await onCreate(payload);
-    reset(); // Reset form on successful creation
+    reset();
   };
 
   if (!isOpen) return null;
 
   return (
-    // Style consistency check: Use project's modal/dialog structure if available, otherwise keep this structure
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg relative dark:bg-gray-800">
         <div className="bg-red-800 text-white p-5 rounded-t-2xl flex items-center justify-between">
           <h2 className="text-lg font-semibold">Nuevo Recurso</h2>
-          {/* Using verified Button and Icon */}
           <Button
             variant="ghost"
             size="icon"
@@ -87,7 +80,6 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4 text-left">
-          {/* Form Fields using verified components */}
           <div>
             <Label htmlFor="name" className="dark:text-gray-300">Nombre*</Label>
             <Input
@@ -105,7 +97,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
               <Label htmlFor="unit_price" className="dark:text-gray-300">Precio Unitario*</Label>
               <Input
                 id="unit_price"
-                type="text" // Use text to allow decimal input easily
+                type="text"
                 {...register('unit_price')}
                 className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 placeholder="0.00"
@@ -138,12 +130,11 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
 
           <div>
             <Label htmlFor="supplier_id" className="dark:text-gray-300">Proveedor</Label>
-            {/* Replace with verified Select component if suppliers list is available and needed */}
             <Input
               id="supplier_id"
               {...register('supplier_id')}
               className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-              placeholder="ID del proveedor (temporal)" // Consider using Select
+              placeholder="ID del proveedor (temporal)"
             />
             {errors.supplier_id && <p className="text-sm text-red-500 mt-1">{errors.supplier_id.message}</p>}
           </div>
@@ -161,10 +152,11 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
 
           <div>
             <Label htmlFor="observation" className="dark:text-gray-300">Observación</Label>
-            <Textarea
+            {/* Replaced non-existent Textarea component with standard textarea */}
+            <textarea
               id="observation"
               {...register('observation')}
-              className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
               placeholder="Añadir observación (opcional)"
               rows={3}
             />
@@ -172,7 +164,6 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
-            {/* Using verified Button component */}
             <Button
               type="button"
               variant="ghost"
@@ -189,13 +180,11 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
             >
               {isCreating ? (
                 <>
-                  {/* Using verified Icon */}
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Guardando...
                 </>
               ) : (
                 <>
-                  {/* Using verified Icon */}
                   <Save size={18} className="mr-2" /> Guardar
                 </>
               )}

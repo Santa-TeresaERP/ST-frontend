@@ -31,20 +31,20 @@ export interface CreateResourcePayload {
   unit_price: string;
   type_unit: string;
   total_cost: number;
-  supplier_id?: string | null;
-  observation?: string | null;
-  purchase_date: string; // Ensure format matches backend expectation (e.g., ISO string)
+  supplier_id: string | null;
+  observation: string | null;
+  purchase_date: string;
 }
 
 // Payload interface for updating a resource
 // Matches fields allowed by backend serviceUpdateResource.ts (likely partial update)
 export interface UpdateResourcePayload {
-  name?: string;
-  unit_price?: string;
-  type_unit?: string;
-  total_cost?: number;
-  supplier_id?: string | null;
-  observation?: string | null;
-  purchase_date?: string;
+  name: string;
+  unit_price: string;
+  type_unit: string;
+  total_cost: number;
+  supplier_id: string | null;
+  observation: string | null;
+  purchase_date: string;
 }
 
