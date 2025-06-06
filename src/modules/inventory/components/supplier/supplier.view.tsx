@@ -3,71 +3,150 @@ import { FiEdit2, FiTrash2, FiUsers, FiSearch, FiPlus } from 'react-icons/fi';
 import ModalCreateSupplier from './suppliers/modal-create-supplier';
 import ModalEditSupplier from './suppliers/modal-edit-supplier';
 import ModalDeleteSupplier from './suppliers/modal-delete-supplier';
-
-type Supplier = {
-  id: number;
-  nombre: string;
-  contacto: string;
-  ruc: string;
-  telefono: string;
-  correo: string;
-  direccion: string;
-};
-
-const initialSuppliers: Supplier[] = [
-  { id: 1, nombre: 'Constructora Andes', contacto: 'Juan Hernández', ruc: '201234567', telefono: '987654321', correo: 'andes@example.com', direccion: 'Av. Principal 123' },
-  { id: 2, nombre: 'Proveedores S.A.', contacto: 'María López', ruc: '204567890', telefono: '912345678', correo: 'proveedores@example.com', direccion: 'Jr. Comercio 456' },
-];
+import {
+  useFetchSuppliers,
+  useCreateSupplier,
+  useUpdateSupplier,
+  useDeleteSupplier,
+} from '../../hook/useSuppliers';
+import type { Supplier } from '../../types/suppliers';
 
 const SupplierView: React.FC = () => {
-  const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
+  const { data: suppliers = [], isLoading, error } = useFetchSuppliers();
+  const createSupplier = useCreateSupplier();
+  const updateSupplier = useUpdateSupplier();
+  const deleteSupplier = useDeleteSupplier();
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [supplierToEdit, setSupplierToEdit] = useState<Supplier | null>(null);
   const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
 
   const filteredSuppliers = useMemo(() => {
-    return suppliers.filter(supplier =>
-      supplier.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      supplier.ruc.includes(searchTerm) ||
-      supplier.contacto.toLowerCase().includes(searchTerm.toLowerCase())
+    return suppliers.filter((supplier) =>
+      (supplier?.suplier_name?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
+      (supplier?.ruc ? String(supplier.ruc).includes(searchTerm) : false) ||
+      (supplier?.contact_name?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
     );
   }, [suppliers, searchTerm]);
 
-  const handleCreateSupplier = (nuevoProveedor: Omit<Supplier, 'id'>) => {
-    const nuevo: Supplier = {
-      id: suppliers.length > 0 ? Math.max(...suppliers.map(s => s.id)) + 1 : 1,
-      ...nuevoProveedor,
-    };
-    setSuppliers(prev => [...prev, nuevo]);
-    setIsCreateModalOpen(false);
+  // Crear proveedor desde el modal
+  const handleCreateSupplier = (nuevoProveedor: {
+    nombre: string;
+    ruc: string;
+    contacto: string;
+    correo: string;
+    direccion: string;
+    telefono: string;
+  }) => {
+    // Validación simple
+    if (
+      !nuevoProveedor.nombre ||
+      !nuevoProveedor.ruc ||
+      !nuevoProveedor.contacto ||
+      !nuevoProveedor.correo ||
+      !nuevoProveedor.direccion ||
+      !nuevoProveedor.telefono
+    ) {
+      setFormError('Todos los campos son obligatorios');
+      return;
+    }
+    setFormError(null);
+
+    // Type guard para error con response.data.message
+    function isAxiosError(err: unknown): err is { response: { data: { message: string } } } {
+      return (
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        typeof (err as { response?: unknown }).response === 'object' &&
+        (err as { response: { data?: unknown } }).response !== null &&
+        'data' in (err as { response: { data?: unknown } }).response &&
+        typeof ((err as { response: { data: { message?: unknown } } }).response.data as { message?: unknown }).message === 'string'
+      );
+    }
+
+    // Type guard para error con message
+    function isErrorWithMessage(err: unknown): err is { message: string } {
+      return (
+        typeof err === 'object' &&
+        err !== null &&
+        'message' in err &&
+        typeof (err as { message?: unknown }).message === 'string'
+      );
+    }
+
+    createSupplier.mutate(
+      {
+        suplier_name: nuevoProveedor.nombre, // <--- Cambiado aquí
+        ruc: Number(nuevoProveedor.ruc),
+        contact_name: nuevoProveedor.contacto,
+        email: nuevoProveedor.correo,
+        address: nuevoProveedor.direccion,
+        phone: Number(nuevoProveedor.telefono),
+      },
+      {
+        onError: (error: unknown) => {
+          let msg = 'Error al crear proveedor: ';
+          if (isAxiosError(error)) {
+            msg += error.response.data.message;
+          } else if (isErrorWithMessage(error)) {
+            msg += error.message;
+          } else {
+            msg += 'Verifica los datos';
+          }
+          setFormError(msg);
+        },
+        onSuccess: () => {
+          setIsCreateModalOpen(false);
+        },
+      }
+    );
   };
 
-  const handleEdit = (id: number) => {
-    const supplier = suppliers.find(s => s.id === id);
+  // Editar proveedor
+  const handleEdit = (id: string) => {
+    const supplier = suppliers.find((s) => s.id === id);
     if (supplier) {
       setSupplierToEdit(supplier);
     }
   };
 
-  const handleUpdateSupplier = (data: Omit<Supplier, 'id'>) => {
+  // Actualizar proveedor
+  const handleUpdateSupplier = (data: {
+    nombre: string;
+    ruc: string;
+    contacto: string;
+    correo: string;
+    direccion: string;
+    telefono: string;
+  }) => {
     if (supplierToEdit) {
-      const actualizado: Supplier = { ...supplierToEdit, ...data };
-      setSuppliers(prev =>
-        prev.map(s => (s.id === actualizado.id ? actualizado : s))
-      );
+      updateSupplier.mutate({
+        id: supplierToEdit.id!,
+        payload: {
+          suplier_name: data.nombre, // <--- Cambiado aquí
+          ruc: Number(data.ruc),
+          contact_name: data.contacto,
+          email: data.correo,
+          address: data.direccion,
+          phone: Number(data.telefono),
+        },
+      });
       setSupplierToEdit(null);
     }
   };
 
-  const handleDelete = (id: number) => {
-    const supplier = suppliers.find(s => s.id === id);
+  // Eliminar proveedor
+  const handleDelete = (id: string) => {
+    const supplier = suppliers.find((s) => s.id === id);
     if (supplier) setSupplierToDelete(supplier);
   };
 
   const confirmDelete = () => {
     if (supplierToDelete) {
-      setSuppliers(prev => prev.filter(s => s.id !== supplierToDelete.id));
+      deleteSupplier.mutate(supplierToDelete.id!);
       setSupplierToDelete(null);
     }
   };
@@ -90,7 +169,10 @@ const SupplierView: React.FC = () => {
           </div>
 
           <button
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => {
+              setFormError(null);
+              setIsCreateModalOpen(true);
+            }}
             className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900 transition flex items-center gap-2"
           >
             <FiPlus /> Nuevo Proveedor
@@ -124,7 +206,19 @@ const SupplierView: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredSuppliers.length === 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-4 text-gray-500">
+                    Cargando proveedores...
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-4 text-red-500">
+                    Error al cargar proveedores
+                  </td>
+                </tr>
+              ) : filteredSuppliers.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-4 text-gray-500">
                     {searchTerm
@@ -135,24 +229,26 @@ const SupplierView: React.FC = () => {
               ) : (
                 filteredSuppliers.map((s) => (
                   <tr key={s.id} className="hover:bg-gray-50 border-t">
-                    <td className="px-4 py-2">{s.nombre}</td>
-                    <td className="px-4 py-2">{s.ruc}</td>
-                    <td className="px-4 py-2">{s.contacto}</td>
-                    <td className="px-4 py-2">{s.telefono}</td>
-                    <td className="px-4 py-2">{s.correo}</td>
-                    <td className="px-4 py-2">{s.direccion}</td>
+                    <td className="px-4 py-2">{s.suplier_name ?? ''}</td>
+                    <td className="px-4 py-2">{s.ruc ?? ''}</td>
+                    <td className="px-4 py-2">{s.contact_name ?? ''}</td>
+                    <td className="px-4 py-2">{s.phone ?? ''}</td>
+                    <td className="px-4 py-2">{s.email ?? ''}</td>
+                    <td className="px-4 py-2">{s.address ?? ''}</td>
                     <td className="px-4 py-2 flex justify-center gap-2">
                       <button
-                        onClick={() => handleEdit(s.id)}
+                        onClick={() => s.id && handleEdit(s.id)}
                         className="text-blue-600 hover:text-blue-800"
-                        aria-label={`Editar proveedor ${s.nombre}`}
+                        aria-label={`Editar proveedor ${s.suplier_name}`}
+                        disabled={!s.id}
                       >
                         <FiEdit2 />
                       </button>
                       <button
-                        onClick={() => handleDelete(s.id)}
+                        onClick={() => s.id && handleDelete(s.id)}
                         className="text-red-600 hover:text-red-800"
-                        aria-label={`Eliminar proveedor ${s.nombre}`}
+                        aria-label={`Eliminar proveedor ${s.suplier_name}`}
+                        disabled={!s.id}
                       >
                         <FiTrash2 />
                       </button>
@@ -170,6 +266,7 @@ const SupplierView: React.FC = () => {
         <ModalCreateSupplier
           onClose={() => setIsCreateModalOpen(false)}
           onCreate={handleCreateSupplier}
+          error={formError}
         />
       )}
 
@@ -178,12 +275,12 @@ const SupplierView: React.FC = () => {
         <ModalEditSupplier
           onClose={() => setSupplierToEdit(null)}
           initialData={{
-            nombre: supplierToEdit.nombre,
-            ruc: supplierToEdit.ruc,
-            contacto: supplierToEdit.contacto,
-            correo: supplierToEdit.correo,
-            direccion: supplierToEdit.direccion,
-            telefono: supplierToEdit.telefono,
+            nombre: supplierToEdit.suplier_name,
+            ruc: supplierToEdit.ruc ? String(supplierToEdit.ruc) : '',
+            contacto: supplierToEdit.contact_name,
+            correo: supplierToEdit.email,
+            direccion: supplierToEdit.address,
+            telefono: supplierToEdit.phone ? String(supplierToEdit.phone) : '',
           }}
           onUpdate={handleUpdateSupplier}
         />
@@ -194,7 +291,7 @@ const SupplierView: React.FC = () => {
         isOpen={!!supplierToDelete}
         onClose={cancelDelete}
         onConfirm={confirmDelete}
-        supplierName={supplierToDelete?.nombre}
+        supplierName={supplierToDelete?.suplier_name}
       />
     </>
   );
