@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { z } from 'zod';
@@ -21,8 +22,8 @@ interface ModalEditProductoProps {
     price: number;
     description: string;
     imagen_url: string;
-    recipe?: Ingredient[]; // Receta del producto
-  } | null;
+    recipe?: { resource_id: string; unit: string; quantity_required: number }[]; // Receta del producto
+  }) => void | null;
   categories: { id: string; name: string; description: string; createdAt?: Date; updatedAt?: Date }[]; // Agregar esta propiedad
 }
 

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 // Define el esquema de validación para WarehouseResource
 export const WarehouseResourceSchema = z.object({
-  id: z.string().optional(), // El ID puede ser opcional
+  id: z.string().optional(),
   warehouse_id: z.string().uuid('El ID del almacén debe ser un UUID válido'),
   resource_id: z.string().uuid('El ID del recurso debe ser un UUID válido'),
   quantity: z.number({ invalid_type_error: 'La cantidad debe ser un número' }),

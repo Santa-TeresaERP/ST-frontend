@@ -398,8 +398,7 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
           Guardar Producto
         </button>
       </div>
-    </div>
-  </div>
+      </div>
   );
 };
 

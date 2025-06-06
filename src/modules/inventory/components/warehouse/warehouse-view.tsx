@@ -6,13 +6,17 @@ import {
   useUpdateWarehouseResource,
   useDeleteWarehouseResource,
 } from '@/modules/inventory/hook/useWarehouseResources';
+import { useFetchResources } from '@/modules/inventory/hook/useResources';
+import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
 import { WarehouseResourceAttributes } from '@/modules/inventory/types/warehouseResource';
 import ModalCreateWarehouses from './resource/modal-create-resource-warehouse';
 import ModalEditWarehouses from './resource/modal-edit-resource-warehouse';
 import ModalDeleteWarehouses from './resource/modal-delete-resource-warehouse';
 
 const WarehouseView: React.FC = () => {
-  const { data: resources, isLoading, error } = useFetchWarehouseResources();
+  const { data: warehouseResources, isLoading, error } = useFetchWarehouseResources();
+  const { data: resources } = useFetchResources();
+  const { data: warehouses } = useFetchWarehouses();
   const createResource = useCreateWarehouseResource();
   const updateResource = useUpdateWarehouseResource();
   const deleteResource = useDeleteWarehouseResource();
@@ -23,12 +27,23 @@ const WarehouseView: React.FC = () => {
   const [deletingResource, setDeletingResource] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<'producto' | 'recurso'>('producto');
 
+  // Combinar warehouseResources con resources y warehouses para obtener nombres
+  const enrichedResources = warehouseResources?.map((warehouseResource) => {
+    const resource = resources?.find((r) => r.id === warehouseResource.resource_id);
+    const warehouse = warehouses?.find((w) => w.id === warehouseResource.warehouse_id);
+    return {
+      ...warehouseResource,
+      resource_name: resource?.name || 'Desconocido',
+      warehouse_name: warehouse?.name || 'Desconocido',
+    };
+  });
+
   // Filtrar recursos por término de búsqueda
-  const filteredResources = resources?.filter((resource) => {
+  const filteredResources = enrichedResources?.filter((resource) => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      resource.warehouse_id.toLowerCase().includes(searchLower) ||
-      resource.resource_id.toLowerCase().includes(searchLower) ||
+      resource.warehouse_name.toLowerCase().includes(searchLower) ||
+      resource.resource_name.toLowerCase().includes(searchLower) ||
       resource.quantity.toString().includes(searchLower) ||
       new Date(resource.entry_date).toLocaleDateString().toLowerCase().includes(searchLower)
     );
@@ -41,7 +56,7 @@ const WarehouseView: React.FC = () => {
   };
 
   const handleEdit = async (id: string, updates: Partial<Omit<WarehouseResourceAttributes, 'id'>>) => {
-    updateResource.mutate({ id, payload: updates }, {
+    updateResource.mutate({ id, data: updates }, {
       onSuccess: () => setEditingResource(null),
     });
   };
@@ -131,7 +146,7 @@ const WarehouseView: React.FC = () => {
           <table className="min-w-full text-sm">
             <thead className="bg-blue-800 text-white">
               <tr>
-                <th className="px-4 py-2 text-left">ID Almacén</th>
+                <th className="px-4 py-2 text-left">Almacén</th>
                 <th className="px-4 py-2 text-left">ID Producto</th>
                 <th className="px-4 py-2 text-left">Cantidad</th>
                 <th className="px-4 py-2 text-left">Fecha de Entrada</th>
@@ -150,49 +165,49 @@ const WarehouseView: React.FC = () => {
           <table className="min-w-full text-sm">
             <thead className="bg-orange-500 text-white">
               <tr>
-                <th className="px-4 py-2 text-left">ID Almacén</th>
-                <th className="px-4 py-2 text-left">ID Recurso</th>
+                <th className="px-4 py-2 text-left">Almacén</th>
+                <th className="px-4 py-2 text-left">Recurso</th>
                 <th className="px-4 py-2 text-left">Cantidad</th>
                 <th className="px-4 py-2 text-left">Fecha de Entrada</th>
                 <th className="px-4 py-2 text-left">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {filteredResources && filteredResources.length > 0 ? (
-                filteredResources.map((resource) => (
-                  <tr key={resource.id} className="hover:bg-gray-50 border-t">
-                    <td className="px-4 py-2">{resource.warehouse_id}</td>
-                    <td className="px-4 py-2">{resource.resource_id}</td>
-                    <td className="px-4 py-2">{resource.quantity}</td>
-                    <td className="px-4 py-2">{new Date(resource.entry_date).toLocaleDateString()}</td>
-                    <td className="px-4 py-2 flex space-x-2">
-                      <button
-                        onClick={() => setEditingResource(resource.id!)}
-                        className="text-blue-600 hover:text-blue-800"
-                        title="Editar"
-                      >
-                        <Edit size={18} />
-                      </button>
-                      <button
-                        onClick={() => setDeletingResource(resource.id!)}
-                        className="text-red-600 hover:text-red-800"
-                        title="Eliminar"
-                      >
-                        <Trash size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="text-center py-4 text-gray-500">
-                    {searchTerm
-                      ? "No se encontraron recursos que coincidan con la búsqueda"
-                      : "No hay recursos registrados"}
+            {filteredResources && filteredResources.length > 0 ? (
+              filteredResources.map((resource) => (
+                <tr key={resource.id} className="hover:bg-gray-50 border-t">
+                  <td className="px-4 py-2">{resource.warehouse_name}</td>
+                  <td className="px-4 py-2">{resource.resource_name}</td>
+                  <td className="px-4 py-2">{resource.quantity}</td>
+                  <td className="px-4 py-2">{new Date(resource.entry_date).toLocaleDateString()}</td>
+                  <td className="px-4 py-2 flex space-x-2">
+                    <button
+                      onClick={() => setEditingResource(resource.id!)}
+                      className="text-blue-600 hover:text-blue-800"
+                      title="Editar"
+                    >
+                      <Edit size={18} />
+                    </button>
+                    <button
+                      onClick={() => setDeletingResource(resource.id!)}
+                      className="text-red-600 hover:text-red-800"
+                      title="Eliminar"
+                    >
+                      <Trash size={18} />
+                    </button>
                   </td>
                 </tr>
-              )}
-            </tbody>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={5} className="text-center py-4 text-gray-500">
+                  {searchTerm
+                    ? "No se encontraron recursos que coincidan con la búsqueda"
+                    : "No hay recursos registrados"}
+                </td>
+              </tr>
+            )}
+          </tbody>
           </table>
         )}
       </div>
@@ -203,7 +218,9 @@ const WarehouseView: React.FC = () => {
           open={showCreate}
           onClose={() => setShowCreate(false)}
           onCreate={handleCreate}
-          onSuccess={() => { } } resourceType={'producto'}        />
+          onSuccess={() => { } } 
+          resourceType={selectedType}
+        />
       )}
 
       {editingResource && (

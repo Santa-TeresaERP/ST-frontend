@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useFetchWarehouseResource } from '@/modules/inventory/hook/useWarehouseResources';
+import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
+import { useFetchResources } from '@/modules/inventory/hook/useResources';
 import { WarehouseResourceAttributes } from '@/modules/inventory/types/warehouseResource';
-import { validateWarehouseResource } from '@/modules/inventory/schemas/warehouseResourceValidation';
 
 interface ModalEditWarehousesProps {
   open: boolean;
   onClose: () => void;
   onEdit: (id: string, updates: Partial<Omit<WarehouseResourceAttributes, 'id'>>) => void;
   resourceId: string;
-  onSuccess?: () => void;
 }
 
 const ModalEditWarehouses: React.FC<ModalEditWarehousesProps> = ({
@@ -17,17 +17,13 @@ const ModalEditWarehouses: React.FC<ModalEditWarehousesProps> = ({
   onEdit,
   resourceId,
 }) => {
-  const { data: resource } = useFetchWarehouseResource(resourceId);
-  const [formData, setFormData] = useState<Partial<Omit<WarehouseResourceAttributes, 'id'>>>({
-    warehouse_id: '',
-    resource_id: '',
-    quantity: 0,
-    entry_date: new Date(),
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const { data: resource, isLoading, error } = useFetchWarehouseResource(resourceId);
+  const { data: warehouses, isLoading: isLoadingWarehouses } = useFetchWarehouses();
+  const { data: resources, isLoading: isLoadingResources } = useFetchResources();
+
+  const [formData, setFormData] = useState<Partial<Omit<WarehouseResourceAttributes, 'id'>>>({});
 
   useEffect(() => {
-    console.log('Editing resource ID:', resourceId);
     if (resource) {
       setFormData({
         warehouse_id: resource.warehouse_id,
@@ -36,137 +32,150 @@ const ModalEditWarehouses: React.FC<ModalEditWarehousesProps> = ({
         entry_date: resource.entry_date,
       });
     }
-  }, [resource, resourceId]);
+  }, [resource]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: name === 'quantity' ? Number(value) : value,
     }));
   };
 
-  const handleDateChange = (date: Date | null) => {
-    if (date) {
-      setFormData(prev => ({
-        ...prev,
-        entry_date: date,
-      }));
-    }
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const validation = validateWarehouseResource(formData);
-    if (!validation.success) {
-      const newErrors: Record<string, string> = {};
-      validation.error.issues.forEach(issue => {
-        newErrors[issue.path[0]] = issue.message;
-      });
-      setErrors(newErrors);
-      return;
-    }
-
+    if (!formData) return;
     onEdit(resourceId, formData);
   };
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-blue-700">Editar Recurso</h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-            &times;
-          </button>
+    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              <h3 className="text-xl font-bold text-white">Editar Recurso</h3>
+            </div>
+            <button 
+              onClick={onClose} 
+              className="text-white hover:text-blue-100 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        {!resource ? (
-          <div className="text-center py-4">Cargando recurso...</div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">ID Almacén</label>
-              <input
-                type="text"
-                name="warehouse_id"
-                value={formData.warehouse_id || ''}
-                onChange={handleChange}
-                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
-                  errors.warehouse_id ? 'border-red-500' : 'border'
-                }`}
-              />
-              {errors.warehouse_id && (
-                <p className="mt-1 text-sm text-red-600">{errors.warehouse_id}</p>
-              )}
+        {/* Body */}
+        <div className="p-6">
+          {isLoading ? (
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
             </div>
+          ) : error ? (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+              <div className="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <p className="ml-3 text-sm text-red-700">
+                  {error.message || 'Error al cargar el recurso. Por favor, inténtelo de nuevo.'}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">Almacén</label>
+                <select
+                  name="warehouse_id"
+                  value={formData?.warehouse_id || ''}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  disabled={isLoadingWarehouses}
+                >
+                  {warehouses?.map((warehouse) => (
+                    <option key={warehouse.id} value={warehouse.id}>
+                      {warehouse.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">ID Recurso</label>
-              <input
-                type="text"
-                name="resource_id"
-                value={formData.resource_id || ''}
-                onChange={handleChange}
-                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
-                  errors.resource_id ? 'border-red-500' : 'border'
-                }`}
-              />
-              {errors.resource_id && (
-                <p className="mt-1 text-sm text-red-600">{errors.resource_id}</p>
-              )}
-            </div>
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">Recurso</label>
+                <select
+                  name="resource_id"
+                  value={formData?.resource_id || ''}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  disabled={isLoadingResources}
+                >
+                  {resources?.map((resource) => (
+                    <option key={resource.id} value={resource.id}>
+                      {resource.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Cantidad</label>
-              <input
-                type="number"
-                name="quantity"
-                value={formData.quantity || 0}
-                onChange={handleChange}
-                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
-                  errors.quantity ? 'border-red-500' : 'border'
-                }`}
-              />
-              {errors.quantity && (
-                <p className="mt-1 text-sm text-red-600">{errors.quantity}</p>
-              )}
-            </div>
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">Cantidad</label>
+                <input
+                  type="number"
+                  name="quantity"
+                  min="0"
+                  value={formData?.quantity || 0}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Fecha de Entrada</label>
-              <input
-                type="date"
-                value={formData.entry_date ? new Date(formData.entry_date).toISOString().split('T')[0] : ''}
-                onChange={(e) => handleDateChange(new Date(e.target.value))}
-                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
-                  errors.entry_date ? 'border-red-500' : 'border'
-                }`}
-              />
-              {errors.entry_date && (
-                <p className="mt-1 text-sm text-red-600">{errors.entry_date}</p>
-              )}
-            </div>
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">Fecha de Entrada</label>
+                <input
+                  type="date"
+                  name="entry_date"
+                  value={
+                    formData?.entry_date
+                      ? new Date(formData.entry_date).toISOString().split('T')[0]
+                      : ''
+                  }
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      entry_date: new Date(e.target.value),
+                    }))
+                  }
+                  className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                />
+              </div>
 
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-              >
-                Guardar Cambios
-              </button>
-            </div>
-          </form>
-        )}
+              <div className="flex justify-end space-x-3 pt-6">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                >
+                  Guardar Cambios
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );

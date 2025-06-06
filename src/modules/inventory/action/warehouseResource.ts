@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import api from '@/core/config/client';
 import { WarehouseResourceAttributes } from '../types/warehouseResource';
 
@@ -9,8 +10,16 @@ export const fetchWarehouseResources = async (): Promise<WarehouseResourceAttrib
 
 // GET: Fetch a single warehouse resource by ID
 export const getWarehouseResource = async (id: string): Promise<WarehouseResourceAttributes> => {
-  const response = await api.get<WarehouseResourceAttributes>(`/warehouseResource/${id}`);
-  return response.data;
+  try {
+    const response = await api.get<WarehouseResourceAttributes>(`/warehouseResource/${id}`);
+    return response.data;
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      throw new Error('El recurso del almacén no existe.');
+    }
+    console.error('Error al obtener el recurso del almacén:', error);
+    throw new Error('Error al obtener el recurso del almacén. Por favor, inténtelo de nuevo.');
+  }
 };
 
 // POST: Create a warehouse resource
@@ -30,8 +39,8 @@ export const updateWarehouseResource = async (
     const response = await api.put<WarehouseResourceAttributes>(`/warehouseResource/${id}`, data);
     return response.data;
   } catch (error) {
-    console.error('Error updating warehouse resource:', error);
-    throw new Error('Failed to update warehouse resource. Please try again.');
+    console.error('Error al actualizar el recurso del almacén:', error);
+    throw new Error('Error al actualizar el recurso del almacén. Por favor, inténtelo de nuevo.');
   }
 };
 

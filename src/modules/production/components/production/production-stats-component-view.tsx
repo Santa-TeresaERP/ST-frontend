@@ -248,6 +248,11 @@ const ProductionView = () => {
       <ModalEditProduction
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
+        onSave={(updatedProduction) => {
+          console.log('Producción actualizada:', updatedProduction);
+          // Aquí puedes agregar lógica para manejar la producción actualizada, como enviarla al servidor
+          setIsEditModalOpen(false);
+        }}
         production={
           selectedProduction
             ? {

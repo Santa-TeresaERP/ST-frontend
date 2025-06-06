@@ -1,68 +1,60 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchWarehouseResources,
   getWarehouseResource,
   createWarehouseResource,
   updateWarehouseResource,
   deleteWarehouseResource,
-} from "../action/warehouseResource";
-import { WarehouseResourceAttributes } from "../types/warehouseResource";
+} from '../action/warehouseResource';
+import { WarehouseResourceAttributes } from '../types/warehouseResource';
 
-// Fetch all warehouse resources
+// Hook para obtener todos los recursos del almacén
 export const useFetchWarehouseResources = () => {
   return useQuery<WarehouseResourceAttributes[], Error>({
-    queryKey: ["warehouseResources"],
+    queryKey: ['warehouseResources'],
     queryFn: fetchWarehouseResources,
   });
 };
 
-// Fetch a single warehouse resource by ID
+// Hook para obtener un recurso del almacén por ID
 export const useFetchWarehouseResource = (id: string) => {
   return useQuery<WarehouseResourceAttributes, Error>({
-    queryKey: ["warehouseResource", id],
+    queryKey: ['warehouseResource', id],
     queryFn: () => getWarehouseResource(id),
+    enabled: !!id, // Solo ejecutar si el ID es válido
+    retry: false, // No reintentar automáticamente si hay un error
+    // Error handling can be done globally or within the component using this hook
   });
 };
 
-// Create a warehouse resource
+// Hook para crear un recurso del almacén
 export const useCreateWarehouseResource = () => {
   const queryClient = useQueryClient();
   return useMutation<WarehouseResourceAttributes, Error, Omit<WarehouseResourceAttributes, 'id'>>({
     mutationFn: createWarehouseResource,
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["warehouseResources"],
-      });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['warehouseResources'] }),
   });
 };
 
-// Update a warehouse resource
+// Hook para actualizar un recurso del almacén
 export const useUpdateWarehouseResource = () => {
   const queryClient = useQueryClient();
   return useMutation<
     WarehouseResourceAttributes,
     Error,
-    { id: string; payload: Partial<Omit<WarehouseResourceAttributes, 'id'>> }
+    { id: string; data: Partial<Omit<WarehouseResourceAttributes, 'id'>> }
   >({
-    mutationFn: ({ id, payload }) => updateWarehouseResource(id, payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["warehouseResources"],
-      });
-    },
+    mutationFn: ({ id, data }) => updateWarehouseResource(id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['warehouseResources'] }),
   });
 };
 
-// Delete a warehouse resource
+// Hook para eliminar un recurso del almacén
 export const useDeleteWarehouseResource = () => {
   const queryClient = useQueryClient();
   return useMutation<void, Error, string>({
     mutationFn: deleteWarehouseResource,
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["warehouseResources"],
-      });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['warehouseResources'] }),
   });
 };

@@ -13,13 +13,6 @@ const ProductionComponentView: React.FC = () => {
     setSelectedView(view);
   };
 
-  // Datos de ejemplo para la tabla
-  const data = [
-    { id: 1, producto: 'Producto A', produccion: 100, perdidas: 5 },
-    { id: 2, producto: 'Producto B', produccion: 200, perdidas: 10 },
-    { id: 3, producto: 'Producto C', produccion: 150, perdidas: 8 },
-  ];
-
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
