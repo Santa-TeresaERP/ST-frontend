@@ -54,8 +54,8 @@ export const useUpdateRecipe = () => {
 
 export const useDeleteRecipe = () => {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, { id: string; product_id: string }>({
-    mutationFn: ({ id, product_id }) => deleteRecipe(id, product_id),
+  return useMutation<void, Error, { id: string; }>({
+    mutationFn: ({ id }) => deleteRecipe(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: 'recipes' })
   });
 };

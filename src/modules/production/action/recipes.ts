@@ -30,6 +30,6 @@ export const updateRecipe = async (id: string, payload: UpdateRecipePayload): Pr
   return response.data;
 };
 
-export const deleteRecipe = async (id: string, product_id: string): Promise<void> => {
-  await api.delete(`/recipes/${id}/${product_id}`);
+export const deleteRecipe = async (id: string): Promise<void> => {
+  await api.delete(`/recipes/${id}`);
 };
