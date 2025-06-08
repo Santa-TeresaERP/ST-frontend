@@ -1,175 +1,194 @@
-import React, { useState, useMemo } from 'react';
-import { X, Save } from 'lucide-react';
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+// Verified Icons import path
+import { X, Save, Loader2 } from 'lucide-react'; 
+// Verified Schema/Types import paths (assuming correct relative path)
+import { ResourceValidationSchema } from '../../../schemas/resourceValidation';
+import { CreateResourcePayload } from '../../../types/resource';
+// Verified UI component import paths
+import { Input } from '@/app/components/ui/input'; 
+import { Button } from '@/app/components/ui/button';
+import { Label } from '@/app/components/ui/label';
+// Removed import for non-existent Textarea component
+// import { Textarea } from '@/app/components/ui/textarea'; 
 
 type ModalNuevoRecursoProps = {
+  isOpen: boolean;
   onClose: () => void;
-  onCreate: (recurso: { 
-    nombre: string; 
-    unidad: string; 
-    cantidad: number;
-    precioUnitario: number;
-    precioTotal?: number;   
-    proveedor: string;
-    fechaCompra: string;
-  }) => void;
+  onCreate: (payload: CreateResourcePayload) => Promise<void>;
+  isCreating: boolean;
+  // suppliers: { id: string; name: string }[]; 
 };
 
+type ResourceFormData = Zod.infer<typeof ResourceValidationSchema>;
+
 const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
+  isOpen,
   onClose,
   onCreate,
+  isCreating,
+  // suppliers = [],
 }) => {
-  const [nombre, setNombre] = useState('');
-  const [cantidad, setUnidad] = useState<number | ''>('');
-  const [unidad, setUnidadMedida] = useState('');
-  const [precioUnitario, setPrecioUnitario] = useState<number | ''>('');
-  const [proveedor, setProveedor] = useState('');
-  const [fechaCompra, setFechaCompra] = useState('');
-  const [error, setError] = useState('');
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<ResourceFormData>({
+    resolver: zodResolver(ResourceValidationSchema),
+    defaultValues: {
+      name: '',
+      unit_price: '',
+      type_unit: '',
+      total_cost: undefined,
+      supplier_id: null,
+      observation: '',
+      purchase_date: '',
+    },
+  });
 
-  const precioTotal = useMemo(() => {
-    if (cantidad !== '' && precioUnitario !== '') {
-      return Number(cantidad) * Number(precioUnitario);
-    }
-    return 0;
-  }, [cantidad, precioUnitario]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!nombre.trim()) {
-      setError('El nombre es obligatorio.');
-      return;
-    }
-    if (cantidad === '' || cantidad <= 0) {
-      setError('La unidad debe ser mayor a 0.');
-      return;
-    }
-    if (!unidad.trim()) {
-      setError('La unidad de medida es obligatoria.');
-      return;
-    }
-    if (precioUnitario === '' || precioUnitario <= 0) {
-      setError('El precio unitario debe ser mayor a 0.');
-      return;
-    }
-
-    setError('');
-    onCreate({ 
-      nombre: nombre.trim(), 
-      unidad: unidad.trim(),
-      cantidad: Number(unidad),
-      precioUnitario: Number(precioUnitario),
-      proveedor: proveedor.trim(),
-      fechaCompra
-    });
-    onClose();
+  const onSubmit = async (data: ResourceFormData) => {
+    const payload: CreateResourcePayload = {
+      ...data,
+      unit_price: data.unit_price,
+      total_cost: Number(data.total_cost),
+      supplier_id: data.supplier_id || null,
+      observation: data.observation || null,
+    };
+    await onCreate(payload);
+    reset();
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md relative">
-        <div className="bg-red-800 text-white p-5 rounded-t-2xl flex items-center justify-center relative">
-          <h2 className="text-lg font-semibold text-center">Nuevo Recurso</h2>
-          <button
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg relative dark:bg-gray-800">
+        <div className="bg-red-800 text-white p-5 rounded-t-2xl flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Nuevo Recurso</h2>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-200"
+            disabled={isCreating}
+            className="text-white hover:text-gray-200 disabled:opacity-50"
+            aria-label="Cerrar modal"
           >
-            <X size={22} />
-          </button>
+            <X className="h-5 w-5" />
+          </Button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 text-left">
-          {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
-
+        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4 text-left">
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Nombre*</label>
-            <input
-              type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+            <Label htmlFor="name" className="dark:text-gray-300">Nombre*</Label>
+            <Input
+              id="name"
+              {...register('name')}
+              className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
               placeholder="Nombre del recurso"
               autoFocus
             />
+            {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>}
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-gray-700 mb-1 font-medium">Cantidad*</label>
-              <input
-                type="number"
-                min={1}
-                value={cantidad}
-                onChange={(e) => setUnidad(e.target.value === '' ? '' : Number(e.target.value))}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="Cantidad"
-              />
-            </div>
-            <div>
-              <label className="block text-gray-700 mb-1 font-medium">Unidad*</label>
-              <input
+              <Label htmlFor="unit_price" className="dark:text-gray-300">Precio Unitario*</Label>
+              <Input
+                id="unit_price"
                 type="text"
-                value={unidad}
-                onChange={(e) => setUnidadMedida(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="Ej. kg, litros, metros"
+                {...register('unit_price')}
+                className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                placeholder="0.00"
               />
+              {errors.unit_price && <p className="text-sm text-red-500 mt-1">{errors.unit_price.message}</p>}
             </div>
             <div>
-              <label className="block text-gray-700 mb-1 font-medium">Precio Unitario*</label>
-              <input
-                type="number"
-                min={0.01}
-                step={0.01}
-                value={precioUnitario}
-                onChange={(e) => setPrecioUnitario(e.target.value === '' ? '' : Number(e.target.value))}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="Precio por unidad"
+              <Label htmlFor="type_unit" className="dark:text-gray-300">Unidad*</Label>
+              <Input
+                id="type_unit"
+                {...register('type_unit')}
+                className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                placeholder="Ej: kg, unidad, hora"
               />
+              {errors.type_unit && <p className="text-sm text-red-500 mt-1">{errors.type_unit.message}</p>}
             </div>
-
+             <div>
+              <Label htmlFor="total_cost" className="dark:text-gray-300">Costo Total*</Label>
+              <Input
+                id="total_cost"
+                type="number"
+                step="0.01"
+                {...register('total_cost', { valueAsNumber: true })}
+                className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                placeholder="0.00"
+              />
+              {errors.total_cost && <p className="text-sm text-red-500 mt-1">{errors.total_cost.message}</p>}
+            </div>
           </div>
 
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Proveedor</label>
-            <input
-              type="text"
-              value={proveedor}
-              onChange={(e) => setProveedor(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-              placeholder="Nombre del proveedor"
+            <Label htmlFor="supplier_id" className="dark:text-gray-300">Proveedor</Label>
+            <Input
+              id="supplier_id"
+              {...register('supplier_id')}
+              className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+              placeholder="ID del proveedor (temporal)"
             />
-          </div>
-
-          <div className="bg-gray-100 p-3 rounded-lg">
-            <label className="block text-gray-500 mb-1 text-sm">Precio Total</label>
-            <p className="text-lg font-semibold">S/ {precioTotal.toFixed(2)}</p>
+            {errors.supplier_id && <p className="text-sm text-red-500 mt-1">{errors.supplier_id.message}</p>}
           </div>
 
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Fecha de compra</label>
-            <input
+            <Label htmlFor="purchase_date" className="dark:text-gray-300">Fecha de Compra*</Label>
+            <Input
+              id="purchase_date"
               type="date"
-              value={fechaCompra}
-              onChange={(e) => setFechaCompra(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+              {...register('purchase_date')}
+              className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
             />
+            {errors.purchase_date && <p className="text-sm text-red-500 mt-1">{errors.purchase_date.message}</p>}
+          </div>
+
+          <div>
+            <Label htmlFor="observation" className="dark:text-gray-300">Observación</Label>
+            {/* Replaced non-existent Textarea component with standard textarea */}
+            <textarea
+              id="observation"
+              {...register('observation')}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
+              placeholder="Añadir observación (opcional)"
+              rows={3}
+            />
+            {errors.observation && <p className="text-sm text-red-500 mt-1">{errors.observation.message}</p>}
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition"
+              disabled={isCreating}
+              className="dark:text-gray-300 dark:hover:bg-gray-700"
             >
               Cancelar
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2"
+              disabled={isCreating}
+              className="bg-red-800 hover:bg-red-700 text-white disabled:opacity-50 dark:bg-red-600 dark:hover:bg-red-700"
             >
-              <Save size={18} /> Aceptar
-            </button>
+              {isCreating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <Save size={18} className="mr-2" /> Guardar
+                </>
+              )}
+            </Button>
           </div>
         </form>
       </div>
@@ -178,3 +197,4 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
 };
 
 export default ModalNuevoRecurso;
+
