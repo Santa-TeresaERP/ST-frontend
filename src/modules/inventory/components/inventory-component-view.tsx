@@ -3,6 +3,8 @@ import { Repeat, Home, Users, Truck } from 'lucide-react';
 import WarehouseView from './warehouse/warehouse-view';
 import ResourceView from './resourcehouse/resourcehouse-view';
 import SuppliersView from './supplier/supplier.view';
+import MovementComponentView from './movements/movement-component-view';
+
 
 const InventoryComponentView: React.FC = () => {
   const [selectedView, setSelectedView] = useState<'movimientos' | 'almacen' | 'recursos' | 'proveedores'>('movimientos');
@@ -100,7 +102,7 @@ const InventoryComponentView: React.FC = () => {
 
       {/* Content Area */}
       <div className="bg-white rounded-2xl shadow-md overflow-hidden p-6 text-center text-gray-600 min-h-[300px]">
-        {selectedView === 'movimientos' && <div>Vista: Movimientos</div>}
+        {selectedView === 'movimientos' && <MovementComponentView />}
         {selectedView === 'almacen' && <WarehouseView />}
         {selectedView === 'recursos' && <ResourceView />}
         {selectedView === 'proveedores' && <SuppliersView />}

@@ -6,7 +6,7 @@ export const LostSchema = z.object({
   quantity: z.number().positive(),
   lost_type: z.string(),
   observations: z.string(),
-  created_at: z.date().optional(),
+  created_at: z.date(),
 });
 
 export type Lost = z.infer<typeof LostSchema>;

@@ -6,6 +6,7 @@ import { X } from 'lucide-react';
 interface ModalCreateProductoProps {
   isOpen: boolean;
   onClose: () => void;
+  categories: { id: string; name: string; description: string; createdAt?: Date; updatedAt?: Date }[]; // Agregar esta propiedad
 }
 
 const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClose }) => {

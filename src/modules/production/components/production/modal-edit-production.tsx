@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
 import { useUpdateProduction } from '../../hook/useProductions';
 import { useFetchPlants } from '../../hook/usePlants';
@@ -5,6 +6,7 @@ import { X } from 'lucide-react';
 
 interface ModalEditProductionProps {
   isOpen: boolean;
+  onSave: (productoEditado: any) => void;
   onClose: () => void;
   production: {
     id: string;
