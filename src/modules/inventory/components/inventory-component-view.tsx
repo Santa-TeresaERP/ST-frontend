@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { Repeat, Home, Users, Truck } from 'lucide-react';
+import { Repeat, Home, Users, Truck, Package } from 'lucide-react';
 import WarehouseView from './warehouse/warehouse-view';
 import ResourceView from './resourcehouse/resourcehouse-view';
 import SuppliersView from './supplier/supplier.view';
 import MovementComponentView from './movements/movement-component-view';
-
+import WarehouseProductList from './warehouse/product/WarehouseProductList';
 
 const InventoryComponentView: React.FC = () => {
-  const [selectedView, setSelectedView] = useState<'movimientos' | 'almacen' | 'recursos' | 'proveedores'>('movimientos');
+  const [selectedView, setSelectedView] = useState<
+    'movimientos' | 'almacen' | 'recursos' | 'proveedores' | 'productos'
+  >('movimientos');
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -18,7 +20,7 @@ const InventoryComponentView: React.FC = () => {
       </div>
 
       {/* Navigation Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 p-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8 p-6">
         {/* Movimientos */}
         <button
           onClick={() => setSelectedView('movimientos')}
@@ -59,7 +61,7 @@ const InventoryComponentView: React.FC = () => {
           </div>
         </button>
 
-        {/* Recursos (anaranjado suave) */}
+        {/* Recursos */}
         <button
           onClick={() => setSelectedView('recursos')}
           className={`p-6 rounded-xl shadow-sm transition-all duration-300 transform hover:scale-105 ${
@@ -79,7 +81,7 @@ const InventoryComponentView: React.FC = () => {
           </div>
         </button>
 
-        {/* Proveedores (verde grisáceo) */}
+        {/* Proveedores */}
         <button
           onClick={() => setSelectedView('proveedores')}
           className={`p-6 rounded-xl shadow-sm transition-all duration-300 transform hover:scale-105 ${
@@ -98,14 +100,35 @@ const InventoryComponentView: React.FC = () => {
             </div>
           </div>
         </button>
+
+        {/* Productos */}
+        <button
+          onClick={() => setSelectedView('productos')}
+          className={`p-6 rounded-xl shadow-sm transition-all duration-300 transform hover:scale-105 ${
+            selectedView === 'productos'
+              ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white'
+              : 'bg-white border border-gray-200 hover:border-purple-400'
+          }`}
+        >
+          <div className="flex items-center space-x-4">
+            <div className={`p-3 rounded-lg ${selectedView === 'productos' ? 'bg-purple-400' : 'bg-purple-100 text-purple-600'}`}>
+              <Package size={24} />
+            </div>
+            <div className="text-left">
+              <h3 className="font-semibold">Productos</h3>
+              <p className="text-sm opacity-80">Lista de productos</p>
+            </div>
+          </div>
+        </button>
       </div>
 
       {/* Content Area */}
-      <div className="bg-white rounded-2xl shadow-md overflow-hidden p-6 text-center text-gray-600 min-h-[300px]">
+      <div className="bg-white rounded-2xl shadow-md overflow-x-auto p-6 text-gray-600 min-h-[300px]">
         {selectedView === 'movimientos' && <MovementComponentView />}
         {selectedView === 'almacen' && <WarehouseView />}
         {selectedView === 'recursos' && <ResourceView />}
         {selectedView === 'proveedores' && <SuppliersView />}
+        {selectedView === 'productos' && <WarehouseProductList />}
       </div>
     </div>
   );
