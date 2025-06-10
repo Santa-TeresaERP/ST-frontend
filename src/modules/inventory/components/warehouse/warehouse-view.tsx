@@ -8,6 +8,9 @@ import {
 } from '@/modules/inventory/hook/useWarehouseResources';
 import { useFetchResources } from '@/modules/inventory/hook/useResources';
 import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
+import {
+  useFetchWarehouseProducts
+} from '@/modules/inventory/hook/useWarehouseProducts';
 import { WarehouseResourceAttributes } from '@/modules/inventory/types/warehouseResource';
 import ModalCreateWarehouses from './resource/modal-create-resource-warehouse';
 import ModalEditWarehouses from './resource/modal-edit-resource-warehouse';
@@ -17,6 +20,8 @@ const WarehouseView: React.FC = () => {
   const { data: warehouseResources, isLoading, error } = useFetchWarehouseResources();
   const { data: resources } = useFetchResources();
   const { data: warehouses } = useFetchWarehouses();
+  const { data: warehouseProducts } = useFetchWarehouseProducts();
+
   const createResource = useCreateWarehouseResource();
   const updateResource = useUpdateWarehouseResource();
   const deleteResource = useDeleteWarehouseResource();
@@ -27,7 +32,6 @@ const WarehouseView: React.FC = () => {
   const [deletingResource, setDeletingResource] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<'producto' | 'recurso'>('producto');
 
-  // Combinar warehouseResources con resources y warehouses para obtener nombres
   const enrichedResources = warehouseResources?.map((warehouseResource) => {
     const resource = resources?.find((r) => r.id === warehouseResource.resource_id);
     const warehouse = warehouses?.find((w) => w.id === warehouseResource.warehouse_id);
@@ -38,7 +42,6 @@ const WarehouseView: React.FC = () => {
     };
   });
 
-  // Filtrar recursos por término de búsqueda
   const filteredResources = enrichedResources?.filter((resource) => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -48,24 +51,6 @@ const WarehouseView: React.FC = () => {
       new Date(resource.entry_date).toLocaleDateString().toLowerCase().includes(searchLower)
     );
   });
-
-  const handleCreate = async (newResource: Omit<WarehouseResourceAttributes, 'id'>) => {
-    createResource.mutate(newResource, {
-      onSuccess: () => setShowCreate(false),
-    });
-  };
-
-  const handleEdit = async (id: string, updates: Partial<Omit<WarehouseResourceAttributes, 'id'>>) => {
-    updateResource.mutate({ id, data: updates }, {
-      onSuccess: () => setEditingResource(null),
-    });
-  };
-
-  const handleDelete = async (id: string) => {
-    deleteResource.mutate(id, {
-      onSuccess: () => setDeletingResource(null),
-    });
-  };
 
   if (isLoading) {
     return (
@@ -85,7 +70,6 @@ const WarehouseView: React.FC = () => {
 
   return (
     <div className="p-6 space-y-4 bg-gray-50 min-h-screen">
-      {/* Header */}
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-semibold text-blue-700">Gestión de Almacén</h2>
         <div className="flex gap-2">
@@ -112,7 +96,6 @@ const WarehouseView: React.FC = () => {
         </div>
       </div>
 
-      {/* Subheader */}
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-2 text-gray-600">
           <Home size={24} className="text-blue-700" />
@@ -126,21 +109,17 @@ const WarehouseView: React.FC = () => {
         </button>
       </div>
 
-      {/* Filter */}
       <div className="relative inline-flex items-center shadow-sm rounded-xl bg-white">
         <Filter className="absolute left-4 text-blue-700 pointer-events-none" size={20} />
         <input
           type="text"
-          className="pl-11 pr-6 py-3 rounded-xl border border-blue-700 text-gray-700 text-base
-                     focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-transparent
-                     hover:bg-gray-200 transition duration-300 min-w-[200px]"
+          className="pl-11 pr-6 py-3 rounded-xl border border-blue-700 text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-transparent hover:bg-gray-200 transition duration-300 min-w-[200px]"
           placeholder={`Buscar por ${selectedType === 'producto' ? 'producto' : 'recurso'}, almacén, cantidad o fecha...`}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
-      {/* Table */}
       <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
         {selectedType === 'producto' ? (
           <table className="min-w-full text-sm">
@@ -154,11 +133,15 @@ const WarehouseView: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td colSpan={5} className="text-center py-4 text-gray-500">
-                  No hay productos registrados.
-                </td>
-              </tr>
+              {warehouseProducts?.data.map((product) => (
+                <tr key={product.id} className="hover:bg-gray-50 border-t">
+                  <td className="px-4 py-2">{product.warehouse_id}</td>
+                  <td className="px-4 py-2">{product.product_id}</td>
+                  <td className="px-4 py-2">{product.quantity}</td>
+                  <td className="px-4 py-2">{new Date(product.entry_date).toLocaleDateString()}</td>
+                  <td className="px-4 py-2"></td>
+                </tr>
+              ))}
             </tbody>
           </table>
         ) : (
@@ -173,52 +156,43 @@ const WarehouseView: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-            {filteredResources && filteredResources.length > 0 ? (
-              filteredResources.map((resource) => (
-                <tr key={resource.id} className="hover:bg-gray-50 border-t">
-                  <td className="px-4 py-2">{resource.warehouse_name}</td>
-                  <td className="px-4 py-2">{resource.resource_name}</td>
-                  <td className="px-4 py-2">{resource.quantity}</td>
-                  <td className="px-4 py-2">{new Date(resource.entry_date).toLocaleDateString()}</td>
-                  <td className="px-4 py-2 flex space-x-2">
-                    <button
-                      onClick={() => setEditingResource(resource.id!)}
-                      className="text-blue-600 hover:text-blue-800"
-                      title="Editar"
-                    >
-                      <Edit size={18} />
-                    </button>
-                    <button
-                      onClick={() => setDeletingResource(resource.id!)}
-                      className="text-red-600 hover:text-red-800"
-                      title="Eliminar"
-                    >
-                      <Trash size={18} />
-                    </button>
+              {filteredResources && filteredResources.length > 0 ? (
+                filteredResources.map((resource) => (
+                  <tr key={resource.id} className="hover:bg-gray-50 border-t">
+                    <td className="px-4 py-2">{resource.warehouse_name}</td>
+                    <td className="px-4 py-2">{resource.resource_name}</td>
+                    <td className="px-4 py-2">{resource.quantity}</td>
+                    <td className="px-4 py-2">{new Date(resource.entry_date).toLocaleDateString()}</td>
+                    <td className="px-4 py-2 flex space-x-2">
+                      <button onClick={() => setEditingResource(resource.id!)} className="text-blue-600 hover:text-blue-800" title="Editar">
+                        <Edit size={18} />
+                      </button>
+                      <button onClick={() => setDeletingResource(resource.id!)} className="text-red-600 hover:text-red-800" title="Eliminar">
+                        <Trash size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="text-center py-4 text-gray-500">
+                    {searchTerm
+                      ? "No se encontraron recursos que coincidan con la búsqueda"
+                      : "No hay recursos registrados"}
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={5} className="text-center py-4 text-gray-500">
-                  {searchTerm
-                    ? "No se encontraron recursos que coincidan con la búsqueda"
-                    : "No hay recursos registrados"}
-                </td>
-              </tr>
-            )}
-          </tbody>
+              )}
+            </tbody>
           </table>
         )}
       </div>
 
-      {/* Modals */}
       {showCreate && (
         <ModalCreateWarehouses
           open={showCreate}
           onClose={() => setShowCreate(false)}
-          onCreate={handleCreate}
-          onSuccess={() => { } } 
+          onCreate={createResource.mutate}
+          onSuccess={() => {}}
           resourceType={selectedType}
         />
       )}
@@ -227,7 +201,7 @@ const WarehouseView: React.FC = () => {
         <ModalEditWarehouses
           open={!!editingResource}
           onClose={() => setEditingResource(null)}
-          onEdit={handleEdit}
+          onEdit={updateResource.mutate}
           resourceId={editingResource}
         />
       )}
@@ -238,7 +212,7 @@ const WarehouseView: React.FC = () => {
           onClose={() => setDeletingResource(null)}
           onDelete={() => {
             if (deletingResource) {
-              return handleDelete(deletingResource);
+              return deleteResource.mutate(deletingResource);
             }
             return undefined;
           }}
