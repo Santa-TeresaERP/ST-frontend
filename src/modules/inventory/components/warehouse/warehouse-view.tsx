@@ -22,6 +22,8 @@ import ModalEditWarehouses from "./resource/modal-edit-resource-warehouse";
 import ModalDeleteWarehouses from "./resource/modal-delete-resource-warehouse";
 import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
 
+import ModalWarehouses from './warehouses/modal-warehouses';
+
 const WarehouseView: React.FC = () => {
   const {
     data: warehouseResources,
@@ -44,6 +46,8 @@ const WarehouseView: React.FC = () => {
   const [selectedType, setSelectedType] = useState<"producto" | "recurso">(
     "producto"
   );
+
+  const [showWarehouses, setShowWarehouses] = useState(false);
 
   const enrichedResources = warehouseResources?.map((warehouseResource) => {
     const resource = resources?.find(
@@ -88,76 +92,82 @@ const WarehouseView: React.FC = () => {
     );
   }
 
-  return (
-    <div className="p-6 space-y-4 bg-gray-50 min-h-screen">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-semibold text-blue-700">
-          Gestión de Almacén
-        </h2>
-        <div className="flex gap-2">
-          <button
-            className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
-              selectedType === "producto"
-                ? "bg-blue-700 text-white"
-                : "bg-white text-blue-700 border border-blue-700"
-            }`}
-            onClick={() => setSelectedType("producto")}
-          >
-            <Package size={18} /> Producto
-          </button>
-          <button
-            className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
-              selectedType === "recurso"
-                ? "bg-orange-500 text-white"
-                : "bg-white text-orange-500 border border-orange-500"
-            }`}
-            onClick={() => setSelectedType("recurso")}
-          >
-            <Users size={18} /> Recurso
-          </button>
-        </div>
-      </div>
+return (
+  <div className="p-6 space-y-4 bg-gray-50 min-h-screen">
+    <div className="flex justify-between items-center">
+      <h2 className="text-3xl font-semibold text-blue-700">Gestión de Almacén</h2>
+    </div>
 
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-2 text-gray-600">
-          <Home size={24} className="text-blue-700" />
-          <span className="text-lg font-medium">
-            Lista de {selectedType === "producto" ? "productos" : "recursos"}
-          </span>
+<div className="flex justify-between items-center">
+  <div className="flex items-center space-x-2 text-gray-600">
+    <Home size={24} className="text-blue-700" />
+    <span className="text-lg font-medium">
+      Lista de {selectedType === 'producto' ? 'productos' : 'recursos'}
+    </span>
+  </div>
+  <div className="flex items-center gap-2">
+    {/* Botón Almacenes azul, junto al filtro */}
+    <button
+      className="flex items-center gap-2 px-4 py-2 rounded-full font-semibold bg-blue-700 text-white hover:bg-blue-800 transition-colors"
+      onClick={() => {
+        setShowWarehouses(true)
+      }}
+    >
+      <Home size={18} /> Almacenes
+    </button>
+     <div className="relative inline-flex items-center shadow-sm rounded-xl bg-white">
+          <Filter className="absolute left-4 text-blue-700 pointer-events-none" size={20} />
+          <input
+            type="text"
+            className="pl-11 pr-6 py-3 rounded-xl border border-blue-700 text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-transparent hover:bg-gray-200 transition duration-300 min-w-[200px]"
+            placeholder={`Buscar por ${selectedType === 'producto' ? 'producto' : 'recurso'}, almacén, cantidad o fecha...`}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
         <button
           onClick={() => setShowCreate(true)}
           className="flex items-center gap-2 px-4 py-2 rounded-full font-semibold bg-blue-700 text-white hover:bg-blue-800"
         >
-          <PlusCircle size={18} /> Crear{" "}
-          {selectedType === "producto" ? "Producto" : "Recurso"}
-        </button>
-      </div>
+      <PlusCircle size={18} /> Crear {selectedType === 'producto' ? 'Producto' : 'Recurso'}
+    </button>
+  </div>
+</div>
 
-      <div className="relative inline-flex items-center shadow-sm rounded-xl bg-white">
-        <Filter
-          className="absolute left-4 text-blue-700 pointer-events-none"
-          size={20}
-        />
-        <input
-          type="text"
-          className="pl-11 pr-6 py-3 rounded-xl border border-blue-700 text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-transparent hover:bg-gray-200 transition duration-300 min-w-[200px]"
-          placeholder={`Buscar por ${selectedType === "producto" ? "producto" : "recurso"}, almacén, cantidad o fecha...`}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
+    {/* Botones Producto y Recurso */}
+    <div className="flex gap-2 mb-4 mt-2">
+      <button
+        className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
+          selectedType === 'producto'
+            ? 'bg-blue-700 text-white'
+            : 'bg-white text-blue-700 border border-blue-700'
+        }`}
+        onClick={() => setSelectedType('producto')}
+      >
+        <Package size={18} /> Producto
+      </button>
+      <button
+        className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
+          selectedType === 'recurso'
+            ? 'bg-orange-500 text-white'
+            : 'bg-white text-orange-500 border border-orange-500'
+        }`}
+        onClick={() => setSelectedType('recurso')}
+      >
+        <Users size={18} /> Recurso
+      </button>
+    </div>
 
       <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
         {selectedType === "producto" ? (
           <table className="min-w-full text-sm">
-            <thead className="bg-blue-800 text-white">
+            <thead className="bg-gray-800 dark:bg-gray-700 text-white">
               <tr>
-                <th className="px-4 py-2 text-left">Almacén</th>
-                <th className="px-4 py-2 text-left">ID Producto</th>
-                <th className="px-4 py-2 text-left">Cantidad</th>
-                <th className="px-4 py-2 text-left">Fecha de Entrada</th>
-                <th className="px-4 py-2 text-left">Acciones</th>
+                <th className="px-4 py-2 text-center">Almacén</th>
+                <th className="px-4 py-2 text-center">ID Producto</th>
+                <th className="px-4 py-2 text-center">Cantidad</th>
+                <th className="px-4 py-2 text-center">Fecha de Entrada</th>
+                <th className="px-4 py-2 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -182,13 +192,13 @@ const WarehouseView: React.FC = () => {
           </table>
         ) : (
           <table className="min-w-full text-sm">
-            <thead className="bg-orange-500 text-white">
+            <thead className="bg-gray-800 dark:bg-gray-700bg-gray-800 dark:bg-gray-700 text-white">
               <tr>
-                <th className="px-4 py-2 text-left">Almacén</th>
-                <th className="px-4 py-2 text-left">Recurso</th>
-                <th className="px-4 py-2 text-left">Cantidad</th>
-                <th className="px-4 py-2 text-left">Fecha de Entrada</th>
-                <th className="px-4 py-2 text-left">Acciones</th>
+                <th className="px-4 py-2 text-center">Almacén</th>
+                <th className="px-4 py-2 text-center">Recurso</th>
+                <th className="px-4 py-2 text-center">Cantidad</th>
+                <th className="px-4 py-2 text-center">Fecha de Entrada</th>
+                <th className="px-4 py-2 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -235,7 +245,7 @@ const WarehouseView: React.FC = () => {
 
       {showCreate && (
         <ModalCreateWarehouses
-          open={showCreate}
+          isOpen={showCreate}
           onClose={() => setShowCreate(false)}
           onCreate={async (newResource) => {
             return new Promise<void>((resolve, reject) => {
@@ -295,6 +305,14 @@ const WarehouseView: React.FC = () => {
           resourceId={deletingResource}
         />
       )}
+
+      {showWarehouses && (
+        <ModalWarehouses
+          open={showWarehouses}
+          onOpenChange={setShowWarehouses}
+        />
+      )}
+      
     </div>
   );
 };
