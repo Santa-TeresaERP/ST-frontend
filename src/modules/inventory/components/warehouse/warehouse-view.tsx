@@ -1,44 +1,61 @@
-import React, { useState } from 'react';
-import { Filter, Home, Package, Users, Edit, Trash, PlusCircle } from 'lucide-react';
+import React, { useState } from "react";
+import {
+  Filter,
+  Home,
+  Package,
+  Users,
+  Edit,
+  Trash,
+  PlusCircle,
+} from "lucide-react";
 import {
   useFetchWarehouseResources,
   useCreateWarehouseResource,
   useUpdateWarehouseResource,
   useDeleteWarehouseResource,
-} from '@/modules/inventory/hook/useWarehouseResources';
-import { useFetchResources } from '@/modules/inventory/hook/useResources';
-import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
-import {
-  useFetchWarehouseProducts
-} from '@/modules/inventory/hook/useWarehouseProducts';
-import { WarehouseResourceAttributes } from '@/modules/inventory/types/warehouseResource';
-import ModalCreateWarehouses from './resource/modal-create-resource-warehouse';
-import ModalEditWarehouses from './resource/modal-edit-resource-warehouse';
-import ModalDeleteWarehouses from './resource/modal-delete-resource-warehouse';
+} from "@/modules/inventory/hook/useWarehouseResources";
+import { useFetchResources } from "@/modules/inventory/hook/useResources";
+import { useFetchWarehouses } from "@/modules/inventory/hook/useWarehouses";
+import { useFetchWarehouseProducts } from "@/modules/inventory/hook/useWarehouseProducts";
+import ModalCreateWarehouses from "./resource/modal-create-resource-warehouse";
+import ModalEditWarehouses from "./resource/modal-edit-resource-warehouse";
+import ModalDeleteWarehouses from "./resource/modal-delete-resource-warehouse";
+import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
 
 const WarehouseView: React.FC = () => {
-  const { data: warehouseResources, isLoading, error } = useFetchWarehouseResources();
+  const {
+    data: warehouseResources,
+    isLoading,
+    error,
+  } = useFetchWarehouseResources();
   const { data: resources } = useFetchResources();
   const { data: warehouses } = useFetchWarehouses();
   const { data: warehouseProducts } = useFetchWarehouseProducts();
+  const { data: products } = useFetchProducts();
 
   const createResource = useCreateWarehouseResource();
   const updateResource = useUpdateWarehouseResource();
   const deleteResource = useDeleteWarehouseResource();
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [editingResource, setEditingResource] = useState<string | null>(null);
   const [deletingResource, setDeletingResource] = useState<string | null>(null);
-  const [selectedType, setSelectedType] = useState<'producto' | 'recurso'>('producto');
+  const [selectedType, setSelectedType] = useState<"producto" | "recurso">(
+    "producto"
+  );
 
   const enrichedResources = warehouseResources?.map((warehouseResource) => {
-    const resource = resources?.find((r) => r.id === warehouseResource.resource_id);
-    const warehouse = warehouses?.find((w) => w.id === warehouseResource.warehouse_id);
+    const resource = resources?.find(
+      (r) => r.id === warehouseResource.resource_id
+    );
+    const warehouse = warehouses?.find(
+      (w) => w.id === warehouseResource.warehouse_id
+    );
     return {
       ...warehouseResource,
-      resource_name: resource?.name || 'Desconocido',
-      warehouse_name: warehouse?.name || 'Desconocido',
+      resource_name: resource?.name || "Desconocido",
+      warehouse_name: warehouse?.name || "Desconocido",
     };
   });
 
@@ -48,7 +65,10 @@ const WarehouseView: React.FC = () => {
       resource.warehouse_name.toLowerCase().includes(searchLower) ||
       resource.resource_name.toLowerCase().includes(searchLower) ||
       resource.quantity.toString().includes(searchLower) ||
-      new Date(resource.entry_date).toLocaleDateString().toLowerCase().includes(searchLower)
+      new Date(resource.entry_date)
+        .toLocaleDateString()
+        .toLowerCase()
+        .includes(searchLower)
     );
   });
 
@@ -71,25 +91,27 @@ const WarehouseView: React.FC = () => {
   return (
     <div className="p-6 space-y-4 bg-gray-50 min-h-screen">
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-semibold text-blue-700">Gestión de Almacén</h2>
+        <h2 className="text-3xl font-semibold text-blue-700">
+          Gestión de Almacén
+        </h2>
         <div className="flex gap-2">
           <button
             className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
-              selectedType === 'producto'
-                ? 'bg-blue-700 text-white'
-                : 'bg-white text-blue-700 border border-blue-700'
+              selectedType === "producto"
+                ? "bg-blue-700 text-white"
+                : "bg-white text-blue-700 border border-blue-700"
             }`}
-            onClick={() => setSelectedType('producto')}
+            onClick={() => setSelectedType("producto")}
           >
             <Package size={18} /> Producto
           </button>
           <button
             className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
-              selectedType === 'recurso'
-                ? 'bg-orange-500 text-white'
-                : 'bg-white text-orange-500 border border-orange-500'
+              selectedType === "recurso"
+                ? "bg-orange-500 text-white"
+                : "bg-white text-orange-500 border border-orange-500"
             }`}
-            onClick={() => setSelectedType('recurso')}
+            onClick={() => setSelectedType("recurso")}
           >
             <Users size={18} /> Recurso
           </button>
@@ -99,29 +121,35 @@ const WarehouseView: React.FC = () => {
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-2 text-gray-600">
           <Home size={24} className="text-blue-700" />
-          <span className="text-lg font-medium">Lista de {selectedType === 'producto' ? 'productos' : 'recursos'}</span>
+          <span className="text-lg font-medium">
+            Lista de {selectedType === "producto" ? "productos" : "recursos"}
+          </span>
         </div>
         <button
           onClick={() => setShowCreate(true)}
           className="flex items-center gap-2 px-4 py-2 rounded-full font-semibold bg-blue-700 text-white hover:bg-blue-800"
         >
-          <PlusCircle size={18} /> Crear {selectedType === 'producto' ? 'Producto' : 'Recurso'}
+          <PlusCircle size={18} /> Crear{" "}
+          {selectedType === "producto" ? "Producto" : "Recurso"}
         </button>
       </div>
 
       <div className="relative inline-flex items-center shadow-sm rounded-xl bg-white">
-        <Filter className="absolute left-4 text-blue-700 pointer-events-none" size={20} />
+        <Filter
+          className="absolute left-4 text-blue-700 pointer-events-none"
+          size={20}
+        />
         <input
           type="text"
           className="pl-11 pr-6 py-3 rounded-xl border border-blue-700 text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-transparent hover:bg-gray-200 transition duration-300 min-w-[200px]"
-          placeholder={`Buscar por ${selectedType === 'producto' ? 'producto' : 'recurso'}, almacén, cantidad o fecha...`}
+          placeholder={`Buscar por ${selectedType === "producto" ? "producto" : "recurso"}, almacén, cantidad o fecha...`}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
       <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
-        {selectedType === 'producto' ? (
+        {selectedType === "producto" ? (
           <table className="min-w-full text-sm">
             <thead className="bg-blue-800 text-white">
               <tr>
@@ -135,10 +163,18 @@ const WarehouseView: React.FC = () => {
             <tbody>
               {warehouseProducts?.data.map((product) => (
                 <tr key={product.id} className="hover:bg-gray-50 border-t">
-                  <td className="px-4 py-2">{product.warehouse_id}</td>
-                  <td className="px-4 py-2">{product.product_id}</td>
+                  <td className="px-4 py-2">
+                    {warehouses?.find((w) => w.id === product.warehouse_id)
+                      ?.name || "Desconocido"}
+                  </td>
+                  <td className="px-4 py-2">
+                    {products?.find((p) => p.id === product.product_id)?.name ||
+                      "Desconocido"}
+                  </td>
                   <td className="px-4 py-2">{product.quantity}</td>
-                  <td className="px-4 py-2">{new Date(product.entry_date).toLocaleDateString()}</td>
+                  <td className="px-4 py-2">
+                    {new Date(product.entry_date).toLocaleDateString()}
+                  </td>
                   <td className="px-4 py-2"></td>
                 </tr>
               ))}
@@ -162,12 +198,22 @@ const WarehouseView: React.FC = () => {
                     <td className="px-4 py-2">{resource.warehouse_name}</td>
                     <td className="px-4 py-2">{resource.resource_name}</td>
                     <td className="px-4 py-2">{resource.quantity}</td>
-                    <td className="px-4 py-2">{new Date(resource.entry_date).toLocaleDateString()}</td>
+                    <td className="px-4 py-2">
+                      {new Date(resource.entry_date).toLocaleDateString()}
+                    </td>
                     <td className="px-4 py-2 flex space-x-2">
-                      <button onClick={() => setEditingResource(resource.id!)} className="text-blue-600 hover:text-blue-800" title="Editar">
+                      <button
+                        onClick={() => setEditingResource(resource.id!)}
+                        className="text-blue-600 hover:text-blue-800"
+                        title="Editar"
+                      >
                         <Edit size={18} />
                       </button>
-                      <button onClick={() => setDeletingResource(resource.id!)} className="text-red-600 hover:text-red-800" title="Eliminar">
+                      <button
+                        onClick={() => setDeletingResource(resource.id!)}
+                        className="text-red-600 hover:text-red-800"
+                        title="Eliminar"
+                      >
                         <Trash size={18} />
                       </button>
                     </td>
@@ -191,7 +237,20 @@ const WarehouseView: React.FC = () => {
         <ModalCreateWarehouses
           open={showCreate}
           onClose={() => setShowCreate(false)}
-          onCreate={createResource.mutate}
+          onCreate={async (newResource) => {
+            return new Promise<void>((resolve, reject) => {
+              createResource.mutate(newResource, {
+                onSuccess: () => {
+                  setShowCreate(false);
+                  resolve();
+                },
+                onError: (error) => {
+                  console.error("Error al crear recurso:", error);
+                  reject(error);
+                },
+              });
+            });
+          }}
           onSuccess={() => {}}
           resourceType={selectedType}
         />
@@ -201,7 +260,23 @@ const WarehouseView: React.FC = () => {
         <ModalEditWarehouses
           open={!!editingResource}
           onClose={() => setEditingResource(null)}
-          onEdit={updateResource.mutate}
+          onEdit={async (id, updates) => {
+            return new Promise<void>((resolve, reject) => {
+              updateResource.mutate(
+                { id, data: updates },
+                {
+                  onSuccess: () => {
+                    setEditingResource(null);
+                    resolve();
+                  },
+                  onError: (error) => {
+                    console.error("Error al editar recurso:", error);
+                    reject(error);
+                  },
+                }
+              );
+            });
+          }}
           resourceId={editingResource}
         />
       )}
