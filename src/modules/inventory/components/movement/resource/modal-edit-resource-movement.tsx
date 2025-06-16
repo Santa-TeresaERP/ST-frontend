@@ -3,7 +3,7 @@ import { X, Save } from 'lucide-react';
 
 interface ModalEditResourceMovementProps {
   movimiento: {
-    id: number;
+    id: string; // Changed from number
     recurso: string;
     almacen: string;
     tipoMovimiento: string;
@@ -12,7 +12,7 @@ interface ModalEditResourceMovementProps {
   };
   onClose: () => void;
   onUpdate: (movimiento: {
-    id: number;
+    id: string; // Changed from number
     recurso: string;
     almacen: string;
     tipoMovimiento: string;
