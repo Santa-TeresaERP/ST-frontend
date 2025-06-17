@@ -1,51 +1,78 @@
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import { useUpdateWarehouse } from "@/modules/inventory/hook/useWarehouses";
+import { UpdateWarehousePayload } from "@/modules/inventory/types/warehouse";
+import { toast } from "react-toastify";
 
 interface Warehouse {
-  id: number;
-  nombre: string;
-  locacion: string;
-  capacidad: string;
-  observaciones: string;
+  id: string;
+  name: string;
+  location: string;
+  capacity: number;
+  observation?: string;
 }
 
 interface ModalEditWarehousesViewProps {
   showModal: boolean;
   onClose: () => void;
   warehouse: Warehouse;
-  onSave: (updatedWarehouse: Warehouse) => void;
+  onSuccess?: () => void;
 }
 
 const ModalEditWarehousesView: React.FC<ModalEditWarehousesViewProps> = ({
   showModal,
   onClose,
   warehouse,
-  onSave,
+  onSuccess,
 }) => {
-  const [nombre, setNombre] = useState("");
-  const [locacion, setLocacion] = useState("");
-  const [capacidad, setCapacidad] = useState("");
-  const [observaciones, setObservaciones] = useState("");
+  const [name, setName] = useState("");
+  const [location, setLocation] = useState("");
+  const [capacity, setCapacity] = useState<number | "">("");
+  const [observation, setObservation] = useState("");
+
+  const updateWarehouse = useUpdateWarehouse();
 
   useEffect(() => {
     if (warehouse) {
-      setNombre(warehouse.nombre);
-      setLocacion(warehouse.locacion);
-      setCapacidad(warehouse.capacidad);
-      setObservaciones(warehouse.observaciones);
+      setName(warehouse.name);
+      setLocation(warehouse.location);
+      setCapacity(warehouse.capacity);
+      setObservation(warehouse.observation || "");
     }
   }, [warehouse]);
 
   const handleSave = () => {
-    const updatedWarehouse: Warehouse = {
-      ...warehouse,
-      nombre,
-      locacion,
-      capacidad,
-      observaciones,
+    if (!name.trim()) {
+      toast.error("El nombre es obligatorio");
+      return;
+    }
+
+    if (capacity === "" || capacity <= 0) {
+      toast.error("La capacidad debe ser mayor a 0");
+      return;
+    }
+
+    const payload: UpdateWarehousePayload = {
+      name: name.trim(),
+      location: location.trim(),
+      capacity: Number(capacity),
+      observation: observation.trim() || undefined,
     };
-    onSave(updatedWarehouse);
-    onClose();
+
+    updateWarehouse.mutate(
+      { id: warehouse.id, payload },
+      {
+        onSuccess: () => {
+          toast.success("Almacén actualizado exitosamente");
+          onSuccess?.();
+          onClose();
+        },
+        onError: (error) => {
+          console.error("Error al actualizar el almacén:", error);
+          toast.error("Error al actualizar el almacén");
+        },
+      }
+    );
   };
 
   if (!showModal) return null;
@@ -74,8 +101,8 @@ const ModalEditWarehousesView: React.FC<ModalEditWarehousesViewProps> = ({
             </label>
             <input
               type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500"
               placeholder="Ej: Almacén Central"
             />
@@ -87,8 +114,8 @@ const ModalEditWarehousesView: React.FC<ModalEditWarehousesViewProps> = ({
             </label>
             <input
               type="text"
-              value={locacion}
-              onChange={(e) => setLocacion(e.target.value)}
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500"
               placeholder="Ej: Calle Industrial 123"
             />
@@ -99,11 +126,12 @@ const ModalEditWarehousesView: React.FC<ModalEditWarehousesViewProps> = ({
               Capacidad
             </label>
             <input
-              type="text"
-              value={capacidad}
-              onChange={(e) => setCapacidad(e.target.value)}
+              type="number"
+              value={capacity}
+              onChange={(e) => setCapacity(e.target.value === "" ? "" : Number(e.target.value))}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500"
-              placeholder="Ej: 1000 unidades"
+              placeholder="Ej: 1000"
+              min="0"
             />
           </div>
 
@@ -112,8 +140,8 @@ const ModalEditWarehousesView: React.FC<ModalEditWarehousesViewProps> = ({
               Observaciones
             </label>
             <textarea
-              value={observaciones}
-              onChange={(e) => setObservaciones(e.target.value)}
+              value={observation}
+              onChange={(e) => setObservation(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500"
               placeholder="Notas adicionales"
               rows={3}
@@ -126,14 +154,16 @@ const ModalEditWarehousesView: React.FC<ModalEditWarehousesViewProps> = ({
           <button
             onClick={onClose}
             className="px-5 py-2.5 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700"
+            disabled={updateWarehouse.isPending}
           >
             Cancelar
           </button>
           <button
             onClick={handleSave}
-            className="px-5 py-2.5 rounded-xl bg-yellow-500 hover:bg-yellow-600 text-white shadow-md hover:shadow-lg"
+            className="px-5 py-2.5 rounded-xl bg-yellow-500 hover:bg-yellow-600 text-white shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={updateWarehouse.isPending}
           >
-            Guardar Cambios
+            {updateWarehouse.isPending ? "Guardando..." : "Guardar Cambios"}
           </button>
         </div>
       </div>
