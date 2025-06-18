@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const lostSchema = z.object({
-  product_id: z.string().uuid('El ID del producto debe ser un UUID válido'),
+  production_id: z.string().uuid('El ID del producto debe ser un UUID válido'),
 
   quantity: z
     .number()

@@ -3,13 +3,13 @@ import { FiFilter, FiSearch, FiPlus, FiTrash2, FiEdit, FiAlertTriangle, FiCalend
 import { useFetchAllLost, useCreateLost, useDeleteLost } from '@/modules/production/hook/useLost';
 import { lostSchema } from '@/modules/production/schemas/lostValidation';
 import { CreateLostPayload } from '@/modules/production/types/lost';
-import { useFetchProducts } from '@/modules/production/hook/useProducts';
 import { toast } from 'react-toastify';
+import { useFetchProductions } from '../../hook/useProductions';
 
 const LostComponentView: React.FC = () => {
   // Obtener datos usando los hooks
   const { data: lostData = [], isLoading, error } = useFetchAllLost();
-  const { data: products = [], isLoading: loadingProducts } = useFetchProducts();
+  const { data: productions = [], isLoading: loadingProducts } = useFetchProductions();
   const createLostMutation = useCreateLost();
   const deleteLostMutation = useDeleteLost();
 
@@ -24,21 +24,28 @@ const LostComponentView: React.FC = () => {
 
   // Estado para el nuevo registro
   const [newLostItem, setNewLostItem] = useState<CreateLostPayload>({
-    product_id: '',
+    production_id: '',
     quantity: 0,
     lost_type: '',
     observations: '',
   });
 
   // Obtener nombre completo del producto para mostrar
-  const getProductName = (productId: string) => {
-    const product = products.find(p => p.id === productId);
-    return product ? product.name : productId;
+  const getProductionDisplay = (productionId: string) => {
+    const production = productions.find(p => p.id === productionId);
+    if (!production) return productionId;
+    // Si productId es un string, deberías buscar el producto por ID, pero según tu types, parece que es un objeto o tiene un campo name
+    // Si no, ajusta esto según tu estructura real
+    const productName = (production.productId as any)?.name || production.productId || 'Producto';
+    const prodDate = production.productionDate
+      ? new Date(production.productionDate).toLocaleDateString()
+      : '';
+    return `${productName} ${prodDate}`;
   };
   
   // Filtrar datos
   const filteredData = lostData.filter(item => {
-    const productName = getProductName(item.product_id).toLowerCase();
+    const productName = getProductionDisplay(item.production_id).toLowerCase();
     const matchesSearch = productName.includes(searchTerm.toLowerCase()) || 
                          item.observations?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = selectedType === 'all' || item.lost_type === selectedType;
@@ -68,7 +75,7 @@ const LostComponentView: React.FC = () => {
       
       setIsAddModalOpen(false);
       setNewLostItem({
-        product_id: '',
+        production_id: '',
         quantity: 0,
         lost_type: '',
         observations: '',
@@ -233,7 +240,7 @@ const LostComponentView: React.FC = () => {
               filteredData.map((lost) => (
                 <tr key={lost.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {getProductName(lost.product_id)}
+                    {getProductionDisplay(lost.production_id)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">
@@ -296,37 +303,43 @@ const LostComponentView: React.FC = () => {
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Producto *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Produccion *</label>
                   {loadingProducts ? (
                     <div className="text-sm text-gray-500">Cargando productos...</div>
-                  ) : products.length === 0 ? (
+                  ) : productions.length === 0 ? (
                     <div className="text-sm text-red-500">No hay productos disponibles</div>
                   ) : (
                     <div className="relative">
                       <select
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={newLostItem.product_id}
+                        value={newLostItem.production_id}
                         onChange={(e) => {
                           if (e.target.value === "show-more") {
                             setShowAllProducts(true);
                             return;
                           }
-                          setNewLostItem({...newLostItem, product_id: e.target.value});
+                          setNewLostItem({...newLostItem, production_id: e.target.value});
                         }}
                         required
                       >
-                        <option value="">Seleccionar producto</option>
-                        {(showAllProducts ? products : products.slice(0, 5)).map(product => (
-                          <option key={product.id} value={product.id}>
-                            {product.name}
+                      <option value="">Seleccionar producto</option>
+                      {(showAllProducts ? productions : productions.slice(0, 5)).map(prod => {
+                        // Obtener nombre y fecha
+                        const productName = (prod.productId as any)?.name || prod.productId || 'Producto';
+                        const prodDate = prod.productionDate
+                          ? new Date(prod.productionDate).toLocaleDateString()
+                          : '';
+                        return (
+                          <option key={prod.id} value={prod.id}>
+                            {`${productName} ${prodDate}`}
                           </option>
-                        ))}
-                        
-                        {!showAllProducts && products.length > 5 && (
-                          <option value="show-more" className="text-blue-600 italic">
-                            Mostrar más...
-                          </option>
-                        )}
+                        );
+                      })}
+                      {!showAllProducts && productions.length > 5 && (
+                        <option value="show-more" className="text-blue-600 italic">
+                          Mostrar más...
+                        </option>
+                      )}
                       </select>
                     </div>
                   )}
