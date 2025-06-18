@@ -1,35 +1,47 @@
 import React, { useState } from 'react';
 import { X, Save } from 'lucide-react';
+import { useCreateWarehouseProduct } from '../../../hook/useWarehouseProducts';
+import { useFetchWarehouses } from '../../../hook/useWarehouses';
+import { useFetchProducts } from '../../../hook/useProducts';
 
 type ModalCreateProductWarehouseProps = {
   onClose: () => void;
-  onCreate: (producto: { nombre: string; cantidad: number; almacen: string }) => void;
 };
 
 const ModalCreateProductWarehouse: React.FC<ModalCreateProductWarehouseProps> = ({
-  onClose,
-  onCreate,
+  onClose
 }) => {
-  const [nombre, setNombre] = useState('');
-  const [cantidad, setCantidad] = useState<number | ''>('');
-  const [almacen, setAlmacen] = useState('Cerro Colorado');
+  const [warehouse_id, setWarehouseId] = useState('');
+  const [product_id, setProductId] = useState('');
+  const [quantity, setQuantity] = useState<number | ''>('');
+  const [entry_date, setEntryDate] = useState('');
   const [error, setError] = useState('');
+
+  const { mutate, status } = useCreateWarehouseProduct();
+  const { data: warehouses, isLoading: loadingWarehouses } = useFetchWarehouses();
+  const { data: products, isLoading: loadingProducts } = useFetchProducts();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!nombre.trim()) {
-      setError('El nombre es obligatorio.');
-      return;
-    }
-    if (cantidad === '' || cantidad <= 0) {
-      setError('La cantidad debe ser mayor a 0.');
+    if (!warehouse_id || !product_id || quantity === '' || Number(quantity) < 0 || !entry_date) {
+      setError('Todos los campos son obligatorios y la cantidad debe ser mayor o igual a 0.');
       return;
     }
 
     setError('');
-    onCreate({ nombre: nombre.trim(), cantidad: Number(cantidad), almacen });
-    onClose();
+    mutate(
+      {
+        warehouse_id,
+        product_id,
+        quantity: Number(quantity),
+        entry_date,
+      },
+      {
+        onSuccess: onClose,
+        onError: () => setError('Error al crear el producto en almacén.'),
+      }
+    );
   };
 
   return (
@@ -44,47 +56,56 @@ const ModalCreateProductWarehouse: React.FC<ModalCreateProductWarehouseProps> = 
             <X size={22} />
           </button>
         </div>
-
         <form onSubmit={handleSubmit} className="p-6 space-y-5 text-left">
           {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
-
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Nombre del Producto*</label>
-            <input
-              type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-              placeholder="Ejemplo: Harina de Trigo"
-              autoFocus
-            />
+            <label className="block text-gray-700 mb-1 font-medium">Almacén*</label>
+            <select
+              value={warehouse_id}
+              onChange={(e) => setWarehouseId(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2"
+              disabled={loadingWarehouses}
+            >
+              <option value="">Seleccione un almacén</option>
+              {warehouses?.map((w) => (
+                <option key={w.id} value={w.id}>{w.name}</option>
+              ))}
+            </select>
           </div>
-
+          <div>
+            <label className="block text-gray-700 mb-1 font-medium">Producto*</label>
+            <select
+              value={product_id}
+              onChange={(e) => setProductId(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2"
+              disabled={loadingProducts}
+            >
+              <option value="">Seleccione un producto</option>
+              {products?.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
           <div>
             <label className="block text-gray-700 mb-1 font-medium">Cantidad*</label>
             <input
               type="number"
-              min={1}
-              value={cantidad}
-              onChange={(e) => setCantidad(e.target.value === '' ? '' : Number(e.target.value))}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+              min={0}
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2"
               placeholder="Ejemplo: 50"
             />
           </div>
-
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Almacén*</label>
-            <select
-              value={almacen}
-              onChange={(e) => setAlmacen(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-            >
-              <option value="Cerro Colorado">Cerro Colorado</option>
-              <option value="Santa Catalina">Santa Catalina</option>
-              <option value="San Juan">San Juan</option>
-            </select>
+            <label className="block text-gray-700 mb-1 font-medium">Fecha de Entrada*</label>
+            <input
+              type="date"
+              value={entry_date}
+              onChange={(e) => setEntryDate(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            />
           </div>
-
           <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"
@@ -95,6 +116,7 @@ const ModalCreateProductWarehouse: React.FC<ModalCreateProductWarehouseProps> = 
             </button>
             <button
               type="submit"
+              disabled={status === 'pending'}
               className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2"
             >
               <Save size={18} /> Guardar
