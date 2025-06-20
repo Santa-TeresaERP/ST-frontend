@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import {
   Filter,
@@ -21,7 +22,9 @@ import ModalCreateWarehouses from "./resource/modal-create-resource-warehouse";
 import ModalEditWarehouses from "./resource/modal-edit-resource-warehouse";
 import ModalDeleteWarehouses from "./resource/modal-delete-resource-warehouse";
 import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
-
+import ModalCreateProductWarehouse from './product/modal-create-product-warehouse'; 
+import ModalEditProductWarehouse from './product/modal-edit-product-warehouse';
+import ModalDeleteProductWarehouse from './product/modal-delete-product-warehouse';
 import ModalWarehouses from './warehouses/modal-warehouses';
 
 const WarehouseView: React.FC = () => {
@@ -43,6 +46,8 @@ const WarehouseView: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [editingResource, setEditingResource] = useState<string | null>(null);
   const [deletingResource, setDeletingResource] = useState<string | null>(null);
+  const [editingProduct, setEditingProduct] = useState<React.Key | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState<React.Key | null>(null);
   const [selectedType, setSelectedType] = useState<"producto" | "recurso">(
     "producto"
   );
@@ -62,6 +67,13 @@ const WarehouseView: React.FC = () => {
       warehouse_name: warehouse?.name || "Desconocido",
     };
   });
+
+  const selectedWarehouseProduct = editingProduct
+    ? warehouseProducts?.find((p: any) => p.id === editingProduct)
+    : null;
+  const deletingWarehouseProduct = deletingProduct
+    ? warehouseProducts?.find((p: any) => p.id === deletingProduct)
+    : null;
 
   const filteredResources = enrichedResources?.filter((resource) => {
     const searchLower = searchTerm.toLowerCase();
@@ -90,6 +102,8 @@ const WarehouseView: React.FC = () => {
         Error al cargar los recursos: {error.message}
       </div>
     );
+  // setEditingProduct and setDeletingProduct are handled by useState above
+    throw new Error("Function not implemented.");
   }
 
 return (
@@ -171,7 +185,7 @@ return (
               </tr>
             </thead>
             <tbody>
-              {warehouseProducts?.data.map((product) => (
+              {warehouseProducts?.map((product: { id: React.Key | null | undefined; warehouse_id: string | undefined; product_id: string; quantity: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined; entry_date: string | number | Date; }) => (
                 <tr key={product.id} className="hover:bg-gray-50 border-t">
                   <td className="px-4 py-2">
                     {warehouses?.find((w) => w.id === product.warehouse_id)
@@ -185,7 +199,22 @@ return (
                   <td className="px-4 py-2">
                     {new Date(product.entry_date).toLocaleDateString()}
                   </td>
-                  <td className="px-4 py-2"></td>
+                  <td className="px-4 py-2 flex space-x-2">
+                    <button
+                      onClick={() => setEditingProduct(product.id!)}
+                      className="text-blue-600 hover:text-blue-800"
+                      title="Editar"
+                    >
+                      <Edit size={18} />
+                    </button>
+                    <button
+                      onClick={() => setDeletingProduct(product.id!)}
+                      className="text-red-600 hover:text-red-800"
+                      title="Eliminar"
+                    >
+                      <Trash size={18} />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -243,9 +272,15 @@ return (
         )}
       </div>
 
-      {showCreate && (
+    {showCreate && (
+      selectedType === 'producto' ? (
+        <ModalCreateProductWarehouse
+          onClose={() => setShowCreate(false)}
+          // Add appropriate props for product creation here
+        />
+      ) : (
         <ModalCreateWarehouses
-          isOpen={showCreate}
+          open={showCreate}
           onClose={() => setShowCreate(false)}
           onCreate={async (newResource) => {
             return new Promise<void>((resolve, reject) => {
@@ -264,7 +299,8 @@ return (
           onSuccess={() => {}}
           resourceType={selectedType}
         />
-      )}
+      )
+    )}
 
       {editingResource && (
         <ModalEditWarehouses
@@ -291,6 +327,13 @@ return (
         />
       )}
 
+      {editingProduct && selectedWarehouseProduct && (
+        <ModalEditProductWarehouse
+          producto={selectedWarehouseProduct}
+          onClose={() => setEditingProduct(null)}
+        />
+      )}
+
       {deletingResource && (
         <ModalDeleteWarehouses
           open={!!deletingResource}
@@ -303,6 +346,17 @@ return (
           }}
           onSuccess={() => {}}
           resourceId={deletingResource}
+        />
+      )}
+
+      {deletingProduct && deletingWarehouseProduct && (
+        <ModalDeleteProductWarehouse
+          isOpen={!!deletingProduct}
+          onClose={() => setDeletingProduct(null)}
+          warehouseProductId={deletingProduct as string}
+          productName={
+            products?.find((p) => p.id === deletingWarehouseProduct.product_id)?.name
+          }
         />
       )}
 

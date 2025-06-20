@@ -1,70 +1,34 @@
-import {
-  WarehouseProduct,
-  CreateWarehouseProductPayload,
-  UpdateWarehouseProductPayload,
-} from '../types/product'
+import { WarehouseProduct, CreateWarehouseProductPayload, UpdateWarehouseProductPayload } from '../types/warehouseProduct';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchWarehouseProducts, createWarehouseProduct, updateWarehouseProduct, deleteWarehouseProduct } from '../action/warehouseProducts';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  fetchWarehouseProducts,
-  fetchWarehouseProductById,
-  fetchWarehouseProductsByWarehouse,
-  fetchWarehouseProductsByProduct,
-  createWarehouseProduct,
-  updateWarehouseProduct,
-  deleteWarehouseProduct,
-} from '../action/product'
-
-export const useFetchWarehouseProducts = () =>
-  useQuery<{ data: WarehouseProduct[] }, Error>({
-    queryKey: ['warehouse-products'],
+export const useFetchWarehouseProducts = () => {
+  return useQuery<WarehouseProduct[], Error>({
+    queryKey: ['warehouseProducts'],
     queryFn: fetchWarehouseProducts,
-  })
-
-export const useFetchWarehouseProductById = (id: string) =>
-  useQuery<{ data: WarehouseProduct }, Error>({
-    queryKey: ['warehouse-products', id],
-    queryFn: () => fetchWarehouseProductById(id),
-    enabled: !!id,
-  })
-
-export const useFetchWarehouseProductsByWarehouse = (warehouseId: string) =>
-  useQuery<{ data: WarehouseProduct[] }, Error>({
-    queryKey: ['warehouse-products', 'warehouse', warehouseId],
-    queryFn: () => fetchWarehouseProductsByWarehouse(warehouseId),
-    enabled: !!warehouseId,
-  })
-
-export const useFetchWarehouseProductsByProduct = (productId: string) =>
-  useQuery<{ data: WarehouseProduct[] }, Error>({
-    queryKey: ['warehouse-products', 'product', productId],
-    queryFn: () => fetchWarehouseProductsByProduct(productId),
-    enabled: !!productId,
-  })
+  });
+};
 
 export const useCreateWarehouseProduct = () => {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   return useMutation<WarehouseProduct, Error, CreateWarehouseProductPayload>({
     mutationFn: createWarehouseProduct,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['warehouse-products'] }),
-  })
-}
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['warehouseProducts'] }),
+  });
+};
 
 export const useUpdateWarehouseProduct = () => {
-  const queryClient = useQueryClient()
-  return useMutation<WarehouseProduct, Error, { id: string; payload: UpdateWarehouseProductPayload }>(
-    {
-      mutationFn: ({ id, payload }) => updateWarehouseProduct(id, payload),
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['warehouse-products'] }),
-    }
-  )
-}
+  const queryClient = useQueryClient();
+  return useMutation<WarehouseProduct, Error, { id: string; payload: UpdateWarehouseProductPayload }>({
+    mutationFn: ({ id, payload }) => updateWarehouseProduct(id, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['warehouseProducts'] }),
+  });
+};
 
 export const useDeleteWarehouseProduct = () => {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   return useMutation<void, Error, string>({
     mutationFn: deleteWarehouseProduct,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['warehouse-products'] }),
-  })
-}
-
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['warehouseProducts'] }),
+  });
+};
