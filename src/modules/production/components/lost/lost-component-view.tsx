@@ -65,11 +65,11 @@ const LostComponentView: React.FC = () => {
     // Ahora mapeamos las pérdidas a sus cadenas de visualización
     const displayStrings = new Map<string, string>();
     lostData.forEach(lost => {
-      const productionInfo = productionDisplayMap.get(lost.product_id);
+      const productionInfo = productionDisplayMap.get(lost.production_id);
       if (productionInfo) {
         displayStrings.set(lost.id, productionInfo.display);
       } else {
-        displayStrings.set(lost.id, `Producción no encontrada: ${lost.product_id}`);
+        displayStrings.set(lost.id, `Producción no encontrada: ${lost.production_id}`);
       }
     });
 
