@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { FiFilter, FiSearch, FiPlus, FiTrash2, FiEdit, FiAlertTriangle, FiCalendar } from 'react-icons/fi';
 import { useFetchAllLost, useCreateLost, useDeleteLost } from '@/modules/production/hook/useLost';
 import { lostSchema } from '@/modules/production/schemas/lostValidation';
 import { CreateLostPayload } from '@/modules/production/types/lost';
-import { useFetchProducts } from '@/modules/production/hook/useProducts';
 import { toast } from 'react-toastify';
+import { useFetchProductions } from '../../hook/useProductions';
+import { useFetchProducts } from '../../hook/useProducts';
 
 const LostComponentView: React.FC = () => {
   // Obtener datos usando los hooks
   const { data: lostData = [], isLoading, error } = useFetchAllLost();
-  const { data: products = [], isLoading: loadingProducts } = useFetchProducts();
+  const { data: productions = [], isLoading: loadingProducts } = useFetchProductions();
+  const { data: productsData = [], isLoading: isLoadingProducts, error: errorProducts } = useFetchProducts();
   const createLostMutation = useCreateLost();
   const deleteLostMutation = useDeleteLost();
 
@@ -30,15 +32,58 @@ const LostComponentView: React.FC = () => {
     observations: '',
   });
 
-  // Obtener nombre completo del producto para mostrar
-  const getProductName = (productId: string) => {
-    const product = products.find(p => p.id === productId);
-    return product ? product.name : productId;
+  const productionDisplayStrings = useMemo(() => {
+    if (isLoading || loadingProducts || isLoadingProducts) {
+      return new Map<string, string>();
+    }
+
+    // Primero creamos un mapa para contar cuántas veces aparece cada combinación producto-fecha
+    const productDateCount = new Map<string, number>();
+    const productionDisplayMap = new Map<string, {display: string, count: number}>();
+
+    // Procesamos todas las producciones para crear las cadenas de visualización
+    productions.forEach(production => {
+      const product = productsData.find(p => p.id === production.productId);
+      if (product) {
+        const prodDate = production.productionDate 
+          ? new Date(production.productionDate).toLocaleDateString() 
+          : 'Sin fecha';
+        const key = `${product.name} ${prodDate}`;
+        
+        // Contamos cuántas producciones hay para esta combinación producto-fecha
+        const currentCount = (productDateCount.get(key) || 0) + 1;
+        productDateCount.set(key, currentCount);
+        
+        // Guardamos la cadena de visualización para esta producción
+        productionDisplayMap.set(production.id, {
+          display: `${key} (${currentCount})`,
+          count: currentCount
+        });
+      }
+    });
+
+    // Ahora mapeamos las pérdidas a sus cadenas de visualización
+    const displayStrings = new Map<string, string>();
+    lostData.forEach(lost => {
+      const productionInfo = productionDisplayMap.get(lost.product_id);
+      if (productionInfo) {
+        displayStrings.set(lost.id, productionInfo.display);
+      } else {
+        displayStrings.set(lost.id, `Producción no encontrada: ${lost.product_id}`);
+      }
+    });
+
+    return displayStrings;
+  }, [lostData, productions, productsData, isLoading, loadingProducts, isLoadingProducts]);
+
+  const getProductionDisplay = (lostId: string) => {
+    return productionDisplayStrings.get(lostId) || 'ID de pérdida no encontrado';
   };
   
   // Filtrar datos
   const filteredData = lostData.filter(item => {
-    const productName = getProductName(item.product_id).toLowerCase();
+    const displayString = productionDisplayStrings.get(item.id) || '';
+    const productName = displayString.toLowerCase();
     const matchesSearch = productName.includes(searchTerm.toLowerCase()) || 
                          item.observations?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = selectedType === 'all' || item.lost_type === selectedType;
@@ -46,7 +91,7 @@ const LostComponentView: React.FC = () => {
     // Filtro por fecha
     const itemDate = new Date(item.created_at);
     const matchesStartDate = !startDate || itemDate >= new Date(startDate);
-    const matchesEndDate = !endDate || itemDate <= new Date(endDate + 'T23:59:59'); // Incluir todo el día
+    const matchesEndDate = !endDate || itemDate <= new Date(endDate + 'T23:59:59');
     
     return matchesSearch && matchesType && matchesStartDate && matchesEndDate;
   });
@@ -102,8 +147,9 @@ const LostComponentView: React.FC = () => {
     setEndDate('');
   };
 
-  if (isLoading) return <div className="p-4">Cargando datos de pérdidas...</div>;
-  if (error) return <div className="p-4 text-red-500">Error: {error.message}</div>;
+  if (isLoading || loadingProducts || isLoadingProducts) return <div className="p-4">Cargando datos...</div>;
+  if (error) return <div className="p-4 text-red-500">Error al cargar pérdidas: {error.message}</div>;
+  if (errorProducts) return <div className="p-4 text-red-500">Error al cargar productos: {errorProducts.message}</div>;
 
   return (
     <div className="space-y-6 p-4 bg-white rounded-lg shadow-md">
@@ -233,7 +279,7 @@ const LostComponentView: React.FC = () => {
               filteredData.map((lost) => (
                 <tr key={lost.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {getProductName(lost.product_id)}
+                    {getProductionDisplay(lost.id)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">
@@ -296,11 +342,11 @@ const LostComponentView: React.FC = () => {
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Producto *</label>
-                  {loadingProducts ? (
-                    <div className="text-sm text-gray-500">Cargando productos...</div>
-                  ) : products.length === 0 ? (
-                    <div className="text-sm text-red-500">No hay productos disponibles</div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Producción *</label>
+                  {(loadingProducts || isLoadingProducts) ? (
+                    <div className="text-sm text-gray-500">Cargando producciones/productos...</div>
+                  ) : productions.length === 0 ? (
+                    <div className="text-sm text-red-500">No hay producciones disponibles</div>
                   ) : (
                     <div className="relative">
                       <select
@@ -315,18 +361,36 @@ const LostComponentView: React.FC = () => {
                         }}
                         required
                       >
-                        <option value="">Seleccionar producto</option>
-                        {(showAllProducts ? products : products.slice(0, 5)).map(product => (
-                          <option key={product.id} value={product.id}>
-                            {product.name}
-                          </option>
-                        ))}
+                      <option value="">Seleccionar producción</option>
+                      {(showAllProducts ? productions : productions.slice(0, 5)).map(prod => {
+                        const product = productsData.find(p => p.id === prod.productId);
+                        const productName = product ? product.name : (prod.productId || 'Producto Desconocido');
+                        const prodDate = prod.productionDate
+                          ? new Date(prod.productionDate).toLocaleDateString()
+                          : 'Sin fecha';
                         
-                        {!showAllProducts && products.length > 5 && (
-                          <option value="show-more" className="text-blue-600 italic">
-                            Mostrar más...
+                        // Contamos cuántas producciones hay para este producto-fecha
+                        const sameProductDate = productions.filter(p => {
+                          const pProduct = productsData.find(pp => pp.id === p.productId);
+                          const pDate = p.productionDate 
+                            ? new Date(p.productionDate).toLocaleDateString() 
+                            : 'Sin fecha';
+                          return pProduct?.name === product?.name && pDate === prodDate;
+                        });
+                        
+                        const index = sameProductDate.findIndex(p => p.id === prod.id) + 1;
+                        
+                        return (
+                          <option key={prod.id} value={prod.id}>
+                            {`${productName} ${prodDate} (${index})`}
                           </option>
-                        )}
+                        );
+                      })}
+                      {!showAllProducts && productions.length > 5 && (
+                        <option value="show-more" className="text-blue-600 italic">
+                          Mostrar más...
+                        </option>
+                      )}
                       </select>
                     </div>
                   )}
@@ -375,7 +439,7 @@ const LostComponentView: React.FC = () => {
                 type="button"
                 className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-800 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
                 onClick={handleAddLostItem}
-                disabled={createLostMutation.isPending || loadingProducts}
+                disabled={createLostMutation.isPending || loadingProducts || isLoadingProducts}
               >
                 {createLostMutation.isPending ? 'Guardando...' : 'Guardar'}
               </button>
