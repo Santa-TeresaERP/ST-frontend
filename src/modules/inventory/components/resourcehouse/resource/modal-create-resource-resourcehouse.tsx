@@ -1,6 +1,7 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import * as Zod from 'zod';
 // Verified Icons import path
 import { X, Save, Loader2 } from 'lucide-react'; 
 // Verified Schema/Types import paths (assuming correct relative path)
@@ -12,6 +13,7 @@ import { Button } from '@/app/components/ui/button';
 import { Label } from '@/app/components/ui/label';
 // Removed import for non-existent Textarea component
 // import { Textarea } from '@/app/components/ui/textarea'; 
+import { useFetchSuppliers } from '@/modules/inventory/hook/useSuppliers'; // Asegúrate de que este hook existe
 
 type ModalNuevoRecursoProps = {
   isOpen: boolean;
@@ -47,6 +49,8 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
       purchase_date: '',
     },
   });
+
+  const { data: suppliers, isLoading: isLoadingSuppliers, error: errorSuppliers } = useFetchSuppliers();
 
   const onSubmit = async (data: ResourceFormData) => {
     const payload: CreateResourcePayload = {
@@ -130,12 +134,25 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
 
           <div>
             <Label htmlFor="supplier_id" className="dark:text-gray-300">Proveedor</Label>
-            <Input
-              id="supplier_id"
-              {...register('supplier_id')}
-              className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-              placeholder="ID del proveedor (temporal)"
-            />
+            {isLoadingSuppliers ? (
+              <div className="animate-pulse bg-gray-200 h-10 rounded-lg"></div>
+            ) : errorSuppliers ? (
+              <p className="text-red-500 text-sm">Error al cargar proveedores</p>
+            ) : (
+              <select
+                id="supplier_id"
+                {...register('supplier_id')}
+                className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                defaultValue=""
+              >
+                <option value="">Seleccione un proveedor</option>
+                {suppliers?.map((supplier) => (
+                  <option key={supplier.id} value={supplier.id}>
+                    {supplier.suplier_name}
+                  </option>
+                ))}
+              </select>
+            )}
             {errors.supplier_id && <p className="text-sm text-red-500 mt-1">{errors.supplier_id.message}</p>}
           </div>
 
