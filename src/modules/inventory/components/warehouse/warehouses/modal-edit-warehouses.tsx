@@ -33,13 +33,13 @@ const ModalEditWarehousesView: React.FC<ModalEditWarehousesViewProps> = ({
   const updateWarehouse = useUpdateWarehouse();
 
   useEffect(() => {
-    if (warehouse) {
+    if (showModal && warehouse) {
       setName(warehouse.name);
       setLocation(warehouse.location);
       setCapacity(warehouse.capacity);
       setObservation(warehouse.observation || "");
     }
-  }, [warehouse]);
+  }, [warehouse, showModal]);
 
   const handleSave = () => {
     if (!name.trim()) {
