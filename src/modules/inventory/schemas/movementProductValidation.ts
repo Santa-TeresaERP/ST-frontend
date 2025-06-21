@@ -2,6 +2,11 @@ import { z } from 'zod';
 
 export const movementProductSchema = z.object({
 
+  store_id: z.string().uuid().optional().nullable(),
+  product_id: z.string().uuid({
+    message: 'El ID del producto debe ser un UUID válido',
+  }),
+
   movement_type: z.enum(['salida', 'entrada'], {
     errorMap: () => ({
       message: 'El tipo de movimiento debe ser "salida" o "entrada"',

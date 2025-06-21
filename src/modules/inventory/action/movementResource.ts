@@ -9,7 +9,7 @@ export const getResourceMovements = async (): Promise<WarehouseMovementResourceA
 
 // POST: Crear movimiento de recurso
 export const createResourceMovement = async (
-  data: Omit<WarehouseMovementResourceAttributes, 'createdAt' | 'updatedAt'>
+  data: Omit<WarehouseMovementResourceAttributes, 'id' | 'createdAt' | 'updatedAt'> // Added 'id' to Omit
 ): Promise<WarehouseMovementResourceAttributes> => {
   const response = await api.post<WarehouseMovementResourceAttributes>('/warehouseMovementResource', data);
   return response.data;

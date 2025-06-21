@@ -1,9 +1,8 @@
 export interface WarehouseMovementResourceAttributes {
-  movement_id: string;
+  id: string; // Renamed from movement_id
   warehouse_id: string;
   resource_id: string;
-  type: string;
-  movement_type: string;
+  movement_type: string; // Kept this, removed 'type'
   quantity: number;
   movement_date: Date;
   observations?: string | null;

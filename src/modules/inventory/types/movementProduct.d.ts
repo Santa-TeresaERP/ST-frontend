@@ -1,7 +1,7 @@
 export interface WarehouseMovementProductAttributes {
   movement_id: string;
   warehouse_id: string;
-  store_id: string;
+  store_id?: string | null;
   product_id: string;
   movement_type: 'salida' | 'entrada';
   quantity: number;
