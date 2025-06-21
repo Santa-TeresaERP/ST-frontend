@@ -4,6 +4,7 @@ import ModalCreateWarehousesView from "./modal-create-warehouses";
 import ModalEditWarehousesView from "./modal-edit-warehouses";
 import ModalDeleteWarehouse from "./modal-delete-warehouses"; // importa el modal de eliminar
 import { useFetchWarehouses } from "../../../hook/useWarehouses"; // Asegúrate de que este hook esté implementado correctamente
+import { WarehouseAttributes } from "../../../types/warehouse";
 
 interface ModalWarehousesProps {
   open: boolean;
@@ -15,12 +16,22 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
   const [showEditWarehouse, setShowEditWarehouse] = useState(false);
   const [showDeleteWarehouse, setShowDeleteWarehouse] = useState(false); // estado para mostrar modal eliminar
   const [selectedWarehouseName, setSelectedWarehouseName] = useState<string | undefined>(); // almacén a eliminar
+  const [selectedWarehouse, setSelectedWarehouse] = useState<WarehouseAttributes | null>(null); // almacén a editar
 
   if (!open) return null;
 
   // Simulación de datos (podrías usar props si vienen del backend)
   const { data: warehouses, isLoading, isError } = useFetchWarehouses();
 
+  const handleEditWarehouse = (warehouse: WarehouseAttributes) => {
+    setSelectedWarehouse(warehouse);
+    setShowEditWarehouse(true);
+  };
+
+  const handleCloseEdit = () => {
+    setShowEditWarehouse(false);
+    setSelectedWarehouse(null);
+  };
 
   return (
     <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 backdrop-blur-sm">
@@ -110,7 +121,7 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
                 </div>
                 <div className="flex justify-end mt-4 space-x-3">
                   <button
-                    onClick={() => setShowEditWarehouse(true)}
+                    onClick={() => handleEditWarehouse(warehouse)}
                     className="p-2 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200"
                   >
                     <Edit3 size={20} />
@@ -137,10 +148,17 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
         />
 
         {/* Modal editar almacén */}
-        <ModalEditWarehousesView
-          showModal={showEditWarehouse}
-          onClose={() => setShowEditWarehouse(false)}
-        />
+        {selectedWarehouse && (
+          <ModalEditWarehousesView
+            showModal={showEditWarehouse}
+            onClose={handleCloseEdit}
+            warehouse={selectedWarehouse}
+            onSuccess={() => {
+              // Recargar los datos después de editar
+              window.location.reload();
+            }}
+          />
+        )}
 
         {/* Modal eliminar almacén */}
         <ModalDeleteWarehouse
