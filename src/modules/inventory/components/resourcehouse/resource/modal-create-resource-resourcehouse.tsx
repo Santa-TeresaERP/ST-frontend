@@ -1,34 +1,28 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-// Verified Icons import path
-import { X, Save, Loader2 } from 'lucide-react'; 
-// Verified Schema/Types import paths (assuming correct relative path)
+import { X, Save, Loader2 } from 'lucide-react';
 import { ResourceValidationSchema } from '../../../schemas/resourceValidation';
 import { CreateResourcePayload } from '../../../types/resource';
-// Verified UI component import paths
-import { Input } from '@/app/components/ui/input'; 
+import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button';
 import { Label } from '@/app/components/ui/label';
-// Removed import for non-existent Textarea component
-// import { Textarea } from '@/app/components/ui/textarea'; 
+import { z } from 'zod';
 
 type ModalNuevoRecursoProps = {
   isOpen: boolean;
   onClose: () => void;
   onCreate: (payload: CreateResourcePayload) => Promise<void>;
   isCreating: boolean;
-  // suppliers: { id: string; name: string }[]; 
 };
 
-type ResourceFormData = Zod.infer<typeof ResourceValidationSchema>;
+type ResourceFormData = z.infer<typeof ResourceValidationSchema>;
 
 const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
   isOpen,
   onClose,
   onCreate,
   isCreating,
-  // suppliers = [],
 }) => {
   const {
     register,
@@ -81,11 +75,13 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
 
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4 text-left">
           <div>
-            <Label htmlFor="name" className="dark:text-gray-300">Nombre*</Label>
+            <Label htmlFor="name" className="block text-sm font-medium mb-1 dark:text-gray-300">
+              Nombre*
+            </Label>
             <Input
               id="name"
               {...register('name')}
-              className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+              className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
               placeholder="Nombre del recurso"
               autoFocus
             />
@@ -94,34 +90,47 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="unit_price" className="dark:text-gray-300">Precio Unitario*</Label>
+              <Label htmlFor="unit_price" className="block text-sm font-medium mb-1 dark:text-gray-300">
+                Precio Unitario*
+              </Label>
               <Input
                 id="unit_price"
                 type="text"
                 {...register('unit_price')}
-                className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 placeholder="0.00"
               />
               {errors.unit_price && <p className="text-sm text-red-500 mt-1">{errors.unit_price.message}</p>}
             </div>
+
             <div>
-              <Label htmlFor="type_unit" className="dark:text-gray-300">Unidad*</Label>
-              <Input
+              <Label htmlFor="type_unit" className="block text-sm font-medium mb-1 dark:text-gray-300">
+                Unidad*
+              </Label>
+              <select
                 id="type_unit"
                 {...register('type_unit')}
-                className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                placeholder="Ej: kg, unidad, hora"
-              />
+                className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
+              >
+                <option value="">Selecciona una unidad</option>
+                <option value="kg">kg</option>
+                <option value="g">g</option>
+                <option value="l">l</option>
+                <option value="ml">ml</option>
+              </select>
               {errors.type_unit && <p className="text-sm text-red-500 mt-1">{errors.type_unit.message}</p>}
             </div>
-             <div>
-              <Label htmlFor="total_cost" className="dark:text-gray-300">Costo Total*</Label>
+
+            <div>
+              <Label htmlFor="total_cost" className="block text-sm font-medium mb-1 dark:text-gray-300">
+                Costo Total*
+              </Label>
               <Input
                 id="total_cost"
                 type="number"
                 step="0.01"
                 {...register('total_cost', { valueAsNumber: true })}
-                className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 placeholder="0.00"
               />
               {errors.total_cost && <p className="text-sm text-red-500 mt-1">{errors.total_cost.message}</p>}
@@ -129,30 +138,35 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="supplier_id" className="dark:text-gray-300">Proveedor</Label>
+            <Label htmlFor="supplier_id" className="block text-sm font-medium mb-1 dark:text-gray-300">
+              Proveedor
+            </Label>
             <Input
               id="supplier_id"
               {...register('supplier_id')}
-              className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+              className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
               placeholder="ID del proveedor (temporal)"
             />
             {errors.supplier_id && <p className="text-sm text-red-500 mt-1">{errors.supplier_id.message}</p>}
           </div>
 
           <div>
-            <Label htmlFor="purchase_date" className="dark:text-gray-300">Fecha de Compra*</Label>
+            <Label htmlFor="purchase_date" className="block text-sm font-medium mb-1 dark:text-gray-300">
+              Fecha de Compra*
+            </Label>
             <Input
               id="purchase_date"
               type="date"
               {...register('purchase_date')}
-              className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+              className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
             />
             {errors.purchase_date && <p className="text-sm text-red-500 mt-1">{errors.purchase_date.message}</p>}
           </div>
 
           <div>
-            <Label htmlFor="observation" className="dark:text-gray-300">Observación</Label>
-            {/* Replaced non-existent Textarea component with standard textarea */}
+            <Label htmlFor="observation" className="block text-sm font-medium mb-1 dark:text-gray-300">
+              Observación
+            </Label>
             <textarea
               id="observation"
               {...register('observation')}
@@ -197,4 +211,3 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
 };
 
 export default ModalNuevoRecurso;
-

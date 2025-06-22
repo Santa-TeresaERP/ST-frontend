@@ -313,14 +313,18 @@ useEffect(() => {
                     </option>
                   ))}
                 </select>
-                <input
-                  type="text"
+                <select
                   name="unit"
                   value={recipe.unit}
                   onChange={handleIngredienteChange}
-                  className="w-32 px-2 py-1 border rounded"
-                  placeholder="Unidad"
-                />
+                  className="w-32 px-2 py-1 border rounded bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Unidad</option>
+                  <option value="kg">kg</option>
+                  <option value="g">g</option>
+                  <option value="l">l</option>
+                  <option value="ml">ml</option>
+                </select>
                 <input
                   type="number"
                   min={1}
