@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { warehouseMovementResourceSchema } from '@/modules/inventory/schemas/movementResourceValidation';
 import { useCreateResourceMovement } from '@/modules/inventory/hook/useMovementResource';
+import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
+import { useFetchResources } from '@/modules/inventory/hook/useResources';
 import { X, Save } from 'lucide-react';
 
 interface Props {
@@ -9,14 +11,14 @@ interface Props {
   onClose?: () => void;
 }
 
+const today = new Date().toISOString().split('T')[0];
 const initialForm = {
-  movement_id: '',
   warehouse_id: '',
   resource_id: '',
   type: '',
   movement_type: '',
   quantity: 0,
-  movement_date: '',
+  movement_date: today,
   observations: '',
 };
 
@@ -24,6 +26,8 @@ const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState<string | null>(null);
   const { mutateAsync, isPending } = useCreateResourceMovement();
+  const { data: warehouses, isLoading: loadingWarehouses } = useFetchWarehouses();
+  const { data: resources, isLoading: loadingResources } = useFetchResources();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -68,40 +72,36 @@ const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
         <form onSubmit={handleSubmit} className="p-6 space-y-5 text-left">
           {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">ID Movimiento*</label>
-            <input
-              type="text"
-              name="movement_id"
-              value={form.movement_id}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
-              placeholder="ID del movimiento"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700 mb-1 font-medium">ID Almacén*</label>
-            <input
-              type="text"
+            <label className="block text-gray-700 mb-1 font-medium">Almacén*</label>
+            <select
               name="warehouse_id"
               value={form.warehouse_id}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
-              placeholder="ID del almacén"
               required
-            />
+              disabled={loadingWarehouses}
+            >
+              <option value="">Seleccione un almacén</option>
+              {warehouses && warehouses.map((w) => (
+                <option key={w.id} value={w.id}>{w.name}</option>
+              ))}
+            </select>
           </div>
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">ID Recurso*</label>
-            <input
-              type="text"
+            <label className="block text-gray-700 mb-1 font-medium">Recurso*</label>
+            <select
               name="resource_id"
               value={form.resource_id}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
-              placeholder="ID del recurso"
               required
-            />
+              disabled={loadingResources}
+            >
+              <option value="">Seleccione un recurso</option>
+              {resources && resources.map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-gray-700 mb-1 font-medium">Tipo*</label>
