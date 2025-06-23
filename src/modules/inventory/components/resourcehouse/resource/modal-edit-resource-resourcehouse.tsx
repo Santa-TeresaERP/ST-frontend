@@ -1,28 +1,24 @@
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-// Verified Icons import path
-import { X, Save, Loader2 } from 'lucide-react'; 
-// Verified Schema/Types import paths (assuming correct relative path)
-import { ResourceValidationSchema } from '../../../schemas/resourceValidation'; 
+import { X, Save, Loader2 } from 'lucide-react';
+import { ResourceValidationSchema } from '../../../schemas/resourceValidation';
 import { Resource, UpdateResourcePayload } from '../../../types/resource';
-// Verified UI component import paths
 import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button';
 import { Label } from '@/app/components/ui/label';
 import { useFetchSuppliers } from '@/modules/inventory/hook/useSuppliers';
-import * as Zod from 'zod';
+import { z } from 'zod';
 
 type ModalEditResourceProps = {
   isOpen: boolean;
-  recurso: Resource; // Use the defined Resource type
+  recurso: Resource;
   onClose: () => void;
   onUpdate: (id: string, payload: UpdateResourcePayload) => Promise<void>;
   isUpdating: boolean;
-  // suppliers: { id: string; name: string }[]; // Add if needed for Select
 };
 
-type ResourceFormData = Zod.infer<typeof ResourceValidationSchema>;
+type ResourceFormData = z.infer<typeof ResourceValidationSchema>;
 
 const ModalEditResource: React.FC<ModalEditResourceProps> = ({
   isOpen,
@@ -30,7 +26,6 @@ const ModalEditResource: React.FC<ModalEditResourceProps> = ({
   onClose,
   onUpdate,
   isUpdating,
-  // suppliers = [],
 }) => {
   const {
     register,
@@ -52,7 +47,9 @@ const ModalEditResource: React.FC<ModalEditResourceProps> = ({
         total_cost: recurso.total_cost,
         supplier_id: recurso.supplier_id ?? null,
         observation: recurso.observation ?? '',
-        purchase_date: recurso.purchase_date ? new Date(recurso.purchase_date).toISOString().split('T')[0] : '',
+        purchase_date: recurso.purchase_date
+          ? new Date(recurso.purchase_date).toISOString().split('T')[0]
+          : '',
       });
     }
   }, [recurso, reset]);
@@ -94,43 +91,59 @@ const ModalEditResource: React.FC<ModalEditResourceProps> = ({
 
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4 text-left">
           <div>
-            <Label htmlFor="edit-name" className="dark:text-gray-300">Nombre*</Label>
+            <Label htmlFor="edit-name" className="block text-sm font-medium mb-1 dark:text-gray-300">
+              Nombre*
+            </Label>
             <Input
               id="edit-name"
               {...register('name')}
-              className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+              className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
             />
             {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-             <div>
-              <Label htmlFor="edit-unit_price" className="dark:text-gray-300">Precio Unitario*</Label>
+            <div>
+              <Label htmlFor="edit-unit_price" className="block text-sm font-medium mb-1 dark:text-gray-300">
+                Precio Unitario*
+              </Label>
               <Input
                 id="edit-unit_price"
                 type="text"
                 {...register('unit_price')}
-                className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
               />
               {errors.unit_price && <p className="text-sm text-red-500 mt-1">{errors.unit_price.message}</p>}
             </div>
-             <div>
-              <Label htmlFor="edit-type_unit" className="dark:text-gray-300">Unidad*</Label>
-              <Input
+
+            <div>
+              <Label htmlFor="edit-type_unit" className="block text-sm font-medium mb-1 dark:text-gray-300">
+                Unidad*
+              </Label>
+              <select
                 id="edit-type_unit"
                 {...register('type_unit')}
-                className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-              />
+                className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
+              >
+                <option value="">Selecciona una unidad</option>
+                <option value="kg">kg</option>
+                <option value="g">g</option>
+                <option value="l">l</option>
+                <option value="ml">ml</option>
+              </select>
               {errors.type_unit && <p className="text-sm text-red-500 mt-1">{errors.type_unit.message}</p>}
             </div>
-             <div>
-              <Label htmlFor="edit-total_cost" className="dark:text-gray-300">Costo Total*</Label>
+
+            <div>
+              <Label htmlFor="edit-total_cost" className="block text-sm font-medium mb-1 dark:text-gray-300">
+                Costo Total*
+              </Label>
               <Input
                 id="edit-total_cost"
                 type="number"
                 step="0.01"
                 {...register('total_cost', { valueAsNumber: true })}
-                className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
               />
               {errors.total_cost && <p className="text-sm text-red-500 mt-1">{errors.total_cost.message}</p>}
             </div>
@@ -161,19 +174,22 @@ const ModalEditResource: React.FC<ModalEditResourceProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="edit-purchase_date" className="dark:text-gray-300">Fecha de Compra*</Label>
+            <Label htmlFor="edit-purchase_date" className="block text-sm font-medium mb-1 dark:text-gray-300">
+              Fecha de Compra*
+            </Label>
             <Input
               id="edit-purchase_date"
               type="date"
               {...register('purchase_date')}
-              className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+              className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
             />
             {errors.purchase_date && <p className="text-sm text-red-500 mt-1">{errors.purchase_date.message}</p>}
           </div>
 
           <div>
-            <Label htmlFor="edit-observation" className="dark:text-gray-300">Observación</Label>
-            {/* Replaced non-existent Textarea component with standard textarea */}
+            <Label htmlFor="edit-observation" className="block text-sm font-medium mb-1 dark:text-gray-300">
+              Observación
+            </Label>
             <textarea
               id="edit-observation"
               {...register('observation')}
@@ -217,4 +233,3 @@ const ModalEditResource: React.FC<ModalEditResourceProps> = ({
 };
 
 export default ModalEditResource;
-
