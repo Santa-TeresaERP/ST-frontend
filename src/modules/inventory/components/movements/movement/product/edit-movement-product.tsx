@@ -4,6 +4,10 @@ import { X, Save } from 'lucide-react';
 import { movementProductSchema } from '@/modules/inventory/schemas/movementProductValidation';
 import { updateMovement } from '@/modules/inventory/action/movementProduct';
 import { WarehouseMovementProductAttributes } from '@/modules/inventory/types/movementProduct';
+import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
+import { useFetchProducts } from '@/modules/inventory/hook/useProducts';
+import { WarehouseAttributes } from '@/modules/inventory/types/warehouse';
+import { ProductAttributes } from '@/modules/inventory/types/ListProduct';
 
 interface Props {
   movement: WarehouseMovementProductAttributes;
@@ -18,6 +22,8 @@ const EditMovementProduct: React.FC<Props> = ({ movement, onUpdated, onCancel })
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { data: warehouses, isLoading: isLoadingWarehouses, error: errorWarehouses } = useFetchWarehouses();
+  const { data: products, isLoading: isLoadingProducts, error: errorProducts } = useFetchProducts();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -62,37 +68,56 @@ const EditMovementProduct: React.FC<Props> = ({ movement, onUpdated, onCancel })
           {error && <div className="text-red-600 font-medium">{error}</div>}
 
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">ID Almacén*</label>
-            <input
+            <label className="block text-gray-700 mb-1 font-medium">Almacén*</label>
+            <select
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-yellow-600 focus:outline-none"
               name="warehouse_id"
-              placeholder="ID Almacén"
               value={form.warehouse_id}
               onChange={handleChange}
               required
-            />
+              disabled={isLoadingWarehouses}
+            >
+              <option value="">{isLoadingWarehouses ? 'Cargando almacenes...' : 'Seleccione un almacén'}</option>
+              {errorWarehouses && <option value="" disabled>Error al cargar almacenes</option>}
+              {warehouses?.map((warehouse: WarehouseAttributes) => (
+                <option key={warehouse.id} value={warehouse.id}>
+                  {warehouse.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">ID Tienda*</label>
-            <input
+            <label className="block text-gray-700 mb-1 font-medium">Tienda*</label>
+            <select
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-yellow-600 focus:outline-none"
               name="store_id"
-              placeholder="ID Tienda"
               value={form.store_id}
               onChange={handleChange}
               required
-            />
+            >
+              <option value="">Seleccione una tienda</option>
+              <option value="tienda1">Tienda 1</option>
+              <option value="tienda2">Tienda 2</option>
+            </select>
           </div>
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">ID Producto*</label>
-            <input
+            <label className="block text-gray-700 mb-1 font-medium">Producto*</label>
+            <select
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-yellow-600 focus:outline-none"
               name="product_id"
-              placeholder="ID Producto"
               value={form.product_id}
               onChange={handleChange}
               required
-            />
+              disabled={isLoadingProducts}
+            >
+              <option value="">{isLoadingProducts ? 'Cargando productos...' : 'Seleccione un producto'}</option>
+              {errorProducts && <option value="" disabled>Error al cargar productos</option>}
+              {products?.map((product: ProductAttributes) => (
+                <option key={product.id} value={product.id}>
+                  {product.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
