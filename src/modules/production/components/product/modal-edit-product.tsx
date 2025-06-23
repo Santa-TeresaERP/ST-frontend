@@ -170,7 +170,7 @@ useEffect(() => {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
         {/* Header del modal */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 rounded-t-2xl">
           <div className="flex justify-between items-center">
@@ -303,8 +303,8 @@ useEffect(() => {
                   name="resource_id"
                   value={recipe.resource_id}
                   onChange={handleIngredienteChange}
-                  className="flex-1 px-2 py-1 border rounded"
-                  disabled={editRecipe !== null} // <-- Solo editable al agregar, no al editar
+                  className="w-50 px-2 py-1 border rounded"
+                  disabled={editRecipe !== null} 
                 >
                   <option value="">Seleccione recurso</option>
                   {recursos?.map((recurso: Resource) => (
@@ -317,9 +317,10 @@ useEffect(() => {
                   name="unit"
                   value={recipe.unit}
                   onChange={handleIngredienteChange}
-                  className="w-32 px-2 py-1 border rounded bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-34 px-2 py-1 border rounded bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Unidad</option>
+                  <option value="">Selecciona una unidad</option>
+                  <option value="Unidades">unidades</option>
                   <option value="kg">kg</option>
                   <option value="g">g</option>
                   <option value="l">l</option>
@@ -331,7 +332,7 @@ useEffect(() => {
                   name="quantity_required"
                   value={recipe.quantity_required}
                   onChange={handleIngredienteChange}
-                  className="w-24 px-2 py-1 border rounded"
+                  className="w-20 px-2 py-1 border rounded"
                   placeholder="Cantidad"
                 />
               </div>
