@@ -118,6 +118,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
                 className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
               >
                 <option value="">Selecciona una unidad</option>
+                <option value="Unidades">Unidades</option>
                 <option value="kg">kg</option>
                 <option value="g">g</option>
                 <option value="l">l</option>

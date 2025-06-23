@@ -159,8 +159,8 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        {/* Header */}
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+        {/* Header del modal */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 rounded-t-2xl">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-white">Editar Producto</h2>
@@ -273,7 +273,7 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
                 >
                   Guardar Cambios
                 </button>
-              </div>
+              </div>  
             </form>
           </div>
 
@@ -287,8 +287,8 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
                   name="resource_id"
                   value={recipe.resource_id}
                   onChange={handleIngredienteChange}
-                  className="flex-1 px-2 py-1 border rounded"
-                  disabled={editRecipe !== null}
+                  className="w-50 px-2 py-1 border rounded"
+                  disabled={editRecipe !== null} 
                 >
                   <option value="">Seleccione recurso</option>
                   {recursos?.map((recurso: Resource) => (
@@ -301,9 +301,10 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
                   name="unit"
                   value={recipe.unit}
                   onChange={handleIngredienteChange}
-                  className="w-32 px-2 py-1 border rounded bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-34 px-2 py-1 border rounded bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Unidad</option>
+                  <option value="">Selecciona una unidad</option>
+                  <option value="Unidades">unidades</option>
                   <option value="kg">kg</option>
                   <option value="g">g</option>
                   <option value="l">l</option>
@@ -315,7 +316,7 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
                   name="quantity_required"
                   value={recipe.quantity_required}
                   onChange={handleIngredienteChange}
-                  className="w-24 px-2 py-1 border rounded"
+                  className="w-20 px-2 py-1 border rounded"
                   placeholder="Cantidad"
                 />
               </div>
