@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useDeleteResourceMovement } from '@/modules/inventory/hook/useMovementResource';
+import { useDeleteWarehouseMovementResource } from '@/modules/inventory/hook/useMovementResource';
 import { Trash2, Loader2, X } from 'lucide-react';
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
 
 const DeleteMovementResource: React.FC<Props> = ({ id, onDeleted }) => {
   const [confirm, setConfirm] = useState(false);
-  const { mutateAsync, isPending, error } = useDeleteResourceMovement();
+  const { mutateAsync, isPending, error } = useDeleteWarehouseMovementResource();
 
   const handleDelete = async () => {
     await mutateAsync(id);

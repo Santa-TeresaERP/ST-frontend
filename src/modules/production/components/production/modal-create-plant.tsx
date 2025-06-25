@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Trash2, Save, Plus, X, Check } from 'lucide-react';
 import { useFetchProductions } from '../../hook/useProductions';
 import { useFetchPlants, useCreatePlant, useUpdatePlant, useDeletePlant } from '../../hook/usePlants';
+import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses'; // Asegúrate de tener este hook
 
 interface ModalCreatePlantProps {
   isOpen: boolean;
@@ -9,13 +10,14 @@ interface ModalCreatePlantProps {
 }
 
 const ModalCreatePlant = ({ isOpen, onClose }: ModalCreatePlantProps) => {
-  const [newPlant, setNewPlant] = useState({ plant_name: '', address: '' });
+  const [newPlant, setNewPlant] = useState({ plant_name: '', address: '', warehouse_id: '' }); // Agregar warehouse_id
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editingPlant, setEditingPlant] = useState<{id: string, plant_name: string, address: string} | null>(null);
+  const [editingPlant, setEditingPlant] = useState<{ id: string, plant_name: string, address: string, warehouse_id: string } | null>(null); // Agregar warehouse_id
   const [newPlants, setNewPlants] = useState<{plant_name: string, address: string}[]>([]);
   const [plantsInUse, setPlantsInUse] = useState<Set<string>>(new Set());
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [plantToDelete, setPlantToDelete] = useState<{id: string, name: string} | null>(null);
+  const { data: warehouses, isLoading: isLoadingWarehouses } = useFetchWarehouses();
   
   // Hooks para plantas
   const createPlantMutation = useCreatePlant();
@@ -40,26 +42,27 @@ const ModalCreatePlant = ({ isOpen, onClose }: ModalCreatePlantProps) => {
   }, [productions, existingPlants]);
 
   const openAddModal = () => {
-    setNewPlant({ plant_name: '', address: '' });
+    setNewPlant({ plant_name: '', address: '', warehouse_id: '' }); // Asegurarse de reiniciar el estado
     setShowAddModal(true);
   };
 
-  const handleAddPlantChange = (field: 'plant_name' | 'address', value: string) => {
+  const handleAddPlantChange = (field: 'plant_name' | 'address' | 'warehouse_id', value: string) => {
     setNewPlant(prev => ({ ...prev, [field]: value }));
   };
 
   const handleAddPlant = async () => {
-    if (!newPlant.plant_name || newPlant.plant_name.trim() === '') {
-      alert('El nombre de la planta es obligatorio.');
+    if (!newPlant.plant_name || newPlant.plant_name.trim() === '' || !newPlant.warehouse_id) {
+      alert('El nombre de la planta y el ID del almacén son obligatorios.');
       return;
     }
-
+  
     try {
       await createPlantMutation.mutateAsync({
         plant_name: newPlant.plant_name.trim(),
         address: newPlant.address.trim(),
+        warehouse_id: newPlant.warehouse_id.trim(), // Nuevo campo
       });
-      
+  
       setNewPlants(prev => [newPlant, ...prev]);
       setShowAddModal(false);
       refetch();
@@ -68,9 +71,10 @@ const ModalCreatePlant = ({ isOpen, onClose }: ModalCreatePlantProps) => {
       alert('No se pudo guardar la planta. Intenta nuevamente.');
     }
   };
+  
 
-  const handleEditar = (id: string, plant_name: string, address: string) => {
-    setEditingPlant({ id, plant_name, address });
+  const handleEditar = (id: string, plant_name: string, address: string, warehouse_id: string) => {
+    setEditingPlant({ id, plant_name, address, warehouse_id }); // Asegurarse de incluir warehouse_id
   };
 
   const openDeleteModal = (id: string, name: string) => {
@@ -108,21 +112,22 @@ const ModalCreatePlant = ({ isOpen, onClose }: ModalCreatePlantProps) => {
 
   const handleActualizar = async () => {
     if (!editingPlant) return;
-
-    const { id, plant_name, address } = editingPlant;
-
-    if (!plant_name || plant_name.trim() === '') {
-      alert('El nombre de la planta es obligatorio.');
+  
+    const { id, plant_name, address, warehouse_id } = editingPlant;
+  
+    if (!plant_name || plant_name.trim() === '' || !warehouse_id) {
+      alert('El nombre de la planta y el ID del almacén son obligatorios.');
       return;
     }
-
+  
     try {
-      await updatePlantMutation.mutateAsync({ 
-        id, 
-        payload: { 
-          plant_name: plant_name.trim(), 
-          address: address.trim() 
-        } 
+      await updatePlantMutation.mutateAsync({
+        id,
+        payload: {
+          plant_name: plant_name.trim(),
+          address: address.trim(),
+          warehouse_id: warehouse_id.trim(), // Nuevo campo
+        },
       });
       setEditingPlant(null);
       refetch();
@@ -250,6 +255,7 @@ const ModalCreatePlant = ({ isOpen, onClose }: ModalCreatePlantProps) => {
                 ) : (
                   existingPlants?.map((plant) => {
                     const isInUse = plant.id ? isPlantInUse(plant.id) : false;
+                    const warehouse = warehouses?.find(w => w.id === plant.warehouse_id);
                     return (
                       <div
                         key={plant.id}
@@ -257,52 +263,58 @@ const ModalCreatePlant = ({ isOpen, onClose }: ModalCreatePlantProps) => {
                           isInUse ? 'border-blue-200 bg-blue-50' : 'border-gray-200'
                         }`}
                       >
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div>
-                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Nombre</label>
-                            <div className="flex items-center">
-                              <p className="text-lg font-medium text-gray-800">{plant.plant_name}</p>
-                              {isInUse && (
-                                <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
-                                  En uso
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="md:col-span-2">
-                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Dirección</label>
-                            <p className="text-gray-600">{plant.address || <span className="text-gray-400">Sin dirección</span>}</p>
-                          </div>
-                        </div>
-                        <div className="flex justify-end mt-4 space-x-3">
-                          <button
-                            onClick={() => handleEditar(plant.id ?? '', plant.plant_name ?? '', plant.address ?? '')}
-                            className="p-2 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200"
-                            title="Editar"
-                          >
-                            <Save size={20} />
-                          </button>
-                          <button
-                            onClick={() => openDeleteModal(plant.id ?? '', plant.plant_name ?? '')}
-                            className={`p-2 rounded-lg transition-colors duration-200 ${
-                              isInUse
-                                ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
-                                : 'text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100'
-                            }`}
-                            title={isInUse ? "Planta en uso - No eliminable" : "Eliminar"}
-                            disabled={isInUse}
-                          >
-                            <Trash2 size={20} />
-                          </button>
-                        </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Nombre</label>
+                      <div className="flex items-center">
+                        <p className="text-lg font-medium text-gray-800">{plant.plant_name}</p>
+                        {isInUse && (
+                          <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                            En uso
+                          </span>
+                        )}
                       </div>
-                    );
-                  })
-                )}
-              </div>
-            )}
-          </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Dirección</label>
+                      <p className="text-gray-600">{plant.address || <span className="text-gray-400">Sin dirección</span>}</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Almacén</label>
+                      <p className="text-gray-600">
+                        {warehouse ? warehouse.name : <span className="text-gray-400">Sin almacén</span>}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex justify-end mt-4 space-x-3">
+                    <button
+                      onClick={() => handleEditar(plant.id ?? '', plant.plant_name ?? '', plant.address ?? '', plant.warehouse_id ?? '')}
+                      className="p-2 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200"
+                      title="Editar"
+                    >
+                      <Save size={20} />
+                    </button>
+                    <button
+                      onClick={() => openDeleteModal(plant.id ?? '', plant.plant_name ?? '')}
+                      className={`p-2 rounded-lg transition-colors duration-200 ${
+                        isInUse
+                          ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                          : 'text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100'
+                      }`}
+                      title={isInUse ? "Planta en uso - No eliminable" : "Eliminar"}
+                      disabled={isInUse}
+                    >
+                      <Trash2 size={20} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
+      )}
+    </div>
+  </div>
 
         {/* Modal para Agregar Plant */}
         {showAddModal && (
@@ -344,8 +356,33 @@ const ModalCreatePlant = ({ isOpen, onClose }: ModalCreatePlantProps) => {
                     placeholder="Ej: Calle Principal 123"
                   />
                 </div>
-              </div>
               
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                  ID del Almacén
+                  <span className="ml-2 text-red-500">*</span>
+                </label>
+                {isLoadingWarehouses ? (
+                  <p className="text-gray-500">Cargando almacenes...</p>
+                ) : (
+                  <select
+                    value={newPlant.warehouse_id}
+                    onChange={(e) => handleAddPlantChange('warehouse_id', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200"
+                  >
+                    <option value="" disabled>Selecciona un almacén</option>
+                    {warehouses?.map((warehouse) => (
+                      <option key={warehouse.id} value={warehouse.id}>
+                        {warehouse.name} {/* Cambia `name` si el campo es diferente */}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              </div>
+
+              {/* Botones de Acción */}
+
               <div className="flex justify-end space-x-4 p-6 border-t border-gray-200">
                 <button
                   onClick={() => setShowAddModal(false)}
@@ -403,6 +440,25 @@ const ModalCreatePlant = ({ isOpen, onClose }: ModalCreatePlantProps) => {
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
                     placeholder="Ej: Calle Principal 123"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">ID del Almacén</label>
+                  {isLoadingWarehouses ? (
+                    <p className="text-gray-500">Cargando almacenes...</p>
+                  ) : (
+                    <select
+                      value={editingPlant?.warehouse_id || ''} // Asegúrate de que el valor sea el warehouse_id actual
+                      onChange={(e) => setEditingPlant({ ...editingPlant, warehouse_id: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                    >
+                      <option value="" disabled>Selecciona un almacén</option>
+                      {warehouses?.map((warehouse) => (
+                        <option key={warehouse.id} value={warehouse.id}>
+                          {warehouse.name} {/* Cambia `name` si el campo es diferente */}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </div>
               

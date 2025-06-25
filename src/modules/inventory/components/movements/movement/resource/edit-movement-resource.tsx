@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import { warehouseMovementResourceSchema } from '@/modules/inventory/schemas/movementResourceValidation';
-import { useUpdateResourceMovement } from '@/modules/inventory/hook/useMovementResource';
+import { useUpdateWarehouseMovementResource } from '@/modules/inventory/hook/useMovementResource';
+import { WarehouseMovementResource } from '@/modules/inventory/types/movementResource';
+import { X, Save } from 'lucide-react';
 import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
 import { useFetchResources } from '@/modules/inventory/hook/useResources';
-import { WarehouseMovementResourceAttributes } from '@/modules/inventory/types/movementResource';
-import { X, Save } from 'lucide-react';
 
 interface Props {
-  movement: WarehouseMovementResourceAttributes;
+  movement: WarehouseMovementResource;
   onUpdated: () => void;
   onCancel: () => void;
 }
@@ -17,15 +17,21 @@ const today = new Date().toISOString().split('T')[0];
 
 const EditMovementResource: React.FC<Props> = ({ movement, onUpdated, onCancel }) => {
   const [form, setForm] = useState({
-    ...movement,
-    movement_date: movement.movement_date
-      ? new Date(movement.movement_date).toISOString().split('T')[0]
-      : today,
+    warehouse_id: movement.warehouse_id,
+    resource_id: movement.resource_id,
+    movement_type: movement.movement_type,
+    quantity: movement.quantity,
+    movement_date: typeof movement.movement_date === 'string'
+      ? movement.movement_date.split('T')[0]
+      : new Date(movement.movement_date).toISOString().split('T')[0],
+    observations: movement.observations || '',
   });
   const [error, setError] = useState<string | null>(null);
-  const { mutateAsync, isPending } = useUpdateResourceMovement();
-  const { data: warehouses, isLoading: loadingWarehouses } = useFetchWarehouses();
-  const { data: resources, isLoading: loadingResources } = useFetchResources();
+  const { mutateAsync, isPending } = useUpdateWarehouseMovementResource();
+
+  // Obtener almacenes y recursos existentes
+  const { data: warehouses = [], isLoading: loadingWarehouses } = useFetchWarehouses();
+  const { data: resources = [], isLoading: loadingResources } = useFetchResources();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -37,14 +43,14 @@ const EditMovementResource: React.FC<Props> = ({ movement, onUpdated, onCancel }
     const parsed = warehouseMovementResourceSchema.safeParse({
       ...form,
       quantity: Number(form.quantity),
-      movement_date: new Date(form.movement_date),
+      movement_date: form.movement_date,
     });
     if (!parsed.success) {
       setError(parsed.error.errors[0].message);
       return;
     }
     try {
-      await mutateAsync({ id: form.id, data: parsed.data });
+      await mutateAsync({ id: movement.id!, payload: parsed.data });
       onUpdated();
     } catch (err: any) {
       setError(err.message);
@@ -75,9 +81,11 @@ const EditMovementResource: React.FC<Props> = ({ movement, onUpdated, onCancel }
               required
               disabled={loadingWarehouses}
             >
-              <option value="">Seleccione un almacén</option>
-              {warehouses && warehouses.map((w) => (
-                <option key={w.id} value={w.id}>{w.name}</option>
+              <option value="">Selecciona un almacén</option>
+              {warehouses.map((w: any) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
               ))}
             </select>
           </div>
@@ -91,23 +99,26 @@ const EditMovementResource: React.FC<Props> = ({ movement, onUpdated, onCancel }
               required
               disabled={loadingResources}
             >
-              <option value="">Seleccione un recurso</option>
-              {resources && resources.map((r) => (
-                <option key={r.id} value={r.id}>{r.name}</option>
+              <option value="">Selecciona un recurso</option>
+              {resources.map((r: any) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
               ))}
             </select>
           </div>
           <div>
             <label className="block text-gray-700 mb-1 font-medium">Tipo de Movimiento*</label>
-            <input
-              type="text"
+            <select
               name="movement_type"
               value={form.movement_type}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
-              placeholder="Tipo de movimiento"
               required
-            />
+            >
+              <option value="entrada">Entrada</option>
+              <option value="salida">Salida</option>
+            </select>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -162,7 +173,7 @@ const EditMovementResource: React.FC<Props> = ({ movement, onUpdated, onCancel }
               <Save size={18} /> {isPending ? 'Actualizando...' : 'Actualizar'}
             </button>
           </div>
-        </form>
+          </form>
       </div>
     </div>
   );

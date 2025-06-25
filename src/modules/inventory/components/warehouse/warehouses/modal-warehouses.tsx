@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
-import { X, Plus, Check, Edit3, Trash2 } from "lucide-react";
+import { X, Plus, Edit3, Trash2 } from "lucide-react";
 import ModalCreateWarehousesView from "./modal-create-warehouses";
 import ModalEditWarehousesView from "./modal-edit-warehouses";
-import ModalDeleteWarehouse from "./modal-delete-warehouses"; // importa el modal de eliminar
-import { useFetchWarehouses } from "../../../hook/useWarehouses"; // Asegúrate de que este hook esté implementado correctamente
-import { WarehouseAttributes } from "../../../types/warehouse";
+import ModalDeleteWarehouse from "./modal-delete-warehouses";
+import { 
+  useFetchWarehouses, 
+} from "@/modules/inventory/hook/useWarehouses";
 
 interface ModalWarehousesProps {
   open: boolean;
@@ -12,26 +14,19 @@ interface ModalWarehousesProps {
 }
 
 const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange }) => {
+  // Estados para controlar los modales
   const [showCreateWarehouse, setShowCreateWarehouse] = useState(false);
   const [showEditWarehouse, setShowEditWarehouse] = useState(false);
   const [showDeleteWarehouse, setShowDeleteWarehouse] = useState(false); // estado para mostrar modal eliminar
-  const [selectedWarehouseName, setSelectedWarehouseName] = useState<string | undefined>(); // almacén a eliminar
-  const [selectedWarehouse, setSelectedWarehouse] = useState<WarehouseAttributes | null>(null); // almacén a editar
+  const [, setSelectedWarehouseName] = useState<string | undefined>(); // almacén a eliminar
+  const [selectedWarehouse, setSelectedWarehouse] = useState<any>(null); // almacén a editar
 
   if (!open) return null;
 
   // Simulación de datos (podrías usar props si vienen del backend)
-  const { data: warehouses, isLoading, isError } = useFetchWarehouses();
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const { data: warehouses } = useFetchWarehouses();
 
-  const handleEditWarehouse = (warehouse: WarehouseAttributes) => {
-    setSelectedWarehouse(warehouse);
-    setShowEditWarehouse(true);
-  };
-
-  const handleCloseEdit = () => {
-    setShowEditWarehouse(false);
-    setSelectedWarehouse(null);
-  };
 
   return (
     <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 backdrop-blur-sm">
@@ -41,7 +36,7 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-2xl md:text-3xl font-bold text-white">Gestión de Almacenes</h2>
-              <p className="text-red-100 mt-1">Administra almacenes</p>
+              <p className="text-red-100 mt-1">Administra los almacenes de la empresa</p>
             </div>
             <button
               className="p-2 rounded-full hover:bg-red-700 transition-colors duration-200 text-white"
@@ -65,33 +60,21 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
 
         {/* Lista de almacenes */}
         <div className="space-y-8">
-          {/* Nuevos almacenes */}
+          {/* Almacenes activos */}
           <div>
             <div className="flex items-center mb-4">
               <span className="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
-              <h3 className="text-xl font-semibold text-gray-800">Nuevos Almacenes</h3>
+              <h3 className="text-xl font-semibold text-gray-800">Almacenes Activos</h3>
               <span className="ml-2 bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                1 nuevo
+                {warehouses?.length ?? 0} activos
               </span>
             </div>
 
-            <div className="bg-white border-2 border-green-200 rounded-xl p-5 shadow-sm bg-gradient-to-br from-green-50 to-white">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Nombre</label>
-                  <p className="text-lg font-medium text-gray-800 flex items-center">
-                    Almacén Central
-                    <span className="ml-2 text-green-500">
-                      <Check size={18} />
-                    </span>
-                  </p>
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Dirección</label>
-                  <p className="text-gray-600">Av. Industrial 123, Arequipa</p>
-                </div>
+            {(warehouses?.length ?? 0) === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No hay almacenes registrados. Crea tu primer almacén.
               </div>
-            </div>
+            ) : null}
           </div>
 
           {/* Almacenes existentes */}
@@ -119,9 +102,12 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
                     <p className="text-gray-600">{warehouse.location}</p>
                   </div>
                 </div>
-                <div className="flex justify-end mt-4 space-x-3">
+                <div className="flex gap-2 mt-4">
                   <button
-                    onClick={() => handleEditWarehouse(warehouse)}
+                    onClick={() => {
+                      setSelectedWarehouse(warehouse);
+                      setShowEditWarehouse(true);
+                    }}
                     className="p-2 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200"
                   >
                     <Edit3 size={20} />
@@ -148,27 +134,19 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
         />
 
         {/* Modal editar almacén */}
-        {selectedWarehouse && (
-          <ModalEditWarehousesView
-            showModal={showEditWarehouse}
-            onClose={handleCloseEdit}
-            warehouse={selectedWarehouse}
-            onSuccess={() => {
-              // Recargar los datos después de editar
-              window.location.reload();
-            }}
-          />
-        )}
+        <ModalEditWarehousesView
+          showModal={showEditWarehouse}
+          onClose={() => setShowEditWarehouse(false)}
+          warehouse={selectedWarehouse}
+          onSave={() => setShowEditWarehouse(false)}
+        />
 
         {/* Modal eliminar almacén */}
         <ModalDeleteWarehouse
           isOpen={showDeleteWarehouse}
           onClose={() => setShowDeleteWarehouse(false)}
-          onConfirm={() => {
-            console.log("Eliminar almacén:", selectedWarehouseName);
-            setShowDeleteWarehouse(false);
-          }}
-          warehouseName={selectedWarehouseName}
+          onConfirm={() => setShowDeleteWarehouse(false)}
+          warehouseName={selectedWarehouse?.name}
         />
       </div>
     </div>

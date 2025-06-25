@@ -10,4 +10,6 @@ export const plantProductionSchema = z.object({
     .string()
     .min(1, 'La dirección no puede estar vacía')
     .max(255, 'La dirección no debe exceder los 255 caracteres'),
+
+  warehouse_id: z.string().uuid('El ID del almacén debe ser un UUID válido'), // Nuevo campo agregado
 });
