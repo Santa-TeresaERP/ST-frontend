@@ -1,35 +1,47 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-// Verified Icons import path
-import { X, Save, Loader2 } from 'lucide-react'; 
-// Verified Schema/Types import paths (assuming correct relative path)
-import { ResourceValidationSchema } from '../../../schemas/resourceValidation';
+import { z } from 'zod';
+import { X, Save, Loader2 } from 'lucide-react';
 import { CreateResourcePayload } from '../../../types/resource';
-// Verified UI component import paths
-import { Input } from '@/app/components/ui/input'; 
+import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button';
 import { Label } from '@/app/components/ui/label';
-// Removed import for non-existent Textarea component
-// import { Textarea } from '@/app/components/ui/textarea'; 
+
+// validaciones
+const ResourceValidationSchema = z.object({
+  name: z.string().min(1, 'El nombre es obligatorio'),
+  unit_price: z
+    .string()
+    .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+      message: 'El precio debe ser un número mayor que 0',
+    }),
+  type_unit: z.string().min(1, 'La unidad es obligatoria'),
+  total_cost: z
+    .number({ invalid_type_error: 'El costo total debe ser un número' })
+    .nonnegative('El costo total no puede ser negativo'),
+  supplier_id: z.string().nullable().optional(),
+  observation: z.string().optional(),
+  purchase_date: z.string().min(1, 'La fecha de compra es obligatoria'),
+});
+
+type ResourceFormData = z.infer<typeof ResourceValidationSchema>;
 
 type ModalNuevoRecursoProps = {
   isOpen: boolean;
   onClose: () => void;
   onCreate: (payload: CreateResourcePayload) => Promise<void>;
   isCreating: boolean;
-  // suppliers: { id: string; name: string }[]; 
 };
-
-type ResourceFormData = Zod.infer<typeof ResourceValidationSchema>;
 
 const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
   isOpen,
   onClose,
   onCreate,
   isCreating,
-  // suppliers = [],
 }) => {
+  const [serverError, setServerError] = React.useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
@@ -56,8 +68,17 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
       supplier_id: data.supplier_id || null,
       observation: data.observation || null,
     };
-    await onCreate(payload);
-    reset();
+
+    try {
+      await onCreate(payload);
+      reset();
+      setServerError(null);
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        'Error inesperado al crear el recurso. Verifica los datos.';
+      setServerError(message);
+    }
   };
 
   if (!isOpen) return null;
@@ -80,6 +101,12 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4 text-left">
+          {serverError && (
+            <div className="bg-red-100 text-red-700 p-3 rounded-md text-sm border border-red-300">
+              {serverError}
+            </div>
+          )}
+
           <div>
             <Label htmlFor="name" className="dark:text-gray-300">Nombre*</Label>
             <Input
@@ -114,7 +141,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
               />
               {errors.type_unit && <p className="text-sm text-red-500 mt-1">{errors.type_unit.message}</p>}
             </div>
-             <div>
+            <div>
               <Label htmlFor="total_cost" className="dark:text-gray-300">Costo Total*</Label>
               <Input
                 id="total_cost"
@@ -134,7 +161,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
               id="supplier_id"
               {...register('supplier_id')}
               className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-              placeholder="ID del proveedor (temporal)"
+              placeholder="ID del proveedor (opcional)"
             />
             {errors.supplier_id && <p className="text-sm text-red-500 mt-1">{errors.supplier_id.message}</p>}
           </div>
@@ -152,7 +179,6 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
 
           <div>
             <Label htmlFor="observation" className="dark:text-gray-300">Observación</Label>
-            {/* Replaced non-existent Textarea component with standard textarea */}
             <textarea
               id="observation"
               {...register('observation')}
@@ -197,4 +223,3 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
 };
 
 export default ModalNuevoRecurso;
-
