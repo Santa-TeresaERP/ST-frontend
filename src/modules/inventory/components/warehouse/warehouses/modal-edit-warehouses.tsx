@@ -1,21 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { useUpdateWarehouse } from "@/modules/inventory/hook/useWarehouses";
-import { UpdateWarehousePayload } from "@/modules/inventory/types/warehouse";
+import { UpdateWarehousePayload, WarehouseAttributes } from "@/modules/inventory/types/warehouse";
 import { toast } from "react-toastify";
-
-interface Warehouse {
-  id: string;
-  name: string;
-  location: string;
-  capacity: number;
-  observation?: string;
-}
 
 interface ModalEditWarehousesViewProps {
   showModal: boolean;
   onClose: () => void;
-  warehouse: Warehouse;
+  warehouse: WarehouseAttributes;
   onSuccess?: () => void;
 }
 
@@ -33,13 +25,13 @@ const ModalEditWarehousesView: React.FC<ModalEditWarehousesViewProps> = ({
   const updateWarehouse = useUpdateWarehouse();
 
   useEffect(() => {
-    if (warehouse) {
+    if (showModal && warehouse) {
       setName(warehouse.name);
       setLocation(warehouse.location);
       setCapacity(warehouse.capacity);
       setObservation(warehouse.observation || "");
     }
-  }, [warehouse]);
+  }, [warehouse, showModal]);
 
   const handleSave = () => {
     if (!name.trim()) {
@@ -60,7 +52,7 @@ const ModalEditWarehousesView: React.FC<ModalEditWarehousesViewProps> = ({
     };
 
     updateWarehouse.mutate(
-      { id: warehouse.id, payload },
+      { id: warehouse.id!, payload },
       {
         onSuccess: () => {
           toast.success("Almacén actualizado exitosamente");

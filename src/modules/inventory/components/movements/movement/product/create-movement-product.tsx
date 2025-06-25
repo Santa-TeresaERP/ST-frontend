@@ -3,6 +3,10 @@ import React, { useState } from 'react';
 import { X, Save } from 'lucide-react';
 import { movementProductSchema } from '@/modules/inventory/schemas/movementProductValidation';
 import { createMovement } from '@/modules/inventory/action/movementProduct';
+import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
+import { useFetchProducts } from '@/modules/inventory/hook/useProducts';
+import { WarehouseAttributes } from '@/modules/inventory/types/warehouse';
+import { ProductAttributes } from '@/modules/inventory/types/ListProduct';
 
 interface Props {
   onCreated: () => void;
@@ -21,6 +25,8 @@ const initialForm = {
 
 const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
   const [form, setForm] = useState(initialForm);
+  const { data: warehouses, isLoading: isLoadingWarehouses, error: errorWarehouses } = useFetchWarehouses();
+  const { data: products, isLoading: isLoadingProducts, error: errorProducts } = useFetchProducts();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -78,42 +84,58 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
           {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
 
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">ID Almacén*</label>
-            <input
-              type="text"
+            <label className="block text-gray-700 mb-1 font-medium">Almacén*</label>
+            <select
               name="warehouse_id"
               value={form.warehouse_id}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-slate-600 focus:outline-none"
-              placeholder="ID del almacén"
               required
-            />
+              disabled={isLoadingWarehouses}
+            >
+              <option value="">{isLoadingWarehouses ? 'Cargando almacenes...' : 'Seleccione un almacén'}</option>
+              {errorWarehouses && <option value="" disabled>Error al cargar almacenes</option>}
+              {warehouses?.map((warehouse: WarehouseAttributes) => (
+                <option key={warehouse.id} value={warehouse.id}>
+                  {warehouse.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">ID Tienda*</label>
-            <input
-              type="text"
+            <label className="block text-gray-700 mb-1 font-medium">Tienda*</label>
+            <select
               name="store_id"
               value={form.store_id}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-slate-600 focus:outline-none"
-              placeholder="ID de la tienda"
               required
-            />
+            >
+              <option value="">Seleccione una tienda</option>
+              <option value="tienda1">Tienda 1</option>
+              <option value="tienda2">Tienda 2</option>
+            </select>
           </div>
 
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">ID Producto*</label>
-            <input
-              type="text"
+            <label className="block text-gray-700 mb-1 font-medium">Producto*</label>
+            <select
               name="product_id"
               value={form.product_id}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-slate-600 focus:outline-none"
-              placeholder="ID del producto"
               required
-            />
+              disabled={isLoadingProducts}
+            >
+              <option value="">{isLoadingProducts ? 'Cargando productos...' : 'Seleccione un producto'}</option>
+              {errorProducts && <option value="" disabled>Error al cargar productos</option>}
+              {products?.map((product: ProductAttributes) => (
+                <option key={product.id} value={product.id}>
+                  {product.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

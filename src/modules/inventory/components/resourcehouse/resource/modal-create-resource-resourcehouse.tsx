@@ -1,31 +1,16 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { X, Save, Loader2 } from 'lucide-react';
+import { ResourceValidationSchema } from '../../../schemas/resourceValidation';
 import { CreateResourcePayload } from '../../../types/resource';
 import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button';
 import { Label } from '@/app/components/ui/label';
-
-// validaciones
-const ResourceValidationSchema = z.object({
-  name: z.string().min(1, 'El nombre es obligatorio'),
-  unit_price: z
-    .string()
-    .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-      message: 'El precio debe ser un número mayor que 0',
-    }),
-  type_unit: z.string().min(1, 'La unidad es obligatoria'),
-  total_cost: z
-    .number({ invalid_type_error: 'El costo total debe ser un número' })
-    .nonnegative('El costo total no puede ser negativo'),
-  supplier_id: z.string().nullable().optional(),
-  observation: z.string().optional(),
-  purchase_date: z.string().min(1, 'La fecha de compra es obligatoria'),
-});
-
-type ResourceFormData = z.infer<typeof ResourceValidationSchema>;
+// Removed import for non-existent Textarea component
+// import { Textarea } from '@/app/components/ui/textarea'; 
+import { useFetchSuppliers } from '@/modules/inventory/hook/useSuppliers'; // Asegúrate de que este hook existe
+import { z } from 'zod';
 
 type ModalNuevoRecursoProps = {
   isOpen: boolean;
@@ -33,6 +18,8 @@ type ModalNuevoRecursoProps = {
   onCreate: (payload: CreateResourcePayload) => Promise<void>;
   isCreating: boolean;
 };
+
+type ResourceFormData = z.infer<typeof ResourceValidationSchema>;
 
 const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
   isOpen,
@@ -59,6 +46,8 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
       purchase_date: '',
     },
   });
+
+  const { data: suppliers, isLoading: isLoadingSuppliers, error: errorSuppliers } = useFetchSuppliers();
 
   const onSubmit = async (data: ResourceFormData) => {
     const payload: CreateResourcePayload = {
@@ -108,11 +97,13 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
           )}
 
           <div>
-            <Label htmlFor="name" className="dark:text-gray-300">Nombre*</Label>
+            <Label htmlFor="name" className="block text-sm font-medium mb-1 dark:text-gray-300">
+              Nombre*
+            </Label>
             <Input
               id="name"
               {...register('name')}
-              className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+              className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
               placeholder="Nombre del recurso"
               autoFocus
             />
@@ -121,34 +112,48 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="unit_price" className="dark:text-gray-300">Precio Unitario*</Label>
+              <Label htmlFor="unit_price" className="block text-sm font-medium mb-1 dark:text-gray-300">
+                Precio Unitario*
+              </Label>
               <Input
                 id="unit_price"
                 type="text"
                 {...register('unit_price')}
-                className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 placeholder="0.00"
               />
               {errors.unit_price && <p className="text-sm text-red-500 mt-1">{errors.unit_price.message}</p>}
             </div>
+
             <div>
-              <Label htmlFor="type_unit" className="dark:text-gray-300">Unidad*</Label>
-              <Input
+              <Label htmlFor="type_unit" className="block text-sm font-medium mb-1 dark:text-gray-300">
+                Unidad*
+              </Label>
+              <select
                 id="type_unit"
                 {...register('type_unit')}
-                className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                placeholder="Ej: kg, unidad, hora"
-              />
+                className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
+              >
+                <option value="">Selecciona una unidad</option>
+                <option value="Unidades">Unidades</option>
+                <option value="kg">kg</option>
+                <option value="g">g</option>
+                <option value="l">l</option>
+                <option value="ml">ml</option>
+              </select>
               {errors.type_unit && <p className="text-sm text-red-500 mt-1">{errors.type_unit.message}</p>}
             </div>
+
             <div>
-              <Label htmlFor="total_cost" className="dark:text-gray-300">Costo Total*</Label>
+              <Label htmlFor="total_cost" className="block text-sm font-medium mb-1 dark:text-gray-300">
+                Costo Total*
+              </Label>
               <Input
                 id="total_cost"
                 type="number"
                 step="0.01"
                 {...register('total_cost', { valueAsNumber: true })}
-                className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 placeholder="0.00"
               />
               {errors.total_cost && <p className="text-sm text-red-500 mt-1">{errors.total_cost.message}</p>}
@@ -157,28 +162,45 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
 
           <div>
             <Label htmlFor="supplier_id" className="dark:text-gray-300">Proveedor</Label>
-            <Input
-              id="supplier_id"
-              {...register('supplier_id')}
-              className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-              placeholder="ID del proveedor (opcional)"
-            />
+            {isLoadingSuppliers ? (
+              <div className="animate-pulse bg-gray-200 h-10 rounded-lg"></div>
+            ) : errorSuppliers ? (
+              <p className="text-red-500 text-sm">Error al cargar proveedores</p>
+            ) : (
+              <select
+                id="supplier_id"
+                {...register('supplier_id')}
+                className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                defaultValue=""
+              >
+                <option value="">Seleccione un proveedor</option>
+                {suppliers?.map((supplier) => (
+                  <option key={supplier.id} value={supplier.id}>
+                    {supplier.suplier_name}
+                  </option>
+                ))}
+              </select>
+            )}
             {errors.supplier_id && <p className="text-sm text-red-500 mt-1">{errors.supplier_id.message}</p>}
           </div>
 
           <div>
-            <Label htmlFor="purchase_date" className="dark:text-gray-300">Fecha de Compra*</Label>
+            <Label htmlFor="purchase_date" className="block text-sm font-medium mb-1 dark:text-gray-300">
+              Fecha de Compra*
+            </Label>
             <Input
               id="purchase_date"
               type="date"
               {...register('purchase_date')}
-              className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+              className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
             />
             {errors.purchase_date && <p className="text-sm text-red-500 mt-1">{errors.purchase_date.message}</p>}
           </div>
 
           <div>
-            <Label htmlFor="observation" className="dark:text-gray-300">Observación</Label>
+            <Label htmlFor="observation" className="block text-sm font-medium mb-1 dark:text-gray-300">
+              Observación
+            </Label>
             <textarea
               id="observation"
               {...register('observation')}

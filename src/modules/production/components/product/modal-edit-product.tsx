@@ -159,8 +159,8 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        {/* Header */}
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+        {/* Header del modal */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 rounded-t-2xl">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-white">Editar Producto</h2>
@@ -273,7 +273,7 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
                 >
                   Guardar Cambios
                 </button>
-              </div>
+              </div>  
             </form>
           </div>
 
@@ -281,92 +281,87 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
           <div className="space-y-6">
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Receta del Producto</h3>
-              
-              {/* Selector de recurso y unidad */}
-              <div className="flex flex-col space-y-3 mb-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Seleccione recurso</label>
-                  <select
-                    name="resource_id"
-                    value={recipe.resource_id}
-                    onChange={handleIngredienteChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={editRecipe !== null}
-                  >
-                    <option value="">Seleccione un recurso</option>
-                    {recursos?.map((recurso: Resource) => (
-                      <option key={recurso.id} value={recurso.id}>{recurso.name}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div className="flex space-x-4">
-                  <div className="flex-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Unidad</label>
-                    <input
-                      type="text"
-                      name="unit"
-                      value={recipe.unit}
-                      onChange={handleIngredienteChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Ej. g, ml, unidades"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
-                    <input
-                      type="number"
-                      name="quantity_required"
-                      value={recipe.quantity_required}
-                      onChange={handleIngredienteChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="0"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                </div>
+              {/* Formulario para agregar ingrediente */}
+              <div className="flex flex-col md:flex-row gap-2 mb-4">
+                <select
+                  name="resource_id"
+                  value={recipe.resource_id}
+                  onChange={handleIngredienteChange}
+                  className="w-50 px-2 py-1 border rounded"
+                  disabled={editRecipe !== null} 
+                >
+                  <option value="">Seleccione recurso</option>
+                  {recursos?.map((recurso: Resource) => (
+                    <option key={recurso.id} value={recurso.id}>
+                      {recurso.name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  name="unit"
+                  value={recipe.unit}
+                  onChange={handleIngredienteChange}
+                  className="w-34 px-2 py-1 border rounded bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Selecciona una unidad</option>
+                  <option value="Unidades">unidades</option>
+                  <option value="kg">kg</option>
+                  <option value="g">g</option>
+                  <option value="l">l</option>
+                  <option value="ml">ml</option>
+                </select>
+                <input
+                  type="number"
+                  min={1}
+                  name="quantity_required"
+                  value={recipe.quantity_required}
+                  onChange={handleIngredienteChange}
+                  className="w-20 px-2 py-1 border rounded"
+                  placeholder="Cantidad"
+                />
               </div>
-
-              {/* Botón para agregar recurso */}
-              <button
-                type="button"
-                onClick={editRecipe === null ? handleAgregarIngrediente : () => {
-                  if (!recipe.resource_id || !recipe.unit || !recipe.quantity_required) return;
-                  updateRecipe.mutateAsync({
-                    id: editRecipe!.id,
-                    payload: {
-                      productId: formData.id,
-                      resourceId: recipe.resource_id,
-                      unit: recipe.unit,
-                      quantity: recipe.quantity_required,
-                    }
-                  }).then(() => {
-                    setRecipe({ resource_id: '', unit: '', quantity_required: 1 });
-                    setEditRecipe(null);
-                    refetchReceta();
-                  });
-                }}
-                className={`px-4 py-2 text-white rounded-lg transition-colors mb-4 ${
-                  editRecipe === null ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'
-                }`}
-              >
-                {editRecipe === null ? 'Agregar recurso' : 'Guardar cambios'}
-              </button>
-
-              {editRecipe !== null && (
+              {/* Botón para agregar o editar recurso */}
+              <div className="mb-4 flex gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setRecipe({ resource_id: '', unit: '', quantity_required: 1 });
-                    setEditRecipe(null);
-                  }}
-                  className="ml-2 px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors mb-4"
+                  onClick={
+                    editRecipe === null
+                      ? handleAgregarIngrediente
+                      : async () => {
+                          if (!recipe.resource_id || !recipe.unit || !recipe.quantity_required) return;
+                          await updateRecipe.mutateAsync({
+                            id: editRecipe!.id,
+                            payload: {
+                              productId: formData.id,
+                              resourceId: recipe.resource_id,
+                              unit: recipe.unit,
+                              quantity: recipe.quantity_required,
+                            },
+                          });
+                          setRecipe({ resource_id: '', unit: '', quantity_required: 1 });
+                          setEditRecipe(null);
+                          refetchReceta();
+                        }
+                  }
+                  className={`px-4 py-2 text-white rounded-lg transition-colors mb-4 ${
+                    editRecipe === null ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'
+                  }`}
                 >
-                  Cancelar
+                  {editRecipe === null ? 'Agregar recurso' : 'Guardar cambios'}
                 </button>
-              )}
-
+                {editRecipe !== null && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRecipe({ resource_id: '', unit: '', quantity_required: 1 });
+                      setEditRecipe(null);
+                    }}
+                    className="px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors mb-4"
+                  >
+                    Cancelar
+                  </button>
+                )}
+              </div>
               {/* Lista de recursos */}
               <div className="border-t pt-4">
                 {recipes.length === 0 ? (
