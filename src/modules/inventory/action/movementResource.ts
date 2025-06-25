@@ -1,30 +1,30 @@
 import api from '@/core/config/client';
-import { WarehouseMovementResourceAttributes } from '../types/movementResource';
+import type {
+  WarehouseMovementResource,
+  CreateWarehouseMovementResourcePayload,
+  UpdateWarehouseMovementResourcePayload,
+} from '../types/movementResource';
 
-// GET: Obtener todos los movimientos de recursos
-export const getResourceMovements = async (): Promise<WarehouseMovementResourceAttributes[]> => {
-  const response = await api.get<WarehouseMovementResourceAttributes[]>('/warehouseMovementResource');
-  return response.data;
+export const fetchWarehouseMovementResources = async (): Promise<WarehouseMovementResource[]> => {
+  const res = await api.get('/warehouseMovementResource');
+  return res.data;
 };
 
-// POST: Crear movimiento de recurso
-export const createResourceMovement = async (
-  data: Omit<WarehouseMovementResourceAttributes, 'createdAt' | 'updatedAt'>
-): Promise<WarehouseMovementResourceAttributes> => {
-  const response = await api.post<WarehouseMovementResourceAttributes>('/warehouseMovementResource', data);
-  return response.data;
+export const createWarehouseMovementResource = async (
+  payload: CreateWarehouseMovementResourcePayload
+): Promise<WarehouseMovementResource> => {
+  const res = await api.post('/warehouseMovementResource', payload);
+  return res.data;
 };
 
-// PATCH: Actualizar movimiento de recurso
-export const updateResourceMovement = async (
+export const updateWarehouseMovementResource = async (
   id: string,
-  data: Partial<WarehouseMovementResourceAttributes>
-): Promise<WarehouseMovementResourceAttributes> => {
-  const response = await api.patch<WarehouseMovementResourceAttributes>(`/warehouseMovementResource/${id}`, data);
-  return response.data;
+  payload: UpdateWarehouseMovementResourcePayload
+): Promise<WarehouseMovementResource> => {
+  const res = await api.patch(`/warehouseMovementResource/${id}`, payload);
+  return res.data;
 };
 
-// DELETE: Eliminar movimiento de recurso
-export const deleteResourceMovement = async (id: string): Promise<void> => {
+export const deleteWarehouseMovementResource = async (id: string): Promise<void> => {
   await api.delete(`/warehouseMovementResource/${id}`);
 };

@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
-import { PlusCircle, Package, Users, Filter } from 'lucide-react';
+import { PlusCircle, Package, Users, Filter, Edit} from 'lucide-react';
 import { useFetchMovements } from '@/modules/inventory/hook/useMovementProduct';
 import CreateMovementProduct from './movement/product/create-movement-product';
 import EditMovementProduct from './movement/product/edit-movement-product';
@@ -10,8 +11,12 @@ import { WarehouseMovementProductAttributes } from '../../types/movementProduct'
 import CreateMovementResource from './movement/resource/create-movement-resource';
 import EditMovementResource from './movement/resource/edit-movement-resource';
 import DeleteMovementResource from './movement/resource/delete-movement-resource';
-import { useFetchResourceMovements } from '@/modules/inventory/hook/useMovementResource';
-import { WarehouseMovementResourceAttributes } from '@/modules/inventory/types/movementResource';
+import { useFetchWarehouseMovementResources } from '@/modules/inventory/hook/useMovementResource';
+import { WarehouseMovementResource } from '@/modules/inventory/types/movementResource';
+
+// Importa hooks para obtener almacenes y recursos
+import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
+import { useFetchResources } from '@/modules/inventory/hook/useResources';
 
 const MovementComponentView: React.FC = () => {
   // Productos
@@ -19,8 +24,12 @@ const MovementComponentView: React.FC = () => {
   const [editing, setEditing] = useState<WarehouseMovementProductAttributes | null>(null);
 
   // Recursos
-  const { data: resourceMovements = [], isLoading: loadingResource, error: errorResource, refetch: fetchResourceMovements } = useFetchResourceMovements();
-  const [editingResource, setEditingResource] = useState<WarehouseMovementResourceAttributes | null>(null);
+  const { data: resourceMovements = [], isLoading: loadingResource, error: errorResource, refetch: fetchResourceMovements } = useFetchWarehouseMovementResources();
+  const [editingResource, setEditingResource] = useState<WarehouseMovementResource | null>(null);
+
+  // Almacenes y recursos para mostrar nombres
+  const { data: warehouses = [] } = useFetchWarehouses();
+  const { data: resources = [] } = useFetchResources();
 
   // General
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,7 +41,7 @@ const MovementComponentView: React.FC = () => {
     (mov) =>
       mov.product_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       mov.warehouse_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mov.store_id.toLowerCase().includes(searchTerm.toLowerCase())
+      mov.store_id?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Filtrar movimientos de recursos
@@ -40,8 +49,11 @@ const MovementComponentView: React.FC = () => {
     (mov) =>
       mov.resource_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       mov.warehouse_id?.toLowerCase().includes(searchTerm.toLowerCase())
-      // Puedes agregar más campos si lo deseas
   );
+
+  // Funciones para mostrar nombre en vez de UUID
+  const getWarehouseName = (id: string) => warehouses.find((w: any) => w.id === id)?.name || id;
+  const getResourceName = (id: string) => resources.find((r: any) => r.id === id)?.name || id;
 
   return (
     <div className="p-6 space-y-4 bg-gray-50 min-h-screen">
@@ -95,7 +107,7 @@ const MovementComponentView: React.FC = () => {
             className="pl-11 pr-6 py-3 rounded-xl border border-red-700 text-gray-700 text-base
                        focus:outline-none focus:ring-2 focus:ring-red-700 focus:border-transparent
                        hover:bg-gray-200 transition duration-300 min-w-[200px]"
-            placeholder={`Buscar por ${selectedType === 'producto' ? 'producto, almacén o tienda' : 'recurso, almacén o tienda'}...`}
+            placeholder={`Buscar por ${selectedType === 'producto' ? 'producto, almacén o tienda' : 'recurso, almacén'}...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -181,15 +193,21 @@ const MovementComponentView: React.FC = () => {
                       <td className="px-4 py-2 text-center">{mov.quantity}</td>
                       <td className="px-4 py-2 text-center">{new Date(mov.movement_date).toLocaleDateString()}</td>
                       <td className="px-4 py-2 text-center">{mov.observations || '-'}</td>
-                      <td className="px-4 py-2 flex justify-center space-x-2">
+                      <td className="px-4 py-2 flex space-x-2 justify-center">
                         <button
                           onClick={() => setEditing(mov)}
-                          className="text-blue-600 hover:text-blue-800 font-medium"
+                          className="text-blue-600 hover:text-blue-800"
                           title="Editar"
                         >
-                          Editar
+                          <Edit size={18} />
                         </button>
-                        <DeleteMovementProduct id={mov.movement_id} onDeleted={fetchMovements} />
+                        <button
+                          onClick={() => {/* Aquí puedes abrir un modal de confirmación si quieres */}}
+                          className="text-red-600 hover:text-red-800"
+                          title="Eliminar"
+                        >
+                          <DeleteMovementProduct id={mov.movement_id} onDeleted={fetchMovements} />
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -211,7 +229,6 @@ const MovementComponentView: React.FC = () => {
               <table className="min-w-full text-sm">
                 <thead className="bg-orange-500 text-white">
                   <tr>
-                    <th className="px-4 py-2 text-center">ID</th>
                     <th className="px-4 py-2 text-center">Recurso</th>
                     <th className="px-4 py-2 text-center">Almacén</th>
                     <th className="px-4 py-2 text-center">Tipo</th>
@@ -223,23 +240,22 @@ const MovementComponentView: React.FC = () => {
                 </thead>
                 <tbody>
                   {filteredResourceMovements.map((mov) => (
-                    <tr key={mov.movement_id} className="hover:bg-orange-50 border-t">
-                      <td className="px-4 py-2 text-center">{mov.movement_id}</td>
-                      <td className="px-4 py-2 text-center">{mov.resource_id}</td>
-                      <td className="px-4 py-2 text-center">{mov.warehouse_id}</td>
-                      <td className="px-4 py-2 text-center">{mov.type}</td>
+                    <tr key={mov.id} className="hover:bg-orange-50 border-t">
+                      <td className="px-4 py-2 text-center">{getResourceName(mov.resource_id)}</td>
+                      <td className="px-4 py-2 text-center">{getWarehouseName(mov.warehouse_id)}</td>
+                      <td className="px-4 py-2 text-center capitalize">{mov.movement_type}</td>
                       <td className="px-4 py-2 text-center">{mov.quantity}</td>
                       <td className="px-4 py-2 text-center">{new Date(mov.movement_date).toLocaleDateString()}</td>
                       <td className="px-4 py-2 text-center">{mov.observations || '-'}</td>
-                      <td className="px-4 py-2 flex justify-center space-x-2">
+                      <td className="px-4 py-2 flex space-x-2 justify-center">
                         <button
                           onClick={() => setEditingResource(mov)}
-                          className="text-blue-600 hover:text-blue-800 font-medium"
+                          className="text-blue-600 hover:text-blue-800"
                           title="Editar"
                         >
-                          Editar
+                          <Edit size={18} />
                         </button>
-                        <DeleteMovementResource id={mov.movement_id} onDeleted={fetchResourceMovements} />
+                        <DeleteMovementResource id={mov.id!} onDeleted={fetchResourceMovements} />
                       </td>
                     </tr>
                   ))}
@@ -249,7 +265,7 @@ const MovementComponentView: React.FC = () => {
           </>
         )}
       </div>
-    </div>
+      </div>
   );
 };
 

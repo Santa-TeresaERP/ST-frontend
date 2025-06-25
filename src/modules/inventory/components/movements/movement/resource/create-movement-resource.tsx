@@ -1,29 +1,34 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import { warehouseMovementResourceSchema } from '@/modules/inventory/schemas/movementResourceValidation';
-import { useCreateResourceMovement } from '@/modules/inventory/hook/useMovementResource';
+import { useCreateWarehouseMovementResource } from '@/modules/inventory/hook/useMovementResource';
+import { CreateWarehouseMovementResourcePayload } from '@/modules/inventory/types/movementResource';
 import { X, Save } from 'lucide-react';
+import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
+import { useFetchResources } from '@/modules/inventory/hook/useResources'; // Asegúrate de tener este hook
 
 interface Props {
   onCreated: () => void;
   onClose?: () => void;
 }
 
-const initialForm = {
-  movement_id: '',
+const initialForm: CreateWarehouseMovementResourcePayload = {
   warehouse_id: '',
   resource_id: '',
-  type: '',
-  movement_type: '',
+  movement_type: 'entrada',
   quantity: 0,
   movement_date: '',
   observations: '',
 };
 
 const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState<CreateWarehouseMovementResourcePayload>(initialForm);
   const [error, setError] = useState<string | null>(null);
-  const { mutateAsync, isPending } = useCreateResourceMovement();
+  const { mutateAsync, isPending } = useCreateWarehouseMovementResource();
+
+  // Obtener almacenes y recursos existentes
+  const { data: warehouses = [], isLoading: loadingWarehouses } = useFetchWarehouses();
+  const { data: resources = [], isLoading: loadingResources } = useFetchResources();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -35,7 +40,7 @@ const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
     const parsed = warehouseMovementResourceSchema.safeParse({
       ...form,
       quantity: Number(form.quantity),
-      movement_date: new Date(form.movement_date),
+      movement_date: form.movement_date,
     });
     if (!parsed.success) {
       setError(parsed.error.errors[0].message);
@@ -68,64 +73,53 @@ const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
         <form onSubmit={handleSubmit} className="p-6 space-y-5 text-left">
           {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">ID Movimiento*</label>
-            <input
-              type="text"
-              name="movement_id"
-              value={form.movement_id}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
-              placeholder="ID del movimiento"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700 mb-1 font-medium">ID Almacén*</label>
-            <input
-              type="text"
+            <label className="block text-gray-700 mb-1 font-medium">Almacén*</label>
+            <select
               name="warehouse_id"
               value={form.warehouse_id}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
-              placeholder="ID del almacén"
               required
-            />
+              disabled={loadingWarehouses}
+            >
+              <option value="">Selecciona un almacén</option>
+              {warehouses.map((w: any) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">ID Recurso*</label>
-            <input
-              type="text"
+            <label className="block text-gray-700 mb-1 font-medium">Recurso*</label>
+            <select
               name="resource_id"
               value={form.resource_id}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
-              placeholder="ID del recurso"
               required
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700 mb-1 font-medium">Tipo*</label>
-            <input
-              type="text"
-              name="type"
-              value={form.type}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
-              placeholder="Tipo"
-              required
-            />
+              disabled={loadingResources}
+            >
+              <option value="">Selecciona un recurso</option>
+              {resources.map((r: any) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-gray-700 mb-1 font-medium">Tipo de Movimiento*</label>
-            <input
-              type="text"
+            <select
               name="movement_type"
               value={form.movement_type}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
-              placeholder="Tipo de movimiento"
               required
-            />
+            >
+              <option value="entrada">Entrada</option>
+              <option value="salida">Salida</option>
+            </select>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -146,7 +140,7 @@ const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
               <input
                 type="date"
                 name="movement_date"
-                value={form.movement_date}
+                value={typeof form.movement_date === 'string' ? form.movement_date : ''}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
                 required
@@ -158,7 +152,7 @@ const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
             <input
               type="text"
               name="observations"
-              value={form.observations}
+              value={form.observations || ''}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
               placeholder="Observaciones"

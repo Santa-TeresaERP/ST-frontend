@@ -1,51 +1,12 @@
 import React, { useState } from "react";
 import { X } from "lucide-react";
-import { useCreateWarehouse } from "../../../hook/useWarehouses";
 
 interface ModalCreateWarehousesViewProps {
   showModal: boolean;
   onClose: () => void;
-  onAddNew: (newWarehouse: { name: string; location: string; capacity: string; observation: string }) => void;
 }
 
 const ModalCreateWarehousesView: React.FC<ModalCreateWarehousesViewProps> = ({ showModal, onClose }) => {
-  const [form, setForm] = useState({
-    name: "",
-    location: "",
-    capacity: "",
-    observation: "",
-  });
-  const [error, setError] = useState<string | null>(null);
-
-  const createWarehouse = useCreateWarehouse();
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
-    if (!form.name || !form.location || !form.capacity) {
-      setError("Todos los campos obligatorios deben estar completos.");
-      return;
-    }
-    try {
-      await createWarehouse.mutateAsync({
-        name: form.name,
-        location: form.location,
-        capacity: Number(form.capacity),
-        observation: form.observation || undefined,
-      });
-      setForm({ name: "", location: "", capacity: "", observation: "" });
-      onClose();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
-      setError("Error al crear el almacén.");
-    }
-  };
-
   if (!showModal) return null;
 
   return (

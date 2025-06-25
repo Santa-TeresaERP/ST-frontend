@@ -1,43 +1,42 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { WarehouseMovementResourceAttributes } from '../types/movementResource';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type {
+  WarehouseMovementResource,
+  CreateWarehouseMovementResourcePayload,
+  UpdateWarehouseMovementResourcePayload,
+} from '../types/movementResource';
 import {
-  getResourceMovements,
-  createResourceMovement,
-  updateResourceMovement,
-  deleteResourceMovement,
+  fetchWarehouseMovementResources,
+  createWarehouseMovementResource,
+  updateWarehouseMovementResource,
+  deleteWarehouseMovementResource,
 } from '../action/movementResource';
 
-// Obtener movimientos de recursos
-export const useFetchResourceMovements = () => {
-  return useQuery<WarehouseMovementResourceAttributes[], Error>({
-    queryKey: ['resourceMovements'],
-    queryFn: getResourceMovements,
+export const useFetchWarehouseMovementResources = () =>
+  useQuery<WarehouseMovementResource[], Error>({
+    queryKey: ['warehouseMovementResource'],
+    queryFn: fetchWarehouseMovementResources,
   });
-};
 
-// Crear movimiento de recurso
-export const useCreateResourceMovement = () => {
+export const useCreateWarehouseMovementResource = () => {
   const queryClient = useQueryClient();
-  return useMutation<WarehouseMovementResourceAttributes, Error, Omit<WarehouseMovementResourceAttributes, 'createdAt' | 'updatedAt'>>({
-    mutationFn: createResourceMovement,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['resourceMovements'] }),
+  return useMutation<WarehouseMovementResource, Error, CreateWarehouseMovementResourcePayload>({
+    mutationFn: createWarehouseMovementResource,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['warehouseMovementResource'] }),
   });
 };
 
-// Actualizar movimiento de recurso
-export const useUpdateResourceMovement = () => {
+export const useUpdateWarehouseMovementResource = () => {
   const queryClient = useQueryClient();
-  return useMutation<WarehouseMovementResourceAttributes, Error, { id: string; data: Partial<WarehouseMovementResourceAttributes> }>({
-    mutationFn: ({ id, data }) => updateResourceMovement(id, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['resourceMovements'] }),
+  return useMutation<WarehouseMovementResource, Error, { id: string; payload: UpdateWarehouseMovementResourcePayload }>({
+    mutationFn: ({ id, payload }) => updateWarehouseMovementResource(id, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['warehouseMovementResource'] }),
   });
 };
 
-// Eliminar movimiento de recurso
-export const useDeleteResourceMovement = () => {
+export const useDeleteWarehouseMovementResource = () => {
   const queryClient = useQueryClient();
   return useMutation<void, Error, string>({
-    mutationFn: deleteResourceMovement,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['resourceMovements'] }),
+    mutationFn: deleteWarehouseMovementResource,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['warehouseMovementResource'] }),
   });
 };
