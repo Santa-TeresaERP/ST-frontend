@@ -96,6 +96,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
             </div>
           )}
 
+          {/* Nombre */}
           <div>
             <Label htmlFor="name" className="block text-sm font-medium mb-1 dark:text-gray-300">
               Nombre*
@@ -110,21 +111,37 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
             {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>}
           </div>
 
+          {/* Grid de campos principales */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* warehouse_id */}
             <div>
-              <Label htmlFor="unit_price" className="block text-sm font-medium mb-1 dark:text-gray-300">
-                Precio Unitario*
+              <Label htmlFor="warehouse_id" className="block text-sm font-medium mb-1 dark:text-gray-300">
+                Almacén*
               </Label>
               <Input
-                id="unit_price"
-                type="text"
-                {...register('unit_price')}
+                id="warehouse_id"
+                {...register('warehouse_id')}
                 className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                placeholder="0.00"
+                placeholder="ID del almacén"
               />
-              {errors.unit_price && <p className="text-sm text-red-500 mt-1">{errors.unit_price.message}</p>}
+              {errors.warehouse_id && <p className="text-sm text-red-500 mt-1">{errors.warehouse_id.message}</p>}
             </div>
 
+            {/* resource_id */}
+            <div>
+              <Label htmlFor="resource_id" className="block text-sm font-medium mb-1 dark:text-gray-300">
+                ID Recurso*
+              </Label>
+              <Input
+                id="resource_id"
+                {...register('resource_id')}
+                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                placeholder="ID del recurso"
+              />
+              {errors.resource_id && <p className="text-sm text-red-500 mt-1">{errors.resource_id.message}</p>}
+            </div>
+
+            {/* type_unit */}
             <div>
               <Label htmlFor="type_unit" className="block text-sm font-medium mb-1 dark:text-gray-300">
                 Unidad*
@@ -144,6 +161,23 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
               {errors.type_unit && <p className="text-sm text-red-500 mt-1">{errors.type_unit.message}</p>}
             </div>
 
+            {/* unit_price */}
+            <div>
+              <Label htmlFor="unit_price" className="block text-sm font-medium mb-1 dark:text-gray-300">
+                Precio Unitario*
+              </Label>
+              <Input
+                id="unit_price"
+                type="number"
+                step="0.01"
+                {...register('unit_price', { valueAsNumber: true })}
+                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                placeholder="0.00"
+              />
+              {errors.unit_price && <p className="text-sm text-red-500 mt-1">{errors.unit_price.message}</p>}
+            </div>
+
+            {/* total_cost */}
             <div>
               <Label htmlFor="total_cost" className="block text-sm font-medium mb-1 dark:text-gray-300">
                 Costo Total*
@@ -158,45 +192,63 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
               />
               {errors.total_cost && <p className="text-sm text-red-500 mt-1">{errors.total_cost.message}</p>}
             </div>
+
+            {/* supplier_id */}
+            <div>
+              <Label htmlFor="supplier_id" className="dark:text-gray-300">Proveedor*</Label>
+              {isLoadingSuppliers ? (
+                <div className="animate-pulse bg-gray-200 h-10 rounded-lg"></div>
+              ) : errorSuppliers ? (
+                <p className="text-red-500 text-sm">Error al cargar proveedores</p>
+              ) : (
+                <select
+                  id="supplier_id"
+                  {...register('supplier_id')}
+                  className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                  defaultValue=""
+                >
+                  <option value="">Seleccione un proveedor</option>
+                  {suppliers?.map((supplier) => (
+                    <option key={supplier.id} value={supplier.id}>
+                      {supplier.suplier_name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {errors.supplier_id && <p className="text-sm text-red-500 mt-1">{errors.supplier_id.message}</p>}
+            </div>
+
+            {/* quantity */}
+            <div>
+              <Label htmlFor="quantity" className="block text-sm font-medium mb-1 dark:text-gray-300">
+                Cantidad*
+              </Label>
+              <Input
+                id="quantity"
+                type="number"
+                {...register('quantity', { valueAsNumber: true })}
+                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                placeholder="Cantidad"
+              />
+              {errors.quantity && <p className="text-sm text-red-500 mt-1">{errors.quantity.message}</p>}
+            </div>
+
+            {/* entry_date */}
+            <div>
+              <Label htmlFor="entry_date" className="block text-sm font-medium mb-1 dark:text-gray-300">
+                Fecha de Entrada*
+              </Label>
+              <Input
+                id="entry_date"
+                type="date"
+                {...register('entry_date')}
+                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+              />
+              {errors.entry_date && <p className="text-sm text-red-500 mt-1">{errors.entry_date.message}</p>}
+            </div>
           </div>
 
-          <div>
-            <Label htmlFor="supplier_id" className="dark:text-gray-300">Proveedor</Label>
-            {isLoadingSuppliers ? (
-              <div className="animate-pulse bg-gray-200 h-10 rounded-lg"></div>
-            ) : errorSuppliers ? (
-              <p className="text-red-500 text-sm">Error al cargar proveedores</p>
-            ) : (
-              <select
-                id="supplier_id"
-                {...register('supplier_id')}
-                className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                defaultValue=""
-              >
-                <option value="">Seleccione un proveedor</option>
-                {suppliers?.map((supplier) => (
-                  <option key={supplier.id} value={supplier.id}>
-                    {supplier.suplier_name}
-                  </option>
-                ))}
-              </select>
-            )}
-            {errors.supplier_id && <p className="text-sm text-red-500 mt-1">{errors.supplier_id.message}</p>}
-          </div>
-
-          <div>
-            <Label htmlFor="purchase_date" className="block text-sm font-medium mb-1 dark:text-gray-300">
-              Fecha de Compra*
-            </Label>
-            <Input
-              id="purchase_date"
-              type="date"
-              {...register('purchase_date')}
-              className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-            />
-            {errors.purchase_date && <p className="text-sm text-red-500 mt-1">{errors.purchase_date.message}</p>}
-          </div>
-
+          {/* Observación */}
           <div>
             <Label htmlFor="observation" className="block text-sm font-medium mb-1 dark:text-gray-300">
               Observación
@@ -211,6 +263,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
             {errors.observation && <p className="text-sm text-red-500 mt-1">{errors.observation.message}</p>}
           </div>
 
+          {/* Botones */}
           <div className="flex justify-end space-x-3 pt-4">
             <Button
               type="button"

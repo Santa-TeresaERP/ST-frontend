@@ -141,11 +141,14 @@ const ResourcesView: React.FC = () => {
             <thead className="bg-gray-800 dark:bg-gray-700 text-white dark:text-gray-200">
               <tr>
                 <th className="px-4 py-2 text-left">Nombre</th>
+                <th className="px-4 py-2 text-left">Almacén</th>
+                <th className="px-4 py-2 text-left">ID Recurso</th>
                 <th className="px-4 py-2 text-left">Unidad</th>
                 <th className="px-4 py-2 text-left">Precio Unitario</th>
                 <th className="px-4 py-2 text-left">Costo Total</th>
                 <th className="px-4 py-2 text-left">Proveedor</th>
-                <th className="px-4 py-2 text-left">Fecha de Compra</th>
+                <th className="px-4 py-2 text-left">Cantidad</th>
+                <th className="px-4 py-2 text-left">Fecha de Entrada</th>
                 <th className="px-4 py-2 text-left">Observación</th>
                 <th className="px-4 py-2 text-left">Acciones</th>
               </tr>
@@ -153,7 +156,7 @@ const ResourcesView: React.FC = () => {
             <tbody>
               {filteredResources.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-4 text-gray-500 dark:text-gray-400">
+                  <td colSpan={11} className="text-center py-4 text-gray-500 dark:text-gray-400">
                     {searchTerm ? 'No se encontraron recursos que coincidan con la búsqueda' : 'No hay recursos para mostrar.'}
                   </td>
                 </tr>
@@ -161,15 +164,18 @@ const ResourcesView: React.FC = () => {
                 filteredResources.map((r) => (
                   <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 border-t dark:border-gray-700">
                     <td className="px-4 py-2 text-left">{r.name}</td>
+                    <td className="px-4 py-2 text-left">{r.warehouse_id}</td>
+                    <td className="px-4 py-2 text-left">{r.resource_id}</td>
                     <td className="px-4 py-2 text-left">{r.type_unit}</td>
                     <td className="px-4 py-2 text-left">
                       S/ {parseFloat(r.unit_price).toFixed(2)}
                     </td>
                     <td className="px-4 py-2 text-left">
-                      S/ {r.total_cost.toFixed(2)}
+                      S/ {parseFloat(r.total_cost).toFixed(2)}
                     </td>
-                    <td className="px-4 py-2 text-left">{r.supplier?.name ?? 'N/A'}</td> 
-                    <td className="px-4 py-2 text-left">{new Date(r.purchase_date).toLocaleDateString()}</td>
+                    <td className="px-4 py-2 text-left">{r.supplier_id ?? 'N/A'}</td> 
+                    <td className="px-4 py-2 text-left">{r.quantity}</td>
+                    <td className="px-4 py-2 text-left">{r.entry_date ? new Date(r.entry_date).toLocaleDateString() : '-'}</td>
                     <td className="px-4 py-2 text-left">{r.observation ?? '-'}</td>
                     <td className="px-4 py-2 text-left space-x-2">
                       <Button
