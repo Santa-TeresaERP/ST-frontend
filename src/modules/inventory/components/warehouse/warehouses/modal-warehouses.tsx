@@ -4,9 +4,7 @@ import { X, Plus, Edit3, Trash2 } from "lucide-react";
 import ModalCreateWarehousesView from "./modal-create-warehouses";
 import ModalEditWarehousesView from "./modal-edit-warehouses";
 import ModalDeleteWarehouse from "./modal-delete-warehouses";
-import { 
-  useFetchWarehouses, 
-} from "@/modules/inventory/hook/useWarehouses";
+import { useFetchWarehouses, useCreateWarehouse, useDeleteWarehouse } from "@/modules/inventory/hook/useWarehouses";
 
 interface ModalWarehousesProps {
   open: boolean;
@@ -17,16 +15,40 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
   // Estados para controlar los modales
   const [showCreateWarehouse, setShowCreateWarehouse] = useState(false);
   const [showEditWarehouse, setShowEditWarehouse] = useState(false);
-  const [showDeleteWarehouse, setShowDeleteWarehouse] = useState(false); // estado para mostrar modal eliminar
-  const [, setSelectedWarehouseName] = useState<string | undefined>(); // almacén a eliminar
-  const [selectedWarehouse, setSelectedWarehouse] = useState<any>(null); // almacén a editar
+  const [showDeleteWarehouse, setShowDeleteWarehouse] = useState(false);
+  const [selectedWarehouse, setSelectedWarehouse] = useState<any>(null);
+
+  // Hooks para manejar las operaciones
+  const { data: warehouses, refetch } = useFetchWarehouses(); // Obtener la lista de almacenes
+  const createWarehouse = useCreateWarehouse(); // Hook para crear almacenes
+  const deleteWarehouse = useDeleteWarehouse(); // Hook para eliminar almacenes
+
+  // Manejar la creación de un almacén
+  const handleCreateWarehouse = async (data: any) => {
+    try {
+      await createWarehouse.mutateAsync(data); // Llama al hook para crear el almacén
+      setShowCreateWarehouse(false); // Cierra el modal
+      refetch(); // Actualiza la lista de almacenes
+    } catch (error) {
+      console.error("Error al crear el almacén:", error);
+    }
+  };
+
+  // Manejar la eliminación de un almacén
+  const handleDeleteWarehouse = async () => {
+    if (!selectedWarehouse) return;
+
+    try {
+      await deleteWarehouse.mutateAsync(selectedWarehouse.id); // Llama al hook para eliminar el almacén
+      setShowDeleteWarehouse(false); // Cierra el modal
+      setSelectedWarehouse(null); // Limpia el almacén seleccionado
+      refetch(); // Actualiza la lista de almacenes
+    } catch (error) {
+      console.error("Error al eliminar el almacén:", error);
+    }
+  };
 
   if (!open) return null;
-
-  // Simulación de datos (podrías usar props si vienen del backend)
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const { data: warehouses } = useFetchWarehouses();
-
 
   return (
     <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 backdrop-blur-sm">
@@ -82,7 +104,7 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
             <div className="flex items-center mb-4">
               <span className="w-3 h-3 bg-red-600 rounded-full mr-3"></span>
               <h3 className="text-xl font-semibold text-gray-800">Almacenes Existentes</h3>
-               <span className="ml-2 bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+              <span className="ml-2 bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
                 {warehouses?.length ?? 0} en total
               </span>
             </div>
@@ -114,7 +136,7 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
                   </button>
                   <button
                     onClick={() => {
-                      setSelectedWarehouseName(warehouse.name);
+                      setSelectedWarehouse(warehouse);
                       setShowDeleteWarehouse(true);
                     }}
                     className="p-2 text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 rounded-lg transition-colors duration-200"
@@ -131,6 +153,7 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
         <ModalCreateWarehousesView
           showModal={showCreateWarehouse}
           onClose={() => setShowCreateWarehouse(false)}
+          onCreate={handleCreateWarehouse} // Pasa la función implementada
         />
 
         {/* Modal editar almacén */}
@@ -138,14 +161,17 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
           showModal={showEditWarehouse}
           onClose={() => setShowEditWarehouse(false)}
           warehouse={selectedWarehouse}
-          onSave={() => setShowEditWarehouse(false)}
+          onSave={() => {
+            setShowEditWarehouse(false);
+            refetch(); // Actualiza la lista después de editar
+          }}
         />
 
         {/* Modal eliminar almacén */}
         <ModalDeleteWarehouse
           isOpen={showDeleteWarehouse}
           onClose={() => setShowDeleteWarehouse(false)}
-          onConfirm={() => setShowDeleteWarehouse(false)}
+          onConfirm={handleDeleteWarehouse} // Llama a la función para eliminar
           warehouseName={selectedWarehouse?.name}
         />
       </div>

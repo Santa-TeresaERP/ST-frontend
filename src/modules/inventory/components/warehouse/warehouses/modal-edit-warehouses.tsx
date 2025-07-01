@@ -9,6 +9,7 @@ interface ModalEditWarehousesViewProps {
   onClose: () => void;
   warehouse: WarehouseAttributes;
   onSuccess?: () => void;
+  onSave: () => void; // Added onSave prop
 }
 
 const ModalEditWarehousesView: React.FC<ModalEditWarehousesViewProps> = ({
@@ -16,6 +17,7 @@ const ModalEditWarehousesView: React.FC<ModalEditWarehousesViewProps> = ({
   onClose,
   warehouse,
   onSuccess,
+  
 }) => {
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
