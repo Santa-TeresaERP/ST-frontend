@@ -5,6 +5,7 @@ export const LostSchema = z.object({
   production_id: z.string(),
   quantity: z.number().positive(),
   lost_type: z.string(),
+  status: z.boolean().optional(),
   observations: z.string(),
   created_at: z.date(),
 });

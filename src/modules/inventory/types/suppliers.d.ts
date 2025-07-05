@@ -6,6 +6,7 @@ export interface Supplier {
   email: string;
   phone: number;
   address: string;
+  status?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }

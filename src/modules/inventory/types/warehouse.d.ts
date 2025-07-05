@@ -7,6 +7,7 @@ export const WarehouseSchema = z.object({
   location: z.string().min(1, 'La ubicación es obligatoria').max(150, 'La ubicación no debe exceder los 150 caracteres'),
   capacity: z.number().int('La capacidad debe ser un número entero').nonnegative('La capacidad no puede ser negativa'),
   observation: z.string().max(150, 'La observación no debe exceder los 150 caracteres').optional(),
+  status: z.boolean().default(true, 'El estado debe ser verdadero o falso'),
 });
 
 // Inferir el tipo a partir del esquema

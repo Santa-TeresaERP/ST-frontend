@@ -17,5 +17,5 @@ export const updateSupplier = async (id: string, payload: UpdateSupplierPayload)
 };
 
 export const deleteSupplier = async (id: string): Promise<void> => {
-  await api.delete(`/supplier/${id}`); // <-- SINGULAR
+  await api.put(`/supplier/${id}`); // <-- SINGULAR
 };
