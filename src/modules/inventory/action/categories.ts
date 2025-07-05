@@ -12,10 +12,10 @@ export const createSupplierCategory = async (payload: CreateSupplierCategoryPayl
 };
 
 export const updateSupplierCategory = async (id: string, payload: UpdateSupplierCategoryPayload): Promise<SupplierCategory> => {
-  const res = await api.put(`/supplier-categories/${id}`, payload);
+  const res = await api.patch(`/supplier-categories/${id}`, payload);
   return res.data;
 };
 
 export const deleteSupplierCategory = async (id: string): Promise<void> => {
-  await api.delete(`/supplier-categories/${id}`);
+  await api.put(`/supplier-categories/${id}`);
 };

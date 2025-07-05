@@ -17,5 +17,5 @@ export const updatePlant = async (id: string, payload: UpdatePlantPayload): Prom
 };
 
 export const deletePlant = async (id: string): Promise<void> => {
-  await api.delete(`/plantProduction/${id}`);
+  await api.put(`/plantProduction/${id}`);
 };

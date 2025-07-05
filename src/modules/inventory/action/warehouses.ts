@@ -21,5 +21,5 @@ export const updateWarehouse = async (id: string, payload: UpdateWarehousePayloa
 
 // Eliminar un almacén
 export const deleteWarehouse = async (id: string): Promise<void> => {
-  await api.delete(`/warehouses/${id}`);
+  await api.put(`/warehouses/${id}`);
 };

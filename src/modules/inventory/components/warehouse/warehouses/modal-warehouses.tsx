@@ -17,15 +17,21 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
   // Estados para controlar los modales
   const [showCreateWarehouse, setShowCreateWarehouse] = useState(false);
   const [showEditWarehouse, setShowEditWarehouse] = useState(false);
-  const [showDeleteWarehouse, setShowDeleteWarehouse] = useState(false); // estado para mostrar modal eliminar
   const [, setSelectedWarehouseName] = useState<string | undefined>(); // almacén a eliminar
   const [selectedWarehouse, setSelectedWarehouse] = useState<any>(null); // almacén a editar
+  const [showDeleteWarehouse, setShowDeleteWarehouse] = useState(false); 
+
 
   if (!open) return null;
 
   // Simulación de datos (podrías usar props si vienen del backend)
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const { data: warehouses } = useFetchWarehouses();
+
+  
+
+  const activeWarehouses = warehouses?.filter(warehouse => warehouse.status === true) || [];
+  const inactiveWarehouses = warehouses?.filter(warehouse => warehouse.status === false) || [];
 
 
   return (
@@ -58,74 +64,139 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
           </button>
         </div>
 
-        {/* Lista de almacenes */}
-        <div className="space-y-8">
-          {/* Almacenes activos */}
-          <div>
-            <div className="flex items-center mb-4">
-              <span className="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
-              <h3 className="text-xl font-semibold text-gray-800">Almacenes Activos</h3>
-              <span className="ml-2 bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                {warehouses?.length ?? 0} activos
-              </span>
-            </div>
-
-            {(warehouses?.length ?? 0) === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                No hay almacenes registrados. Crea tu primer almacén.
-              </div>
-            ) : null}
+      {/* Lista de almacenes */}
+      <div className="space-y-8">
+        {/* Almacenes activos */}
+        <div>
+          <div className="flex items-center mb-4">
+            <span className="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
+            <h3 className="text-xl font-semibold text-gray-800">Almacenes Activos</h3>
+            <span className="ml-2 bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+              {activeWarehouses.length} activos
+            </span>
           </div>
 
-          {/* Almacenes existentes */}
-          <div>
-            <div className="flex items-center mb-4">
-              <span className="w-3 h-3 bg-red-600 rounded-full mr-3"></span>
-              <h3 className="text-xl font-semibold text-gray-800">Almacenes Existentes</h3>
-               <span className="ml-2 bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                {warehouses?.length ?? 0} en total
-              </span>
+          {activeWarehouses.length === 0 ? (
+            
+            <div className="text-center py-8 text-gray-500">
+              No hay almacenes activos.
             </div>
-
-            {warehouses?.map((warehouse) => (
-              <div
-                key={warehouse.id}
-                className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Nombre</label>
-                    <p className="text-lg font-medium text-gray-800">{warehouse.name}</p>
+          ) : (
+            <div className="space-y-4">
+              {activeWarehouses.map((warehouse) => (
+                <div
+                  key={warehouse.id}
+                  className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Nombre</label>
+                      <p className="text-lg font-medium text-gray-800">{warehouse.name}</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Dirección</label>
+                      <p className="text-gray-600">{warehouse.location}</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Estado</label>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <span className="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                        Activo
+                      </span>
+                    </div>
                   </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Dirección</label>
-                    <p className="text-gray-600">{warehouse.location}</p>
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      onClick={() => {
+                        setSelectedWarehouse(warehouse);
+                        setShowEditWarehouse(true);
+                      }}
+                      className="p-2 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200"
+                    >
+                      <Edit3 size={20} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        console.log('Warehouse seleccionado (activo):', warehouse); // ✅ Debug
+                        setSelectedWarehouse(warehouse); // ✅ Cambiar: guardar el warehouse completo, no solo el nombre
+                        setShowDeleteWarehouse(true);
+                      }}
+                      className="p-2 text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 rounded-lg transition-colors duration-200"
+                    >
+                      <Trash2 size={20} />
+                    </button>
                   </div>
                 </div>
-                <div className="flex gap-2 mt-4">
-                  <button
-                    onClick={() => {
-                      setSelectedWarehouse(warehouse);
-                      setShowEditWarehouse(true);
-                    }}
-                    className="p-2 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200"
-                  >
-                    <Edit3 size={20} />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedWarehouseName(warehouse.name);
-                      setShowDeleteWarehouse(true);
-                    }}
-                    className="p-2 text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 rounded-lg transition-colors duration-200"
-                  >
-                    <Trash2 size={20} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
+
+        {/* Almacenes inactivos */}
+        <div>
+          <div className="flex items-center mb-4">
+            <span className="w-3 h-3 bg-red-500 rounded-full mr-3"></span>
+            <h3 className="text-xl font-semibold text-gray-800">Almacenes Inactivos</h3>
+            <span className="ml-2 bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+              {inactiveWarehouses.length} inactivos
+            </span>
+          </div>
+
+          {inactiveWarehouses.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No hay almacenes inactivos.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {inactiveWarehouses.map((warehouse) => (
+                <div
+                  key={warehouse.id}
+                  className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition opacity-75"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Nombre</label>
+                      <p className="text-lg font-medium text-gray-800">{warehouse.name}</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Dirección</label>
+                      <p className="text-gray-600">{warehouse.location}</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Estado</label>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <span className="w-2 h-2 bg-red-400 rounded-full mr-1"></span>
+                        Inactivo
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      onClick={() => {
+                        setSelectedWarehouse(warehouse);
+                        setShowEditWarehouse(true);
+                      }}
+                      className="p-2 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200"
+                    >
+                      <Edit3 size={20} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        console.log('Warehouse seleccionado:', warehouse); // ✅ Debug
+                        setSelectedWarehouse(warehouse); // Guardar el warehouse completo
+                        setShowDeleteWarehouse(true);
+                      }}
+                      className="p-2 text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 rounded-lg transition-colors duration-200"
+                    >
+                      <Trash2 size={20} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
         {/* Modal crear almacén */}
         <ModalCreateWarehousesView
@@ -142,12 +213,19 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
         />
 
         {/* Modal eliminar almacén */}
-        <ModalDeleteWarehouse
-          isOpen={showDeleteWarehouse}
-          onClose={() => setShowDeleteWarehouse(false)}
-          onConfirm={() => setShowDeleteWarehouse(false)}
-          warehouseName={selectedWarehouse?.name}
-        />
+          <ModalDeleteWarehouse
+            isOpen={showDeleteWarehouse}
+            onClose={() => {
+              setShowDeleteWarehouse(false);
+              setSelectedWarehouse(null); // Limpiar selección
+            }}
+            onConfirm={() => {
+              setShowDeleteWarehouse(false);
+              setSelectedWarehouse(null); // Limpiar selección
+            }}
+            warehouseId={selectedWarehouse?.id} // ✅ Verificar que esto no sea undefined
+            warehouseName={selectedWarehouse?.name}
+          />
       </div>
     </div>
   );

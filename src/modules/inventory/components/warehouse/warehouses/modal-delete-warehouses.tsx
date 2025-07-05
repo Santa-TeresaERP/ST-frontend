@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Trash2, X } from 'lucide-react';
+import { useDeleteWarehouse } from '../../../hook/useWarehouses';
+import { toast } from 'react-toastify';
 
 interface ModalDeleteWarehouseProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
+  warehouseId?: string; // ID del almacén a eliminar
   warehouseName?: string; // opcional, para mostrar el nombre del almacén a eliminar
 }
 
@@ -12,9 +15,37 @@ const ModalDeleteWarehouse: React.FC<ModalDeleteWarehouseProps> = ({
   isOpen,
   onClose,
   onConfirm,
+  warehouseId,
   warehouseName,
 }) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const deleteWarehouse = useDeleteWarehouse();
+
   if (!isOpen) return null;
+
+const handleDelete = async () => {
+  console.log('warehouseId:', warehouseId); // ✅ Debug
+  console.log('selectedWarehouse:', warehouseId); // ✅ Debug
+  
+  if (!warehouseId) {
+    toast.error('No se pudo identificar el almacén a eliminar');
+    return;
+  }
+
+  setIsDeleting(true);
+  try {
+    console.log('Intentando eliminar warehouse:', warehouseId); // ✅ Debug
+    await deleteWarehouse.mutateAsync(warehouseId);
+    toast.success('Almacén eliminado correctamente');
+    onConfirm();
+    onClose();
+  } catch (error) {
+    console.error('Error al eliminar almacén:', error);
+    toast.error('Error al eliminar el almacén');
+  } finally {
+    setIsDeleting(false);
+  }
+};
 
   return (
     <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 transition-opacity duration-300">
@@ -30,15 +61,17 @@ const ModalDeleteWarehouse: React.FC<ModalDeleteWarehouseProps> = ({
         </p>
         <div className="flex justify-center space-x-8">
           <button
-            onClick={onConfirm}
-            className="bg-red-800 text-white px-8 py-3 rounded-lg shadow-md hover:bg-red-600 hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2"
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="bg-red-800 text-white px-8 py-3 rounded-lg shadow-md hover:bg-red-600 hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             <Trash2 size={20} />
-            <span>Eliminar</span>
+            <span>{isDeleting ? 'Eliminando...' : 'Eliminar'}</span>
           </button>
           <button
             onClick={onClose}
-            className="bg-gray-300 text-gray-700 px-8 py-3 rounded-lg shadow-md hover:bg-gray-400 hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2"
+            disabled={isDeleting}
+            className="bg-gray-300 text-gray-700 px-8 py-3 rounded-lg shadow-md hover:bg-gray-400 hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             <X size={20} />
             <span>Cancelar</span>

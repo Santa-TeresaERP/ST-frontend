@@ -4,6 +4,7 @@ export const SupplierCategorySchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
+  status: z.boolean(),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
 });
