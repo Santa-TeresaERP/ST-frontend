@@ -9,7 +9,7 @@ import { Button } from '@/app/components/ui/button';
 import { Label } from '@/app/components/ui/label';
 // Removed import for non-existent Textarea component
 // import { Textarea } from '@/app/components/ui/textarea'; 
-import { useFetchSuppliers } from '@/modules/inventory/hook/useSuppliers'; // Asegúrate de que este hook existe
+import { useFetchSuppliers } from '@/modules/inventory/hook/useSuppliers';
 import { z } from 'zod';
 
 type ModalNuevoRecursoProps = {
@@ -43,7 +43,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
       total_cost: undefined,
       supplier_id: null,
       observation: '',
-      purchase_date: '',
+      purchase_date: new Date().toISOString().split('T')[0], // Fecha actual por defecto
     },
   });
 

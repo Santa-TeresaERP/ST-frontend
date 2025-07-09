@@ -16,7 +16,7 @@ const ModalCreateProduction: React.FC<ModalCreateProductionProps> = ({ isOpen, o
   const [cantidad, setCantidad] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [planta, setPlanta] = useState('');
-  const [fecha, setFecha] = useState('');
+  const [fecha, setFecha] = useState(() => new Date().toISOString().split('T')[0]);
 
   const createProductionMutation = useCreateProduction();
   const { data: plantas, isLoading: isLoadingPlantas, error: errorPlantas } = useFetchPlants();
