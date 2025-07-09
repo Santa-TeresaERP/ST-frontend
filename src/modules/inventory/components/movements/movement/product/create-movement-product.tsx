@@ -19,7 +19,7 @@ const initialForm = {
   product_id: '',
   movement_type: 'entrada',
   quantity: 0,
-  movement_date: '',
+  movement_date: new Date().toISOString().split('T')[0],
   observations: '',
 };
 
