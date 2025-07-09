@@ -90,18 +90,26 @@ const ModalCreateCategoria = ({ isOpen, onClose }: ModalCreateCategoriaProps) =>
   };
 
   const handleEliminar = async () => {
-    if (!categoryToDelete) return;
+  if (!categoryToDelete) return;
 
-    try {
-      await deleteCategoryMutation.mutateAsync(categoryToDelete.id); // ← mismo hook
-      refetch();
-      setShowDeleteModal(false);
-      setCategoryToDelete(null);
-    } catch (err: any) {
-      alert(err.response?.data?.error ?? 'Error desconocido. Intenta nuevamente.');
-      console.error('Error al inactivar la categoría:', err);
-    }
-  };
+  try {
+    await deleteCategoryMutation.mutateAsync(categoryToDelete.id); // ← mismo hook
+    refetch();
+    setShowDeleteModal(false);
+    setCategoryToDelete(null);
+  } catch (err: any) {
+    alert(err.response?.data?.error ?? 'Error desconocido. Intenta nuevamente.');
+    console.error('Error al inactivar la categoría:', err);
+  }
+};
+
+// Activos arriba, inactivos abajo
+const sortedCategories = existingCategories
+  ? [...existingCategories].sort((a, b) =>
+      a.status === b.status ? 0 : a.status ? -1 : 1
+    )
+  : [];
+
 
   const handleActualizar = async () => {
     if (!editingCategory) return;
@@ -216,7 +224,7 @@ const ModalCreateCategoria = ({ isOpen, onClose }: ModalCreateCategoriaProps) =>
               </div>
             ) : (
               <div className="grid gap-4">
-                {existingCategories?.map((cat) => {
+                {sortedCategories?.map((cat) => {
                 const isAssigned = categoriesInUse.has(cat.id);
 
                 return (
