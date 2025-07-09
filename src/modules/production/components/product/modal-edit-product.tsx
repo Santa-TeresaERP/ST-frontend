@@ -304,7 +304,7 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
                   className="w-34 px-2 py-1 border rounded bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Selecciona una unidad</option>
-                  <option value="Unidades">unidades</option>
+                  <option value="unidades">unidades</option>
                   <option value="kg">kg</option>
                   <option value="g">g</option>
                   <option value="l">l</option>

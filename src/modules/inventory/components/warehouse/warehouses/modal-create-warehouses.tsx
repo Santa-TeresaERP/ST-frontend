@@ -2,10 +2,19 @@ import React, { useState } from "react";
 import { X } from "lucide-react";
 import { useCreateWarehouse } from "../../../hook/useWarehouses";
 
+interface AxiosError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+    status?: number;
+    statusText?: string;
+  };
+}
+
 interface ModalCreateWarehousesViewProps {
   showModal: boolean;
   onClose: () => void;
-  onAddNew: (newWarehouse: { name: string; location: string; capacity: string; observation: string }) => void;
 }
 
 const ModalCreateWarehousesView: React.FC<ModalCreateWarehousesViewProps> = ({ showModal, onClose }) => {
@@ -27,22 +36,47 @@ const ModalCreateWarehousesView: React.FC<ModalCreateWarehousesViewProps> = ({ s
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+    
     if (!form.name || !form.location || !form.capacity) {
       setError("Todos los campos obligatorios deben estar completos.");
       return;
     }
+
+    const payload = {
+      name: form.name,
+      location: form.location,
+      capacity: Number(form.capacity),
+      observation: form.observation || undefined,
+    };
+
+    console.log('Enviando payload:', payload);
+
     try {
-      await createWarehouse.mutateAsync({
-        name: form.name,
-        location: form.location,
-        capacity: Number(form.capacity),
-        observation: form.observation || undefined,
-      });
+      const result = await createWarehouse.mutateAsync(payload);
+      console.log('Resultado exitoso:', result);
+      
       setForm({ name: "", location: "", capacity: "", observation: "" });
       onClose();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
-      setError("Error al crear el almacén.");
+    } catch (err: unknown) {
+      console.error('Error completo:', err);
+      
+      let errorMessage = "Error al crear el almacén.";
+      
+      // Manejo más específico del error
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosError = err as AxiosError;
+        console.error('Error de respuesta:', axiosError.response);
+        
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        } else if (axiosError.response?.status) {
+          errorMessage = `Error ${axiosError.response.status}: ${axiosError.response.statusText}`;
+        }
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     }
   };
 
@@ -125,7 +159,17 @@ const ModalCreateWarehousesView: React.FC<ModalCreateWarehousesViewProps> = ({ s
               rows={3}
             ></textarea>
           </div>
-          {error && <div className="text-red-600 text-sm">{error}</div>}
+          {error && (
+            <div className="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 border border-red-200">
+              <div className="flex items-center">
+                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <span className="font-medium">Error:</span>
+              </div>
+              <div className="mt-1">{error}</div>
+            </div>
+          )}
           {/* Botones */}
           <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
             <button
@@ -138,9 +182,9 @@ const ModalCreateWarehousesView: React.FC<ModalCreateWarehousesViewProps> = ({ s
             <button
               type="submit"
               className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white shadow-md hover:shadow-lg transition-all duration-200"
-              disabled={createWarehouse.status === "pending"}
+              disabled={createWarehouse.isPending}
             >
-              {createWarehouse.status === "pending" ? "Guardando..." : "Guardar Almacén"}
+              {createWarehouse.isPending ? "Guardando..." : "Guardar Almacén"}
             </button>
           </div>
         </form>

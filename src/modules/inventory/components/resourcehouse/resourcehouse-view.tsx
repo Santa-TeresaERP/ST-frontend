@@ -2,50 +2,48 @@ import React, { useState, useMemo } from 'react';
 // Verified Icons import path
 import { Edit2, Trash2, FileText, Search, Plus, AlertCircle } from 'lucide-react';
 // Corrected Hooks import path (from ../../hooks/ to ../../hook/)
-import { useFetchResources, useCreateResource, useUpdateResource, useDeleteResource } from '../../hook/resource';
+import { useFetchResourcesWithBuys, useCreateBuysResource, useUpdateResource, useDeleteResource } from '../../hook/usebuysResource';
 // Verified Types/Actions import paths (assuming they are correct relative to this file)
-import { Resource, CreateResourcePayload, UpdateResourcePayload } from '../../types/resource';
+import { UpdateResourcePayload } from '../../types/resource';
+import { BuysResourceWithResource, CreateBuysResourcePayload } from '../../types/buysResource';
 // Verified Modal import paths (assuming they are correct relative to this file)
 import ModalNuevoRecurso from './resource/modal-create-resource-resourcehouse';
 import ModalEditResource from './resource/modal-edit-resource-resourcehouse';
 import ModalDeleteResource from './resource/modal-delete-resource-resourcehouse';
-// Removed import for non-existent Loading component
-// import { Loading } from '@/app/components/Loading'; 
-// Removed import for non-existent Alert component
-// import { Alert, AlertDescription, AlertTitle } from '@/app/components/ui/alert'; 
-// Verified Input component import path
+
 import { Input } from '@/app/components/ui/input';
 // Verified Button component import path
 import { Button } from '@/app/components/ui/button';
 
 const ResourcesView: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [resourceToDelete, setResourceToDelete] = useState<Resource | null>(null);
-  const [resourceToEdit, setResourceToEdit] = useState<Resource | null>(null);
+  const [resourceToDelete, setResourceToDelete] = useState<BuysResourceWithResource | null>(null);
+  const [resourceToEdit, setResourceToEdit] = useState<BuysResourceWithResource | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Fetch resources using the hook
-  const { data: resources = [], isLoading, error } = useFetchResources();
+  const { data: resources = [], isLoading, error } = useFetchResourcesWithBuys();
 
   // Mutation hooks
-  const createResourceMutation = useCreateResource();
+  const createResourceMutation = useCreateBuysResource();
   const updateResourceMutation = useUpdateResource();
   const deleteResourceMutation = useDeleteResource();
 
   // Filter resources based on the search term
   const filteredResources = useMemo(() => {
     if (!resources) return [];
-    return resources.filter(resource =>
-      resource.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (resource.supplier?.name && resource.supplier.name.toLowerCase().includes(searchTerm.toLowerCase())) 
+    return resources.filter((resource: BuysResourceWithResource) =>
+      resource.resource?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (resource.warehouse?.name && resource.warehouse.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (resource.supplier?.suplier_name && resource.supplier.suplier_name.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [resources, searchTerm]);
 
-  const handleEdit = (resource: Resource) => {
+  const handleEdit = (resource: BuysResourceWithResource) => {
     setResourceToEdit(resource);
   };
 
-  const handleDelete = (resource: Resource) => {
+  const handleDelete = (resource: BuysResourceWithResource) => {
     setResourceToDelete(resource);
   };
 
@@ -65,7 +63,7 @@ const ResourcesView: React.FC = () => {
     setResourceToDelete(null);
   };
 
-  const handleCreateResource = async (payload: CreateResourcePayload) => {
+  const handleCreateResource = async (payload: CreateBuysResourcePayload) => {
     try {
       await createResourceMutation.mutateAsync(payload);
       setIsCreateModalOpen(false);
@@ -113,7 +111,7 @@ const ResourcesView: React.FC = () => {
         <Input
           type="text"
           className="pl-10 dark:bg-gray-800 dark:text-white dark:border-gray-700"
-          placeholder="Buscar recursos por nombre o proveedor..."
+          placeholder="Buscar por recurso, almacén o proveedor..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -140,9 +138,8 @@ const ResourcesView: React.FC = () => {
           <table className="min-w-full text-sm dark:text-gray-300">
             <thead className="bg-gray-800 dark:bg-gray-700 text-white dark:text-gray-200">
               <tr>
-                <th className="px-4 py-2 text-left">Nombre</th>
+                <th className="px-4 py-2 text-left">Recurso</th>
                 <th className="px-4 py-2 text-left">Almacén</th>
-                <th className="px-4 py-2 text-left">ID Recurso</th>
                 <th className="px-4 py-2 text-left">Unidad</th>
                 <th className="px-4 py-2 text-left">Precio Unitario</th>
                 <th className="px-4 py-2 text-left">Costo Total</th>
@@ -156,27 +153,39 @@ const ResourcesView: React.FC = () => {
             <tbody>
               {filteredResources.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="text-center py-4 text-gray-500 dark:text-gray-400">
+                  <td colSpan={10} className="text-center py-4 text-gray-500 dark:text-gray-400">
                     {searchTerm ? 'No se encontraron recursos que coincidan con la búsqueda' : 'No hay recursos para mostrar.'}
                   </td>
                 </tr>
               ) : (
-                filteredResources.map((r) => (
+                filteredResources.map((r: BuysResourceWithResource) => (
                   <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 border-t dark:border-gray-700">
-                    <td className="px-4 py-2 text-left">{r.name}</td>
-                    <td className="px-4 py-2 text-left">{r.warehouse_id}</td>
-                    <td className="px-4 py-2 text-left">{r.resource_id}</td>
+                    <td className="px-4 py-2 text-left">
+                      <div>
+                        <div className="font-medium">{r.resource?.name || 'N/A'}</div>
+                        {r.resource?.observation && (
+                          <div className="text-xs text-gray-500">{r.resource.observation}</div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2 text-left">{r.warehouse?.name || 'N/A'}</td>
                     <td className="px-4 py-2 text-left">{r.type_unit}</td>
                     <td className="px-4 py-2 text-left">
-                      S/ {parseFloat(r.unit_price).toFixed(2)}
+                      S/ {r.unit_price.toFixed(2)}
                     </td>
                     <td className="px-4 py-2 text-left">
-                      S/ {parseFloat(r.total_cost).toFixed(2)}
+                      S/ {r.total_cost.toFixed(2)}
                     </td>
-                    <td className="px-4 py-2 text-left">{r.supplier_id ?? 'N/A'}</td> 
+                    <td className="px-4 py-2 text-left">{r.supplier?.suplier_name || 'N/A'}</td>
                     <td className="px-4 py-2 text-left">{r.quantity}</td>
                     <td className="px-4 py-2 text-left">{r.entry_date ? new Date(r.entry_date).toLocaleDateString() : '-'}</td>
-                    <td className="px-4 py-2 text-left">{r.observation ?? '-'}</td>
+                    <td className="px-4 py-2 text-left">
+                      {r.resource?.observation ? (
+                        <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                          Ver arriba
+                        </span>
+                      ) : '-'}
+                    </td>
                     <td className="px-4 py-2 text-left space-x-2">
                       <Button
                         variant="ghost"
@@ -218,7 +227,7 @@ const ResourcesView: React.FC = () => {
       {resourceToEdit && (
         <ModalEditResource
           isOpen={!!resourceToEdit}
-          recurso={resourceToEdit}
+          recurso={resourceToEdit.resource || { id: resourceToEdit.id || '', name: '', observation: null }}
           onClose={() => setResourceToEdit(null)}
           onUpdate={handleUpdateResource}
           isUpdating={updateResourceMutation.isPending}
@@ -230,7 +239,7 @@ const ResourcesView: React.FC = () => {
           isOpen={!!resourceToDelete}
           onClose={cancelDelete}
           onConfirm={confirmDelete}
-          resourceName={resourceToDelete.name}
+          resourceName={resourceToDelete.resource?.name || 'Recurso'}
           isDeleting={deleteResourceMutation.isPending}
         />
       )}
