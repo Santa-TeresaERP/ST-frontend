@@ -202,6 +202,9 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
         <ModalCreateWarehousesView
           showModal={showCreateWarehouse}
           onClose={() => setShowCreateWarehouse(false)}
+          onAddNew={(newWarehouse) => {
+            setShowCreateWarehouse(false);
+          }}
         />
 
         {/* Modal editar almacén */}
@@ -209,7 +212,6 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
           showModal={showEditWarehouse}
           onClose={() => setShowEditWarehouse(false)}
           warehouse={selectedWarehouse}
-          onSave={() => setShowEditWarehouse(false)}
         />
 
         {/* Modal eliminar almacén */}

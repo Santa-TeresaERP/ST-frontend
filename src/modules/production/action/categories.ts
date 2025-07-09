@@ -11,8 +11,13 @@ export const fetchCategory = async (id: string): Promise<Category> => {
   return response.data;
 };
 
-export const createCategory = async (payload: CreateCategoryPayload): Promise<Category> => {
-  const response = await api.post<Category>('/categories', payload);
+export const createCategory = async (
+  payload: CreateCategoryPayload,
+): Promise<Category> => {
+  const response = await api.post<Category>('/categories', {
+    ...payload,
+    status: true,          // ← entra como activa
+  });
   return response.data;
 };
 
@@ -22,5 +27,5 @@ export const updateCategory = async (id: string, payload: UpdateCategoryPayload)
 };
 
 export const deleteCategory = async (id: string): Promise<void> => {
-  await api.delete(`/categories/${id}`);
+  await api.put(`/categories/${id}`, { status: false });
 };
