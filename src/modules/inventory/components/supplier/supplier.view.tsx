@@ -79,7 +79,7 @@ const SupplierView: React.FC = () => {
 
     createSupplier.mutate(
       {
-        suplier_name: nuevoProveedor.nombre, // <--- Cambiado aquí
+        suplier_name: nuevoProveedor.nombre, 
         ruc: Number(nuevoProveedor.ruc),
         contact_name: nuevoProveedor.contacto,
         email: nuevoProveedor.correo,
@@ -155,7 +155,7 @@ const SupplierView: React.FC = () => {
     setSupplierToDelete(null);
   };
 
-  return (
+return (
     <>
       <div className="p-6 space-y-4 bg-gray-50 min-h-screen">
         <div className="flex justify-start">
@@ -202,25 +202,26 @@ const SupplierView: React.FC = () => {
                 <th className="px-4 py-2 text-center">Teléfono</th>
                 <th className="px-4 py-2 text-center">Correo</th>
                 <th className="px-4 py-2 text-center">Dirección</th>
+                <th className="px-4 py-2 text-center">Estado</th> {/* NUEVO */}
                 <th className="px-4 py-2 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-4 text-gray-500">
+                  <td colSpan={8} className="text-center py-4 text-gray-500">
                     Cargando proveedores...
                   </td>
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-4 text-red-500">
+                  <td colSpan={8} className="text-center py-4 text-red-500">
                     Error al cargar proveedores
                   </td>
                 </tr>
               ) : filteredSuppliers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-4 text-gray-500">
+                  <td colSpan={8} className="text-center py-4 text-gray-500">
                     {searchTerm
                       ? 'No se encontraron proveedores que coincidan con la búsqueda'
                       : 'No hay proveedores para mostrar.'}
@@ -235,6 +236,20 @@ const SupplierView: React.FC = () => {
                     <td className="px-4 py-2">{s.phone ?? ''}</td>
                     <td className="px-4 py-2">{s.email ?? ''}</td>
                     <td className="px-4 py-2">{s.address ?? ''}</td>
+
+                    {/* ESTADO activo o inactivo */}
+                    <td className="px-4 py-2 text-center">
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                          s.status === 'activo'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {s.status === 'activo' ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+
                     <td className="px-4 py-2 flex justify-center gap-2">
                       <button
                         onClick={() => s.id && handleEdit(s.id)}

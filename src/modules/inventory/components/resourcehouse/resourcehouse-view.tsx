@@ -172,8 +172,10 @@ const ResourcesView: React.FC = () => {
                     </td>
                     <td className="px-4 py-2 text-left">
                       S/ {parseFloat(r.total_cost).toFixed(2)}
+                    </td> //cambio de N/A
+                    <td className="px-4 py-2 text-left">
+                      {r.supplier?.suplier_name ?? 'Proveedor no encontrado'}
                     </td>
-                    <td className="px-4 py-2 text-left">{r.supplier_id ?? 'N/A'}</td> 
                     <td className="px-4 py-2 text-left">{r.quantity}</td>
                     <td className="px-4 py-2 text-left">{r.entry_date ? new Date(r.entry_date).toLocaleDateString() : '-'}</td>
                     <td className="px-4 py-2 text-left">{r.observation ?? '-'}</td>
