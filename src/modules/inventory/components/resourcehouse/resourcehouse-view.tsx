@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 // Verified Icons import path
-import { Edit2, Trash2, FileText, Search, Plus, AlertCircle } from 'lucide-react';
+import { Edit2, Trash2, FileText, Search, Plus, AlertCircle, Filter, X, Calendar } from 'lucide-react';
 // Corrected Hooks import path (from ../../hooks/ to ../../hook/)
 import { useFetchResourcesWithBuys, useCreateBuysResource, useUpdateResource, useDeleteResource } from '../../hook/usebuysResource';
 // Verified Types/Actions import paths (assuming they are correct relative to this file)
@@ -20,6 +20,10 @@ const ResourcesView: React.FC = () => {
   const [resourceToDelete, setResourceToDelete] = useState<BuysResourceWithResource | null>(null);
   const [resourceToEdit, setResourceToEdit] = useState<BuysResourceWithResource | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Filter states - only date filters
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
 
   // Fetch resources using the hook
   const { data: resources = [], isLoading, error } = useFetchResourcesWithBuys();
@@ -29,15 +33,36 @@ const ResourcesView: React.FC = () => {
   const updateResourceMutation = useUpdateResource();
   const deleteResourceMutation = useDeleteResource();
 
-  // Filter resources based on the search term
+  // Filter resources based on search term and date filters only
   const filteredResources = useMemo(() => {
     if (!resources) return [];
-    return resources.filter((resource: BuysResourceWithResource) =>
-      resource.resource?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (resource.warehouse?.name && resource.warehouse.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (resource.supplier?.suplier_name && resource.supplier.suplier_name.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
-  }, [resources, searchTerm]);
+    
+    return resources.filter((resource: BuysResourceWithResource) => {
+      // Text search filter
+      const matchesSearch = 
+        resource.resource?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (resource.warehouse?.name && resource.warehouse.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (resource.supplier?.suplier_name && resource.supplier.suplier_name.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      // Date filter
+      let matchesDate = true;
+      if (startDate || endDate) {
+        const entryDate = resource.entry_date ? new Date(resource.entry_date) : null;
+        if (entryDate) {
+          if (startDate && new Date(startDate) > entryDate) {
+            matchesDate = false;
+          }
+          if (endDate && new Date(endDate) < entryDate) {
+            matchesDate = false;
+          }
+        } else if (startDate || endDate) {
+          matchesDate = false; // No entry date but filters are set
+        }
+      }
+      
+      return matchesSearch && matchesDate;
+    });
+  }, [resources, searchTerm, startDate, endDate]);
 
   const handleEdit = (resource: BuysResourceWithResource) => {
     setResourceToEdit(resource);
@@ -83,22 +108,28 @@ const ResourcesView: React.FC = () => {
     }
   };
 
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setStartDate('');
+    setEndDate('');
+  };
+
   return (
-    <div className="p-6 space-y-4 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div className="p-6 space-y-4 bg-white min-h-screen">
       <div className="flex justify-start">
-        <h2 className="text-4xl font-semibold text-yellow-500 dark:text-yellow-400">
+        <h2 className="text-4xl font-semibold text-yellow-500">
           Recursos
         </h2>
       </div>
 
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-2">
-          <FileText size={24} className="text-yellow-500 dark:text-yellow-400" />
-          <span className="text-lg font-medium dark:text-gray-200">Gestión de Recursos</span>
+          <FileText size={24} className="text-yellow-500" />
+          <span className="text-lg font-medium text-gray-800">Gestión de Recursos</span>
         </div>
         <Button
           onClick={() => setIsCreateModalOpen(true)}
-          className="bg-red-700 hover:bg-red-800 dark:bg-red-600 dark:hover:bg-red-700 text-white"
+          className="bg-red-700 hover:bg-red-800 text-white"
         >
           <Plus className="mr-2 h-4 w-4" /> Agregar Recurso
         </Button>
@@ -110,23 +141,89 @@ const ResourcesView: React.FC = () => {
         </div>
         <Input
           type="text"
-          className="pl-10 dark:bg-gray-800 dark:text-white dark:border-gray-700"
+          className="pl-10 bg-white text-gray-900 border-gray-300"
           placeholder="Buscar por recurso, almacén o proveedor..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
-      {/* Loading and Error States - Replaced non-existent components */}
+      {/* Filters Section */}
+      <div className="bg-white rounded-xl shadow p-4 border border-gray-200">
+        <div className="flex items-center gap-2 mb-4">
+          <Filter className="text-gray-600" size={20} />
+          <h3 className="text-lg font-medium text-gray-800">Filtros</h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearAllFilters}
+            className="ml-auto text-gray-600 hover:text-gray-800"
+          >
+            <X className="mr-1 h-4 w-4" />
+            Limpiar filtros
+          </Button>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Start Date Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              <Calendar className="inline mr-1 h-4 w-4" />
+              Fecha desde
+            </label>
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="h-10 bg-white text-gray-900 border-gray-300"
+            />
+          </div>
+
+          {/* End Date Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              <Calendar className="inline mr-1 h-4 w-4" />
+              Fecha hasta
+            </label>
+            <Input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="h-10 bg-white text-gray-900 border-gray-300"
+            />
+          </div>
+        </div>
+
+        {/* Active Filters Summary */}
+        {(startDate || endDate) && (
+          <div className="mt-4 pt-3 border-t border-gray-200">
+            <div className="flex flex-wrap gap-2">
+              <span className="text-sm text-gray-600">Filtros activos:</span>
+              {startDate && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                  Desde: {new Date(startDate).toLocaleDateString()}
+                </span>
+              )}
+              {endDate && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                  Hasta: {new Date(endDate).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Loading and Error States */}
       {isLoading && (
-        <div className="flex justify-center items-center p-4 text-gray-500 dark:text-gray-400">
+        <div className="flex justify-center items-center p-4 text-gray-500">
           {/* Simple text loading indicator */}
           Cargando recursos...
         </div>
       )}
       {error && (
-         /* Simple div for error message - Replace with actual Alert component if implemented */
-        <div className="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+         /* Simple div for error message */
+        <div className="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50" role="alert">
           <AlertCircle className="inline w-4 h-4 mr-2"/>
           <span className="font-medium">Error:</span> No se pudieron cargar los recursos: {error.message}
         </div>
@@ -134,9 +231,9 @@ const ResourcesView: React.FC = () => {
 
       {/* Table */} 
       {!isLoading && !error && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 overflow-x-auto">
-          <table className="min-w-full text-sm dark:text-gray-300">
-            <thead className="bg-gray-800 dark:bg-gray-700 text-white dark:text-gray-200">
+        <div className="bg-white rounded-xl shadow p-4 overflow-x-auto border border-gray-200">
+          <table className="min-w-full text-sm text-gray-700">
+            <thead className="bg-gray-100 text-gray-700">
               <tr>
                 <th className="px-4 py-2 text-left">Recurso</th>
                 <th className="px-4 py-2 text-left">Almacén</th>
@@ -153,13 +250,13 @@ const ResourcesView: React.FC = () => {
             <tbody>
               {filteredResources.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="text-center py-4 text-gray-500 dark:text-gray-400">
+                  <td colSpan={10} className="text-center py-4 text-gray-500">
                     {searchTerm ? 'No se encontraron recursos que coincidan con la búsqueda' : 'No hay recursos para mostrar.'}
                   </td>
                 </tr>
               ) : (
                 filteredResources.map((r: BuysResourceWithResource) => (
-                  <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 border-t dark:border-gray-700">
+                  <tr key={r.id} className="hover:bg-gray-50 border-t border-gray-200">
                     <td className="px-4 py-2 text-left">
                       <div>
                         <div className="font-medium">{r.resource?.name || 'N/A'}</div>
@@ -181,7 +278,7 @@ const ResourcesView: React.FC = () => {
                     <td className="px-4 py-2 text-left">{r.entry_date ? new Date(r.entry_date).toLocaleDateString() : '-'}</td>
                     <td className="px-4 py-2 text-left">
                       {r.resource?.observation ? (
-                        <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                        <span className="text-xs bg-gray-100 px-2 py-1 rounded">
                           Ver arriba
                         </span>
                       ) : '-'}
@@ -191,7 +288,7 @@ const ResourcesView: React.FC = () => {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleEdit(r)}
-                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                        className="text-blue-600 hover:text-blue-800"
                         title="Editar"
                       >
                         <Edit2 className="h-4 w-4"/>
@@ -200,7 +297,7 @@ const ResourcesView: React.FC = () => {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleDelete(r)}
-                        className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                        className="text-red-600 hover:text-red-800"
                         title="Eliminar"
                       >
                         <Trash2 className="h-4 w-4"/>

@@ -124,7 +124,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg relative dark:bg-gray-800">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg relative">
         <div className="bg-red-800 text-white p-5 rounded-t-2xl flex items-center justify-between">
           <h2 className="text-lg font-semibold">Nuevo Recurso</h2>
           <Button
@@ -165,7 +165,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             {/* supplier_id */}
             <div>
-              <Label htmlFor="supplier_id" className="block text-sm font-medium mb-1 dark:text-gray-300">
+              <Label htmlFor="supplier_id" className="block text-sm font-medium mb-1">
                 Proveedor*
               </Label>
               {isLoadingSuppliers ? (
@@ -176,7 +176,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
                 <select
                   id="supplier_id"
                   {...register('supplier_id')}
-                  className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                  className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white text-gray-900 border-gray-300"
                   defaultValue=""
                 >
                   <option value="">Seleccione un proveedor</option>
@@ -192,7 +192,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
 
             {/* warehouse_id */}
             <div>
-              <Label htmlFor="warehouse_id" className="block text-sm font-medium mb-1 dark:text-gray-300">
+              <Label htmlFor="warehouse_id" className="block text-sm font-medium mb-1">
                 Almacén*
               </Label>
               {isLoadingWarehouses ? (
@@ -203,7 +203,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
                 <select
                   id="warehouse_id"
                   {...register('warehouse_id')}
-                  className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                  className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white text-gray-900 border-gray-300"
                   defaultValue=""
                 >
                   <option value="">Seleccione un almacén</option>
@@ -222,7 +222,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             {/* total_cost */}
             <div>
-              <Label htmlFor="total_cost" className="block text-sm font-medium mb-1 dark:text-gray-300">
+              <Label htmlFor="total_cost" className="block text-sm font-medium mb-1">
                 Costo Total*
               </Label>
               <Input
@@ -230,7 +230,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
                 type="number"
                 step="0.01"
                 {...register('total_cost', { valueAsNumber: true })}
-                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                className="h-10 mt-1 bg-white text-gray-900 border-gray-300"
                 placeholder="0.00"
               />
               {errors.total_cost && <p className="text-sm text-red-500 mt-1">{errors.total_cost.message}</p>}
@@ -238,14 +238,14 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
 
             {/* quantity */}
             <div>
-              <Label htmlFor="quantity" className="block text-sm font-medium mb-1 dark:text-gray-300">
+              <Label htmlFor="quantity" className="block text-sm font-medium mb-1">
                 Cantidad*
               </Label>
               <Input
                 id="quantity"
                 type="number"
                 {...register('quantity', { valueAsNumber: true })}
-                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                className="h-10 mt-1 bg-white text-gray-900 border-gray-300"
                 placeholder="Cantidad"
               />
               {errors.quantity && <p className="text-sm text-red-500 mt-1">{errors.quantity.message}</p>}
@@ -253,7 +253,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
 
             {/* unit_price - Calculado automáticamente e inmutable */}
             <div>
-              <Label htmlFor="unit_price" className="block text-sm font-medium mb-1 dark:text-gray-300">
+              <Label htmlFor="unit_price" className="block text-sm font-medium mb-1">
                 Precio Unitario
               </Label>
               <Input
@@ -261,7 +261,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
                 type="text"
                 value={`S/ ${unitPrice}`}
                 readOnly
-                className="h-10 mt-1 dark:bg-gray-600 dark:text-gray-300 dark:border-gray-600 bg-gray-100 text-gray-600 cursor-not-allowed"
+                className="h-10 mt-1 bg-gray-100 text-gray-600 cursor-not-allowed border-gray-300"
                 placeholder="0.00"
               />
               <p className="text-xs text-gray-500 mt-1">Calculado automáticamente</p>
@@ -272,7 +272,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             {/* type_unit */}
             <div>
-              <Label htmlFor="type_unit" className="block text-sm font-medium mb-1 dark:text-gray-300">
+              <Label htmlFor="type_unit" className="block text-sm font-medium mb-1">
                 Unidad*
               </Label>
               <select

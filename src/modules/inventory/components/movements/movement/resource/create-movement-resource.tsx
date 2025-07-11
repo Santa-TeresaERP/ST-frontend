@@ -16,7 +16,7 @@ const initialForm: CreateWarehouseMovementResourcePayload = {
   warehouse_id: '',
   resource_id: '',
   movement_type: 'entrada',
-  quantity: 0,
+  quantity: 1, // Cambiar de 0 a 1 para evitar valores negativos
   movement_date: new Date().toISOString().split('T')[0], // Fecha actual en formato YYYY-MM-DD
   observations: '',
 };
@@ -27,32 +27,68 @@ const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
   const { mutateAsync, isPending } = useCreateWarehouseMovementResource();
 
   // Obtener almacenes y recursos existentes
-  const { data: warehouses = [], isLoading: loadingWarehouses } = useFetchWarehouses();
-  const { data: resources = [], isLoading: loadingResources } = useFetchResources();
+  const { data: warehouses = [], isLoading: loadingWarehouses, error: errorWarehouses } = useFetchWarehouses();
+  const { data: resources = [], isLoading: loadingResources, error: errorResources } = useFetchResources();
+
+  // Debug: mostrar datos cargados
+  console.log('Warehouses:', warehouses);
+  console.log('Resources:', resources);
+  console.log('Loading warehouses:', loadingWarehouses);
+  console.log('Loading resources:', loadingResources);
+  console.log('Error warehouses:', errorWarehouses);
+  console.log('Error resources:', errorResources);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    
+    // Debug: mostrar cambios en los campos
+    console.log(`Campo ${name} cambió a:`, value);
+    
+    if (name === 'quantity') {
+      const numValue = Number(value);
+      if (numValue <= 0) {
+        setError('La cantidad debe ser mayor que 0');
+        return;
+      } else {
+        setError(null);
+      }
+      setForm({ ...form, [name]: numValue });
+    } else {
+      setForm({ ...form, [name]: value });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    
+    // Debug: Mostrar los datos del formulario
+    console.log('Form data antes de validación:', form);
+    
     const parsed = warehouseMovementResourceSchema.safeParse({
       ...form,
       quantity: Number(form.quantity),
-      movement_date: form.movement_date,
+      movement_date: new Date(form.movement_date).toISOString(), // Convertir a ISO string
     });
+    
+    // Debug: Mostrar resultado de validación
+    console.log('Parsed data:', parsed);
+    
     if (!parsed.success) {
+      console.log('Validation errors:', parsed.error.errors);
       setError(parsed.error.errors[0].message);
       return;
     }
+    
     try {
+      console.log('Payload a enviar:', parsed.data);
       await mutateAsync(parsed.data);
       setForm(initialForm);
       onCreated();
       if (onClose) onClose();
     } catch (err: any) {
-      setError(err.message);
+      console.error('Error en la petición:', err);
+      setError(err.response?.data?.message || err.message);
     }
   };
 
@@ -71,7 +107,27 @@ const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
           )}
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-5 text-left">
-          {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-sm text-red-600 font-medium">Error:</p>
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+          
+          {/* Mostrar errores de carga de datos */}
+          {errorWarehouses && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <p className="text-sm text-yellow-600 font-medium">Error cargando almacenes:</p>
+              <p className="text-sm text-yellow-700">{errorWarehouses.message}</p>
+            </div>
+          )}
+          
+          {errorResources && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <p className="text-sm text-yellow-600 font-medium">Error cargando recursos:</p>
+              <p className="text-sm text-yellow-700">{errorResources.message}</p>
+            </div>
+          )}
           <div>
             <label className="block text-gray-700 mb-1 font-medium">Almacén*</label>
             <select

@@ -99,7 +99,7 @@ const ResourceSearchInput: React.FC<ResourceSearchInputProps> = ({
 
   return (
     <div className={`relative ${className}`}>
-      <Label htmlFor="resource_search" className="block text-sm font-medium mb-1 dark:text-gray-300">
+      <Label htmlFor="resource_search" className="block text-sm font-medium mb-1">
         {label}{required && '*'}
       </Label>
       
@@ -115,7 +115,7 @@ const ResourceSearchInput: React.FC<ResourceSearchInputProps> = ({
           }}
           onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
-          className="h-10 mt-1 pr-10 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+          className="h-10 mt-1 pr-10 bg-white text-gray-900 border-gray-300"
         />
         
         <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
@@ -137,14 +137,14 @@ const ResourceSearchInput: React.FC<ResourceSearchInputProps> = ({
       {isOpen && suggestions.length > 0 && (
         <div
           ref={dropdownRef}
-          className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto"
+          className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
         >
           {suggestions.map((resource) => (
             <button
               key={resource.id}
               type="button"
               onClick={() => handleResourceSelection(resource)}
-              className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between"
+              className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center justify-between"
             >
               <div className="flex items-center space-x-2">
                 {resource.isExisting ? (
@@ -153,18 +153,18 @@ const ResourceSearchInput: React.FC<ResourceSearchInputProps> = ({
                   <Plus className="h-4 w-4 text-green-500" />
                 )}
                 <div>
-                  <div className="font-medium text-gray-900 dark:text-gray-100">
+                  <div className="font-medium text-gray-900">
                     {resource.name}
                   </div>
                   {resource.observation && (
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                    <div className="text-sm text-gray-500">
                       {resource.observation}
                     </div>
                   )}
                 </div>
               </div>
               {!resource.isExisting && (
-                <span className="text-xs text-green-600 dark:text-green-400">
+                <span className="text-xs text-green-600">
                   Crear nuevo
                 </span>
               )}
@@ -175,8 +175,8 @@ const ResourceSearchInput: React.FC<ResourceSearchInputProps> = ({
 
       {/* Mostrar descripción del recurso seleccionado */}
       {selectedResource && selectedResource.observation && (
-        <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md text-sm">
-          <div className="font-medium text-blue-800 dark:text-blue-200">
+        <div className="mt-2 p-2 bg-blue-50 rounded-md text-sm">
+          <div className="font-medium text-blue-800">
             Descripción:
           </div>
           <div className="text-blue-700 dark:text-blue-300">
