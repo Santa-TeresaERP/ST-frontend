@@ -85,6 +85,7 @@ const SupplierView: React.FC = () => {
         email: nuevoProveedor.correo,
         address: nuevoProveedor.direccion,
         phone: Number(nuevoProveedor.telefono),
+        status: true,
       },
       {
         onError: (error: unknown) => {
@@ -145,11 +146,23 @@ const SupplierView: React.FC = () => {
   };
 
   const confirmDelete = () => {
-    if (supplierToDelete) {
-      deleteSupplier.mutate(supplierToDelete.id!);
-      setSupplierToDelete(null);
-    }
-  };
+  if (supplierToDelete) {
+    updateSupplier.mutate({
+      id: supplierToDelete.id!,
+      payload: {
+        suplier_name: supplierToDelete.suplier_name,
+        ruc: supplierToDelete.ruc!,
+        contact_name: supplierToDelete.contact_name,
+        email: supplierToDelete.email,
+        address: supplierToDelete.address,
+        phone: supplierToDelete.phone!,
+        status: false, // 👈 CAMBIO DE ESTADO A INACTIVO
+      },
+    });
+    setSupplierToDelete(null);
+  }
+};
+
 
   const cancelDelete = () => {
     setSupplierToDelete(null);
@@ -202,7 +215,7 @@ return (
                 <th className="px-4 py-2 text-center">Teléfono</th>
                 <th className="px-4 py-2 text-center">Correo</th>
                 <th className="px-4 py-2 text-center">Dirección</th>
-                <th className="px-4 py-2 text-center">Estado</th> {/* NUEVO */}
+                <th className="px-4 py-2 text-center">Estado</th>
                 <th className="px-4 py-2 text-center">Acciones</th>
               </tr>
             </thead>
@@ -239,14 +252,12 @@ return (
 
                     {/* ESTADO activo o inactivo */}
                     <td className="px-4 py-2 text-center">
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                          s.status === 'activo'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}
-                      >
-                        {s.status === 'activo' ? 'Activo' : 'Inactivo'}
+                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                        s.status
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {s.status ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
 
