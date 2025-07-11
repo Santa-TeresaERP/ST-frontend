@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const CategorySchema = z.object({
   id: z.string(),
   name: z.string(),
+  status: z.boolean(), 
   description: z.string(),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
@@ -16,6 +17,7 @@ export interface CreateCategoryPayload {
 }
 
 export interface UpdateCategoryPayload {
-  name: string;
-  description: string;
+  name?: string;
+  description?: string;
+  status?: boolean;   // ← ya estaba
 }

@@ -151,6 +151,16 @@ const ModalCreateProducto: React.FC<ModalCreateProductoProps> = ({ isOpen, onClo
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200"
                 placeholder="URL de la imagen"
               />
+              {imagen && (
+                <div className="mt-2 flex justify-center">
+                  <img
+                    src={imagen}
+                    alt="Vista previa"
+                    className="h-32 w-32 object-cover rounded-lg border"
+                    onError={(e) => (e.currentTarget.style.display = 'none')}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>

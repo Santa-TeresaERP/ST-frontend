@@ -17,21 +17,23 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
   // Estados para controlar los modales
   const [showCreateWarehouse, setShowCreateWarehouse] = useState(false);
   const [showEditWarehouse, setShowEditWarehouse] = useState(false);
-  const [, setSelectedWarehouseName] = useState<string | undefined>(); // almacén a eliminar
   const [selectedWarehouse, setSelectedWarehouse] = useState<any>(null); // almacén a editar
   const [showDeleteWarehouse, setShowDeleteWarehouse] = useState(false); 
 
+  // Hook debe estar antes del return condicional
+  const { data: warehouses, isLoading, error } = useFetchWarehouses();
 
   if (!open) return null;
 
-  // Simulación de datos (podrías usar props si vienen del backend)
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const { data: warehouses } = useFetchWarehouses();
-
-  
-
   const activeWarehouses = warehouses?.filter(warehouse => warehouse.status === true) || [];
   const inactiveWarehouses = warehouses?.filter(warehouse => warehouse.status === false) || [];
+
+  // Debug: mostrar información en consola
+  console.log('Warehouses data:', warehouses);
+  console.log('Active warehouses:', activeWarehouses);
+  console.log('Inactive warehouses:', inactiveWarehouses);
+  console.log('Loading:', isLoading);
+  console.log('Error:', error);
 
 
   return (
@@ -64,8 +66,29 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
           </button>
         </div>
 
+        {/* Estados de carga y error */}
+        {isLoading && (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Cargando almacenes...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-red-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <span className="font-medium text-red-800">Error al cargar almacenes:</span>
+            </div>
+            <p className="text-red-700 mt-1">{error.message}</p>
+          </div>
+        )}
+
       {/* Lista de almacenes */}
-      <div className="space-y-8">
+      {!isLoading && !error && (
+        <div className="space-y-8">
         {/* Almacenes activos */}
         <div>
           <div className="flex items-center mb-4">
@@ -196,12 +219,16 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
             </div>
           )}
         </div>
-      </div>
+        </div>
+      )}
 
         {/* Modal crear almacén */}
         <ModalCreateWarehousesView
           showModal={showCreateWarehouse}
           onClose={() => setShowCreateWarehouse(false)}
+          onAddNew={(newWarehouse) => {
+            setShowCreateWarehouse(false);
+          }}
         />
 
         {/* Modal editar almacén */}
@@ -209,7 +236,7 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
           showModal={showEditWarehouse}
           onClose={() => setShowEditWarehouse(false)}
           warehouse={selectedWarehouse}
-          onSave={() => setShowEditWarehouse(false)}
+          onSuccess={() => setShowEditWarehouse(false)}
         />
 
         {/* Modal eliminar almacén */}

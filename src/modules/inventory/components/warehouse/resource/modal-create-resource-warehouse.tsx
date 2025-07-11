@@ -16,7 +16,7 @@ const ModalCreateWarehouses: React.FC<ModalCreateWarehousesProps> = ({ onClose, 
   const [warehouse_id, setWarehouseId] = useState('');
   const [resource_id, setResourceId] = useState('');
   const [quantity, setQuantity] = useState<number | ''>('');
-  const [entry_date, setEntryDate] = useState('');
+  const [entry_date, setEntryDate] = useState(() => new Date().toISOString().split('T')[0]);
 
   const createResource = useCreateWarehouseResource();
   const { data: warehouses, isLoading: isLoadingWarehouses } = useFetchWarehouses();

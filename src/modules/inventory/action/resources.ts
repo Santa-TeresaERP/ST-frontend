@@ -6,6 +6,11 @@ export const fetchResources = async (): Promise<Resource[]> => {
     return response.data;
     }
 
+export const getResource = async (id: string): Promise<Resource> => {
+    const response = await api.get<Resource>(`/resource/${id}`);
+    return response.data;
+    }
+
 export const createResource = async (payload: CreateResourcePayload): Promise<Resource> => {
     const response = await api.post<Resource>('/resource', payload);
     return response.data;

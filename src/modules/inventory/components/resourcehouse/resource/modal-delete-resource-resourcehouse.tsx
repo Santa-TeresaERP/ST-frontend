@@ -38,19 +38,19 @@ const ModalDeleteResource: React.FC<ModalDeleteResourceProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       {/* Use DialogContent */}
-      <DialogContent className="dark:bg-gray-800 sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px]">
         {/* Use DialogHeader */}
         <DialogHeader>
           {/* Use DialogTitle */}
-          <DialogTitle className="flex flex-col items-center text-center dark:text-white">
+          <DialogTitle className="flex flex-col items-center text-center">
             {/* Using verified Icon */}
-            <div className="bg-red-100 dark:bg-red-900/30 rounded-full p-3 mb-3">
-              <Trash2 size={24} className="text-red-600 dark:text-red-400" />
+            <div className="bg-red-100 rounded-full p-3 mb-3">
+              <Trash2 size={24} className="text-red-600" />
             </div>
             Eliminar Recurso
           </DialogTitle>
           {/* Use DialogDescription */}
-          <DialogDescription className="text-center dark:text-gray-400 pt-2">
+          <DialogDescription className="text-center pt-2">
             ¿Estás seguro de que deseas eliminar el recurso "<strong>{resourceName || 'seleccionado'}</strong>"?
             Esta acción no se puede deshacer.
           </DialogDescription>
@@ -58,7 +58,7 @@ const ModalDeleteResource: React.FC<ModalDeleteResourceProps> = ({
         {/* Use DialogFooter */}
         <DialogFooter className="mt-4 sm:justify-center">
           {/* Use standard Button for Cancel */}
-          <Button variant="ghost" onClick={onClose} disabled={isDeleting} className="dark:text-gray-300 dark:hover:bg-gray-700">
+          <Button variant="ghost" onClick={onClose} disabled={isDeleting} className="text-gray-600 hover:bg-gray-100">
             Cancelar
           </Button>
           {/* Use standard Button for Confirm */}
@@ -66,7 +66,7 @@ const ModalDeleteResource: React.FC<ModalDeleteResourceProps> = ({
             variant="destructive" 
             onClick={handleConfirm} 
             disabled={isDeleting}
-            className="bg-red-700 hover:bg-red-800 dark:bg-red-600 dark:hover:bg-red-700 disabled:opacity-50"
+            className="bg-red-700 hover:bg-red-800 disabled:opacity-50"
           >
             {isDeleting ? (
               <>

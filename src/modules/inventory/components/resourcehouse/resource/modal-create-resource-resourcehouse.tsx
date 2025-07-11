@@ -1,25 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X, Save, Loader2 } from 'lucide-react';
-import { ResourceValidationSchema } from '../../../schemas/resourceValidation';
-import { CreateResourcePayload } from '../../../types/resource';
+import { BuysResourceValidationSchema, BuysResourceFormData } from '../../../schemas/buysResourceValidation';
+import { CreateBuysResourcePayload } from '../../../types/buysResource';
 import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button';
 import { Label } from '@/app/components/ui/label';
-// Removed import for non-existent Textarea component
-// import { Textarea } from '@/app/components/ui/textarea'; 
-import { useFetchSuppliers } from '@/modules/inventory/hook/useSuppliers'; // Asegúrate de que este hook existe
-import { z } from 'zod';
+import { useFetchSuppliers } from '@/modules/inventory/hook/useSuppliers';
+import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
+import ResourceSearchInput from './ResourceSearchInput';
 
 type ModalNuevoRecursoProps = {
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (payload: CreateResourcePayload) => Promise<void>;
+  onCreate: (payload: CreateBuysResourcePayload) => Promise<void>;
   isCreating: boolean;
 };
 
-type ResourceFormData = z.infer<typeof ResourceValidationSchema>;
+const UNIT_OPTIONS = [
+  { value: 'g', label: 'Gramos (g)' },
+  { value: 'kg', label: 'Kilogramos (kg)' },
+  { value: 'l', label: 'Litros (l)' },
+  { value: 'ml', label: 'Mililitros (ml)' },
+  { value: 'unidades', label: 'Unidades' },
+];
 
 const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
   isOpen,
@@ -28,44 +33,89 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
   isCreating,
 }) => {
   const [serverError, setServerError] = React.useState<string | null>(null);
+  const [selectedResourceId, setSelectedResourceId] = useState<string>('');
+
+  // Función para limpiar el formulario y estados
+  const handleCloseModal = () => {
+    reset();
+    setSelectedResourceId('');
+    setServerError(null);
+    onClose();
+  };
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm<ResourceFormData>({
-    resolver: zodResolver(ResourceValidationSchema),
+    watch,
+    setValue,
+  } = useForm<BuysResourceFormData>({
+    resolver: zodResolver(BuysResourceValidationSchema),
     defaultValues: {
-      name: '',
-      unit_price: '',
+      warehouse_id: '',
+      resource_id: '',
+      quantity: 0,
       type_unit: '',
-      total_cost: undefined,
-      supplier_id: null,
-      observation: '',
-      purchase_date: '',
+      total_cost: 0,
+      supplier_id: '',
+      entry_date: new Date().toISOString().split('T')[0], // Fecha de hoy por defecto
     },
   });
 
+  // Hooks para datos
   const { data: suppliers, isLoading: isLoadingSuppliers, error: errorSuppliers } = useFetchSuppliers();
+  const { data: warehouses, isLoading: isLoadingWarehouses, error: errorWarehouses } = useFetchWarehouses();
 
-  const onSubmit = async (data: ResourceFormData) => {
-    const payload: CreateResourcePayload = {
-      ...data,
-      unit_price: data.unit_price,
-      total_cost: Number(data.total_cost),
-      supplier_id: data.supplier_id || null,
-      observation: data.observation || null,
+  // Limpiar el formulario cuando se cierre el modal
+  useEffect(() => {
+    if (!isOpen) {
+      reset();
+      setSelectedResourceId('');
+      setServerError(null);
+    }
+  }, [isOpen, reset]);
+
+  // Watch para calcular unit_price automáticamente
+  const quantity = watch('quantity');
+  const totalCost = watch('total_cost');
+  const unitPrice = quantity > 0 && totalCost > 0 ? (totalCost / quantity).toFixed(2) : '0.00';
+
+  useEffect(() => {
+    if (quantity > 0 && totalCost > 0) {
+      // El precio unitario se calcula automáticamente y se muestra en el UI
+      const calculatedUnitPrice = totalCost / quantity;
+      console.log('Precio unitario calculado:', calculatedUnitPrice);
+    }
+  }, [quantity, totalCost]);
+
+  const onSubmit = async (data: BuysResourceFormData) => {
+    // Validar que se haya seleccionado un recurso
+    if (!selectedResourceId) {
+      setServerError('Debe seleccionar un recurso');
+      return;
+    }
+
+    const unitPrice = data.quantity > 0 && data.total_cost > 0 ? data.total_cost / data.quantity : 0;
+    
+    const payload: CreateBuysResourcePayload = {
+      warehouse_id: data.warehouse_id,
+      resource_id: selectedResourceId, // Usar el ID del recurso seleccionado
+      quantity: data.quantity,
+      type_unit: data.type_unit,
+      unit_price: unitPrice,
+      total_cost: data.total_cost,
+      supplier_id: data.supplier_id,
+      entry_date: new Date(data.entry_date),
     };
 
     try {
       await onCreate(payload);
       reset();
+      setSelectedResourceId('');
       setServerError(null);
-    } catch (error: any) {
-      const message =
-        error?.response?.data?.message ||
-        'Error inesperado al crear el recurso. Verifica los datos.';
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Error inesperado al crear el recurso.';
       setServerError(message);
     }
   };
@@ -74,13 +124,13 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg relative dark:bg-gray-800">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg relative">
         <div className="bg-red-800 text-white p-5 rounded-t-2xl flex items-center justify-between">
           <h2 className="text-lg font-semibold">Nuevo Recurso</h2>
           <Button
             variant="ghost"
             size="icon"
-            onClick={onClose}
+            onClick={handleCloseModal}
             disabled={isCreating}
             className="text-white hover:text-gray-200 disabled:opacity-50"
             aria-label="Cerrar modal"
@@ -96,106 +146,28 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
             </div>
           )}
 
-          {/* Nombre */}
-          <div>
-            <Label htmlFor="name" className="block text-sm font-medium mb-1 dark:text-gray-300">
-              Nombre*
-            </Label>
-            <Input
-              id="name"
-              {...register('name')}
-              className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-              placeholder="Nombre del recurso"
-              autoFocus
+          {/* Campo Recurso - Ocupa todo el ancho */}
+          <div className="mb-4">
+            <ResourceSearchInput
+              label="Recurso"
+              placeholder="Buscar recurso..."
+              onResourceSelect={(resourceId) => {
+                setSelectedResourceId(resourceId);
+                // Actualizar el valor en el formulario
+                setValue('resource_id', resourceId);
+              }}
+              required
+              error={errors.resource_id?.message}
             />
-            {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>}
           </div>
 
-          {/* Grid de campos principales */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* warehouse_id */}
-            <div>
-              <Label htmlFor="warehouse_id" className="block text-sm font-medium mb-1 dark:text-gray-300">
-                Almacén*
-              </Label>
-              <Input
-                id="warehouse_id"
-                {...register('warehouse_id')}
-                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                placeholder="ID del almacén"
-              />
-              {errors.warehouse_id && <p className="text-sm text-red-500 mt-1">{errors.warehouse_id.message}</p>}
-            </div>
-
-            {/* resource_id */}
-            <div>
-              <Label htmlFor="resource_id" className="block text-sm font-medium mb-1 dark:text-gray-300">
-                ID Recurso*
-              </Label>
-              <Input
-                id="resource_id"
-                {...register('resource_id')}
-                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                placeholder="ID del recurso"
-              />
-              {errors.resource_id && <p className="text-sm text-red-500 mt-1">{errors.resource_id.message}</p>}
-            </div>
-
-            {/* type_unit */}
-            <div>
-              <Label htmlFor="type_unit" className="block text-sm font-medium mb-1 dark:text-gray-300">
-                Unidad*
-              </Label>
-              <select
-                id="type_unit"
-                {...register('type_unit')}
-                className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
-              >
-                <option value="">Selecciona una unidad</option>
-                <option value="Unidades">Unidades</option>
-                <option value="kg">kg</option>
-                <option value="g">g</option>
-                <option value="l">l</option>
-                <option value="ml">ml</option>
-              </select>
-              {errors.type_unit && <p className="text-sm text-red-500 mt-1">{errors.type_unit.message}</p>}
-            </div>
-
-            {/* unit_price */}
-            <div>
-              <Label htmlFor="unit_price" className="block text-sm font-medium mb-1 dark:text-gray-300">
-                Precio Unitario*
-              </Label>
-              <Input
-                id="unit_price"
-                type="number"
-                step="0.01"
-                {...register('unit_price', { valueAsNumber: true })}
-                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                placeholder="0.00"
-              />
-              {errors.unit_price && <p className="text-sm text-red-500 mt-1">{errors.unit_price.message}</p>}
-            </div>
-
-            {/* total_cost */}
-            <div>
-              <Label htmlFor="total_cost" className="block text-sm font-medium mb-1 dark:text-gray-300">
-                Costo Total*
-              </Label>
-              <Input
-                id="total_cost"
-                type="number"
-                step="0.01"
-                {...register('total_cost', { valueAsNumber: true })}
-                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                placeholder="0.00"
-              />
-              {errors.total_cost && <p className="text-sm text-red-500 mt-1">{errors.total_cost.message}</p>}
-            </div>
-
+          {/* Proveedor y Almacén - Misma fila */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             {/* supplier_id */}
             <div>
-              <Label htmlFor="supplier_id" className="dark:text-gray-300">Proveedor*</Label>
+              <Label htmlFor="supplier_id" className="block text-sm font-medium mb-1">
+                Proveedor*
+              </Label>
               {isLoadingSuppliers ? (
                 <div className="animate-pulse bg-gray-200 h-10 rounded-lg"></div>
               ) : errorSuppliers ? (
@@ -204,7 +176,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
                 <select
                   id="supplier_id"
                   {...register('supplier_id')}
-                  className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                  className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white text-gray-900 border-gray-300"
                   defaultValue=""
                 >
                   <option value="">Seleccione un proveedor</option>
@@ -218,19 +190,104 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
               {errors.supplier_id && <p className="text-sm text-red-500 mt-1">{errors.supplier_id.message}</p>}
             </div>
 
+            {/* warehouse_id */}
+            <div>
+              <Label htmlFor="warehouse_id" className="block text-sm font-medium mb-1">
+                Almacén*
+              </Label>
+              {isLoadingWarehouses ? (
+                <div className="animate-pulse bg-gray-200 h-10 rounded-lg"></div>
+              ) : errorWarehouses ? (
+                <p className="text-red-500 text-sm">Error al cargar almacenes</p>
+              ) : (
+                <select
+                  id="warehouse_id"
+                  {...register('warehouse_id')}
+                  className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white text-gray-900 border-gray-300"
+                  defaultValue=""
+                >
+                  <option value="">Seleccione un almacén</option>
+                  {warehouses?.map((warehouse) => (
+                    <option key={warehouse.id} value={warehouse.id}>
+                      {warehouse.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {errors.warehouse_id && <p className="text-sm text-red-500 mt-1">{errors.warehouse_id.message}</p>}
+            </div>
+          </div>
+
+          {/* Costo Total, Cantidad y Precio Unitario - Misma fila */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            {/* total_cost */}
+            <div>
+              <Label htmlFor="total_cost" className="block text-sm font-medium mb-1">
+                Costo Total*
+              </Label>
+              <Input
+                id="total_cost"
+                type="number"
+                step="0.01"
+                {...register('total_cost', { valueAsNumber: true })}
+                className="h-10 mt-1 bg-white text-gray-900 border-gray-300"
+                placeholder="0.00"
+              />
+              {errors.total_cost && <p className="text-sm text-red-500 mt-1">{errors.total_cost.message}</p>}
+            </div>
+
             {/* quantity */}
             <div>
-              <Label htmlFor="quantity" className="block text-sm font-medium mb-1 dark:text-gray-300">
+              <Label htmlFor="quantity" className="block text-sm font-medium mb-1">
                 Cantidad*
               </Label>
               <Input
                 id="quantity"
                 type="number"
                 {...register('quantity', { valueAsNumber: true })}
-                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                className="h-10 mt-1 bg-white text-gray-900 border-gray-300"
                 placeholder="Cantidad"
               />
               {errors.quantity && <p className="text-sm text-red-500 mt-1">{errors.quantity.message}</p>}
+            </div>
+
+            {/* unit_price - Calculado automáticamente e inmutable */}
+            <div>
+              <Label htmlFor="unit_price" className="block text-sm font-medium mb-1">
+                Precio Unitario
+              </Label>
+              <Input
+                id="unit_price"
+                type="text"
+                value={`S/ ${unitPrice}`}
+                readOnly
+                className="h-10 mt-1 bg-gray-100 text-gray-600 cursor-not-allowed border-gray-300"
+                placeholder="0.00"
+              />
+              <p className="text-xs text-gray-500 mt-1">Calculado automáticamente</p>
+            </div>
+          </div>
+
+          {/* Unidad y Fecha - Misma fila */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            {/* type_unit */}
+            <div>
+              <Label htmlFor="type_unit" className="block text-sm font-medium mb-1">
+                Unidad*
+              </Label>
+              <select
+                id="type_unit"
+                {...register('type_unit')}
+                className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
+              >
+                <option value="">Selecciona una unidad</option>
+                {UNIT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              {errors.type_unit && <p className="text-sm text-red-500 mt-1">{errors.type_unit.message}</p>}
             </div>
 
             {/* entry_date */}
@@ -248,27 +305,12 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
             </div>
           </div>
 
-          {/* Observación */}
-          <div>
-            <Label htmlFor="observation" className="block text-sm font-medium mb-1 dark:text-gray-300">
-              Observación
-            </Label>
-            <textarea
-              id="observation"
-              {...register('observation')}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
-              placeholder="Añadir observación (opcional)"
-              rows={3}
-            />
-            {errors.observation && <p className="text-sm text-red-500 mt-1">{errors.observation.message}</p>}
-          </div>
-
           {/* Botones */}
           <div className="flex justify-end space-x-3 pt-4">
             <Button
               type="button"
               variant="ghost"
-              onClick={onClose}
+              onClick={handleCloseModal}
               disabled={isCreating}
               className="dark:text-gray-300 dark:hover:bg-gray-700"
             >

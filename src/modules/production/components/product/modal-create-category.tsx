@@ -90,23 +90,26 @@ const ModalCreateCategoria = ({ isOpen, onClose }: ModalCreateCategoriaProps) =>
   };
 
   const handleEliminar = async () => {
-    if (!categoryToDelete) return;
+  if (!categoryToDelete) return;
 
-    try {
-      await deleteCategoryMutation.mutateAsync(categoryToDelete.id);
-      refetch();
-      setShowDeleteModal(false);
-      setCategoryToDelete(null);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      if (error.response?.data?.error) {
-        alert(`Error: ${error.response.data.error}`);
-      } else {
-        alert('Error desconocido. Por favor, intenta nuevamente.');
-      }
-      console.error('Error al eliminar la categoría:', error.response?.data || error.message);
-    }
-  };
+  try {
+    await deleteCategoryMutation.mutateAsync(categoryToDelete.id); // ← mismo hook
+    refetch();
+    setShowDeleteModal(false);
+    setCategoryToDelete(null);
+  } catch (err: any) {
+    alert(err.response?.data?.error ?? 'Error desconocido. Intenta nuevamente.');
+    console.error('Error al inactivar la categoría:', err);
+  }
+};
+
+// Activos arriba, inactivos abajo
+const sortedCategories = existingCategories
+  ? [...existingCategories].sort((a, b) =>
+      a.status === b.status ? 0 : a.status ? -1 : 1
+    )
+  : [];
+
 
   const handleActualizar = async () => {
     if (!editingCategory) return;
@@ -221,42 +224,50 @@ const ModalCreateCategoria = ({ isOpen, onClose }: ModalCreateCategoriaProps) =>
               </div>
             ) : (
               <div className="grid gap-4">
-                {existingCategories?.length === 0 ? (
-                  <div className="text-center py-12 bg-gray-50 rounded-xl">
-                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <h3 className="mt-2 text-lg font-medium text-gray-900">No hay categorías registradas</h3>
-                    <p className="mt-1 text-gray-500">Comienza agregando una nueva categoría.</p>
-                  </div>
-                ) : (
-                  existingCategories?.map((cat) => {
-                    const isAssigned = categoriesInUse.has(cat.id);
-                    return (
-                      <div
-                        key={cat.id}
-                        className={`bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-200 ${
-                          isAssigned ? 'border-blue-200 bg-blue-50' : 'border-gray-200'
-                        }`}
-                      >
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div>
-                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Nombre</label>
-                            <div className="flex items-center">
-                              <p className="text-lg font-medium text-gray-800">{cat.name}</p>
-                              {isAssigned && (
-                                <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
-                                  En uso
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="md:col-span-2">
-                            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Descripción</label>
-                            <p className="text-gray-600">{cat.description || <span className="text-gray-400">Sin descripción</span>}</p>
-                          </div>
+                {sortedCategories?.map((cat) => {
+                const isAssigned = categoriesInUse.has(cat.id);
+
+                return (
+                  <div
+                    key={cat.id}
+                    className={`bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-200 ${
+                      isAssigned ? 'border-blue-200 bg-blue-50' : 'border-gray-200'
+                    }`}
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                      {/* Nombre */}
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Nombre</label>
+                        <div className="flex items-center">
+                          <p className="text-lg font-medium text-gray-800">{cat.name}</p>
+                          {isAssigned && (
+                            <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                              En uso
+                            </span>
+                          )}
                         </div>
-                        <div className="flex justify-end mt-4 space-x-3">
+                      </div>
+
+                      {/* Descripción */}
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Descripción</label>
+                        <p className="text-gray-600">
+                          {cat.description || <span className="text-gray-400">Sin descripción</span>}
+                        </p>
+                      </div>
+
+                      {/* Estado y acciones */}
+                      <div className="space-y-2">
+                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Estado</label>
+                        <span
+                          className={`text-sm font-medium px-3 py-1 rounded-full inline-block ${
+                            cat.status ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'
+                          }`}
+                        >
+                          {cat.status ? 'Activo' : 'Inactivo'}
+                        </span>
+
+                        <div className="flex gap-2 mt-2">
                           <button
                             onClick={() => handleEditar(cat.id, cat.name, cat.description)}
                             className="p-2 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200"
@@ -267,20 +278,22 @@ const ModalCreateCategoria = ({ isOpen, onClose }: ModalCreateCategoriaProps) =>
                           <button
                             onClick={() => openDeleteModal(cat.id, cat.name)}
                             className={`p-2 rounded-lg transition-colors duration-200 ${
-                              isAssigned 
+                              isAssigned
                                 ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
                                 : 'text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100'
                             }`}
-                            title={isAssigned ? "Categoría en uso - No eliminable" : "Eliminar"}
+                            title={isAssigned ? 'Categoría en uso - No eliminable' : 'Eliminar'}
                             disabled={isAssigned}
                           >
                             {isAssigned ? <Ban size={20} /> : <Trash2 size={20} />}
                           </button>
                         </div>
                       </div>
-                    );
-                  })
-                )}
+                    </div>
+                  </div>
+                );
+              })}
+
               </div>
             )}
           </div>
