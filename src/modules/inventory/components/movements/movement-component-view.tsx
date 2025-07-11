@@ -14,9 +14,10 @@ import DeleteMovementResource from './movement/resource/delete-movement-resource
 import { useFetchWarehouseMovementResources } from '@/modules/inventory/hook/useMovementResource';
 import { WarehouseMovementResource } from '@/modules/inventory/types/movementResource';
 
-// Importa hooks para obtener almacenes y recursos
+// Importa hooks para obtener almacenes, recursos y productos
 import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
 import { useFetchResources } from '@/modules/inventory/hook/useResources';
+import { useFetchProducts } from '@/modules/inventory/hook/useProducts';
 
 const MovementComponentView: React.FC = () => {
   // Productos
@@ -27,9 +28,10 @@ const MovementComponentView: React.FC = () => {
   const { data: resourceMovements = [], isLoading: loadingResource, error: errorResource, refetch: fetchResourceMovements } = useFetchWarehouseMovementResources();
   const [editingResource, setEditingResource] = useState<WarehouseMovementResource | null>(null);
 
-  // Almacenes y recursos para mostrar nombres
+  // Almacenes, recursos y productos para mostrar nombres
   const { data: warehouses = [] } = useFetchWarehouses();
   const { data: resources = [] } = useFetchResources();
+  const { data: products = [] } = useFetchProducts();
 
   // General
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,6 +56,7 @@ const MovementComponentView: React.FC = () => {
   // Funciones para mostrar nombre en vez de UUID
   const getWarehouseName = (id: string) => warehouses.find((w: any) => w.id === id)?.name || id;
   const getResourceName = (id: string) => resources.find((r: any) => r.id === id)?.name || id;
+  const getProductName = (id: string) => products.find((p: any) => p.id === id)?.name || id;
 
   return (
     <div className="p-6 space-y-4 bg-gray-50 min-h-screen">
@@ -186,9 +189,9 @@ const MovementComponentView: React.FC = () => {
                   {filteredMovements.map((mov) => (
                     <tr key={mov.movement_id} className="hover:bg-gray-50 border-t">
                       <td className="px-4 py-2 text-center">{mov.movement_id}</td>
-                      <td className="px-4 py-2 text-center">{mov.warehouse_id}</td>
+                      <td className="px-4 py-2 text-center">{getWarehouseName(mov.warehouse_id)}</td>
                       <td className="px-4 py-2 text-center">{mov.store_id}</td>
-                      <td className="px-4 py-2 text-center">{mov.product_id}</td>
+                      <td className="px-4 py-2 text-center">{getProductName(mov.product_id)}</td>
                       <td className="px-4 py-2 text-center capitalize">{mov.movement_type}</td>
                       <td className="px-4 py-2 text-center">{mov.quantity}</td>
                       <td className="px-4 py-2 text-center">{new Date(mov.movement_date).toLocaleDateString()}</td>

@@ -109,6 +109,12 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
       entry_date: new Date(data.entry_date),
     };
 
+    // Debug logs para verificar los valores enviados
+    console.log('Datos del formulario:', data);
+    console.log('Payload a enviar:', payload);
+    console.log('Cantidad original:', data.quantity);
+    console.log('Cantidad en payload:', payload.quantity);
+
     try {
       await onCreate(payload);
       reset();
@@ -278,7 +284,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
               <select
                 id="type_unit"
                 {...register('type_unit')}
-                className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white text-gray-900 border-gray-300"
               >
                 <option value="">Selecciona una unidad</option>
                 {UNIT_OPTIONS.map((option) => (
@@ -292,14 +298,14 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
 
             {/* entry_date */}
             <div>
-              <Label htmlFor="entry_date" className="block text-sm font-medium mb-1 dark:text-gray-300">
+              <Label htmlFor="entry_date" className="block text-sm font-medium mb-1">
                 Fecha de Entrada*
               </Label>
               <Input
                 id="entry_date"
                 type="date"
                 {...register('entry_date')}
-                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                className="h-10 mt-1 bg-white text-gray-900 border-gray-300"
               />
               {errors.entry_date && <p className="text-sm text-red-500 mt-1">{errors.entry_date.message}</p>}
             </div>
@@ -312,14 +318,14 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
               variant="ghost"
               onClick={handleCloseModal}
               disabled={isCreating}
-              className="dark:text-gray-300 dark:hover:bg-gray-700"
+              className="text-gray-600 hover:bg-gray-100"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
               disabled={isCreating}
-              className="bg-red-800 hover:bg-red-700 text-white disabled:opacity-50 dark:bg-red-600 dark:hover:bg-red-700"
+              className="bg-red-800 hover:bg-red-700 text-white disabled:opacity-50"
             >
               {isCreating ? (
                 <>

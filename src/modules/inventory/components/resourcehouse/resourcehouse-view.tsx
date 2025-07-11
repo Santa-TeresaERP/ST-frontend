@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 // Verified Icons import path
 import { Edit2, Trash2, FileText, Search, Plus, AlertCircle, Filter, X, Calendar } from 'lucide-react';
 // Corrected Hooks import path (from ../../hooks/ to ../../hook/)
-import { useFetchResourcesWithBuys, useCreateBuysResource, useUpdateResource, useDeleteResource } from '../../hook/usebuysResource';
+import { useFetchResourcesWithBuys, useCreateBuysResource, useUpdateResource, useDeleteBuysResource } from '../../hook/usebuysResource';
 // Verified Types/Actions import paths (assuming they are correct relative to this file)
 import { UpdateResourcePayload } from '../../types/resource';
 import { BuysResourceWithResource, CreateBuysResourcePayload } from '../../types/buysResource';
@@ -31,7 +31,7 @@ const ResourcesView: React.FC = () => {
   // Mutation hooks
   const createResourceMutation = useCreateBuysResource();
   const updateResourceMutation = useUpdateResource();
-  const deleteResourceMutation = useDeleteResource();
+  const deleteResourceMutation = useDeleteBuysResource();
 
   // Filter resources based on search term and date filters only
   const filteredResources = useMemo(() => {
@@ -90,7 +90,9 @@ const ResourcesView: React.FC = () => {
 
   const handleCreateResource = async (payload: CreateBuysResourcePayload) => {
     try {
-      await createResourceMutation.mutateAsync(payload);
+      console.log('Creando recurso con payload:', payload);
+      const result = await createResourceMutation.mutateAsync(payload);
+      console.log('Resultado de la creación:', result);
       setIsCreateModalOpen(false);
     } catch (err) {
       console.error('Error creating resource:', err);
