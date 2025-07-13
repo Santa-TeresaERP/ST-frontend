@@ -263,17 +263,10 @@ const ModalCreatePlant = ({ isOpen, onClose }: ModalCreatePlantProps) => {
                           isInUse ? 'border-blue-200 bg-blue-50' : 'border-gray-200'
                         }`}
                       >
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Nombre</label>
-                      <div className="flex items-center">
-                        <p className="text-lg font-medium text-gray-800">{plant.plant_name}</p>
-                        {isInUse && (
-                          <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
-                            En uso
-                          </span>
-                        )}
-                      </div>
+                      <p className="text-lg font-medium text-gray-800">{plant.plant_name}</p>
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Dirección</label>
@@ -284,6 +277,14 @@ const ModalCreatePlant = ({ isOpen, onClose }: ModalCreatePlantProps) => {
                       <p className="text-gray-600">
                         {warehouse ? warehouse.name : <span className="text-gray-400">Sin almacén</span>}
                       </p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Estado</label>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        plant.status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {plant.status ? 'Activo' : 'Inactivo'}
+                      </span>
                     </div>
                   </div>
                   <div className="flex justify-end mt-4 space-x-3">
