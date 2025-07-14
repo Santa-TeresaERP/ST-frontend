@@ -8,16 +8,17 @@ import type {
 type WarehouseMovementResourceFilters = {
   resource_id?: string;
   movement_type?: string;
-  movement_date?: string;
+  start_date?: string;
+  end_date?: string;
 };
 
 export const fetchWarehouseMovementResources = async (
   filters: WarehouseMovementResourceFilters
 ): Promise<WarehouseMovementResource[]> => {
   const params = new URLSearchParams();
-  if (filters.resource_id) params.append('resource_id', filters.resource_id);
-  if (filters.movement_type) params.append('movement_type', filters.movement_type);
-  if (filters.movement_date) params.append('movement_date', filters.movement_date);
+  
+  // Filtros en formato horizontal optimizado
+  Object.entries(filters).forEach(([key, value]) => value && params.append(key, value));
 
   const res = await api.get('/warehouseMovementResource', { params });
   return res.data;

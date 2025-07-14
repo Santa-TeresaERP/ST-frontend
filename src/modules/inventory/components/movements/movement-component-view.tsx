@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
-import { PlusCircle, Package, Users, Filter, Edit} from 'lucide-react';
+import { PlusCircle, Package, Users, Edit} from 'lucide-react';
 import { useFetchMovements } from '@/modules/inventory/hook/useMovementProduct';
 import CreateMovementProduct from './movement/product/create-movement-product';
 import EditMovementProduct from './movement/product/edit-movement-product';
@@ -18,7 +18,7 @@ import { WarehouseMovementResource } from '@/modules/inventory/types/movementRes
 import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
 import { useFetchResources } from '@/modules/inventory/hook/useResources';
 import { useFetchProducts } from '@/modules/inventory/hook/useProducts';
-import ModalFilterMovement from './movement/modal-filter-movement';
+import FilterMovement from './movement/filter-movement';
 
 const MovementComponentView: React.FC = () => {
   const [filters, setFilters] = useState<any>({});
@@ -39,7 +39,10 @@ const MovementComponentView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [selectedType, setSelectedType] = useState<'producto' | 'recurso'>('producto');
-  const [showFilterModal, setShowFilterModal] = useState(false);
+
+  const handleFilter = (newFilters: any) => {
+    setFilters(newFilters);
+  };
 
   // Filtrar movimientos por producto, almacén o tienda
   const filteredMovements = movements.filter(
@@ -47,7 +50,8 @@ const MovementComponentView: React.FC = () => {
       (filters.product_id ? mov.product_id === filters.product_id : true) &&
       (filters.store_id ? mov.store_id?.toLowerCase().includes(filters.store_id.toLowerCase()) : true) &&
       (filters.movement_type ? mov.movement_type === filters.movement_type : true) &&
-      (filters.movement_date ? new Date(mov.movement_date).toLocaleDateString() === new Date(filters.movement_date).toLocaleDateString() : true) &&
+      (filters.start_date ? new Date(mov.movement_date) >= new Date(filters.start_date) : true) &&
+      (filters.end_date ? new Date(mov.movement_date) <= new Date(filters.end_date) : true) &&
       (searchTerm ? (
         mov.product_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         mov.warehouse_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -60,7 +64,8 @@ const MovementComponentView: React.FC = () => {
     (mov) =>
       (filters.resource_id ? mov.resource_id === filters.resource_id : true) &&
       (filters.movement_type ? mov.movement_type === filters.movement_type : true) &&
-      (filters.movement_date ? new Date(mov.movement_date).toLocaleDateString() === new Date(filters.movement_date).toLocaleDateString() : true) &&
+      (filters.start_date ? new Date(mov.movement_date) >= new Date(filters.start_date) : true) &&
+      (filters.end_date ? new Date(mov.movement_date) <= new Date(filters.end_date) : true) &&
       (searchTerm ? (
         mov.resource_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         mov.warehouse_id?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -128,28 +133,21 @@ const MovementComponentView: React.FC = () => {
           </button>
         </div>
         <div className="relative inline-flex items-center shadow-sm rounded-xl bg-white">
-          <button
-            onClick={() => setShowFilterModal(true)}
-            className="pl-11 pr-6 py-3 rounded-xl border border-red-700 text-gray-700 text-base
-                       focus:outline-none focus:ring-2 focus:ring-red-700 focus:border-transparent
-                       hover:bg-gray-200 transition duration-300 min-w-[200px]"
-          >
-            <Filter className="absolute left-4 text-red-700 pointer-events-none" size={20} />
-            Filtrar
-          </button>
         </div>
       </div>
+      <FilterMovement selectedType={selectedType} onFilter={handleFilter} />
 
-      {showFilterModal && (
-        <ModalFilterMovement
-          selectedType={selectedType}
-          onClose={() => setShowFilterModal(false)}
-          onFilter={(newFilters) => {
-            setFilters(newFilters);
-            setShowFilterModal(false);
-          }}
-        />
-      )}
+      {/* Display active filters */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {(Object.entries(filters).map(([key, value]) => (
+          value && (
+            <div key={key} className="flex items-center gap-2 bg-gray-200 rounded-full px-3 py-1 text-sm">
+              <span className="font-semibold">{key.replace('_', ' ')}:</span>
+              <span>{String(value)}</span>
+            </div>
+          )
+        )) as React.ReactNode[])}
+      </div>
 
       {/* Tabla de movimientos */}
       <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">

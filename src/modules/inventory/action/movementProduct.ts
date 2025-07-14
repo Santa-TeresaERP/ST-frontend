@@ -5,15 +5,15 @@ type MovementFilters = {
   product_id?: string;
   store_id?: string;
   movement_type?: string;
-  movement_date?: string;
+  start_date?: string;
+  end_date?: string;
 };
 
 export const getMovements = async (filters: MovementFilters): Promise<WarehouseMovementProductAttributes[]> => {
-  const params = new URLSearchParams();
-  if (filters.product_id) params.append('product_id', filters.product_id);
-  if (filters.store_id) params.append('store_id', filters.store_id);
-  if (filters.movement_type) params.append('movement_type', filters.movement_type);
-  if (filters.movement_date) params.append('movement_date', filters.movement_date);
+  const params = Object.entries(filters).reduce((acc, [key, value]) => {
+    if (value) acc.append(key, value);
+    return acc;
+  }, new URLSearchParams());
 
   const response = await api.get<WarehouseMovementProductAttributes[]>(`/warehouseMovementProduct`, { params });
   return response.data;
