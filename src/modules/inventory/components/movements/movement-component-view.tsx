@@ -204,13 +204,7 @@ const MovementComponentView: React.FC = () => {
                         >
                           <Edit size={18} />
                         </button>
-                        <button
-                          onClick={() => {/* Aquí puedes abrir un modal de confirmación si quieres */}}
-                          className="text-red-600 hover:text-red-800"
-                          title="Eliminar"
-                        >
-                          <DeleteMovementProduct id={mov.movement_id} onDeleted={fetchMovements} />
-                        </button>
+                        <DeleteMovementProduct id={mov.movement_id} onDeleted={fetchMovements} />
                       </td>
                     </tr>
                   ))}
