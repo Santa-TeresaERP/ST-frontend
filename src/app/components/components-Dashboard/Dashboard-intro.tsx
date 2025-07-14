@@ -37,8 +37,8 @@ const Dashboard = () => {
 
         <DepartmentSection title="Departamento de Ventas" items={[
           { name: "Ventas", icon: "cake-slice.svg" },
-          { name: "Produccion", icon: "lightbulb.svg" },
-          { name: "Inventario", icon: "church.svg" },
+          { name: "Produccion", icon: "ajuste.png" },
+          { name: "Inventario", icon: "inventary.png" },
         ]} />
 
         <DepartmentSection title="Departamento de Alquileres" items={[
