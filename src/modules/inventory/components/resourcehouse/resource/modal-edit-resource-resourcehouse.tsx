@@ -147,12 +147,12 @@ const ModalEditResource: React.FC<ModalEditResourceProps> = ({
                 {...register('type_unit')}
                 className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
               >
-                <option value="">Selecciona una unidad</option>
-                <option value="Unidades">Unidades</option>
-                <option value="kg">kg</option>
-                <option value="g">g</option>
-                <option value="l">l</option>
-                <option value="ml">ml</option>
+                <option key="select-unit" value="">Selecciona una unidad</option>
+                <option key="Unidades" value="Unidades">Unidades</option>
+                <option key="kg" value="kg">kg</option>
+                <option key="g" value="g">g</option>
+                <option key="l" value="l">l</option>
+                <option key="ml" value="ml">ml</option>
               </select>
               {errors.type_unit && <p className="text-sm text-red-500 mt-1">{errors.type_unit.message}</p>}
             </div>
@@ -201,7 +201,7 @@ const ModalEditResource: React.FC<ModalEditResourceProps> = ({
                   className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
                   defaultValue=""
                 >
-                  <option value="">Seleccione un proveedor</option>
+                  <option key="select-supplier" value="">Seleccione un proveedor</option>
                   {suppliers?.map((supplier) => (
                     <option key={supplier.id} value={supplier.id}>
                       {supplier.suplier_name}
