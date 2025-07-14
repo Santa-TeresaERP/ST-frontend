@@ -1,8 +1,21 @@
 import api from '@/core/config/client';
 import { WarehouseMovementProductAttributes } from '../types/movementProduct';
 
-export const getMovements = async (): Promise<WarehouseMovementProductAttributes[]> => {
-  const response = await api.get<WarehouseMovementProductAttributes[]>('/warehouseMovementProduct');
+type MovementFilters = {
+  product_id?: string;
+  store_id?: string;
+  movement_type?: string;
+  start_date?: string;
+  end_date?: string;
+};
+
+export const getMovements = async (filters: MovementFilters): Promise<WarehouseMovementProductAttributes[]> => {
+  const params = Object.entries(filters).reduce((acc, [key, value]) => {
+    if (value) acc.append(key, value);
+    return acc;
+  }, new URLSearchParams());
+
+  const response = await api.get<WarehouseMovementProductAttributes[]>(`/warehouseMovementProduct`, { params });
   return response.data;
 };
 

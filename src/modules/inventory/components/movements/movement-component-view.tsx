@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
-import { PlusCircle, Package, Users, Filter, Edit} from 'lucide-react';
+import { PlusCircle, Package, Users, Edit} from 'lucide-react';
 import { useFetchMovements } from '@/modules/inventory/hook/useMovementProduct';
 import CreateMovementProduct from './movement/product/create-movement-product';
 import EditMovementProduct from './movement/product/edit-movement-product';
@@ -18,14 +18,16 @@ import { WarehouseMovementResource } from '@/modules/inventory/types/movementRes
 import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
 import { useFetchResources } from '@/modules/inventory/hook/useResources';
 import { useFetchProducts } from '@/modules/inventory/hook/useProducts';
+import FilterMovement from './movement/filter-movement';
 
 const MovementComponentView: React.FC = () => {
+  const [filters, setFilters] = useState<any>({});
   // Productos
-  const { data: movements = [], isLoading: loading, error, refetch: fetchMovements } = useFetchMovements();
+  const { data: movements = [], isLoading: loading, error, refetch: fetchMovements } = useFetchMovements(filters);
   const [editing, setEditing] = useState<WarehouseMovementProductAttributes | null>(null);
 
   // Recursos
-  const { data: resourceMovements = [], isLoading: loadingResource, error: errorResource, refetch: fetchResourceMovements } = useFetchWarehouseMovementResources();
+  const { data: resourceMovements = [], isLoading: loadingResource, error: errorResource, refetch: fetchResourceMovements } = useFetchWarehouseMovementResources(filters);
   const [editingResource, setEditingResource] = useState<WarehouseMovementResource | null>(null);
 
   // Almacenes, recursos y productos para mostrar nombres
@@ -38,19 +40,36 @@ const MovementComponentView: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [selectedType, setSelectedType] = useState<'producto' | 'recurso'>('producto');
 
+  const handleFilter = (newFilters: any) => {
+    setFilters(newFilters);
+  };
+
   // Filtrar movimientos por producto, almacén o tienda
   const filteredMovements = movements.filter(
     (mov) =>
-      mov.product_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mov.warehouse_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mov.store_id?.toLowerCase().includes(searchTerm.toLowerCase())
+      (filters.product_id ? mov.product_id === filters.product_id : true) &&
+      (filters.store_id ? mov.store_id?.toLowerCase().includes(filters.store_id.toLowerCase()) : true) &&
+      (filters.movement_type ? mov.movement_type === filters.movement_type : true) &&
+      (filters.start_date ? new Date(mov.movement_date) >= new Date(filters.start_date) : true) &&
+      (filters.end_date ? new Date(mov.movement_date) <= new Date(filters.end_date) : true) &&
+      (searchTerm ? (
+        mov.product_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        mov.warehouse_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        mov.store_id?.toLowerCase().includes(searchTerm.toLowerCase())
+      ) : true)
   );
 
   // Filtrar movimientos de recursos
   const filteredResourceMovements = resourceMovements.filter(
     (mov) =>
-      mov.resource_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mov.warehouse_id?.toLowerCase().includes(searchTerm.toLowerCase())
+      (filters.resource_id ? mov.resource_id === filters.resource_id : true) &&
+      (filters.movement_type ? mov.movement_type === filters.movement_type : true) &&
+      (filters.start_date ? new Date(mov.movement_date) >= new Date(filters.start_date) : true) &&
+      (filters.end_date ? new Date(mov.movement_date) <= new Date(filters.end_date) : true) &&
+      (searchTerm ? (
+        mov.resource_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        mov.warehouse_id?.toLowerCase().includes(searchTerm.toLowerCase())
+      ) : true)
   );
 
   // Funciones para mostrar nombre en vez de UUID
@@ -90,7 +109,17 @@ const MovementComponentView: React.FC = () => {
       </div>
 
       {/* Acciones y Filtro */}
-      <div className="flex justify-end items-center space-x-6">
+      <div className="flex justify-between items-center space-x-6">
+        {/* Search input */}
+        <div className="flex items-center space-x-2">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Buscar..."
+            className="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-700"
+          />
+        </div>
         <div className="flex items-center space-x-3 select-none">
           <button
             onClick={() => setShowCreate(true)}
@@ -104,17 +133,20 @@ const MovementComponentView: React.FC = () => {
           </button>
         </div>
         <div className="relative inline-flex items-center shadow-sm rounded-xl bg-white">
-          <Filter className="absolute left-4 text-red-700 pointer-events-none" size={20} />
-          <input
-            type="text"
-            className="pl-11 pr-6 py-3 rounded-xl border border-red-700 text-gray-700 text-base
-                       focus:outline-none focus:ring-2 focus:ring-red-700 focus:border-transparent
-                       hover:bg-gray-200 transition duration-300 min-w-[200px]"
-            placeholder={`Buscar por ${selectedType === 'producto' ? 'producto, almacén o tienda' : 'recurso, almacén'}...`}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
         </div>
+      </div>
+      <FilterMovement selectedType={selectedType} onFilter={handleFilter} />
+
+      {/* Display active filters */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {(Object.entries(filters).map(([key, value]) => (
+          value && (
+            <div key={key} className="flex items-center gap-2 bg-gray-200 rounded-full px-3 py-1 text-sm">
+              <span className="font-semibold">{key.replace('_', ' ')}:</span>
+              <span>{String(value)}</span>
+            </div>
+          )
+        )) as React.ReactNode[])}
       </div>
 
       {/* Tabla de movimientos */}
