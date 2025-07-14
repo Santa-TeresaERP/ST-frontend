@@ -24,6 +24,8 @@ const ResourcesView: React.FC = () => {
   // Filter states - only date filters
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [supplierFilter, setSupplierFilter] = useState(''); //filtro de proveedor
+  
 
   // Fetch resources using the hook
   const { data: resources = [], isLoading, error } = useFetchResourcesWithBuys();
@@ -33,36 +35,46 @@ const ResourcesView: React.FC = () => {
   const updateResourceMutation = useUpdateResource();
   const deleteResourceMutation = useDeleteBuysResource();
 
+  //lista de proveedores
+  const suppliersList = useMemo(() => {
+  const uniqueSuppliers = new Set(
+        resources.map(r => r.supplier?.suplier_name).filter(Boolean)
+      );
+      return Array.from(uniqueSuppliers);
+    }, [resources]);
+
+
   // Filter resources based on search term and date filters only
-  const filteredResources = useMemo(() => {
-    if (!resources) return [];
-    
-    return resources.filter((resource: BuysResourceWithResource) => {
-      // Text search filter
-      const matchesSearch = 
-        resource.resource?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (resource.warehouse?.name && resource.warehouse.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (resource.supplier?.suplier_name && resource.supplier.suplier_name.toLowerCase().includes(searchTerm.toLowerCase()));
-      
-      // Date filter
-      let matchesDate = true;
-      if (startDate || endDate) {
-        const entryDate = resource.entry_date ? new Date(resource.entry_date) : null;
-        if (entryDate) {
-          if (startDate && new Date(startDate) > entryDate) {
+    const filteredResources = useMemo(() => {
+      if (!resources) return [];
+
+      return resources.filter((resource: BuysResourceWithResource) => {
+        const matchesSearch = 
+          resource.resource?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (resource.warehouse?.name && resource.warehouse.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (resource.supplier?.suplier_name && resource.supplier.suplier_name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+        let matchesDate = true;
+        if (startDate || endDate) {
+          const entryDate = resource.entry_date ? new Date(resource.entry_date) : null;
+          if (entryDate) {
+            if (startDate && new Date(startDate) > entryDate) matchesDate = false;
+            if (endDate && new Date(endDate) < entryDate) matchesDate = false;
+          } else if (startDate || endDate) {
             matchesDate = false;
           }
-          if (endDate && new Date(endDate) < entryDate) {
-            matchesDate = false;
-          }
-        } else if (startDate || endDate) {
-          matchesDate = false; // No entry date but filters are set
         }
-      }
-      
-      return matchesSearch && matchesDate;
-    });
-  }, [resources, searchTerm, startDate, endDate]);
+
+        const matchesSupplier = supplierFilter
+          ? resource.supplier?.suplier_name === supplierFilter
+          : true;
+
+        return matchesSearch && matchesDate && matchesSupplier;
+      });
+    }, [resources, searchTerm, startDate, endDate, supplierFilter]);
+
+
+  
 
   const handleEdit = (resource: BuysResourceWithResource) => {
     setResourceToEdit(resource);
@@ -114,6 +126,7 @@ const ResourcesView: React.FC = () => {
     setSearchTerm('');
     setStartDate('');
     setEndDate('');
+    setSupplierFilter('');
   };
 
   return (
@@ -193,6 +206,29 @@ const ResourcesView: React.FC = () => {
               onChange={(e) => setEndDate(e.target.value)}
               className="h-10 bg-white text-gray-900 border-gray-300"
             />
+          </div>
+
+          <div className="mt-4">
+
+          {/* Proveedor Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              <FileText className="inline mr-1 h-4 w-4 text-gray-500" />
+              Proveedor
+            </label>
+            <select
+              value={supplierFilter}
+              onChange={(e) => setSupplierFilter(e.target.value)}
+              className="h-10 bg-white text-gray-900 border border-gray-300 rounded-md w-full px-3"
+            >
+              <option value="">Todos los proveedores</option>
+              {suppliersList.map((supplierName, index) => (
+                <option key={index} value={supplierName}>
+                  {supplierName}
+                </option>
+              ))}
+            </select>
+          </div>
           </div>
         </div>
 
