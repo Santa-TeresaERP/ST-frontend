@@ -3,10 +3,10 @@ import { WarehouseMovementProductAttributes } from '../types/movementProduct';
 import { getMovements, createMovement, updateMovement, deleteMovement } from '../action/movementProduct';
 
 // Obtener movimientos
-export const useFetchMovements = () => {
+export const useFetchMovements = (filters: Record<string, unknown> = {}) => {
   return useQuery<WarehouseMovementProductAttributes[], Error>({
-    queryKey: ['movements'],
-    queryFn: getMovements,
+    queryKey: ['movements', filters],
+    queryFn: () => getMovements(filters),
   });
 };
 

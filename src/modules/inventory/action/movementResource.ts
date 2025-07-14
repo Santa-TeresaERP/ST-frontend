@@ -5,8 +5,21 @@ import type {
   UpdateWarehouseMovementResourcePayload,
 } from '../types/movementResource';
 
-export const fetchWarehouseMovementResources = async (): Promise<WarehouseMovementResource[]> => {
-  const res = await api.get('/warehouseMovementResource');
+type WarehouseMovementResourceFilters = {
+  resource_id?: string;
+  movement_type?: string;
+  movement_date?: string;
+};
+
+export const fetchWarehouseMovementResources = async (
+  filters: WarehouseMovementResourceFilters
+): Promise<WarehouseMovementResource[]> => {
+  const params = new URLSearchParams();
+  if (filters.resource_id) params.append('resource_id', filters.resource_id);
+  if (filters.movement_type) params.append('movement_type', filters.movement_type);
+  if (filters.movement_date) params.append('movement_date', filters.movement_date);
+
+  const res = await api.get('/warehouseMovementResource', { params });
   return res.data;
 };
 

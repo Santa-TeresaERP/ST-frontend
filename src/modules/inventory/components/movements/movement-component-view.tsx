@@ -18,14 +18,16 @@ import { WarehouseMovementResource } from '@/modules/inventory/types/movementRes
 import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
 import { useFetchResources } from '@/modules/inventory/hook/useResources';
 import { useFetchProducts } from '@/modules/inventory/hook/useProducts';
+import ModalFilterMovement from './movement/modal-filter-movement';
 
 const MovementComponentView: React.FC = () => {
+  const [filters, setFilters] = useState<any>({});
   // Productos
-  const { data: movements = [], isLoading: loading, error, refetch: fetchMovements } = useFetchMovements();
+  const { data: movements = [], isLoading: loading, error, refetch: fetchMovements } = useFetchMovements(filters);
   const [editing, setEditing] = useState<WarehouseMovementProductAttributes | null>(null);
 
   // Recursos
-  const { data: resourceMovements = [], isLoading: loadingResource, error: errorResource, refetch: fetchResourceMovements } = useFetchWarehouseMovementResources();
+  const { data: resourceMovements = [], isLoading: loadingResource, error: errorResource, refetch: fetchResourceMovements } = useFetchWarehouseMovementResources(filters);
   const [editingResource, setEditingResource] = useState<WarehouseMovementResource | null>(null);
 
   // Almacenes, recursos y productos para mostrar nombres
@@ -37,20 +39,32 @@ const MovementComponentView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [selectedType, setSelectedType] = useState<'producto' | 'recurso'>('producto');
+  const [showFilterModal, setShowFilterModal] = useState(false);
 
   // Filtrar movimientos por producto, almacén o tienda
   const filteredMovements = movements.filter(
     (mov) =>
-      mov.product_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mov.warehouse_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mov.store_id?.toLowerCase().includes(searchTerm.toLowerCase())
+      (filters.product_id ? mov.product_id === filters.product_id : true) &&
+      (filters.store_id ? mov.store_id?.toLowerCase().includes(filters.store_id.toLowerCase()) : true) &&
+      (filters.movement_type ? mov.movement_type === filters.movement_type : true) &&
+      (filters.movement_date ? new Date(mov.movement_date).toLocaleDateString() === new Date(filters.movement_date).toLocaleDateString() : true) &&
+      (searchTerm ? (
+        mov.product_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        mov.warehouse_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        mov.store_id?.toLowerCase().includes(searchTerm.toLowerCase())
+      ) : true)
   );
 
   // Filtrar movimientos de recursos
   const filteredResourceMovements = resourceMovements.filter(
     (mov) =>
-      mov.resource_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mov.warehouse_id?.toLowerCase().includes(searchTerm.toLowerCase())
+      (filters.resource_id ? mov.resource_id === filters.resource_id : true) &&
+      (filters.movement_type ? mov.movement_type === filters.movement_type : true) &&
+      (filters.movement_date ? new Date(mov.movement_date).toLocaleDateString() === new Date(filters.movement_date).toLocaleDateString() : true) &&
+      (searchTerm ? (
+        mov.resource_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        mov.warehouse_id?.toLowerCase().includes(searchTerm.toLowerCase())
+      ) : true)
   );
 
   // Funciones para mostrar nombre en vez de UUID
@@ -90,7 +104,17 @@ const MovementComponentView: React.FC = () => {
       </div>
 
       {/* Acciones y Filtro */}
-      <div className="flex justify-end items-center space-x-6">
+      <div className="flex justify-between items-center space-x-6">
+        {/* Search input */}
+        <div className="flex items-center space-x-2">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Buscar..."
+            className="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-700"
+          />
+        </div>
         <div className="flex items-center space-x-3 select-none">
           <button
             onClick={() => setShowCreate(true)}
@@ -104,18 +128,28 @@ const MovementComponentView: React.FC = () => {
           </button>
         </div>
         <div className="relative inline-flex items-center shadow-sm rounded-xl bg-white">
-          <Filter className="absolute left-4 text-red-700 pointer-events-none" size={20} />
-          <input
-            type="text"
+          <button
+            onClick={() => setShowFilterModal(true)}
             className="pl-11 pr-6 py-3 rounded-xl border border-red-700 text-gray-700 text-base
                        focus:outline-none focus:ring-2 focus:ring-red-700 focus:border-transparent
                        hover:bg-gray-200 transition duration-300 min-w-[200px]"
-            placeholder={`Buscar por ${selectedType === 'producto' ? 'producto, almacén o tienda' : 'recurso, almacén'}...`}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          >
+            <Filter className="absolute left-4 text-red-700 pointer-events-none" size={20} />
+            Filtrar
+          </button>
         </div>
       </div>
+
+      {showFilterModal && (
+        <ModalFilterMovement
+          selectedType={selectedType}
+          onClose={() => setShowFilterModal(false)}
+          onFilter={(newFilters) => {
+            setFilters(newFilters);
+            setShowFilterModal(false);
+          }}
+        />
+      )}
 
       {/* Tabla de movimientos */}
       <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
