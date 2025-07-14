@@ -53,33 +53,33 @@ const UserDetail = ({ userId, onClose }: { userId: string; onClose: () => void }
 
   return (
     <div className="flex justify-center px-4 py-10 bg-gradient-to-b from-gray-100 to-gray-200 min-h-screen">
-      <div className="w-full max-w-3xl">
+      <div className="w-full max-w-4xl">
         <Card className="rounded-3xl shadow-2xl overflow-hidden border border-gray-300">
-          {/* Header */}
-          <CardHeader className="bg-red-600 text-white py-8 px-6">
+          {/* Header con degradado rojo */}
+          <CardHeader className="bg-gradient-to-r from-red-700 via-red-600 to-red-500 text-white py-8 px-6">
             <div className="flex items-center gap-4">
-              <UserCircle className="w-14 h-14" />
+              <UserCircle className="w-14 h-14 text-white" />
               <div>
                 <h2 className="text-2xl font-bold">Perfil de Usuario</h2>
                 <p className="text-sm text-red-100 italic">{user?.email}</p>
               </div>
             </div>
           </CardHeader>
-  
-          {/* Content */}
-          <CardContent className="bg-white p-8 space-y-10">
-            {/* Información personal */}
+          
+          {/* Contenido */}
+          <CardContent className="bg-white p-6 sm:p-8 space-y-10">
+            {/* Información Personal */}
             <section>
               <h3 className="text-xl font-semibold text-gray-800 border-b pb-1 mb-6">
                 Información Personal
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <Label className="text-sm text-gray-600">Nombre</Label>
                   <Input
                     value={user?.name || ""}
                     readOnly
-                    className="border border-black bg-gray-50 focus:ring-red-300"
+                    className="bg-gray-50 border border-gray-300 focus:ring-red-300"
                   />
                 </div>
                 <div>
@@ -87,7 +87,7 @@ const UserDetail = ({ userId, onClose }: { userId: string; onClose: () => void }
                   <Input
                     value={user?.dni || ""}
                     readOnly
-                    className="border border-black bg-gray-50 focus:ring-red-300"
+                    className="bg-gray-50 border border-gray-300 focus:ring-red-300"
                   />
                 </div>
                 <div>
@@ -95,7 +95,7 @@ const UserDetail = ({ userId, onClose }: { userId: string; onClose: () => void }
                   <Input
                     value={user?.email || ""}
                     readOnly
-                    className="border border-black bg-gray-50 focus:ring-red-300"
+                    className="bg-gray-50 border border-gray-300 focus:ring-red-300"
                   />
                 </div>
                 <div>
@@ -103,24 +103,24 @@ const UserDetail = ({ userId, onClose }: { userId: string; onClose: () => void }
                   <Input
                     value={user?.phonenumber || ""}
                     readOnly
-                    className="border border-black bg-gray-50 focus:ring-red-300"
+                    className="bg-gray-50 border border-gray-300 focus:ring-red-300"
                   />
                 </div>
               </div>
             </section>
-  
+
             {/* Rol */}
             <section>
               <h3 className="text-xl font-semibold text-gray-800 border-b pb-1 mb-6">
                 Rol de Usuario
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <Label className="text-sm text-gray-600">Rol</Label>
                   <Input
                     value={userRole?.name || ""}
                     readOnly
-                    className="border border-black bg-gray-50 focus:ring-red-300"
+                    className="bg-gray-50 border border-gray-300 focus:ring-red-300"
                   />
                 </div>
                 <div>
@@ -128,24 +128,24 @@ const UserDetail = ({ userId, onClose }: { userId: string; onClose: () => void }
                   <Input
                     value={userRole?.description || ""}
                     readOnly
-                    className="border border-black bg-gray-50 focus:ring-red-300"
+                    className="bg-gray-50 border border-gray-300 focus:ring-red-300"
                   />
                 </div>
               </div>
             </section>
-  
+
             {/* Botones */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200">
               <Button
                 onClick={handleOpenChangePasswordModal}
-                className="bg-black hover:bg-neutral-900 text-white flex items-center gap-2 px-4 py-2"
+                className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 px-4 py-2 w-full sm:w-auto"
               >
                 <Lock className="w-4 h-4" />
                 Cambiar Contraseña
               </Button>
               <Button
                 onClick={onClose}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-400 flex items-center gap-2 px-4 py-2"
+                className="bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-400 flex items-center gap-2 px-4 py-2 w-full sm:w-auto"
               >
                 <XCircle className="w-4 h-4" />
                 Cerrar
@@ -153,8 +153,8 @@ const UserDetail = ({ userId, onClose }: { userId: string; onClose: () => void }
             </div>
           </CardContent>
         </Card>
-  
-        {/* Modal */}
+
+        {/* Modal contraseña */}
         {user && (
           <ChangePasswordForm
             isOpen={isChangePasswordModalOpen}
@@ -164,6 +164,7 @@ const UserDetail = ({ userId, onClose }: { userId: string; onClose: () => void }
         )}
       </div>
     </div>
+
   );
   
 };

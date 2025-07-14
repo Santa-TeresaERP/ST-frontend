@@ -14,7 +14,7 @@ import { UserPlus } from "lucide-react";
 type ModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: Omit<User, "createdAt" | "updatedAt">) => void;
+  onSubmit: (data: Omit<User, "createdAt" | "updatedAt"> & { password: string }) => void | Promise<void>;
 };
 
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
@@ -42,7 +42,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
       return;
     }
 
-    onSubmit(formData as Omit<User, "createdAt" | "updatedAt">);
+    onSubmit(formData as Omit<User, "createdAt" | "updatedAt"> & { password: string });
   };
 
   if (isLoadingRoles) {

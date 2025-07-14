@@ -39,13 +39,18 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ isOpen, onClose
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="w-full max-w-[95%] sm:max-w-[500px] p-0 rounded-2xl overflow-hidden shadow-lg">
+        
+        {/* Header accesible con estilo completo */}
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Cambiar Contraseña</DialogTitle>
+          <div className="bg-gradient-to-r from-red-700 via-red-600 to-red-500 text-white px-6 py-5">
+            <DialogTitle className="text-xl sm:text-2xl font-bold">Cambiar Contraseña</DialogTitle>
+          </div>
         </DialogHeader>
-        <form onSubmit={handleChangePassword} className="space-y-6">
+
+        <form onSubmit={handleChangePassword} className="space-y-6 px-6 py-6 bg-white">
           <div className="space-y-2">
-            <Label htmlFor="currentPassword">Contraseña Actual</Label>
+            <Label htmlFor="currentPassword" className="text-gray-800">Contraseña Actual</Label>
             <Input
               id="currentPassword"
               name="currentPassword"
@@ -53,11 +58,15 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ isOpen, onClose
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               required
+              className="w-full bg-gray-50 border border-gray-300"
             />
-            {errors.currentPassword && <p className="text-red-600">{errors.currentPassword}</p>}
+            {errors.currentPassword && (
+              <p className="text-red-600 text-sm">{errors.currentPassword}</p>
+            )}
           </div>
+
           <div className="space-y-2">
-            <Label htmlFor="newPassword">Nueva Contraseña</Label>
+            <Label htmlFor="newPassword" className="text-gray-800">Nueva Contraseña</Label>
             <Input
               id="newPassword"
               name="newPassword"
@@ -65,15 +74,30 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ isOpen, onClose
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
+              className="w-full bg-gray-50 border border-gray-300"
             />
-            {errors.newPassword && <p className="text-red-600">{errors.newPassword}</p>}
+            {errors.newPassword && (
+              <p className="text-red-600 text-sm">{errors.newPassword}</p>
+            )}
           </div>
-          {errors.submit && <p className="text-red-600">{errors.submit}</p>}
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+
+          {errors.submit && (
+            <p className="text-red-600 text-sm">{errors.submit}</p>
+          )}
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="w-full sm:w-auto"
+            >
               Cancelar
             </Button>
-            <Button type="submit" className="bg-red-600 hover:bg-red-700 text-white">
+            <Button
+              type="submit"
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white"
+            >
               Cambiar Contraseña
             </Button>
           </DialogFooter>
