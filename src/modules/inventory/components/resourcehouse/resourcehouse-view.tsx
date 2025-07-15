@@ -118,20 +118,18 @@ const ResourcesView: React.FC = () => {
 
   return (
     <div className="p-6 space-y-4 bg-white min-h-screen">
-      <div className="flex justify-start">
-        <h2 className="text-4xl font-semibold text-yellow-500">
-          Recursos
-        </h2>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <h2 className="text-4xl font-semibold text-yellow-500">Recursos</h2>
       </div>
 
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center space-x-2">
           <FileText size={24} className="text-yellow-500" />
           <span className="text-lg font-medium text-gray-800">Gestión de Recursos</span>
         </div>
         <Button
           onClick={() => setIsCreateModalOpen(true)}
-          className="bg-red-700 hover:bg-red-800 text-white"
+          className="bg-red-700 hover:bg-red-800 text-white w-full md:w-auto"
         >
           <Plus className="mr-2 h-4 w-4" /> Agregar Recurso
         </Button>
@@ -151,70 +149,71 @@ const ResourcesView: React.FC = () => {
       </div>
 
       {/* Filters Section */}
-      <div className="bg-white rounded-xl shadow p-4 border border-gray-200">
-        <div className="flex items-center gap-2 mb-4">
-          <Filter className="text-gray-600" size={20} />
-          <h3 className="text-lg font-medium text-gray-800">Filtros</h3>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearAllFilters}
-            className="ml-auto text-gray-600 hover:text-gray-800"
-          >
-            <X className="mr-1 h-4 w-4" />
-            Limpiar filtros
-          </Button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Start Date Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              <Calendar className="inline mr-1 h-4 w-4" />
-              Fecha desde
-            </label>
-            <Input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="h-10 bg-white text-gray-900 border-gray-300"
-            />
+       <div className="bg-white rounded-xl shadow p-4 border border-gray-200">
+          <div className="flex flex-row md:flex-row md:items-center md:justify-between gap-4 mb-4">
+            <div className="flex items-center gap-2">
+              <Filter className="text-gray-600" size={20} />
+              <h3 className="text-lg font-medium text-gray-800">Filtros</h3>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearAllFilters}
+              className="text-gray-600 hover:text-gray-800 self-start md:self-auto"
+            >
+              <X className="mr-1 h-4 w-4 justify-end" />
+            </Button>
           </div>
 
-          {/* End Date Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              <Calendar className="inline mr-1 h-4 w-4" />
-              Fecha hasta
-            </label>
-            <Input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="h-10 bg-white text-gray-900 border-gray-300"
-            />
-          </div>
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Fecha desde */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                <Calendar className="inline mr-1 h-4 w-4" />
+                Fecha desde
+              </label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="h-10 bg-white text-gray-900 border-gray-300 w-full"
+              />
+            </div>
 
-        {/* Active Filters Summary */}
-        {(startDate || endDate) && (
-          <div className="mt-4 pt-3 border-t border-gray-200">
-            <div className="flex flex-wrap gap-2">
-              <span className="text-sm text-gray-600">Filtros activos:</span>
-              {startDate && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                  Desde: {new Date(startDate).toLocaleDateString()}
-                </span>
-              )}
-              {endDate && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                  Hasta: {new Date(endDate).toLocaleDateString()}
-                </span>
-              )}
+            {/* Fecha hasta */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                <Calendar className="inline mr-1 h-4 w-4" />
+                Fecha hasta
+              </label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="h-10 bg-white text-gray-900 border-gray-300 w-full item-end"
+              />
             </div>
           </div>
-        )}
-      </div>
+
+          {/* Filtros activos */}
+          {(startDate || endDate) && (
+            <div className="mt-4 pt-3 border-t border-gray-200">
+              <div className="flex flex-wrap gap-2">
+                <span className="text-sm text-gray-600">Filtros activos:</span>
+                {startDate && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    Desde: {new Date(startDate).toLocaleDateString()}
+                  </span>
+                )}
+                {endDate && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    Hasta: {new Date(endDate).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
       {/* Loading and Error States */}
       {isLoading && (

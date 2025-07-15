@@ -125,18 +125,18 @@ const ModuleModal: React.FC<ModuleModalProps> = ({
               )}
             </div>
 
-            <DialogFooter className="flex flex-col sm:flex-row gap-3 pt-4">
+            <DialogFooter className="flex flex-row sm:flex-row gap-3 pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
-                className="w-full sm:w-auto border border-red-700 text-red-800 hover:bg-red-100"
+                className="w-full sm:w-auto border border-red-700 rounded-3xl text-red-800 hover:bg-red-100"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                className="bg-red-700 hover:bg-red-600 text-white w-full sm:w-auto flex items-center gap-2"
+                className="bg-red-600 hover:bg-red-600 text-white w-full rounded-3xl sm:w-auto flex items-center gap-2"
               >
                 <Save size={18} />
                 Guardar
@@ -156,18 +156,18 @@ const ModuleModal: React.FC<ModuleModalProps> = ({
               <p className="text-gray-700">
                 ¿Estás seguro de que deseas {module ? "editar" : "crear"} este módulo?
               </p>
-              <DialogFooter className="flex flex-col sm:flex-row gap-3 pt-4">
+              <DialogFooter className="flex flex-row sm:flex-row gap-3 pt-4">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setShowConfirmation(false)}
-                  className="w-full sm:w-auto border border-red-700 text-red-800 hover:bg-red-100"
+                  className="w-full border border-red-700 rounded-3xl text-red-800 hover:bg-red-100 px-4 py-2"
                 >
                   Cancelar
                 </Button>
                 <Button
                   type="button"
-                  className="bg-red-700 hover:bg-red-600 text-white w-full sm:w-auto flex items-center gap-2"
+                  className="w-full bg-red-700 hover:bg-red-600 text-white rounded-3xl flex items-center gap-2 px-4 py-2"
                   onClick={handleConfirmSubmit}
                 >
                   <Save size={18} />

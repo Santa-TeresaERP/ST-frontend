@@ -141,10 +141,11 @@ const ModalCreatePlant = ({ isOpen, onClose }: ModalCreatePlantProps) => {
 
   return (
     <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl p-6 md:p-8 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-[95%] sm:max-w-lg md:max-w-2xl lg:max-w-4xl p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto px-0 pb-6 pt-0">
         {/* Header con gradiente y botón de cierre */}
-        <div className="relative bg-gradient-to-r from-red-600 to-red-800 rounded-t-xl -m-6 mb-6 p-6">
-          <div className="flex justify-between items-center">
+        <div className="relative bg-gradient-to-r from-red-600 to-red-800 rounded-t-xl px-6 pt-6 pb-4 mb-6">
+
+          <div className="flex justify-between items-center px-4">
             <div>
               <h2 className="text-2xl md:text-3xl font-bold text-white">
                 Gestión de Plantas
@@ -162,7 +163,7 @@ const ModalCreatePlant = ({ isOpen, onClose }: ModalCreatePlantProps) => {
         </div>
 
         {/* Botón Agregar */}
-        <div className="flex justify-end mb-8">
+        <div className="flex justify-end mb-8 px-6">
           <button
             onClick={() => openAddModal()}
             className="flex items-center gap-2 bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white px-5 py-3 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
@@ -173,7 +174,7 @@ const ModalCreatePlant = ({ isOpen, onClose }: ModalCreatePlantProps) => {
         </div>
 
         {/* Sección de Plantas */}
-        <div className="space-y-8">
+        <div className="space-y-8 p-6">
           {/* Plantas Nuevas */}
           {newPlants.length > 0 && (
             <div>

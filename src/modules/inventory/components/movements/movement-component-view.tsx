@@ -61,7 +61,7 @@ const MovementComponentView: React.FC = () => {
   return (
     <div className="p-6 space-y-4 bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h2 className="text-3xl font-semibold text-red-700">
           Movimientos de {selectedType === 'producto' ? 'Productos' : 'Recursos'}
         </h2>
@@ -90,7 +90,7 @@ const MovementComponentView: React.FC = () => {
       </div>
 
       {/* Acciones y Filtro */}
-      <div className="flex justify-end items-center space-x-6">
+      <div className="flex flex-col md:flex-row justify-end items-stretch md:items-center gap-4 md:gap-6">
         <div className="flex items-center space-x-3 select-none">
           <button
             onClick={() => setShowCreate(true)}

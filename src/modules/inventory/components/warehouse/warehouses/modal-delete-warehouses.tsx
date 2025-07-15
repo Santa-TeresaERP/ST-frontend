@@ -48,7 +48,7 @@ const handleDelete = async () => {
 };
 
   return (
-    <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 transition-opacity duration-300">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 sm:px-6 md:px-8 bg-black bg-opacity-50 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-lg p-8 max-w-lg w-full">
         <h2 className="text-3xl font-semibold text-center text-gray-800 mb-6 flex flex-col items-center">
           <div className="bg-red-200 rounded-full p-4 mb-4">
