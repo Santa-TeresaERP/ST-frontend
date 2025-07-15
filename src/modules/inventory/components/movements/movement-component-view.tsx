@@ -186,8 +186,8 @@ const MovementComponentView: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredMovements.map((mov) => (
-                    <tr key={mov.movement_id} className="hover:bg-gray-50 border-t">
+                  {filteredMovements.map((mov, index) => (
+                    <tr key={mov.movement_id || `movement-${index}`} className="hover:bg-gray-50 border-t">
                       <td className="px-4 py-2 text-center">{mov.movement_id}</td>
                       <td className="px-4 py-2 text-center">{getWarehouseName(mov.warehouse_id)}</td>
                       <td className="px-4 py-2 text-center">{mov.store_id}</td>
@@ -204,13 +204,7 @@ const MovementComponentView: React.FC = () => {
                         >
                           <Edit size={18} />
                         </button>
-                        <button
-                          onClick={() => {/* Aquí puedes abrir un modal de confirmación si quieres */}}
-                          className="text-red-600 hover:text-red-800"
-                          title="Eliminar"
-                        >
-                          <DeleteMovementProduct id={mov.movement_id} onDeleted={fetchMovements} />
-                        </button>
+                        <DeleteMovementProduct id={mov.movement_id} onDeleted={fetchMovements} />
                       </td>
                     </tr>
                   ))}
@@ -242,8 +236,8 @@ const MovementComponentView: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredResourceMovements.map((mov) => (
-                    <tr key={mov.id} className="hover:bg-orange-50 border-t">
+                  {filteredResourceMovements.map((mov, index) => (
+                    <tr key={mov.id || `resource-movement-${index}`} className="hover:bg-orange-50 border-t">
                       <td className="px-4 py-2 text-center">{getResourceName(mov.resource_id)}</td>
                       <td className="px-4 py-2 text-center">{getWarehouseName(mov.warehouse_id)}</td>
                       <td className="px-4 py-2 text-center capitalize">{mov.movement_type}</td>

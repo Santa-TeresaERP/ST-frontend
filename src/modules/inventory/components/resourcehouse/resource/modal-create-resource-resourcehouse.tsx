@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X, Save, Loader2 } from 'lucide-react';
 import { BuysResourceValidationSchema, BuysResourceFormData } from '../../../schemas/buysResourceValidation';
-import { CreateBuysResourcePayload } from '../../../types/buysResource';
+import { CreateBuysResourcePayload } from '../../../types/buysResource.d';
 import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button';
 import { Label } from '@/app/components/ui/label';
@@ -55,9 +55,9 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
     defaultValues: {
       warehouse_id: '',
       resource_id: '',
-      quantity: 0,
+      quantity: undefined, // Cambiar de 0 a undefined para evitar enviar 0
       type_unit: '',
-      total_cost: 0,
+      total_cost: undefined, // Cambiar de 0 a undefined para evitar enviar 0
       supplier_id: '',
       entry_date: new Date().toISOString().split('T')[0], // Fecha de hoy por defecto
     },
@@ -96,24 +96,46 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
       return;
     }
 
-    const unitPrice = data.quantity > 0 && data.total_cost > 0 ? data.total_cost / data.quantity : 0;
+    // Validar que todos los campos requeridos tengan valores
+    if (!data.warehouse_id || data.warehouse_id.trim() === '') {
+      setServerError('Debe seleccionar un almacén');
+      return;
+    }
+
+    if (!data.supplier_id || data.supplier_id.trim() === '') {
+      setServerError('Debe seleccionar un proveedor');
+      return;
+    }
+
+    if (!data.type_unit || data.type_unit.trim() === '') {
+      setServerError('Debe seleccionar una unidad');
+      return;
+    }
+
+    if (!data.quantity || data.quantity <= 0) {
+      setServerError('La cantidad debe ser mayor a 0');
+      return;
+    }
+
+    if (!data.total_cost || data.total_cost <= 0) {
+      setServerError('El costo total debe ser mayor a 0');
+      return;
+    }
+
+    const unitPrice = data.total_cost / data.quantity;
     
     const payload: CreateBuysResourcePayload = {
-      warehouse_id: data.warehouse_id,
-      resource_id: selectedResourceId, // Usar el ID del recurso seleccionado
-      quantity: data.quantity,
-      type_unit: data.type_unit,
-      unit_price: unitPrice,
-      total_cost: data.total_cost,
-      supplier_id: data.supplier_id,
+      warehouse_id: data.warehouse_id.trim(),
+      resource_id: selectedResourceId,
+      quantity: Number(data.quantity),
+      type_unit: data.type_unit.trim(),
+      unit_price: Number(unitPrice.toFixed(2)),
+      total_cost: Number(data.total_cost),
+      supplier_id: data.supplier_id.trim(),
       entry_date: new Date(data.entry_date),
     };
 
-    // Debug logs para verificar los valores enviados
-    console.log('Datos del formulario:', data);
-    console.log('Payload a enviar:', payload);
-    console.log('Cantidad original:', data.quantity);
-    console.log('Cantidad en payload:', payload.quantity);
+    console.log('Payload validado a enviar:', payload);
 
     try {
       await onCreate(payload);

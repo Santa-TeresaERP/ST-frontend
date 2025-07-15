@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { X, Save } from 'lucide-react';
 import { movementProductSchema } from '@/modules/inventory/schemas/movementProductValidation';
-import { createMovement } from '@/modules/inventory/action/movementProduct';
+import { createMovement, CreateMovementProductPayload } from '@/modules/inventory/action/movementProduct';
 import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
 import { useFetchProducts } from '@/modules/inventory/hook/useProducts';
 import { WarehouseAttributes } from '@/modules/inventory/types/warehouse';
@@ -13,15 +13,15 @@ interface Props {
   onClose?: () => void; // Opcional, por si quieres usarlo como modal
 }
 
-const initialForm = {
-  warehouse_id: '',
-  store_id: '',
-  product_id: '',
-  movement_type: 'entrada',
-  quantity: 0,
-  movement_date: new Date().toISOString().split('T')[0],
-  observations: '',
-};
+  const initialForm = {
+    warehouse_id: '',
+    store_id: '',
+    product_id: '',
+    movement_type: 'entrada' as const,
+    quantity: 0, // Cambiar de undefined a 0
+    movement_date: new Date().toISOString().split('T')[0],
+    observations: '',
+  };
 
 const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
   const [form, setForm] = useState(initialForm);
@@ -31,35 +31,91 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'quantity') {
+      setForm({ ...form, [name]: value === '' ? 0 : Number(value) });
+    } else {
+      setForm({ ...form, [name]: value });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const parsed = movementProductSchema.safeParse({
-      ...form,
+    
+    console.log('Datos del formulario antes de validar:', form);
+    
+    // Validar campos antes de enviar
+    if (!form.warehouse_id || form.warehouse_id.trim() === '' || form.warehouse_id === 'Seleccione un almacén') {
+      setError('Debe seleccionar un almacén');
+      return;
+    }
+    
+    if (!form.product_id || form.product_id.trim() === '' || form.product_id === 'Seleccione un producto') {
+      setError('Debe seleccionar un producto');
+      return;
+    }
+    
+    if (form.quantity < 0) {
+      setError('La cantidad debe ser mayor o igual a 0');
+      return;
+    }
+
+    // Preparar datos para validación
+    const dataToValidate = {
+      warehouse_id: form.warehouse_id.trim(),
+      store_id: form.store_id?.trim() || null, // Convertir a null si está vacío
+      product_id: form.product_id.trim(),
+      movement_type: form.movement_type,
       quantity: Number(form.quantity),
       movement_date: new Date(form.movement_date),
-    });
+      observations: form.observations?.trim() || undefined,
+    };
+
+    console.log('Datos preparados para validación:', dataToValidate);
+
+    const parsed = movementProductSchema.safeParse(dataToValidate);
+    
     if (!parsed.success) {
+      console.error('Error de validación:', parsed.error.errors);
       setError(parsed.error.errors[0].message);
       return;
     }
+    
+    // Preparar los datos exactamente como los espera el backend
+    const payload: CreateMovementProductPayload = {
+      warehouse_id: parsed.data.warehouse_id,
+      product_id: parsed.data.product_id,
+      movement_type: parsed.data.movement_type,
+      quantity: parsed.data.quantity,
+      movement_date: parsed.data.movement_date,
+      store_id: parsed.data.store_id, // Incluir siempre (puede ser null)
+      ...(parsed.data.observations && { observations: parsed.data.observations }), // Solo incluir si no es undefined
+    };
+    
+    console.log('Payload final a enviar:', payload);
+    
     setLoading(true);
     try {
-      await createMovement({
-          ...parsed.data,
-          warehouse_id: '',
-          store_id: '',
-          product_id: '',
-          movement_id: ''
-      });
+      await createMovement(payload);
       setForm(initialForm);
       onCreated();
       if (onClose) onClose();
     } catch (err: any) {
-      setError(err.message);
+      console.error('Error completo:', err);
+      console.error('Respuesta del servidor:', err.response?.data);
+      console.error('Status:', err.response?.status);
+      console.error('Headers:', err.response?.headers);
+      
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else if (err.response?.status === 400) {
+        setError('Datos inválidos. Verifique que todos los campos estén correctos.');
+      } else {
+        setError(err.message || 'Error al crear el movimiento');
+      }
     } finally {
       setLoading(false);
     }
@@ -104,17 +160,18 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
           </div>
 
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Tienda*</label>
+            <label className="block text-gray-700 mb-1 font-medium">Tienda</label>
             <select
               name="store_id"
               value={form.store_id}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-slate-600 focus:outline-none"
-              required
             >
-              <option value="">Seleccione una tienda</option>
-              <option value="tienda1">Tienda 1</option>
-              <option value="tienda2">Tienda 2</option>
+              <option value="">Sin tienda asignada</option>
+              <option value="Tienda Centro">Tienda Centro</option>
+              <option value="Sucursal Norte">Sucursal Norte</option>
+              <option value="Tienda Sur">Tienda Sur</option>
+              <option value="Almacén Principal">Almacén Principal</option>
             </select>
           </div>
 
