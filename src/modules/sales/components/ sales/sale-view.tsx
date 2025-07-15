@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { FiShoppingCart, FiPlus, FiEdit, FiTrash2 } from 'react-icons/fi';
-import ModalCreateStore from './modal-create-sales';
+import { FiShoppingCart, FiPlus, FiEdit, FiTrash2, FiHelpCircle } from 'react-icons/fi';
+import ModalCreateSales from './modal-create-sales';
 import ModalEditSales from './modal-edit-sales';
 import ModalDeleteSales from './modal-delete-sales';
+import ModalDetailSales from './modal-details-sales';
 
 const SalesComponentsView: React.FC = () => {
   const [sales, setSales] = useState([
@@ -12,6 +13,11 @@ const SalesComponentsView: React.FC = () => {
       costoTotal: 'S/ 120.00',
       fecha: '2025-07-14',
       observacion: 'Venta de tortas y cupcakes',
+      productos: [
+        { nombre: 'Torta de chocolate', cantidad: 2, costo: 40.00 },
+        { nombre: 'Cupcakes', cantidad: 12, costo: 80.00 }
+      ],
+      totalVenta: 120.00
     },
     {
       id: 2,
@@ -19,12 +25,18 @@ const SalesComponentsView: React.FC = () => {
       costoTotal: 'S/ 200.00',
       fecha: '2025-07-13',
       observacion: 'Pedidos para evento empresarial',
+      productos: [
+        { nombre: 'Tarta de frutas', cantidad: 3, costo: 150.00 },
+        { nombre: 'Galletas', cantidad: 10, costo: 50.00 }
+      ],
+      totalVenta: 200.00
     },
   ]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [currentSale, setCurrentSale] = useState<any>(null);
 
   const handleEditClick = (sale: any) => {
@@ -35,6 +47,11 @@ const SalesComponentsView: React.FC = () => {
   const handleDeleteClick = (sale: any) => {
     setCurrentSale(sale);
     setIsDeleteModalOpen(true);
+  };
+
+  const handleDetailClick = (sale: any) => {
+    setCurrentSale(sale);
+    setIsDetailModalOpen(true);
   };
 
   const handleSaveEdit = (updatedSale: any) => {
@@ -87,6 +104,12 @@ const SalesComponentsView: React.FC = () => {
                 <td className="px-4 py-2 text-center">{sale.observacion}</td>
                 <td className="px-4 py-2 text-center flex justify-center space-x-3">
                   <button
+                    className="text-green-600 hover:text-green-800"
+                    onClick={() => handleDetailClick(sale)}
+                  >
+                    <FiHelpCircle size={18} />
+                  </button>
+                  <button
                     className="text-blue-500 hover:text-yellow-600"
                     onClick={() => handleEditClick(sale)}
                   >
@@ -105,7 +128,13 @@ const SalesComponentsView: React.FC = () => {
         </table>
       </div>
 
-      <ModalCreateStore isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <ModalCreateSales isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+
+      <ModalDetailSales
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        saleDetail={currentSale}
+      />
 
       <ModalEditSales
         isOpen={isEditModalOpen}
