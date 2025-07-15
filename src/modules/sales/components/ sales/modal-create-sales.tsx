@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { X, Save } from 'lucide-react';
 import { FiShoppingCart } from 'react-icons/fi';
 
-interface ModalCreateStoreProps {
+interface ModalCreateSalesProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const ModalCreateStore: React.FC<ModalCreateStoreProps> = ({ isOpen, onClose }) => {
+const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) => {
   const [tienda, setTienda] = useState('');
   const [costoTotal, setCostoTotal] = useState('');
   const [fecha, setFecha] = useState('');
@@ -30,7 +30,7 @@ const ModalCreateStore: React.FC<ModalCreateStoreProps> = ({ isOpen, onClose }) 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl relative">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl relative mx-2">
         <div className="bg-gradient-to-r from-red-700 to-red-900 text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
           <FiShoppingCart size={24} />
           <h2 className="text-xl font-semibold text-center">Crear Venta</h2>
@@ -47,7 +47,9 @@ const ModalCreateStore: React.FC<ModalCreateStoreProps> = ({ isOpen, onClose }) 
 
           <div className="space-y-4">
             <div>
-              <label className="block text-gray-700 mb-1 font-medium">Tienda*</label>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Tienda <span className="text-red-600">*</span>
+              </label>
               <input
                 type="text"
                 value={tienda}
@@ -58,7 +60,9 @@ const ModalCreateStore: React.FC<ModalCreateStoreProps> = ({ isOpen, onClose }) 
             </div>
 
             <div>
-              <label className="block text-gray-700 mb-1 font-medium">Costo Total*</label>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Costo Total <span className="text-red-600">*</span>
+              </label>
               <input
                 type="number"
                 value={costoTotal}
@@ -69,7 +73,9 @@ const ModalCreateStore: React.FC<ModalCreateStoreProps> = ({ isOpen, onClose }) 
             </div>
 
             <div>
-              <label className="block text-gray-700 mb-1 font-medium">Fecha*</label>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Fecha <span className="text-red-600">*</span>
+              </label>
               <input
                 type="date"
                 value={fecha}
@@ -79,7 +85,9 @@ const ModalCreateStore: React.FC<ModalCreateStoreProps> = ({ isOpen, onClose }) 
             </div>
 
             <div>
-              <label className="block text-gray-700 mb-1 font-medium">Observación*</label>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Observación <span className="text-red-600">*</span>
+              </label>
               <textarea
                 value={observacion}
                 onChange={(e) => setObservacion(e.target.value)}
@@ -111,4 +119,4 @@ const ModalCreateStore: React.FC<ModalCreateStoreProps> = ({ isOpen, onClose }) 
   );
 };
 
-export default ModalCreateStore;
+export default ModalCreateSales;
