@@ -141,8 +141,9 @@ const MuseumComponentView: React.FC = () => {
       <ModalEditVisitor
         isOpen={isModalEditOpen}
         onClose={handleCloseEdit}
-        visitor={selectedVisitor}
-      />
+        initialData={selectedVisitor}
+        onSave={handleSaveVisitor}
+        />
 
       <ModalDeleteVisitor
         isOpen={isModalDeleteOpen}
