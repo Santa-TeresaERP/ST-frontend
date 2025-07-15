@@ -159,7 +159,7 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-[90%] sm:max-w-[600px] max-h-[90vh] overflow-y-auto px-0 pb-6 pt-0">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-[90%] sm:max-w-[1080px] max-h-[90vh] overflow-y-auto px-0 pb-6 pt-0">
         {/* Header del modal */}
         <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-blue-700 p-6 rounded-t-2xl"> 
           <div className="flex justify-between items-center">
