@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
-import { X, Plus, Edit3, Trash2 } from "lucide-react";
+import { X, Plus, Edit3 } from "lucide-react";
 import ModalCreateWarehousesView from "./modal-create-warehouses";
 import ModalEditWarehousesView from "./modal-edit-warehouses";
 import ModalDeleteWarehouse from "./modal-delete-warehouses";
+import ToggleWarehouseStatus from "./toggle-warehouse-status";
 import { 
   useFetchWarehouses, 
 } from "@/modules/inventory/hook/useWarehouses";
@@ -138,16 +139,7 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
                     >
                       <Edit3 size={20} />
                     </button>
-                    <button
-                      onClick={() => {
-                        console.log('Warehouse seleccionado (activo):', warehouse); // ✅ Debug
-                        setSelectedWarehouse(warehouse); // ✅ Cambiar: guardar el warehouse completo, no solo el nombre
-                        setShowDeleteWarehouse(true);
-                      }}
-                      className="p-2 text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 rounded-lg transition-colors duration-200"
-                    >
-                      <Trash2 size={20} />
-                    </button>
+                    <ToggleWarehouseStatus warehouse={warehouse} />
                   </div>
                 </div>
               ))}
@@ -203,16 +195,7 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
                     >
                       <Edit3 size={20} />
                     </button>
-                    <button
-                      onClick={() => {
-                        console.log('Warehouse seleccionado:', warehouse); // ✅ Debug
-                        setSelectedWarehouse(warehouse); // Guardar el warehouse completo
-                        setShowDeleteWarehouse(true);
-                      }}
-                      className="p-2 text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 rounded-lg transition-colors duration-200"
-                    >
-                      <Trash2 size={20} />
-                    </button>
+                    <ToggleWarehouseStatus warehouse={warehouse} />
                   </div>
                 </div>
               ))}
@@ -226,9 +209,6 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
         <ModalCreateWarehousesView
           showModal={showCreateWarehouse}
           onClose={() => setShowCreateWarehouse(false)}
-          onAddNew={(newWarehouse) => {
-            setShowCreateWarehouse(false);
-          }}
         />
 
         {/* Modal editar almacén */}
