@@ -93,8 +93,8 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
               required
               disabled={isLoadingWarehouses}
             >
-              <option value="">{isLoadingWarehouses ? 'Cargando almacenes...' : 'Seleccione un almacén'}</option>
-              {errorWarehouses && <option value="" disabled>Error al cargar almacenes</option>}
+              <option key="select-warehouse" value="">{isLoadingWarehouses ? 'Cargando almacenes...' : 'Seleccione un almacén'}</option>
+              {errorWarehouses && <option key="error-warehouse" value="" disabled>Error al cargar almacenes</option>}
               {warehouses?.map((warehouse: WarehouseAttributes) => (
                 <option key={warehouse.id} value={warehouse.id}>
                   {warehouse.name}
@@ -112,7 +112,7 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-slate-600 focus:outline-none"
               required
             >
-              <option value="">Seleccione una tienda</option>
+              <option key="select-store" value="">Seleccione una tienda</option>
               <option value="tienda1">Tienda 1</option>
               <option value="tienda2">Tienda 2</option>
             </select>
@@ -128,8 +128,8 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
               required
               disabled={isLoadingProducts}
             >
-              <option value="">{isLoadingProducts ? 'Cargando productos...' : 'Seleccione un producto'}</option>
-              {errorProducts && <option value="" disabled>Error al cargar productos</option>}
+              <option key="select-product" value="">{isLoadingProducts ? 'Cargando productos...' : 'Seleccione un producto'}</option>
+              {errorProducts && <option key="error-product" value="" disabled>Error al cargar productos</option>}
               {products?.map((product: ProductAttributes) => (
                 <option key={product.id} value={product.id}>
                   {product.name}

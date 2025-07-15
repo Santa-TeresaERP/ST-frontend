@@ -61,7 +61,7 @@ export const useResourceSearch = () => {
 
   // Filtrar recursos basado en el término de búsqueda
   useEffect(() => {
-    if (!searchTerm.trim()) {
+    if (!searchTerm || !searchTerm.trim()) {
       setSuggestions([]);
       return;
     }

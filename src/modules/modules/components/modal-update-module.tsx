@@ -1,25 +1,39 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../../app/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "../../../app/components/ui/dialog";
 import { Button } from "../../../app/components/ui/button";
 import { Input } from "../../../app/components/ui/input";
 import { Label } from "../../../app/components/ui/label";
-import { Module } from '@/modules/modules/types/modules';
+import { Module } from "@/modules/modules/types/modules";
 import { moduleSchema } from "@/modules/modules/schemas/moduleValidation";
-import { z } from 'zod';
+import { z } from "zod";
+import { Save } from "lucide-react";
 
 type ModuleModalProps = {
   isOpen: boolean;
   onClose: () => void;
   module: Module | null;
-  onSubmit: (data: Omit<Module, 'createdAt' | 'updatedAt'>) => Promise<void>;
+  onSubmit: (data: Omit<Module, "createdAt" | "updatedAt">) => Promise<void>;
 };
 
-const ModuleModal: React.FC<ModuleModalProps> = ({ isOpen, onClose, module, onSubmit }) => {
+const ModuleModal: React.FC<ModuleModalProps> = ({
+  isOpen,
+  onClose,
+  module,
+  onSubmit,
+}) => {
   const [formData, setFormData] = useState<Partial<Module>>({});
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [errors, setErrors] = useState<Partial<Record<keyof Module, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof Module, string>>
+  >({});
 
   useEffect(() => {
     if (module) {
@@ -27,7 +41,7 @@ const ModuleModal: React.FC<ModuleModalProps> = ({ isOpen, onClose, module, onSu
     } else {
       setFormData({ name: "", description: "" });
     }
-    setErrors({}); // Clear errors when the modal is opened or the module changes
+    setErrors({});
   }, [module, isOpen]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,7 +52,7 @@ const ModuleModal: React.FC<ModuleModalProps> = ({ isOpen, onClose, module, onSu
     e.preventDefault();
     try {
       moduleSchema.parse(formData);
-      setErrors({}); // Clear validation errors if validation passes
+      setErrors({});
       setShowConfirmation(true);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -64,7 +78,7 @@ const ModuleModal: React.FC<ModuleModalProps> = ({ isOpen, onClose, module, onSu
         setShowConfirmation(false);
         onClose();
       } catch (error) {
-        console.error('Error updating module:', error);
+        console.error("Error updating module:", error);
       }
     }
   };
@@ -72,59 +86,91 @@ const ModuleModal: React.FC<ModuleModalProps> = ({ isOpen, onClose, module, onSu
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="text-3xl font-bold text-red-800 border-b border-red-800 pb-2 mb-6">{module ? "Editar Módulo" : "Crear Módulo"}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <DialogContent className="w-full max-w-[90%] sm:max-w-[425px] px-4 py-6 mx-auto rounded-lg shadow-md">
+          {/* Header ocupa todo el ancho */}
+          <div className="-mt-6 -mx-4 rounded-t-lg bg-gradient-to-r from-red-700 via-red-600 to-red-500 px-6 py-4">
+            <DialogTitle className="text-white text-2xl sm:text-3xl font-bold text-center">
+              {module ? "Editar Módulo" : "Crear Módulo"}
+            </DialogTitle>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label className="text-red-800" htmlFor="name">Nombre</Label>
+              <Label className="text-red-800 font-semibold" htmlFor="name">Nombre</Label>
               <Input
                 id="name"
                 name="name"
                 type="text"
                 value={formData.name || ""}
                 onChange={handleInputChange}
-                className={errors.name ? 'border-red-500' : ''}
+                className={`w-full ${errors.name ? "border-red-500" : ""}`}
               />
-              {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
+              {errors.name && (
+                <p className="text-red-500 text-sm">{errors.name}</p>
+              )}
             </div>
+
             <div className="space-y-2">
-              <Label className="text-red-800" htmlFor="description">Descripción</Label>
+              <Label className="text-red-800 font-semibold" htmlFor="description">Descripción</Label>
               <Input
                 id="description"
                 name="description"
                 type="text"
                 value={formData.description || ""}
                 onChange={handleInputChange}
-                className={errors.description ? 'border-red-500' : ''} 
+                className={`w-full ${errors.description ? "border-red-500" : ""}`}
               />
-              {errors.description && <p className="text-red-500 text-sm">{errors.description}</p>}
+              {errors.description && (
+                <p className="text-red-500 text-sm">{errors.description}</p>
+              )}
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
+
+            <DialogFooter className="flex flex-col sm:flex-row gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="w-full sm:w-auto border border-red-700 text-red-800 hover:bg-red-100"
+              >
                 Cancelar
               </Button>
-              <Button type="submit" className="bg-red-800 hover:bg-red-700 text-white">
+              <Button
+                type="submit"
+                className="bg-red-700 hover:bg-red-600 text-white w-full sm:w-auto flex items-center gap-2"
+              >
+                <Save size={18} />
                 Guardar
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
+
       {showConfirmation && (
         <Dialog open={showConfirmation} onOpenChange={() => setShowConfirmation(false)}>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="w-full max-w-[90%] sm:max-w-[425px] px-4 py-6 mx-auto rounded-lg shadow-md">
             <DialogHeader>
-              <DialogTitle className="text-red-800">Confirmación</DialogTitle>
+              <DialogTitle className="text-red-700 text-xl font-bold">Confirmación</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <p>¿Estás seguro de que deseas {module ? "editar" : "crear"} este módulo?</p>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setShowConfirmation(false)}>
+              <p className="text-gray-700">
+                ¿Estás seguro de que deseas {module ? "editar" : "crear"} este módulo?
+              </p>
+              <DialogFooter className="flex flex-col sm:flex-row gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowConfirmation(false)}
+                  className="w-full sm:w-auto border border-red-700 text-red-800 hover:bg-red-100"
+                >
                   Cancelar
                 </Button>
-                <Button type="button" className="bg-red-800 hover:bg-red-700 text-white" onClick={handleConfirmSubmit}>
+                <Button
+                  type="button"
+                  className="bg-red-700 hover:bg-red-600 text-white w-full sm:w-auto flex items-center gap-2"
+                  onClick={handleConfirmSubmit}
+                >
+                  <Save size={18} />
                   Confirmar
                 </Button>
               </DialogFooter>

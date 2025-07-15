@@ -108,7 +108,7 @@ const ResourceSearchInput: React.FC<ResourceSearchInputProps> = ({
           ref={inputRef}
           id="resource_search"
           type="text"
-          value={searchTerm}
+          value={searchTerm || ''}
           onChange={(e) => {
             setSearchTerm(e.target.value);
             setIsOpen(true);
