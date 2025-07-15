@@ -1,10 +1,11 @@
 "use client";
-import VentasList from '@/modules/ventas/components/ventas-component.view';
+
+import SalesView from '../../../../modules/sales/components/sales-component-view';
 
 export default function VentasPage() {
   return (
     <div>
-      <VentasList />
+      <SalesView />
     </div>
   );
 }

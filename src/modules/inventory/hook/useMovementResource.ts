@@ -11,10 +11,10 @@ import {
   deleteWarehouseMovementResource,
 } from '../action/movementResource';
 
-export const useFetchWarehouseMovementResources = () =>
+export const useFetchWarehouseMovementResources = (filters: Record<string, unknown> = {}) =>
   useQuery<WarehouseMovementResource[], Error>({
-    queryKey: ['warehouseMovementResource'],
-    queryFn: fetchWarehouseMovementResources,
+    queryKey: ['warehouseMovementResource', filters],
+    queryFn: () => fetchWarehouseMovementResources(filters),
   });
 
 export const useCreateWarehouseMovementResource = () => {

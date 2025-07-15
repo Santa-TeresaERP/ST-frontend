@@ -207,7 +207,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
                   className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white text-gray-900 border-gray-300"
                   defaultValue=""
                 >
-                  <option value="">Seleccione un proveedor</option>
+                  <option key="select-supplier" value="">Seleccione un proveedor</option>
                   {suppliers?.map((supplier) => (
                     <option key={supplier.id} value={supplier.id}>
                       {supplier.suplier_name}
@@ -234,7 +234,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
                   className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white text-gray-900 border-gray-300"
                   defaultValue=""
                 >
-                  <option value="">Seleccione un almacén</option>
+                  <option key="select-warehouse" value="">Seleccione un almacén</option>
                   {warehouses?.map((warehouse) => (
                     <option key={warehouse.id} value={warehouse.id}>
                       {warehouse.name}
@@ -308,7 +308,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
                 {...register('type_unit')}
                 className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white text-gray-900 border-gray-300"
               >
-                <option value="">Selecciona una unidad</option>
+                <option key="select-unit" value="">Selecciona una unidad</option>
                 {UNIT_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}

@@ -149,8 +149,8 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
               required
               disabled={isLoadingWarehouses}
             >
-              <option value="">{isLoadingWarehouses ? 'Cargando almacenes...' : 'Seleccione un almacén'}</option>
-              {errorWarehouses && <option value="" disabled>Error al cargar almacenes</option>}
+              <option key="select-warehouse" value="">{isLoadingWarehouses ? 'Cargando almacenes...' : 'Seleccione un almacén'}</option>
+              {errorWarehouses && <option key="error-warehouse" value="" disabled>Error al cargar almacenes</option>}
               {warehouses?.map((warehouse: WarehouseAttributes) => (
                 <option key={warehouse.id} value={warehouse.id}>
                   {warehouse.name}
@@ -185,8 +185,8 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
               required
               disabled={isLoadingProducts}
             >
-              <option value="">{isLoadingProducts ? 'Cargando productos...' : 'Seleccione un producto'}</option>
-              {errorProducts && <option value="" disabled>Error al cargar productos</option>}
+              <option key="select-product" value="">{isLoadingProducts ? 'Cargando productos...' : 'Seleccione un producto'}</option>
+              {errorProducts && <option key="error-product" value="" disabled>Error al cargar productos</option>}
               {products?.map((product: ProductAttributes) => (
                 <option key={product.id} value={product.id}>
                   {product.name}

@@ -138,7 +138,7 @@ const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
               required
               disabled={loadingWarehouses}
             >
-              <option value="">Selecciona un almacén</option>
+              <option key="select-warehouse" value="">Selecciona un almacén</option>
               {warehouses.map((w: any) => (
                 <option key={w.id} value={w.id}>
                   {w.name}
@@ -156,7 +156,7 @@ const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
               required
               disabled={loadingResources}
             >
-              <option value="">Selecciona un recurso</option>
+              <option key="select-resource" value="">Selecciona un recurso</option>
               {resources.map((r: any) => (
                 <option key={r.id} value={r.id}>
                   {r.name}

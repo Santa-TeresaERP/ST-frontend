@@ -1,10 +1,15 @@
 "use client";
 
 import React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../../app/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "../../../app/components/ui/dialog";
 import { Button } from "../../../app/components/ui/button";
-import { User } from '@/modules/user-creations/types/user';
-import { Trash2 } from "lucide-react"
+import { User } from "@/modules/user-creations/types/user";
+import { Trash2 } from "lucide-react";
 
 type DeleteUserModalProps = {
   isOpen: boolean;
@@ -13,28 +18,39 @@ type DeleteUserModalProps = {
   onDelete: (userId: string) => void;
 };
 
-const DeleteUserModal: React.FC<DeleteUserModalProps> = ({ isOpen, onClose, user, onDelete }) => {
+const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
+  isOpen,
+  onClose,
+  user,
+  onDelete,
+}) => {
   if (!user) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[460px] rounded-3xl shadow-2xl px-6 py-8 bg-white">
+      <DialogContent className="w-full max-w-xs sm:max-w-sm rounded-3xl shadow-2xl px-6 py-8 bg-white mx-2">
         <div className="flex flex-col items-center justify-center text-center">
           {/* Icono */}
           <div className="bg-red-100 rounded-full p-4 mb-4">
             <Trash2 className="w-10 h-10 text-red-600" />
           </div>
-  
+
           {/* Título */}
           <DialogHeader>
-            <DialogTitle className="text-2xl font-semibold text-gray-800">¿Eliminar Usuario?</DialogTitle>
+            <DialogTitle className="text-2xl font-semibold text-gray-800">
+              ¿Eliminar Usuario?
+            </DialogTitle>
           </DialogHeader>
-  
+
           {/* Texto de advertencia */}
           <p className="text-gray-600 mt-2 text-base">
-            Esta acción <span className="font-semibold text-red-600">no se puede deshacer</span>. ¿Estás seguro de que quieres eliminar este usuario?
+            Esta acción{" "}
+            <span className="font-semibold text-red-600">
+              no se puede deshacer
+            </span>
+            . ¿Estás seguro de que quieres eliminar este usuario?
           </p>
-  
+
           {/* Botones */}
           <div className="mt-8 w-full flex justify-center gap-4">
             <Button

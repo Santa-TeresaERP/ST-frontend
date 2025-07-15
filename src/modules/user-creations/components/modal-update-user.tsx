@@ -96,15 +96,19 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] rounded-2xl shadow-xl px-6 py-4">
-        <DialogHeader>
-          <DialogTitle className="text-3xl font-bold flex items-center justify-center gap-3 text-gray-800">
-            <UserCog className="w-10 h-10 text-red-600" />
-            Editar Usuario
-          </DialogTitle>
-        </DialogHeader>
-  
-        <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[600px] p-0 overflow-hidden rounded-2xl shadow-xl [&>button]:text-white [&>button]:hover:text-white">
+        {/* Header */}
+        <div className="w-full bg-gradient-to-r from-red-600 to-red-700 py-6 px-6">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-bold text-white flex items-center justify-center gap-3">
+              <UserCog className="w-10 h-10 text-white" />
+              Editar Usuario
+            </DialogTitle>
+          </DialogHeader>
+        </div>
+
+        {/* Formulario */}
+        <form onSubmit={handleSubmit} className="space-y-6 p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Nombre */}
             <div className="space-y-1">
@@ -121,8 +125,8 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
               />
               {errors.name && <p className="text-red-600 text-sm">{errors.name}</p>}
             </div>
-  
-            {/* Correo */}
+
+            {/* Email */}
             <div className="space-y-1">
               <Label htmlFor="email" className="uppercase font-semibold text-sm text-gray-700">
                 Correo Electrónico
@@ -137,11 +141,11 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
               />
               {errors.email && <p className="text-red-600 text-sm">{errors.email}</p>}
             </div>
-  
+
             {/* Teléfono */}
             <div className="space-y-1">
               <Label htmlFor="phonenumber" className="uppercase font-semibold text-sm text-gray-700">
-                Número de Teléfono
+                Teléfono
               </Label>
               <Input
                 id="phonenumber"
@@ -153,7 +157,7 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
               />
               {errors.phonenumber && <p className="text-red-600 text-sm">{errors.phonenumber}</p>}
             </div>
-  
+
             {/* DNI */}
             <div className="space-y-1">
               <Label htmlFor="dni" className="uppercase font-semibold text-sm text-gray-700">
@@ -170,9 +174,9 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
               {errors.dni && <p className="text-red-600 text-sm">{errors.dni}</p>}
             </div>
           </div>
-  
-          {/* Footer de botones */}
-          <DialogFooter className="pt-6 flex justify-end gap-4">
+
+          {/* Botones */}
+          <DialogFooter className="flex justify-end gap-4 pt-6">
             <Button
               type="button"
               variant="outline"
@@ -189,18 +193,23 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
             </Button>
           </DialogFooter>
         </form>
-  
+
         {/* Confirmación */}
         {showWarning && (
           <Dialog open={showWarning} onOpenChange={() => setShowWarning(false)}>
-            <DialogContent className="sm:max-w-[425px] rounded-2xl shadow-lg">
-              <DialogHeader>
-                <DialogTitle className="text-lg font-bold text-center text-gray-800">
-                  Confirmar Cambios
-                </DialogTitle>
-              </DialogHeader>
-              <div className="text-center py-6 px-4">
-                <p className="text-gray-600 mb-4">
+            <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[600px] p-0 overflow-hidden rounded-2xl shadow-xl [&>button]:text-white [&>button]:hover:text-white">
+              {/* Header rojo */}
+              <div className="w-full bg-gradient-to-r from-red-600 to-red-700 py-4 px-6">
+                <DialogHeader>
+                  <DialogTitle className="text-lg font-bold text-white text-center">
+                    Confirmar Cambios
+                  </DialogTitle>
+                </DialogHeader>
+              </div>
+
+              {/* Contenido */}
+              <div className="text-center py-6 px-6">
+                <p className="text-gray-700 mb-4">
                   ¿Estás seguro de que quieres guardar los cambios?
                 </p>
                 <div className="flex justify-center gap-4">
@@ -208,14 +217,14 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
                     type="button"
                     variant="outline"
                     onClick={() => setShowWarning(false)}
-                    className="text-gray-700"
+                    className="text-gray-700 border-gray-400 hover:bg-gray-100"
                   >
                     Cancelar
                   </Button>
                   <Button
                     type="button"
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={handleConfirmSubmit}
+                    className="bg-red-600 hover:bg-red-700 text-white"
                   >
                     Confirmar
                   </Button>

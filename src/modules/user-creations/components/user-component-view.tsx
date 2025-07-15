@@ -97,45 +97,45 @@ const UserList: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-12">
       {/* Título + Botón */}
-      <div className="flex justify-between items-center mb-12">
-        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
-          <UserIcon className="w-8 h-8 text-red-600" />
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-10">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3 px-4">
+          <UserIcon className="w-7 h-7 sm:w-8 sm:h-8 text-red-600" />
           Gestión de Usuarios
         </h1>
         <Button
           onClick={handleOpenCreateModal}
-          className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white px-6 py-2.5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 text-sm font-semibold"
+          className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-5 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 text-sm font-semibold w-full sm:w-auto"
         >
           <PlusCircle className="w-5 h-5" />
           Crear Usuario
         </Button>
       </div>
-  
+
       {/* Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {users?.map((user, index) => (
           <div
             key={user.id || index}
             onClick={() => handleProfileClick(user)}
-            className="bg-white border border-gray-200 rounded-2xl p-6 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+            className="bg-white border border-gray-200 rounded-2xl p-5 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
           >
             <div className="flex flex-col items-center text-center">
-              <div className="bg-red-100 p-4 rounded-full shadow-inner mb-5">
-                <UserIcon className="h-8 w-8 text-red-600" />
+              <div className="bg-red-100 p-4 rounded-full shadow-inner mb-4">
+                <UserIcon className="h-7 w-7 sm:h-8 sm:w-8 text-red-600" />
               </div>
-              <h2 className="text-lg font-bold text-gray-800 mb-4">{user.name}</h2>
+              <h2 className="text-lg font-semibold text-gray-800 mb-3">{user.name}</h2>
               <div className="text-sm text-gray-700 space-y-1">
                 <p><span className="font-medium">Email:</span> {user.email}</p>
                 <p><span className="font-medium">Teléfono:</span> {user.phonenumber}</p>
                 <p><span className="font-medium">DNI:</span> {user.dni}</p>
               </div>
-              <div className="flex justify-center gap-3 mt-6">
+              <div className="flex flex-col sm:flex-row justify-center gap-2 mt-5 w-full">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleEditClick(user);
                   }}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium shadow-sm flex items-center gap-1"
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center justify-center gap-1 w-full sm:w-auto"
                 >
                   <Pencil className="w-4 h-4" />
                   Editar
@@ -145,7 +145,7 @@ const UserList: React.FC = () => {
                     e.stopPropagation();
                     handleDeleteUser(user);
                   }}
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium shadow-sm flex items-center gap-1"
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm flex items-center justify-center gap-1 w-full sm:w-auto"
                 >
                   <Trash2 className="w-4 h-4" />
                   Eliminar
