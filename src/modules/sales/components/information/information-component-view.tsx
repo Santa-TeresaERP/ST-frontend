@@ -1,7 +1,12 @@
 import React from 'react';
 import { FiInfo, FiMapPin, FiHome, FiClipboard, FiDollarSign } from 'react-icons/fi';
+import { StoreAttributes } from '@/modules/stores/types/store';
 
-const InformationComponentView: React.FC = () => {
+interface InformationComponentViewProps {
+  selectedStore?: StoreAttributes | null;
+}
+
+const InformationComponentView: React.FC<InformationComponentViewProps> = ({ selectedStore }) => {
   return (
     <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 space-y-6">
       
@@ -17,7 +22,9 @@ const InformationComponentView: React.FC = () => {
             <FiHome className="text-red-500" size={20} />
             <span className="font-semibold">Nombre de la tienda</span>
           </div>
-          <p>Panadería Dulce Sabor</p>
+          <p className={selectedStore ? 'text-gray-900' : 'text-gray-400 italic'}>
+            {selectedStore ? selectedStore.store_name : 'Selecciona una tienda para ver su información'}
+          </p>
         </div>
 
         <div className="border border-gray-300 rounded-lg p-4 shadow-sm">
@@ -25,7 +32,9 @@ const InformationComponentView: React.FC = () => {
             <FiMapPin className="text-red-500" size={20} />
             <span className="font-semibold">Dirección</span>
           </div>
-          <p>Av. Principal 1234, Centro Histórico, Lima</p>
+          <p className={selectedStore ? 'text-gray-900' : 'text-gray-400 italic'}>
+            {selectedStore ? selectedStore.address : 'Selecciona una tienda para ver su dirección'}
+          </p>
         </div>
       </div>
 
@@ -34,7 +43,12 @@ const InformationComponentView: React.FC = () => {
           <FiClipboard className="text-red-500" size={20} />
           <span className="font-semibold">Observaciones</span>
         </div>
-        <p>Especializada en pasteles personalizados, productos sin gluten, y servicio a domicilio en zonas cercanas.</p>
+        <p className={selectedStore ? 'text-gray-900' : 'text-gray-400 italic'}>
+          {selectedStore ? 
+            (selectedStore.observations || 'Sin observaciones registradas') : 
+            'Selecciona una tienda para ver sus observaciones'
+          }
+        </p>
       </div>
 
       {/* Información de la Caja */}
