@@ -4,12 +4,14 @@ import { Users, PlusCircle, Ticket, Pencil, Trash2, CheckCircle, XCircle } from 
 import ModalCreateVisitor, { VisitorData } from './visitor/modal-create-visitor';
 import ModalEditVisitor from './visitor/modal-edit-visitor';
 import ModalDeleteVisitor from './visitor/modal-delete-visitor';
+import ModalTicketTypes from './tickets/modal-ticket-types';
 
 const MuseumComponentView: React.FC = () => {
   const [isModalCreateOpen, setIsModalCreateOpen] = useState(false);
   const [isModalEditOpen, setIsModalEditOpen] = useState(false);
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
   const [selectedVisitor, setSelectedVisitor] = useState<VisitorData | null>(null);
+  const [isModalTicketOpen, setIsModalTicketOpen] = useState(false);
 
   const handleOpenCreate = () => setIsModalCreateOpen(true);
   const handleCloseCreate = () => setIsModalCreateOpen(false);
@@ -60,7 +62,10 @@ const MuseumComponentView: React.FC = () => {
           <PlusCircle className="mr-2" size={20} />
           Nuevo Visitante
         </button>
-        <button className="flex items-center justify-center bg-gradient-to-r from-red-600 to-red-800 text-white px-4 py-2 rounded-lg shadow hover:opacity-90 w-full md:w-auto">
+        <button
+          onClick={() => setIsModalTicketOpen(true)}
+          className="flex items-center justify-center bg-gradient-to-r from-red-600 to-red-800 text-white px-4 py-2 rounded-lg shadow hover:opacity-90 w-full md:w-auto"
+        >
           <Ticket className="mr-2" size={20} />
           Tipos de Tickets
         </button>
@@ -152,6 +157,11 @@ const MuseumComponentView: React.FC = () => {
           console.log('Visitante eliminado:', selectedVisitor);
           handleCloseDelete();
         }}
+      />
+
+      <ModalTicketTypes
+        isOpen={isModalTicketOpen}
+        onClose={() => setIsModalTicketOpen(false)}
       />
     </div>
   );
