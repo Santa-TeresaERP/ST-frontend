@@ -2,10 +2,9 @@ import React, { useState, useMemo } from 'react';
 // Verified Icons import path
 import { Edit2, Trash2, FileText, Search, Plus, AlertCircle, Filter, X, Calendar } from 'lucide-react';
 // Corrected Hooks import path (from ../../hooks/ to ../../hook/)
-import { useFetchResourcesWithBuys, useCreateBuysResource, useUpdateResource, useDeleteBuysResource } from '../../hook/usebuysResource';
+import { useFetchResourcesWithBuys, useCreateBuysResource, useUpdateBuysResource, useDeleteBuysResource } from '../../hook/usebuysResource';
 // Verified Types/Actions import paths (assuming they are correct relative to this file)
-import { UpdateResourcePayload } from '../../types/resource';
-import { BuysResourceWithResource, CreateBuysResourcePayload } from '../../types/buysResource.d';
+import { BuysResourceWithResource, CreateBuysResourcePayload, UpdateBuysResourcePayload } from '../../types/buysResource';
 // Verified Modal import paths (assuming they are correct relative to this file)
 import ModalNuevoRecurso from './resource/modal-create-resource-resourcehouse';
 import ModalEditResource from './resource/modal-edit-resource-resourcehouse';
@@ -32,7 +31,7 @@ const ResourcesView: React.FC = () => {
 
   // Mutation hooks
   const createResourceMutation = useCreateBuysResource();
-  const updateResourceMutation = useUpdateResource();
+  const updateResourceMutation = useUpdateBuysResource();
   const deleteResourceMutation = useDeleteBuysResource();
 
   //lista de proveedores
@@ -112,7 +111,7 @@ const ResourcesView: React.FC = () => {
     }
   };
 
-  const handleUpdateResource = async (id: string, payload: UpdateResourcePayload) => {
+  const handleUpdateResource = async (id: string, payload: UpdateBuysResourcePayload) => {
     try {
       await updateResourceMutation.mutateAsync({ id, payload });
       setResourceToEdit(null);
@@ -338,7 +337,7 @@ const ResourcesView: React.FC = () => {
       {resourceToEdit && (
         <ModalEditResource
           isOpen={!!resourceToEdit}
-          recurso={resourceToEdit.resource || { id: resourceToEdit.id || '', name: '', observation: null }}
+          recurso={resourceToEdit}
           onClose={() => setResourceToEdit(null)}
           onUpdate={handleUpdateResource}
           isUpdating={updateResourceMutation.isPending}
