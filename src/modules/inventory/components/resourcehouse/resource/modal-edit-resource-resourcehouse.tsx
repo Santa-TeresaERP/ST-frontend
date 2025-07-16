@@ -2,23 +2,22 @@ import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X, Save, Loader2 } from 'lucide-react';
-import { ResourceValidationSchema } from '../../../schemas/resourceValidation';
-import { Resource, UpdateResourcePayload } from '../../../types/resource';
+import { BuysResourceEditValidationSchema, BuysResourceEditFormData } from '../../../schemas/buysResourceValidation';
+import { BuysResourceWithResource, UpdateBuysResourcePayload } from '../../../types/buysResource';
 import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button';
 import { Label } from '@/app/components/ui/label';
 import { useFetchSuppliers } from '@/modules/inventory/hook/useSuppliers';
-import { z } from 'zod';
 
 type ModalEditResourceProps = {
   isOpen: boolean;
-  recurso: Resource;
+  recurso: BuysResourceWithResource;
   onClose: () => void;
-  onUpdate: (id: string, payload: UpdateResourcePayload) => Promise<void>;
+  onUpdate: (id: string, payload: UpdateBuysResourcePayload) => Promise<void>;
   isUpdating: boolean;
 };
 
-type ResourceFormData = z.infer<typeof ResourceValidationSchema>;
+type ResourceFormData = BuysResourceEditFormData;
 
 const ModalEditResource: React.FC<ModalEditResourceProps> = ({
   isOpen,
@@ -33,7 +32,7 @@ const ModalEditResource: React.FC<ModalEditResourceProps> = ({
     formState: { errors },
     reset,
   } = useForm<ResourceFormData>({
-    resolver: zodResolver(ResourceValidationSchema),
+    resolver: zodResolver(BuysResourceEditValidationSchema),
   });
 
   const { data: suppliers, isLoading: isLoadingSuppliers, error: errorSuppliers } = useFetchSuppliers();
@@ -41,36 +40,34 @@ const ModalEditResource: React.FC<ModalEditResourceProps> = ({
   useEffect(() => {
     if (recurso) {
       reset({
-        name: recurso.name,
-        warehouse_id: recurso.warehouse_id,
-        resource_id: recurso.resource_id,
-        type_unit: recurso.type_unit,
-        unit_price: recurso.unit_price,
-        total_cost: recurso.total_cost,
-        supplier_id: recurso.supplier_id ?? '',
-        quantity: recurso.quantity,
+        type_unit: recurso.type_unit || '',
+        supplier_id: recurso.supplier_id || '',
+        quantity: recurso.quantity || 0,
         entry_date: recurso.entry_date
           ? new Date(recurso.entry_date).toISOString().split('T')[0]
           : '',
-        observation: recurso.observation ?? '',
+        // Campos inmutables como hidden inputs
+        warehouse_id: recurso.warehouse_id || '',
+        resource_id: recurso.resource_id || '',
+        unit_price: recurso.unit_price || 0,
+        total_cost: recurso.total_cost || 0,
       });
     }
   }, [recurso, reset]);
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: ResourceFormData) => {
     if (!recurso.id) return;
 
-    const payload = {
-      name: data.name,
-      warehouse_id: data.warehouse_id,
-      resource_id: data.resource_id,
+    const payload: UpdateBuysResourcePayload = {
       type_unit: data.type_unit,
-      unit_price: Number(data.unit_price),
-      total_cost: Number(data.total_cost),
       supplier_id: data.supplier_id,
-      quantity: Number(data.quantity),
-      entry_date: data.entry_date,
-      observation: data.observation,
+      quantity: data.quantity,
+      entry_date: new Date(data.entry_date),
+      // Los campos inmutables mantienen sus valores originales
+      warehouse_id: recurso.warehouse_id,
+      resource_id: recurso.resource_id,
+      unit_price: recurso.unit_price,
+      total_cost: recurso.total_cost,
     };
 
     await onUpdate(recurso.id, payload);
@@ -96,46 +93,60 @@ const ModalEditResource: React.FC<ModalEditResourceProps> = ({
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4 text-left">
-          {/* Nombre */}
-          <div>
-            <Label htmlFor="edit-name" className="block text-sm font-medium mb-1 dark:text-gray-300">
-              Nombre*
-            </Label>
-            <Input
-              id="edit-name"
-              {...register('name')}
-              className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-            />
-            {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>}
+          {/* Información inmutable */}
+          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border">
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Información del Recurso (No editable)</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* warehouse_id - Solo lectura */}
+              <div>
+                <Label htmlFor="edit-warehouse_id" className="block text-sm font-medium mb-1 dark:text-gray-300">
+                  Almacén
+                </Label>
+                <div className="h-10 mt-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600 dark:bg-gray-600 dark:border-gray-500 dark:text-gray-300">
+                  {recurso.warehouse?.name || 'N/A'}
+                </div>
+                <input type="hidden" {...register('warehouse_id')} />
+              </div>
+
+              {/* resource_id - Solo lectura */}
+              <div>
+                <Label htmlFor="edit-resource_id" className="block text-sm font-medium mb-1 dark:text-gray-300">
+                  Recurso
+                </Label>
+                <div className="h-10 mt-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600 dark:bg-gray-600 dark:border-gray-500 dark:text-gray-300">
+                  {recurso.resource?.name || 'N/A'}
+                </div>
+                <input type="hidden" {...register('resource_id')} />
+              </div>
+
+              {/* unit_price - Solo lectura */}
+              <div>
+                <Label htmlFor="edit-unit_price" className="block text-sm font-medium mb-1 dark:text-gray-300">
+                  Precio Unitario
+                </Label>
+                <div className="h-10 mt-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600 dark:bg-gray-600 dark:border-gray-500 dark:text-gray-300">
+                  S/ {recurso.unit_price?.toFixed(2) || '0.00'}
+                </div>
+                <input type="hidden" {...register('unit_price')} />
+              </div>
+
+              {/* total_cost - Solo lectura */}
+              <div>
+                <Label htmlFor="edit-total_cost" className="block text-sm font-medium mb-1 dark:text-gray-300">
+                  Costo Total
+                </Label>
+                <div className="h-10 mt-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-600 dark:bg-gray-600 dark:border-gray-500 dark:text-gray-300">
+                  S/ {recurso.total_cost?.toFixed(2) || '0.00'}
+                </div>
+                <input type="hidden" {...register('total_cost')} />
+              </div>
+            </div>
           </div>
 
-          {/* Grid de campos principales */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* warehouse_id */}
-            <div>
-              <Label htmlFor="edit-warehouse_id" className="block text-sm font-medium mb-1 dark:text-gray-300">
-                Almacén*
-              </Label>
-              <Input
-                id="edit-warehouse_id"
-                {...register('warehouse_id')}
-                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-              />
-              {errors.warehouse_id && <p className="text-sm text-red-500 mt-1">{errors.warehouse_id.message}</p>}
-            </div>
-
-            {/* resource_id */}
-            <div>
-              <Label htmlFor="edit-resource_id" className="block text-sm font-medium mb-1 dark:text-gray-300">
-                ID Recurso*
-              </Label>
-              <Input
-                id="edit-resource_id"
-                {...register('resource_id')}
-                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-              />
-              {errors.resource_id && <p className="text-sm text-red-500 mt-1">{errors.resource_id.message}</p>}
-            </div>
+          {/* Campos editables */}
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Información Editable</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             {/* type_unit */}
             <div>
@@ -147,44 +158,29 @@ const ModalEditResource: React.FC<ModalEditResourceProps> = ({
                 {...register('type_unit')}
                 className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
               >
-                <option key="select-unit" value="">Selecciona una unidad</option>
-                <option key="Unidades" value="Unidades">Unidades</option>
-                <option key="kg" value="kg">kg</option>
-                <option key="g" value="g">g</option>
-                <option key="l" value="l">l</option>
-                <option key="ml" value="ml">ml</option>
+                <option value="">Selecciona una unidad</option>
+                <option value="Unidades">Unidades</option>
+                <option value="kg">kg</option>
+                <option value="g">g</option>
+                <option value="l">l</option>
+                <option value="ml">ml</option>
               </select>
               {errors.type_unit && <p className="text-sm text-red-500 mt-1">{errors.type_unit.message}</p>}
             </div>
 
-            {/* unit_price */}
+            {/* quantity */}
             <div>
-              <Label htmlFor="edit-unit_price" className="block text-sm font-medium mb-1 dark:text-gray-300">
-                Precio Unitario*
+              <Label htmlFor="edit-quantity" className="block text-sm font-medium mb-1 dark:text-gray-300">
+                Cantidad*
               </Label>
               <Input
-                id="edit-unit_price"
+                id="edit-quantity"
                 type="number"
                 step="0.01"
-                {...register('unit_price', { valueAsNumber: true })}
+                {...register('quantity', { valueAsNumber: true })}
                 className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
               />
-              {errors.unit_price && <p className="text-sm text-red-500 mt-1">{errors.unit_price.message}</p>}
-            </div>
-
-            {/* total_cost */}
-            <div>
-              <Label htmlFor="edit-total_cost" className="block text-sm font-medium mb-1 dark:text-gray-300">
-                Costo Total*
-              </Label>
-              <Input
-                id="edit-total_cost"
-                type="number"
-                step="0.01"
-                {...register('total_cost', { valueAsNumber: true })}
-                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-              />
-              {errors.total_cost && <p className="text-sm text-red-500 mt-1">{errors.total_cost.message}</p>}
+              {errors.quantity && <p className="text-sm text-red-500 mt-1">{errors.quantity.message}</p>}
             </div>
 
             {/* supplier_id */}
@@ -199,9 +195,8 @@ const ModalEditResource: React.FC<ModalEditResourceProps> = ({
                   id="edit-supplier_id"
                   {...register('supplier_id')}
                   className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                  defaultValue=""
                 >
-                  <option key="select-supplier" value="">Seleccione un proveedor</option>
+                  <option value="">Seleccione un proveedor</option>
                   {suppliers?.map((supplier) => (
                     <option key={supplier.id} value={supplier.id}>
                       {supplier.suplier_name}
@@ -210,20 +205,6 @@ const ModalEditResource: React.FC<ModalEditResourceProps> = ({
                 </select>
               )}
               {errors.supplier_id && <p className="text-sm text-red-500 mt-1">{errors.supplier_id.message}</p>}
-            </div>
-
-            {/* quantity */}
-            <div>
-              <Label htmlFor="edit-quantity" className="block text-sm font-medium mb-1 dark:text-gray-300">
-                Cantidad*
-              </Label>
-              <Input
-                id="edit-quantity"
-                type="number"
-                {...register('quantity', { valueAsNumber: true })}
-                className="h-10 mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-              />
-              {errors.quantity && <p className="text-sm text-red-500 mt-1">{errors.quantity.message}</p>}
             </div>
 
             {/* entry_date */}
@@ -240,20 +221,7 @@ const ModalEditResource: React.FC<ModalEditResourceProps> = ({
               {errors.entry_date && <p className="text-sm text-red-500 mt-1">{errors.entry_date.message}</p>}
             </div>
           </div>
-
-          {/* Observación */}
-          <div>
-            <Label htmlFor="edit-observation" className="block text-sm font-medium mb-1 dark:text-gray-300">
-              Observación
-            </Label>
-            <textarea
-              id="edit-observation"
-              {...register('observation')}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"
-              rows={3}
-            />
-            {errors.observation && <p className="text-sm text-red-500 mt-1">{errors.observation.message}</p>}
-          </div>
+        </div>
 
           <div className="flex justify-end space-x-3 pt-4">
             <Button
