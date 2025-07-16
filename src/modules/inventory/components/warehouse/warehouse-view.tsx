@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react"; // Importar useMemo
 import {
   Filter,
   Home,
   Edit,
   Trash,
   PlusCircle,
+  X, // Importar X para el botón de limpiar filtros
+  Calendar, // Importar Calendar para los iconos de fecha
 } from "lucide-react";
 import { useFetchWarehouseProducts } from "@/modules/inventory/hook/useWarehouseProducts";
 import { useFetchWarehouses } from "@/modules/inventory/hook/useWarehouses";
@@ -14,6 +16,9 @@ import ModalCreateProductWarehouse from './product/modal-create-product-warehous
 import ModalEditProductWarehouse from './product/modal-edit-product-warehouse';
 import ModalDeleteProductWarehouse from './product/modal-delete-product-warehouse';
 import ModalWarehouses from './warehouses/modal-warehouses';
+
+import { Input } from '@/app/components/ui/input';
+import { Button } from '@/app/components/ui/button';
 
 const WarehouseView: React.FC = () => {
   const { data: warehouseProducts, isLoading, error } = useFetchWarehouseProducts();
@@ -26,6 +31,11 @@ const WarehouseView: React.FC = () => {
   const [deletingProduct, setDeletingProduct] = useState<React.Key | null>(null);
   const [showWarehouses, setShowWarehouses] = useState(false);
 
+  // **NUEVOS ESTADOS PARA LOS FILTROS**
+  const [productFilter, setProductFilter] = useState(""); // Filtro por nombre de producto
+  const [startDate, setStartDate] = useState<string>(""); // Filtro "Fecha desde"
+  const [endDate, setEndDate] = useState<string>("");     // Filtro "Fecha hasta"
+
   const selectedWarehouseProduct = editingProduct
     ? warehouseProducts?.find((p: any) => p.id === editingProduct)
     : null;
@@ -34,17 +44,59 @@ const WarehouseView: React.FC = () => {
     ? warehouseProducts?.find((p: any) => p.id === deletingProduct)
     : null;
 
-  const filteredProducts = warehouseProducts?.filter((product: any) => {
-    const searchLower = searchTerm.toLowerCase();
-    const warehouseName = warehouses?.find((w) => w.id === product.warehouse_id)?.name?.toLowerCase() || "";
-    const productName = products?.find((p) => p.id === product.product_id)?.name?.toLowerCase() || "";
-    return (
-      warehouseName.includes(searchLower) ||
-      productName.includes(searchLower) ||
-      product.quantity.toString().includes(searchLower) ||
-      new Date(product.entry_date).toLocaleDateString().toLowerCase().includes(searchLower)
-    );
-  });
+  // **LISTA DE PRODUCTOS ÚNICOS PARA EL FILTRO**
+  const productsList = useMemo(() => {
+    if (!products) return [];
+    const uniqueProductNames = new Set(products.map(p => p.name).filter(Boolean));
+    return Array.from(uniqueProductNames);
+  }, [products]);
+
+
+  // **LÓGICA DE FILTRADO MEJORADA CON useMemo**
+  const filteredProducts = useMemo(() => {
+    if (!warehouseProducts) return [];
+
+    return warehouseProducts.filter((product: any) => {
+      const searchLower = searchTerm.toLowerCase();
+      const warehouseName = warehouses?.find((w) => w.id === product.warehouse_id)?.name?.toLowerCase() || "";
+      const productName = products?.find((p) => p.id === product.product_id)?.name?.toLowerCase() || "";
+
+      // Filtro por término de búsqueda general
+      const matchesSearchTerm =
+        warehouseName.includes(searchLower) ||
+        productName.includes(searchLower) ||
+        product.quantity.toString().includes(searchLower) ||
+        new Date(product.entry_date).toLocaleDateString().toLowerCase().includes(searchLower);
+
+      // Filtro por producto (dropdown)
+      const matchesProduct = productFilter
+        ? productName === productFilter.toLowerCase() // Asegúrate de comparar en minúsculas si productFilter viene de lowercase
+        : true;
+
+      // Filtro por rango de fechas
+      let matchesDate = true;
+      if (startDate || endDate) {
+        const entryDate = product.entry_date ? new Date(product.entry_date) : null;
+        if (entryDate) {
+          if (startDate && new Date(startDate) > entryDate) matchesDate = false;
+          if (endDate && new Date(endDate) < entryDate) matchesDate = false;
+        } else if (startDate || endDate) {
+          matchesDate = false; // Si no hay fecha de entrada pero hay filtro de fecha, no coincide
+        }
+      }
+
+      return matchesSearchTerm && matchesProduct && matchesDate;
+    });
+  }, [warehouseProducts, searchTerm, productFilter, startDate, endDate, warehouses, products]); // Dependencias de useMemo
+
+
+  // **FUNCIÓN PARA LIMPIAR TODOS LOS FILTROS**
+  const clearAllFilters = () => {
+    setSearchTerm("");
+    setProductFilter("");
+    setStartDate("");
+    setEndDate("");
+  };
 
   if (isLoading) {
     return (
@@ -81,6 +133,8 @@ const WarehouseView: React.FC = () => {
             <Home size={18} /> Almacenes
           </button>
           <div className="relative inline-flex items-center shadow-sm rounded-xl bg-white">
+            {/* El icono de Filter ya no es para la búsqueda general, lo dejaremos en el input de búsqueda como estaba */}
+            {/* Puedes reemplazarlo con Search si es más apropiado aquí */}
             <Filter className="absolute left-4 text-blue-700 pointer-events-none" size={20} />
             <input
               type="text"
@@ -98,6 +152,98 @@ const WarehouseView: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* **SECCIÓN DE FILTROS** */}
+      <div className="bg-white rounded-xl shadow p-4 border border-gray-200">
+        <div className="flex flex-row md:flex-row md:items-center md:justify-between gap-4 mb-4">
+          <div className="flex items-center gap-2">
+            <Filter className="text-gray-600" size={20} />
+            <h3 className="text-lg font-medium text-gray-800">Filtros</h3>
+          </div>
+          <button
+            // Usamos un botón normal si no tienes el componente Button de shadcn/ui
+            // Si lo tienes, puedes usar <Button variant="ghost" size="sm" onClick={clearAllFilters}>
+            className="text-gray-600 hover:text-gray-800 self-start md:self-auto flex items-center px-2 py-1 rounded hover:bg-gray-100"
+            onClick={clearAllFilters}
+          >
+            <X className="mr-1 h-4 w-4" /> Limpiar Filtros
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Filtro de Producto */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+              Producto
+            </label>
+            <select
+              value={productFilter}
+              onChange={(e) => setProductFilter(e.target.value)}
+              className="h-10 bg-white text-gray-900 border border-gray-300 rounded-md w-full px-3"
+            >
+              <option value="">Todos los productos</option>
+              {productsList.map((productName, index) => (
+                <option key={index} value={productName}>
+                  {productName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Fecha desde */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+              <Calendar className="inline mr-1 h-4 w-4" />
+              Fecha desde
+            </label>
+            <input // Usamos input HTML si no tienes un componente Input específico
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="h-10 bg-white text-gray-900 border border-gray-300 rounded-md w-full px-3"
+            />
+          </div>
+
+          {/* Fecha hasta */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+              <Calendar className="inline mr-1 h-4 w-4" />
+              Fecha hasta
+            </label>
+            <input // Usamos input HTML si no tienes un componente Input específico
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="h-10 bg-white text-gray-900 border border-gray-300 rounded-md w-full px-3"
+            />
+          </div>
+        </div>
+
+        {/* Filtros activos */}
+        {(productFilter || startDate || endDate) && (
+          <div className="mt-4 pt-3 border-t border-gray-200">
+            <div className="flex flex-wrap gap-2">
+              <span className="text-sm text-gray-600">Filtros activos:</span>
+              {productFilter && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  Producto: {productFilter}
+                </span>
+              )}
+              {startDate && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                  Desde: {new Date(startDate).toLocaleDateString()}
+                </span>
+              )}
+              {endDate && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                  Hasta: {new Date(endDate).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
 
       <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
         <table className="min-w-full text-sm">
@@ -135,7 +281,7 @@ const WarehouseView: React.FC = () => {
             ) : (
               <tr>
                 <td colSpan={5} className="text-center py-4 text-gray-500">
-                  {searchTerm ? "No se encontraron productos que coincidan con la búsqueda" : "No hay productos registrados"}
+                  {searchTerm || productFilter || startDate || endDate ? "No se encontraron productos que coincidan con los filtros" : "No hay productos registrados"}
                 </td>
               </tr>
             )}
