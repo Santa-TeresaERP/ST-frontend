@@ -6,7 +6,7 @@ import {
   UpdateResourcePayload,
 } from '../types/resource';
 import { 
-  BuysResourceWithResource, 
+  BuysResourceWithResource,  
   CreateBuysResourcePayload, 
   UpdateBuysResourcePayload 
 } from '../types/buysResource.d';
