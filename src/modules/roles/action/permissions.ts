@@ -17,6 +17,12 @@ export const createPermission = async (payload: CreatePermissionPayload): Promis
 }
 
 export const updatePermission = async (id: string, payload: UpdatePermissionPayload): Promise<Permission> =>{
+    console.log('🚀 Enviando a API:', {
+        url: `/permissions/${id}`,
+        method: 'PATCH',
+        payload
+    });
+    
     const response = await api.patch<Permission>(`/permissions/${id}`, payload);
     return response.data;
 }
