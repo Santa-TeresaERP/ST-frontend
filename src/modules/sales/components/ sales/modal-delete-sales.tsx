@@ -5,9 +5,15 @@ interface ModalDeleteSalesProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
+  isLoading?: boolean;
 }
 
-const ModalDeleteSales: React.FC<ModalDeleteSalesProps> = ({ isOpen, onClose, onConfirm }) => {
+const ModalDeleteSales: React.FC<ModalDeleteSalesProps> = ({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  isLoading = false 
+}) => {
   if (!isOpen) return null;
 
   return (
@@ -25,14 +31,25 @@ const ModalDeleteSales: React.FC<ModalDeleteSalesProps> = ({ isOpen, onClose, on
         <div className="flex justify-center space-x-8">
           <button
             onClick={onConfirm}
-            className="bg-red-800 text-white px-8 py-3 rounded-lg shadow-md hover:bg-red-600 hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2"
+            disabled={isLoading}
+            className="bg-red-800 text-white px-8 py-3 rounded-lg shadow-md hover:bg-red-600 hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
-            <Trash2 size={20} />
-            <span>Eliminar</span>
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                <span>Eliminando...</span>
+              </>
+            ) : (
+              <>
+                <Trash2 size={20} />
+                <span>Eliminar</span>
+              </>
+            )}
           </button>
           <button
             onClick={onClose}
-            className="bg-gray-300 text-gray-700 px-8 py-3 rounded-lg shadow-md hover:bg-gray-400 hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2"
+            disabled={isLoading}
+            className="bg-gray-300 text-gray-700 px-8 py-3 rounded-lg shadow-md hover:bg-gray-400 hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             <X size={20} />
             <span>Cancelar</span>
