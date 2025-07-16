@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { X, Save } from 'lucide-react';
 import { FiHome } from 'react-icons/fi';
 
-interface ModalCreateSaleProps {
+interface ModalCreateStoreProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const ModalCreateSale: React.FC<ModalCreateSaleProps> = ({ isOpen, onClose }) => {
+const ModalCreateStore: React.FC<ModalCreateStoreProps> = ({ isOpen, onClose }) => {
   const [nombre, setNombre] = useState('');
   const [direccion, setDireccion] = useState('');
   const [observaciones, setObservaciones] = useState('');
@@ -29,7 +29,7 @@ const ModalCreateSale: React.FC<ModalCreateSaleProps> = ({ isOpen, onClose }) =>
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl relative">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl relative mx-2">
         <div className="bg-gradient-to-r from-red-700 to-red-900 text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
           <FiHome size={24} />
           <h2 className="text-xl font-semibold text-center">Crear Tienda</h2>
@@ -46,7 +46,9 @@ const ModalCreateSale: React.FC<ModalCreateSaleProps> = ({ isOpen, onClose }) =>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-gray-700 mb-1 font-medium">Nombre de la Tienda*</label>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Nombre de la Tienda <span className="text-red-600">*</span>
+              </label>
               <input
                 type="text"
                 value={nombre}
@@ -57,7 +59,9 @@ const ModalCreateSale: React.FC<ModalCreateSaleProps> = ({ isOpen, onClose }) =>
             </div>
 
             <div>
-              <label className="block text-gray-700 mb-1 font-medium">Dirección*</label>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Dirección <span className="text-red-600">*</span>
+              </label>
               <input
                 type="text"
                 value={direccion}
@@ -68,7 +72,9 @@ const ModalCreateSale: React.FC<ModalCreateSaleProps> = ({ isOpen, onClose }) =>
             </div>
 
             <div>
-              <label className="block text-gray-700 mb-1 font-medium">Observaciones*</label>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Observaciones <span className="text-red-600">*</span>
+              </label>
               <textarea
                 value={observaciones}
                 onChange={(e) => setObservaciones(e.target.value)}
@@ -100,4 +106,4 @@ const ModalCreateSale: React.FC<ModalCreateSaleProps> = ({ isOpen, onClose }) =>
   );
 };
 
-export default ModalCreateSale;
+export default ModalCreateStore;

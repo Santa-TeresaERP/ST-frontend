@@ -139,38 +139,38 @@ const ProductosView = () => {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto">
       {/* Header mejorado */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-blue-600 flex items-center gap-3">
-            <FiBox size={28} className="text-blue-500" />
+        <div className="space-y-2 w-full md:w-auto">
+          <h1 className="text-2xl sm:text-3xl font-bold text-blue-600 flex items-center gap-3">
+            <FiBox size={24} className="text-blue-500" />
             <span>Gestión de Productos</span>
           </h1>
-          <p className="text-gray-600">Administra tu catálogo de productos</p>
+          <p className="text-sm sm:text-base text-gray-600">Administra tu catálogo de productos</p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <div className="flex gap-3">
+        <div className="w-full md:w-auto">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => setIsFilterModalOpen(true)}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-500 hover:to-blue-400 transition-all duration-300 shadow hover:shadow-md"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-500 hover:to-blue-400 transition-all duration-300 shadow hover:shadow-md w-full sm:w-auto"
             >
               <List size={18} />
               <span>Filtrar</span>
             </button>
-            
+
             <button
               onClick={() => setIsCreateModalOpen(true)}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-lg hover:from-red-500 hover:to-red-400 transition-all duration-300 shadow hover:shadow-md"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-lg hover:from-red-500 hover:to-red-400 transition-all duration-300 shadow hover:shadow-md w-full sm:w-auto"
             >
               <Plus size={18} />
               <span>Nuevo Producto</span>
             </button>
-            
+
             <button
               onClick={() => setIsCategoryModalOpen(true)}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-gray-600 to-gray-500 text-white rounded-lg hover:from-gray-500 hover:to-gray-400 transition-all duration-300 shadow hover:shadow-md"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-gray-600 to-gray-500 text-white rounded-lg hover:from-gray-500 hover:to-gray-400 transition-all duration-300 shadow hover:shadow-md w-full sm:w-auto"
             >
               <List size={18} />
               <span>Categorías</span>
@@ -180,12 +180,12 @@ const ProductosView = () => {
       </div>
 
       {/* Lista de productos */}
-      {filteredProducts.length === 0 ? ( // Mostrar mensaje si no hay productos filtrados
-        <div className="text-center text-gray-500 mt-8">
+      {filteredProducts.length === 0 ? (
+        <div className="text-center text-gray-500 mt-8 px-4">
           <p>No se encontraron productos que coincidan con los filtros aplicados.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-2 sm:px-0">
           {filteredProducts.map((producto) => {
             const isLinked = isProductLinkedToProduction(producto.id);
 
@@ -230,8 +230,8 @@ const ProductosView = () => {
 
                 <div className="p-5">
                   <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 line-clamp-1">
+                    <div className="max-w-[70%]">
+                      <h3 className="text-base font-semibold text-gray-900 line-clamp-1">
                         {producto.name}
                       </h3>
                       <p className="mt-1 text-sm text-gray-500 line-clamp-2">

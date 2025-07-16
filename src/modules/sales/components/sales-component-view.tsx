@@ -4,8 +4,10 @@ import { Input } from '@/app/components/ui/input';
 import { FiUsers, FiShoppingCart, FiPackage, FiAlertOctagon } from 'react-icons/fi';
 
 import InformationComponentView from '@/modules/sales/components/information/information-component-view';
-import ModalCreateSale from '@/modules/sales/components/modal-create-sale';
+import ModalCreateStore from './modal-create-store';
 import SalesComponentsView from './ sales/sale-view';
+import InventoryComponentsView from './ inventory/inventory-view';
+import LossesComponentView from './losses/losses-view';
 
 const SalesView: React.FC = () => {
   const [activeTab, setActiveTab] = useState('informacion');
@@ -138,10 +140,12 @@ const SalesView: React.FC = () => {
       <div className="mt-6">
         {activeTab === 'informacion' && <InformationComponentView />}
         {activeTab === 'ventas' && <SalesComponentsView />}
+        {activeTab === 'inventario' && <InventoryComponentsView />}
+        {activeTab === 'perdidas' && <LossesComponentView/>}
       </div>
 
       {/* Modal Nueva Tienda */}
-      <ModalCreateSale isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <ModalCreateStore isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   );
 };

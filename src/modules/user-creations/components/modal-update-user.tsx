@@ -8,7 +8,7 @@ import { Label } from "../../../app/components/ui/label";
 import { User } from '@/modules/user-creations/types/user';
 import { useUpdateUser } from '@/modules/user-creations/hook/useUsers';
 import { z } from "zod";
-import { UserCog } from "lucide-react";
+import { Save, UserCog } from "lucide-react";
 
 const userSchema = z.object({
   name: z
@@ -98,7 +98,7 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[600px] p-0 overflow-hidden rounded-2xl shadow-xl [&>button]:text-white [&>button]:hover:text-white">
         {/* Header */}
-        <div className="w-full bg-gradient-to-r from-red-600 to-red-700 py-6 px-6">
+        <div className="w-full bg-gradient-to-r from-green-600 to-green-700 py-6 px-6">
           <DialogHeader>
             <DialogTitle className="text-3xl font-bold text-white flex items-center justify-center gap-3">
               <UserCog className="w-10 h-10 text-white" />
@@ -187,8 +187,9 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
             </Button>
             <Button
               type="submit"
-              className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md"
+              className="bg-green-600 hover:bg-green-500 text-white w-full sm:w-auto flex items-center gap-2"
             >
+              <Save size={18} />
               Guardar
             </Button>
           </DialogFooter>

@@ -135,7 +135,7 @@ const sortedCategories = existingCategories
 
   return (
     <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl p-6 md:p-8 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-xl w-  max-w-[90%] max-w-4xl p-6 md:p-8 max-h-[90vh] overflow-y-auto">
         {/* Header con gradiente y botón de cierre */}
         <div className="relative bg-gradient-to-r from-red-600 to-red-800 rounded-t-xl -m-6 mb-6 p-6">
           <div className="flex justify-between items-center">
@@ -425,7 +425,7 @@ const sortedCategories = existingCategories
         {/* Modal de Confirmación para Eliminar */}
         {showDeleteModal && categoryToDelete && (
           <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md transform transition-all duration-300">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-[95%] sm:max-w-lg md:max-w-2xl lg:max-w-4xl p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
               <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-t-xl p-6">
                 <div className="flex justify-between items-center">
                   <h2 className="text-2xl font-bold text-white">Confirmar Eliminación</h2>

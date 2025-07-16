@@ -1,28 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
-import { FiShoppingCart } from 'react-icons/fi';
+import { FiPackage } from 'react-icons/fi';
 
-interface ModalCreateStoreProps {
+interface ModalEditProductProps {
   isOpen: boolean;
   onClose: () => void;
+  currentProduct: any;
+  onSave: (updatedProduct: any) => void;
 }
 
-const ModalCreateStore: React.FC<ModalCreateStoreProps> = ({ isOpen, onClose }) => {
-  const [tienda, setTienda] = useState('');
-  const [costoTotal, setCostoTotal] = useState('');
+const ModalEditProduct: React.FC<ModalEditProductProps> = ({
+  isOpen,
+  onClose,
+  currentProduct,
+  onSave,
+}) => {
+  const [producto, setProducto] = useState('');
+  const [cantidad, setCantidad] = useState('');
   const [fecha, setFecha] = useState('');
-  const [observacion, setObservacion] = useState('');
   const [localError, setLocalError] = useState('');
+
+  useEffect(() => {
+    if (currentProduct) {
+      setProducto(currentProduct.producto || '');
+      setCantidad(currentProduct.cantidad || '');
+      setFecha(currentProduct.fecha || '');
+    }
+  }, [currentProduct]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!tienda || !costoTotal || !fecha || !observacion) {
+    if (!producto || !cantidad || !fecha) {
       setLocalError('Por favor, completa todos los campos.');
       return;
     }
 
-    console.log('Venta creada:', { tienda, costoTotal, fecha, observacion });
+    onSave({ producto, cantidad, fecha });
     onClose();
   };
 
@@ -30,10 +44,10 @@ const ModalCreateStore: React.FC<ModalCreateStoreProps> = ({ isOpen, onClose }) 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl relative">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl relative mx-2">
         <div className="bg-gradient-to-r from-red-700 to-red-900 text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
-          <FiShoppingCart size={24} />
-          <h2 className="text-xl font-semibold text-center">Crear Venta</h2>
+          <FiPackage size={24} />
+          <h2 className="text-xl font-semibold text-center">Editar Producto</h2>
           <button
             onClick={onClose}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
@@ -47,45 +61,40 @@ const ModalCreateStore: React.FC<ModalCreateStoreProps> = ({ isOpen, onClose }) 
 
           <div className="space-y-4">
             <div>
-              <label className="block text-gray-700 mb-1 font-medium">Tienda*</label>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Producto <span className="text-red-600">*</span>
+              </label>
               <input
                 type="text"
-                value={tienda}
-                onChange={(e) => setTienda(e.target.value)}
+                value={producto}
+                onChange={(e) => setProducto(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="Nombre de la tienda"
+                placeholder="Nombre del producto"
               />
             </div>
 
             <div>
-              <label className="block text-gray-700 mb-1 font-medium">Costo Total*</label>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Cantidad <span className="text-red-600">*</span>
+              </label>
               <input
                 type="number"
-                value={costoTotal}
-                onChange={(e) => setCostoTotal(e.target.value)}
+                value={cantidad}
+                onChange={(e) => setCantidad(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="S/ 0.00"
+                placeholder="Cantidad en stock"
               />
             </div>
 
             <div>
-              <label className="block text-gray-700 mb-1 font-medium">Fecha*</label>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Fecha <span className="text-red-600">*</span>
+              </label>
               <input
                 type="date"
                 value={fecha}
                 onChange={(e) => setFecha(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-700 mb-1 font-medium">Observación*</label>
-              <textarea
-                value={observacion}
-                onChange={(e) => setObservacion(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="Detalle u observaciones de la venta"
-                rows={3}
               />
             </div>
           </div>
@@ -102,7 +111,7 @@ const ModalCreateStore: React.FC<ModalCreateStoreProps> = ({ isOpen, onClose }) 
               type="submit"
               className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-600 transition flex items-center gap-2"
             >
-              <Save size={18} /> Guardar
+              <Save size={18} /> Guardar Cambios
             </button>
           </div>
         </form>
@@ -111,4 +120,4 @@ const ModalCreateStore: React.FC<ModalCreateStoreProps> = ({ isOpen, onClose }) 
   );
 };
 
-export default ModalCreateStore;
+export default ModalEditProduct;

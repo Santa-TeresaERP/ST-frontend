@@ -80,7 +80,7 @@ const MovementComponentView: React.FC = () => {
   return (
     <div className="p-6 space-y-4 bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h2 className="text-3xl font-semibold text-red-700">
           Movimientos de {selectedType === 'producto' ? 'Productos' : 'Recursos'}
         </h2>
@@ -218,8 +218,8 @@ const MovementComponentView: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredMovements.map((mov) => (
-                    <tr key={mov.movement_id} className="hover:bg-gray-50 border-t">
+                  {filteredMovements.map((mov, index) => (
+                    <tr key={mov.movement_id || `movement-${index}`} className="hover:bg-gray-50 border-t">
                       <td className="px-4 py-2 text-center">{mov.movement_id}</td>
                       <td className="px-4 py-2 text-center">{getWarehouseName(mov.warehouse_id)}</td>
                       <td className="px-4 py-2 text-center">{mov.store_id}</td>
@@ -268,8 +268,8 @@ const MovementComponentView: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredResourceMovements.map((mov) => (
-                    <tr key={mov.id} className="hover:bg-orange-50 border-t">
+                  {filteredResourceMovements.map((mov, index) => (
+                    <tr key={mov.id || `resource-movement-${index}`} className="hover:bg-orange-50 border-t">
                       <td className="px-4 py-2 text-center">{getResourceName(mov.resource_id)}</td>
                       <td className="px-4 py-2 text-center">{getWarehouseName(mov.warehouse_id)}</td>
                       <td className="px-4 py-2 text-center capitalize">{mov.movement_type}</td>

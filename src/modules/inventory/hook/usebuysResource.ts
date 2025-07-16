@@ -6,11 +6,10 @@ import {
   UpdateResourcePayload,
 } from '../types/resource';
 import { 
-  BuysResourceWithResource, 
-  BuysResourceAttributes, 
+  BuysResourceWithResource,  
   CreateBuysResourcePayload, 
   UpdateBuysResourcePayload 
-} from '../types/buysResource';
+} from '../types/buysResource.d';
 import {
   fetchResources,
   getResource,

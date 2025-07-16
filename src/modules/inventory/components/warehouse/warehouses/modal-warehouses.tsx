@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
-import { X, Plus, Edit3, Trash2 } from "lucide-react";
+import { X, Plus, Edit3 } from "lucide-react";
 import ModalCreateWarehousesView from "./modal-create-warehouses";
 import ModalEditWarehousesView from "./modal-edit-warehouses";
 import ModalDeleteWarehouse from "./modal-delete-warehouses";
+import ToggleWarehouseStatus from "./toggle-warehouse-status";
 import { 
   useFetchWarehouses, 
 } from "@/modules/inventory/hook/useWarehouses";
@@ -37,10 +38,10 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
 
 
   return (
-    <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl p-6 md:p-8 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 sm:px-6 md:px-8 bg-black bg-opacity-50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto px-0 pb-6 pt-0">
         {/* Encabezado */}
-        <div className="relative bg-gradient-to-r from-red-600 to-red-800 rounded-t-xl -m-6 mb-6 p-6">
+        <div className="sticky top-0 z-10 bg-gradient-to-r from-red-600 to-red-800 rounded-t-xl p-6">
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-2xl md:text-3xl font-bold text-white">Gestión de Almacenes</h2>
@@ -56,7 +57,7 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
         </div>
 
         {/* Botón agregar */}
-        <div className="flex justify-end mb-8">
+        <div className="flex justify-end mb-2 p-6 ">
           <button
             className="flex items-center gap-2 bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white px-5 py-3 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
             onClick={() => setShowCreateWarehouse(true)}
@@ -88,7 +89,7 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
 
       {/* Lista de almacenes */}
       {!isLoading && !error && (
-        <div className="space-y-8">
+        <div className="space-y-8 p-6">
         {/* Almacenes activos */}
         <div>
           <div className="flex items-center mb-4">
@@ -138,16 +139,7 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
                     >
                       <Edit3 size={20} />
                     </button>
-                    <button
-                      onClick={() => {
-                        console.log('Warehouse seleccionado (activo):', warehouse); // ✅ Debug
-                        setSelectedWarehouse(warehouse); // ✅ Cambiar: guardar el warehouse completo, no solo el nombre
-                        setShowDeleteWarehouse(true);
-                      }}
-                      className="p-2 text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 rounded-lg transition-colors duration-200"
-                    >
-                      <Trash2 size={20} />
-                    </button>
+                    <ToggleWarehouseStatus warehouse={warehouse} />
                   </div>
                 </div>
               ))}
@@ -203,16 +195,7 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
                     >
                       <Edit3 size={20} />
                     </button>
-                    <button
-                      onClick={() => {
-                        console.log('Warehouse seleccionado:', warehouse); // ✅ Debug
-                        setSelectedWarehouse(warehouse); // Guardar el warehouse completo
-                        setShowDeleteWarehouse(true);
-                      }}
-                      className="p-2 text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 rounded-lg transition-colors duration-200"
-                    >
-                      <Trash2 size={20} />
-                    </button>
+                    <ToggleWarehouseStatus warehouse={warehouse} />
                   </div>
                 </div>
               ))}
@@ -226,9 +209,6 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
         <ModalCreateWarehousesView
           showModal={showCreateWarehouse}
           onClose={() => setShowCreateWarehouse(false)}
-          onAddNew={(newWarehouse) => {
-            setShowCreateWarehouse(false);
-          }}
         />
 
         {/* Modal editar almacén */}

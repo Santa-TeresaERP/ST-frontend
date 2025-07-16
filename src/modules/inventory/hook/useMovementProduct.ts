@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { WarehouseMovementProductAttributes } from '../types/movementProduct';
-import { getMovements, createMovement, updateMovement, deleteMovement } from '../action/movementProduct';
+import { getMovements, createMovement, updateMovement, deleteMovement, CreateMovementProductPayload } from '../action/movementProduct';
 
 // Obtener movimientos
 export const useFetchMovements = (filters: Record<string, unknown> = {}) => {
@@ -13,7 +13,7 @@ export const useFetchMovements = (filters: Record<string, unknown> = {}) => {
 // Crear movimiento
 export const useCreateMovement = () => {
   const queryClient = useQueryClient();
-  return useMutation<WarehouseMovementProductAttributes, Error, Omit<WarehouseMovementProductAttributes, 'id' | 'createdAt' | 'updatedAt'>>({
+  return useMutation<WarehouseMovementProductAttributes, Error, CreateMovementProductPayload>({
     mutationFn: createMovement,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['movements'] }),
   });

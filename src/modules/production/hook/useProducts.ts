@@ -11,7 +11,7 @@ export const useFetchProducts = () => {
 
 export const useCreateProduct = () => {
   const queryClient = useQueryClient();
-  return useMutation<Product, Error, CreateProductPayload>({
+  return useMutation<Product, Error, CreateProductPayload | FormData>({
     mutationFn: createProduct,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['products'] }),
   });

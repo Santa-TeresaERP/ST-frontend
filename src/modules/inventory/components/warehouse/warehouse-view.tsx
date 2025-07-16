@@ -64,16 +64,16 @@ const WarehouseView: React.FC = () => {
 
   return (
     <div className="p-6 space-y-4 bg-gray-50 min-h-screen">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h2 className="text-3xl font-semibold text-blue-700">Gestión de Almacén</h2>
       </div>
 
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
         <div className="flex items-center space-x-2 text-gray-600">
           <Home size={24} className="text-blue-700" />
           <span className="text-lg font-medium">Lista de productos</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto">
           <button
             className="flex items-center gap-2 px-4 py-2 rounded-full font-semibold bg-blue-700 text-white hover:bg-blue-800 transition-colors"
             onClick={() => setShowWarehouses(true)}
@@ -84,7 +84,7 @@ const WarehouseView: React.FC = () => {
             <Filter className="absolute left-4 text-blue-700 pointer-events-none" size={20} />
             <input
               type="text"
-              className="pl-11 pr-6 py-3 rounded-xl border border-blue-700 text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-transparent hover:bg-gray-200 transition duration-300 min-w-[200px]"
+              className="w-full md:w-auto pl-11 pr-6 py-3 rounded-xl border border-blue-700 text-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-blue-700 focus:border-transparent hover:bg-gray-200 transition duration-300 min-w-[200px]"
               placeholder="Buscar por producto, almacén, cantidad o fecha..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
