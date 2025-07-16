@@ -1,5 +1,5 @@
 import api from '@/core/config/client';
-import type { BuysResourceAttributes, BuysResourceWithResource, CreateBuysResourcePayload, UpdateBuysResourcePayload } from '../types/buysResource';
+import type { BuysResourceAttributes, BuysResourceWithResource, CreateBuysResourcePayload, UpdateBuysResourcePayload } from '../types/buysResource.d';
 
 export const fetchBuysResourceAttributes = async (): Promise<BuysResourceWithResource[]> =>{
     const res = await api.get('/buysResource');

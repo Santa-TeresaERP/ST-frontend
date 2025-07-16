@@ -19,8 +19,19 @@ export const getMovements = async (filters: MovementFilters): Promise<WarehouseM
   return response.data;
 };
 
+// Tipo específico para crear movimientos (exactamente como lo espera el backend)
+export type CreateMovementProductPayload = {
+  warehouse_id: string;           // UUID válido, obligatorio
+  store_id?: string | null;       // String simple, opcional (ej: "Tienda Centro", "Sucursal Norte")
+  product_id: string;             // UUID válido, obligatorio
+  movement_type: "entrada" | "salida";  // Solo estas dos opciones exactas
+  quantity: number;               // Número no negativo (>= 0)
+  movement_date: string | Date;   // Fecha válida
+  observations?: string;          // String opcional, máximo 150 caracteres
+};
+
 export const createMovement = async (
-  data: Omit<WarehouseMovementProductAttributes, 'id' | 'createdAt' | 'updatedAt'>
+  data: CreateMovementProductPayload
 ): Promise<WarehouseMovementProductAttributes> => {
   const response = await api.post<WarehouseMovementProductAttributes>('/warehouseMovementProduct', data);
   return response.data;

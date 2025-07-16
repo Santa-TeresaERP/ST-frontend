@@ -64,11 +64,11 @@ const DeleteMovementProduct: React.FC<Props> = ({ id, onDeleted }) => {
 
   return (
     <button
-      className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition flex items-center gap-1"
+      className="text-red-600 hover:text-red-800"
       onClick={() => setConfirm(true)}
       title="Eliminar"
     >
-      <Trash2 size={16} /> Eliminar
+      <Trash2 size={18} />
     </button>
   );
 };

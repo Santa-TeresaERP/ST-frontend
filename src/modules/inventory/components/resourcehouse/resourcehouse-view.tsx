@@ -5,7 +5,7 @@ import { Edit2, Trash2, FileText, Search, Plus, AlertCircle, Filter, X, Calendar
 import { useFetchResourcesWithBuys, useCreateBuysResource, useUpdateResource, useDeleteBuysResource } from '../../hook/usebuysResource';
 // Verified Types/Actions import paths (assuming they are correct relative to this file)
 import { UpdateResourcePayload } from '../../types/resource';
-import { BuysResourceWithResource, CreateBuysResourcePayload } from '../../types/buysResource';
+import { BuysResourceWithResource, CreateBuysResourcePayload } from '../../types/buysResource.d';
 // Verified Modal import paths (assuming they are correct relative to this file)
 import ModalNuevoRecurso from './resource/modal-create-resource-resourcehouse';
 import ModalEditResource from './resource/modal-edit-resource-resourcehouse';

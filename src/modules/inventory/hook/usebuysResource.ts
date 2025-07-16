@@ -7,10 +7,9 @@ import {
 } from '../types/resource';
 import { 
   BuysResourceWithResource, 
-  BuysResourceAttributes, 
   CreateBuysResourcePayload, 
   UpdateBuysResourcePayload 
-} from '../types/buysResource';
+} from '../types/buysResource.d';
 import {
   fetchResources,
   getResource,
