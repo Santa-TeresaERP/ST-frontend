@@ -1,6 +1,7 @@
 import { CreateRolePayload, UpdateRolePayload, Role } from "../types/roles";
+import { UpdatePermissionPayload } from "../types/permission";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { deleteRole, getRole, createRole, updateRole, fetchRoles } from "../action/role";
+import { deleteRole, getRole, createRole, updateRole, fetchRoles, updateRolePermissions } from "../action/role";
 
 export const useFetchRoles = () => {
   return useQuery<Role[], Error>({
@@ -49,6 +50,27 @@ export const useDeleteRole = () => {
     onSuccess: () => queryClient.invalidateQueries({
       queryKey: ["roles"]
     })
+  });
+};
+
+export const useUpdateRolePermissions = () => {
+  const queryClient = useQueryClient();
+  return useMutation<Role, Error, {
+    roleId: string;
+    payload: UpdatePermissionPayload;
+  }>({
+    mutationFn: ({
+      roleId,
+      payload
+    }) => updateRolePermissions(roleId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["roles"]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["permissions"]
+      });
+    }
   });
 };
 
