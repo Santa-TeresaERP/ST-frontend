@@ -1,10 +1,31 @@
-import React from 'react';
-import { FiInfo, FiMapPin, FiHome, FiClipboard, FiDollarSign } from 'react-icons/fi';
+import React, { useState } from 'react';
+import { FiInfo, FiMapPin, FiHome, FiClipboard, FiDollarSign, FiPlus } from 'react-icons/fi';
+import ModalCreateCashRegister from './modal-create-cashregister';
+
+interface CashRegisterData {
+  usuario: string;
+  tienda: string;
+  dineroInicial: number;
+  dineroFinal: number;
+  totalPerdidas: number;
+  fechaTermino: string;
+  observaciones: string;
+}
 
 const InformationComponentView: React.FC = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleCreateCashRegister = (data: CashRegisterData) => {
+    console.log('Registro de caja completado:', {
+      ...data,
+      fechaRegistro: new Date().toISOString()
+    });
+    // Aquí iría la llamada a la API para guardar el registro
+    alert(`Cierre de caja registrado exitosamente!\nUsuario: ${data.usuario}\nTotal Final: S/${data.dineroFinal.toFixed(2)}`);
+  };
+
   return (
     <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 space-y-6">
-      
       {/* Información de la Tienda */}
       <h2 className="text-2xl font-bold text-red-700 flex items-center space-x-2">
         <FiInfo className="text-red-600" size={24} />
@@ -38,21 +59,30 @@ const InformationComponentView: React.FC = () => {
       </div>
 
       {/* Información de la Caja */}
-      <h2 className="text-2xl font-bold text-red-700 flex items-center space-x-2 pt-6">
-        <FiDollarSign className="text-red-600" size={24} />
-        <span>Información de Caja</span>
-      </h2>
+      <div className="flex justify-between items-center pt-6">
+        <h2 className="text-2xl font-bold text-red-700 flex items-center space-x-2">
+          <FiDollarSign className="text-red-600" size={24} />
+          <span>Información de Caja</span>
+        </h2>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center space-x-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+        >
+          <FiPlus size={18} />
+          <span>Registrar Cierre</span>
+        </button>
+      </div>
 
       <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm bg-white">
         <table className="min-w-full bg-white text-left text-gray-700">
           <thead className="bg-gray-800 text-white">
             <tr>
-              <th className="px-4 py-2 text-center align-middle">Usuario</th>
-              <th className="px-4 py-2 text-center align-middle">Tienda</th>
-              <th className="px-4 py-2 text-center align-middle">Dinero Inicial</th>
-              <th className="px-4 py-2 text-center align-middle">Dinero Final</th>
-              <th className="px-4 py-2 text-center align-middle">Total Pérdidas</th>
-              <th className="px-4 py-2 text-center align-middle">Fecha de Término</th>
+              <th className="px-4 py-2 text-center">Usuario</th>
+              <th className="px-4 py-2 text-center">Tienda</th>
+              <th className="px-4 py-2 text-center">Dinero Inicial</th>
+              <th className="px-4 py-2 text-center">Dinero Final</th>
+              <th className="px-4 py-2 text-center">Total Pérdidas</th>
+              <th className="px-4 py-2 text-center">Fecha de Término</th>
             </tr>
           </thead>
           <tbody>
@@ -75,6 +105,13 @@ const InformationComponentView: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Modal de registro de cierre de caja */}
+      <ModalCreateCashRegister
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCreateCashRegister}
+      />
     </div>
   );
 };
