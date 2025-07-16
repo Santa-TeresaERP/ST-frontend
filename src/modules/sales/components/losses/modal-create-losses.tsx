@@ -1,31 +1,47 @@
 import React, { useState } from 'react';
 import { X, Save } from 'lucide-react';
 import { FiAlertOctagon } from 'react-icons/fi';
+import { useCreateReturn } from '@/modules/sales/hooks/useReturns'; // ajusta el path según tu proyecto
 
 interface ModalCreateLossProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (newLoss: any) => void;
 }
 
-const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({ isOpen, onClose, onSave }) => {
-  const [producto, setProducto] = useState('');
-  const [tienda, setTienda] = useState('');
-  const [razon, setRazon] = useState('');
-  const [observacion, setObservacion] = useState('');
-  const [fecha, setFecha] = useState('');
+const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({ isOpen, onClose }) => {
+  const [productId, setProductId] = useState('');
+  const [salesId, setSalesId] = useState('');
+  const [reason, setReason] = useState('');
+  const [observations, setObservations] = useState('');
   const [localError, setLocalError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const createReturnMutation = useCreateReturn();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!producto || !tienda || !razon || !observacion || !fecha) {
+    if (!productId || !salesId || !reason || !observations) {
       setLocalError('Por favor, completa todos los campos.');
       return;
     }
 
-    onSave({ producto, tienda, razon, observacion, fecha });
-    onClose();
+    try {
+      await createReturnMutation.mutateAsync({
+        productId,
+        salesId,
+        reason,
+        observations,
+      });
+      onClose();
+      // Limpia campos después de guardar
+      setProductId('');
+      setSalesId('');
+      setReason('');
+      setObservations('');
+      setLocalError('');
+    } catch (error) {
+      setLocalError('Hubo un error al guardar la pérdida.');
+    }
   };
 
   if (!isOpen) return null;
@@ -50,27 +66,27 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({ isOpen, onClose, onSa
           <div className="space-y-4">
             <div>
               <label className="block text-gray-700 mb-1 font-medium">
-                Producto <span className="text-red-600">*</span>
+                ID del Producto <span className="text-red-600">*</span>
               </label>
               <input
                 type="text"
-                value={producto}
-                onChange={(e) => setProducto(e.target.value)}
+                value={productId}
+                onChange={(e) => setProductId(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="Nombre del producto"
+                placeholder="UUID del producto"
               />
             </div>
 
             <div>
               <label className="block text-gray-700 mb-1 font-medium">
-                Tienda <span className="text-red-600">*</span>
+                ID de la Venta <span className="text-red-600">*</span>
               </label>
               <input
                 type="text"
-                value={tienda}
-                onChange={(e) => setTienda(e.target.value)}
+                value={salesId}
+                onChange={(e) => setSalesId(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="Nombre de la tienda"
+                placeholder="UUID de la venta"
               />
             </div>
 
@@ -80,8 +96,8 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({ isOpen, onClose, onSa
               </label>
               <input
                 type="text"
-                value={razon}
-                onChange={(e) => setRazon(e.target.value)}
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
                 placeholder="Razón de la pérdida"
               />
@@ -92,23 +108,11 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({ isOpen, onClose, onSa
                 Observación <span className="text-red-600">*</span>
               </label>
               <textarea
-                value={observacion}
-                onChange={(e) => setObservacion(e.target.value)}
+                value={observations}
+                onChange={(e) => setObservations(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
                 placeholder="Detalle u observaciones"
                 rows={3}
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-700 mb-1 font-medium">
-                Fecha <span className="text-red-600">*</span>
-              </label>
-              <input
-                type="date"
-                value={fecha}
-                onChange={(e) => setFecha(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
               />
             </div>
           </div>
