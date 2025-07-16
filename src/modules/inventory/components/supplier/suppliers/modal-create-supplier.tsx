@@ -89,7 +89,7 @@ const ModalCreateSupplier: React.FC<ModalCreateSupplierProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl relative">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh]">
         <div className="bg-[#8B0000] text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
           <UserPlus size={26} />
           <h2 className="text-2xl font-semibold text-center">Nuevo Proveedor</h2>
@@ -106,7 +106,7 @@ const ModalCreateSupplier: React.FC<ModalCreateSupplierProps> = ({
             <p className="text-sm text-red-600 font-medium">{localError || error}</p>
           )}
 
-          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
             <div>
               <label className="block text-gray-700 mb-1 font-medium">
                 Nombre*

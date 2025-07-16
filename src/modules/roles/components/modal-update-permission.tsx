@@ -85,17 +85,17 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[600px] rounded-lg">
-          <DialogHeader className="border-b pb-4">
-            <div className="flex items-center space-x-3">
-              <ShieldCheck className="h-6 w-6 text-green-600" />
-              <DialogTitle className="text-2xl font-semibold text-black">
-                {role ? `Editar Permisos - ${role.name}` : "Asignar Nuevos Permisos"}
-              </DialogTitle>
-            </div>
-          </DialogHeader>
+        <DialogContent className="w-full max-w-[90%] sm:max-w-[600px] rounded-xl shadow-lg px-0 pb-6 pt-0">
+
+          {/* Header con degradado */}
+          <div className="w-full bg-gradient-to-r from-green-600 to-green-500 rounded-t-xl px-6 py-4 flex items-center space-x-3">
+            <ShieldCheck className="h-6 w-6 text-white" />
+            <DialogTitle className="text-xl font-semibold text-white">
+              {role ? `Editar Permisos - ${role.name}` : "Asignar Nuevos Permisos"}
+            </DialogTitle>
+          </div>
           
-          <form onSubmit={handleSubmit} className="space-y-6 py-4">
+          <form onSubmit={handleSubmit} className="space-y-6 py-4 px-4 sm:px-6">
             <Card className="p-4 border border-gray-400 shadow-sm">
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -158,21 +158,21 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role
               </div>
             </Card>
 
-            <DialogFooter className="border-t pt-4">
+            <DialogFooter className="border-t flex flex-row  gap-4 pt-4">
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={onClose}
-                className="border-gray-400 text-gray-700 hover:bg-gray-200"
+                className="w-full border-gray-400 text-gray-700 hover:bg-gray-200"
               >
                 Cancelar
               </Button>
               <Button 
                 type="submit" 
-                className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-lg"
+                className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-lg"
               >
                 <Check className="h-4 w-4 mr-2" />
-                Guardar Permisos
+                Guardar
               </Button>
             </DialogFooter>
           </form>
@@ -182,16 +182,18 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role
       {/* Modal de Confirmación */}
       {showConfirmation && (
         <Dialog open={showConfirmation} onOpenChange={() => setShowConfirmation(false)}>
-          <DialogContent className="sm:max-w-[425px] rounded-lg">
+          <DialogContent className="w-full max-w-[90%] sm:max-w-[425px] rounded-xl shadow-lg px-0 pb-6 pt-0">
+
             <DialogHeader className="border-b pb-4">
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3 px-4 py-4 justify-center">
                 <ShieldCheck className="h-6 w-6 text-green-600" />
                 <DialogTitle className="text-xl font-semibold text-black">
                   Confirmar Cambios
                 </DialogTitle>
               </div>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+
+            <div className="space-y-4  px-4 sm:px-6">
               <p className="text-gray-600">
                 ¿Estás seguro de que deseas {role ? "actualizar" : "asignar"} estos permisos?
               </p>
@@ -210,22 +212,22 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role
                 </div>
               </div>
             </div>
-            <DialogFooter className="border-t pt-4">
+            <DialogFooter className="flex flex-row gap-4 pt-4 px-4">
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={() => setShowConfirmation(false)}
-                className="border-gray-400 text-gray-700 hover:bg-gray-200"
+                className="w-full border-gray-400 text-gray-700 hover:bg-gray-200"
               >
                 Revisar de nuevo
               </Button>
               <Button 
                 type="button" 
                 onClick={handleConfirmSubmit}
-                className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-lg"
+                className=" w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-lg"
               >
                 <Check className="h-4 w-4 mr-2" />
-                Confirmar Cambios
+                Confirmar
               </Button>
             </DialogFooter>
           </DialogContent>

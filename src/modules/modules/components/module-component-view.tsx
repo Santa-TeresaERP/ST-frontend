@@ -67,7 +67,7 @@ const ModuleList: React.FC = () => {
 
               <div className="flex justify-end mt-4">
                 <button
-                  className="bg-red-700 hover:bg-red-600 text-white text-sm px-4 py-2 rounded-lg transition-colors"
+                  className="bg-red-700 hover:bg-red-600 text-white text-sm px-4 py-2 rounded-3xl transition-colors"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleEditClick(module);

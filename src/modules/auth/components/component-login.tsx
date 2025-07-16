@@ -40,7 +40,7 @@ export default function Component() {
   return (
     <div className="min-h-screen bg-[url('/fondo-login.png')] bg-cover bg-center flex items-center justify-center p-4">
       <div className="container mx-auto max-w-4xl flex justify-center">
-        <Card className="flex w-full overflow-hidden">
+        <Card className="flex flex-col md:flex-row w-full overflow-hidden">
           <CardContent className="flex-1 p-6 bg-white/95">
             <div className="mb-6 flex flex-col items-center">
               <div className="mb-4 h-24 w-24 relative">
