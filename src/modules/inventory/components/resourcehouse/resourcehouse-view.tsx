@@ -177,7 +177,7 @@ const ResourcesView: React.FC = () => {
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Fecha desde */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
@@ -205,10 +205,30 @@ const ResourcesView: React.FC = () => {
                 className="h-10 bg-white text-gray-900 border-gray-300 w-full item-end"
               />
             </div>
+
+            {/* Proveedor Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+                <FileText className="inline mr-1 h-4 w-4 text-gray-500" />
+                Proveedor
+              </label>
+              <select
+                value={supplierFilter}
+                onChange={(e) => setSupplierFilter(e.target.value)}
+                className="h-10 bg-white text-gray-900 border border-gray-300 rounded-md w-full px-3"
+              >
+                <option value="">Todos los proveedores</option>
+                {suppliersList.map((supplierName, index) => (
+                  <option key={index} value={supplierName}>
+                    {supplierName}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Filtros activos */}
-          {(startDate || endDate) && (
+          {(startDate || endDate || supplierFilter) && (
             <div className="mt-4 pt-3 border-t border-gray-200">
               <div className="flex flex-wrap gap-2">
                 <span className="text-sm text-gray-600">Filtros activos:</span>
@@ -220,6 +240,11 @@ const ResourcesView: React.FC = () => {
                 {endDate && (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                     Hasta: {new Date(endDate).toLocaleDateString()}
+                  </span>
+                )}
+                {supplierFilter && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Proveedor: {supplierFilter}
                   </span>
                 )}
               </div>
