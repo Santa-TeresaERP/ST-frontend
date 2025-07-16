@@ -1,49 +1,53 @@
-import React, { useState } from 'react';
-import { FiAlertOctagon, FiPlus, FiEdit, FiTrash2 } from 'react-icons/fi';
-import ModalCreateLoss from './modal-create-losses';
-import ModalEditLoss from './modal-edit-losses';
-import ModalDeleteLoss from './modal-delete-losses';
+import React, { useState } from "react";
+import { FiAlertOctagon, FiPlus, FiEdit, FiTrash2 } from "react-icons/fi";
+import ModalCreateLoss from "./modal-create-losses";
+import ModalEditLoss from "./modal-edit-losses";
+import ModalDeleteLoss from "./modal-delete-losses";
+import {
+  useFetchReturns,
+  useCreateReturn,
+  useUpdateReturn,
+  useDeleteReturn
+} from '@/modules/sales/hooks/useReturns'
+
+import { useFetchProducts } from '@/modules/inventory/hook/useProducts'
+
 
 const LossesComponentView: React.FC = () => {
-  const [losses, setLosses] = useState([
-    {
-      id: 1,
-      producto: 'Pan Integral',
-      tienda: 'Tienda Central',
-      razon: 'Vencimiento',
-      observacion: 'Producto caducado',
-      fecha: '2025-07-15',
-    },
-    {
-      id: 2,
-      producto: 'Leche',
-      tienda: 'Sucursal Norte',
-      razon: 'Dañado',
-      observacion: 'Envase roto',
-      fecha: '2025-07-14',
-    },
-  ]);
+  const { data: losses = [], isLoading } = useFetchReturns();
+  const { data: products = [] } = useFetchProducts();
+
+  const createReturnMutation = useCreateReturn();
+  const updateReturnMutation = useUpdateReturn();
+  const deleteReturnMutation = useDeleteReturn();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentLoss, setCurrentLoss] = useState<any>(null);
 
-  const handleCreateLoss = (newLoss: any) => {
-    setLosses((prev) => [...prev, { ...newLoss, id: Date.now() }]);
+  const handleCreateLoss = async (newLoss: any) => {
+    await createReturnMutation.mutateAsync(newLoss);
     setIsCreateModalOpen(false);
   };
 
-  const handleEditLoss = (updatedLoss: any) => {
-    setLosses((prev) =>
-      prev.map((item) => (item.id === currentLoss.id ? { ...item, ...updatedLoss } : item))
-    );
+  const handleEditLoss = async (updatedLoss: any) => {
+    await updateReturnMutation.mutateAsync({
+      id: currentLoss.id,
+      payload: updatedLoss,
+    });
     setIsEditModalOpen(false);
   };
 
-  const handleDeleteLoss = () => {
-    setLosses((prev) => prev.filter((item) => item.id !== currentLoss.id));
+  const handleDeleteLoss = async () => {
+    await deleteReturnMutation.mutateAsync(currentLoss.id);
     setIsDeleteModalOpen(false);
+  };
+
+  // Obtener nombre del producto desde el ID
+  const getProductName = (productId: string) => {
+    const product = products.find((p) => p.id === productId);
+    return product ? product.name : productId; // fallback al ID si no está cargado
   };
 
   return (
@@ -76,35 +80,40 @@ const LossesComponentView: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {losses.map((item) => (
-              <tr key={item.id} className="border-t hover:bg-gray-50">
-                <td className="px-4 py-2 text-center">{item.producto}</td>
-                <td className="px-4 py-2 text-center">{item.tienda}</td>
-                <td className="px-4 py-2 text-center">{item.razon}</td>
-                <td className="px-4 py-2 text-center">{item.observacion}</td>
-                <td className="px-4 py-2 text-center">{item.fecha}</td>
-                <td className="px-4 py-2 text-center flex justify-center space-x-3">
-                  <button
-                    className="text-blue-500 hover:text-yellow-600"
-                    onClick={() => {
-                      setCurrentLoss(item);
-                      setIsEditModalOpen(true);
-                    }}
-                  >
-                    <FiEdit size={18} />
-                  </button>
-                  <button
-                    className="text-red-500 hover:text-red-600"
-                    onClick={() => {
-                      setCurrentLoss(item);
-                      setIsDeleteModalOpen(true);
-                    }}
-                  >
-                    <FiTrash2 size={18} />
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {!isLoading &&
+              losses.map((item) => (
+                <tr key={item.id} className="border-t hover:bg-gray-50">
+                  <td className="px-4 py-2 text-center">
+                    {getProductName(item.productId)}
+                  </td>
+                  <td className="px-4 py-2 text-center">{item.salesId}</td>
+                  <td className="px-4 py-2 text-center">{item.reason}</td>
+                  <td className="px-4 py-2 text-center">{item.observations}</td>
+                  <td className="px-4 py-2 text-center">
+                    {new Date(item.createdAt!).toLocaleDateString()}
+                  </td>
+                  <td className="px-4 py-2 text-center flex justify-center space-x-3">
+                    <button
+                      className="text-blue-500 hover:text-yellow-600"
+                      onClick={() => {
+                        setCurrentLoss(item);
+                        setIsEditModalOpen(true);
+                      }}
+                    >
+                      <FiEdit size={18} />
+                    </button>
+                    <button
+                      className="text-red-500 hover:text-red-600"
+                      onClick={() => {
+                        setCurrentLoss(item);
+                        setIsDeleteModalOpen(true);
+                      }}
+                    >
+                      <FiTrash2 size={18} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
       </div>
@@ -132,4 +141,3 @@ const LossesComponentView: React.FC = () => {
 };
 
 export default LossesComponentView;
-
