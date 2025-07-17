@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { Plus } from "lucide-react";
-import { useFetchStores } from "../hook/useStores";
-import { StoreAttributes } from "../types/store";
-import ModalCreateStore from "./store/modal-create-store";
-import ModalEditStore from "./store/modal-edit-store";
-import ModalDeleteStore from "./store/modal-delete-store";
+import { useFetchStores } from "../../hooks/useStores";
+import { StoreAttributes } from "../../types/store";
+import ModalCreateStore from "./modal-create-store";
+import ModalEditStore from "./modal-edit-store";
+import ModalDeleteStore from "./modal-delete-store";
 
 interface StoreListViewProps {
   onStoreSelect?: (store: StoreAttributes | null) => void;

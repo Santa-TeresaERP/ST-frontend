@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { X } from "lucide-react";
 import { toast } from "react-toastify";
 import { createStoreSchema, CreateStoreFormData } from "../../schemas/store-schema";
-import { useCreateStore } from "../../hook/useStores";
+import { useCreateStore } from "../../hooks/useStores";
 
 interface ModalCreateStoreProps {
   isOpen: boolean;

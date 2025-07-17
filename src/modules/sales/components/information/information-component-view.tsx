@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FiInfo, FiMapPin, FiHome, FiClipboard, FiDollarSign, FiPlus } from 'react-icons/fi';
-import { StoreAttributes } from '@/modules/stores/types/store';
+import { StoreAttributes } from '@/modules/sales/types/store';
 import ModalCreateCashRegister from './modal-create-cashregister';
 
 interface CashRegisterData {

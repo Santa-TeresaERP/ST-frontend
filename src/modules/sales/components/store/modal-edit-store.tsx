@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { X } from "lucide-react";
 import { toast } from "react-toastify";
 import { updateStoreSchema, UpdateStoreFormData } from "../../schemas/store-schema";
-import { useUpdateStore } from "../../hook/useStores";
+import { useUpdateStore } from "../../hooks/useStores";
 import { StoreAttributes } from "../../types/store";
 
 interface ModalEditStoreProps {

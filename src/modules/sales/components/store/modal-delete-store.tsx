@@ -1,7 +1,7 @@
 import React from "react";
 import { AlertTriangle, X } from "lucide-react";
 import { toast } from "react-toastify";
-import { useDeleteStore } from "../../hook/useStores";
+import { useDeleteStore } from "../../hooks/useStores";
 
 interface ModalDeleteStoreProps {
   isOpen: boolean;

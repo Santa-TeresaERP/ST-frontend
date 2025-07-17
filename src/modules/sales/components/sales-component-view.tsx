@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { FiUsers, FiShoppingCart, FiPackage, FiAlertOctagon } from 'react-icons/fi';
 
 import InformationComponentView from '@/modules/sales/components/information/information-component-view';
-import StoreListView from '@/modules/stores/components/store-list-view';
+import StoreListView from './store/store-list-view';
 import SalesComponentsView from './ sales/sale-view';
 import InventoryComponentsView from './ inventory/inventory-view';
 import LossesComponentView from './losses/losses-view';
-import { StoreAttributes } from '@/modules/stores/types/store';
+import { StoreAttributes } from '../types/store';
 
 const SalesView: React.FC = () => {
   const [activeTab, setActiveTab] = useState('informacion');
