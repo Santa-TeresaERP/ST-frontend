@@ -27,6 +27,10 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({ sel
     });
     // Aquí iría la llamada a la API para guardar el registro
     alert(`Cierre de caja registrado exitsamente!\nUsuario: ${data.usuario}\nTotal Final: S/${data.dineroFinal.toFixed(2)}`);
+
+    console.log('Datos del cierre de caja:', data);
+    // Aquí iría la lógica para crear el registro de cierre de caja
+    setIsModalOpen(false);
   };
 
   return (
