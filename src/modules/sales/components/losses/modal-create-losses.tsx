@@ -15,7 +15,6 @@ interface ModalCreateLossProps {
 const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
   isOpen,
   onClose,
-  onSave,
 }) => {
   const [productSearch, setProductSearch] = useState("");
   const [productId, setProductId] = useState("");
@@ -77,7 +76,6 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
         reason,
         observations,
       });
-      onSave({ productId, salesId, reason, observations });
       onClose();
       setProductSearch("");
       setProductId("");
