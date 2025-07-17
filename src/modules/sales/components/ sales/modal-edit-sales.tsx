@@ -5,6 +5,7 @@ import { FiShoppingCart, FiPackage } from 'react-icons/fi';
 import { useUpdateSale } from '../../hooks/useSales';
 import { useCreateSalesDetail, useUpdateSalesDetail, useDeleteSalesDetail, useFetchSalesDetails } from '../../hooks/useSalesDetails';
 import { useFetchProducts } from '@/modules/production/hook/useProducts';
+import { useFetchStores } from '@/modules/stores/hook/useStores';
 import { salesAttributes } from '../../types/sales';
 import { Product as ProductType } from '@/modules/production/types/products';
 
@@ -35,6 +36,7 @@ const ModalEditSales: React.FC<ModalEditSalesProps> = ({ isOpen, onClose, curren
   // Hooks para datos
   const { data: allSalesDetails = [], isLoading: loadingSalesDetails } = useFetchSalesDetails();
   const { data: allProducts = [], isLoading: loadingProducts } = useFetchProducts();
+  const { data: stores = [], isLoading: loadingStores } = useFetchStores(); // Obtener las tiendas
   
   // Estados del formulario
   const [tienda, setTienda] = useState('');
@@ -258,7 +260,6 @@ const ModalEditSales: React.FC<ModalEditSalesProps> = ({ isOpen, onClose, curren
       setObservacion('');
       setProductos([]);
       setLocalError('');
-
     } catch (error) {
       console.error('Error updating sale:', error);
       setLocalError('Error al actualizar la venta. Por favor, inténtalo de nuevo.');
@@ -319,17 +320,25 @@ const ModalEditSales: React.FC<ModalEditSalesProps> = ({ isOpen, onClose, curren
 
               <div>
                 <label className="block text-gray-700 mb-1 font-medium">
-                  ID de Tienda <span className="text-red-600">*</span>
+                  Tienda <span className="text-red-600">*</span>
                 </label>
-                <input
-                  type="text"
+                <select
                   value={tienda}
                   onChange={(e) => setTienda(e.target.value)}
-                  disabled={isUpdating}
+                  disabled={isUpdating || loadingStores}
                   className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none disabled:bg-gray-100"
-                  placeholder="UUID de la tienda"
-                />
+                >
+                  <option value="">
+                    {loadingStores ? 'Cargando tiendas...' : 'Seleccionar tienda'}
+                  </option>
+                  {stores.map((store) => (
+                    <option key={store.id} value={store.id}>
+                      {store.store_name}
+                    </option>
+                  ))}
+                </select>
               </div>
+
 
               <div>
                 <label className="block text-gray-700 mb-1 font-medium">

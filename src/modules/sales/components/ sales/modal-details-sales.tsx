@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import { salesAttributes } from '../../types/sales';
 import { useFetchSalesDetails } from '../../hooks/useSalesDetails';
 import { useFetchProducts } from '@/modules/production/hook/useProducts';
-
+import { useFetchStores } from '@/modules/stores/hook/useStores';
 interface ModalDetailSalesProps {
   isOpen: boolean;
   onClose: () => void;
@@ -11,6 +11,7 @@ interface ModalDetailSalesProps {
 }
 
 const ModalDetailSales: React.FC<ModalDetailSalesProps> = ({ isOpen, onClose, saleDetail }) => {
+  const { data: stores = [] } = useFetchStores(); // Obtener las tiendas
   const { 
     data: allSalesDetails = [], 
     isLoading: loadingSalesDetails, 
@@ -34,6 +35,15 @@ const ModalDetailSales: React.FC<ModalDetailSalesProps> = ({ isOpen, onClose, sa
     return product?.name || 'Producto no encontrado';
   };
 
+      // Función para obtener el nombre de la tienda por UUID
+      const getStoreName = (storeId: string) => {
+        const store = stores.find((store) => store.id === storeId);
+        return store?.store_name || 'Tienda no encontrada';
+      };
+
+  // Calcular el total de la venta
+  const totalAmount = salesDetails.reduce((sum, detail) => sum + detail.mount, 0);
+
   // Estados de carga y error
   const isLoading = loadingSalesDetails || loadingProducts;
   const error = errorSalesDetails || errorProducts;
@@ -56,7 +66,7 @@ const ModalDetailSales: React.FC<ModalDetailSalesProps> = ({ isOpen, onClose, sa
           <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <p className="font-semibold text-gray-800">
-                Tienda: <span className="font-normal text-gray-600">{saleDetail.store_id}</span>
+                Tienda: <span className="font-normal text-gray-600">{getStoreName(saleDetail.store_id)}</span>
               </p>
               <p className="font-semibold text-gray-800">
                 Fecha: <span className="font-normal text-gray-600">
@@ -122,6 +132,17 @@ const ModalDetailSales: React.FC<ModalDetailSalesProps> = ({ isOpen, onClose, sa
                         </td>
                       </tr>
                     ))}
+                    {/* Fila para el total de la venta */}
+                    {!isLoading && !error && salesDetails.length > 0 && (
+                      <tr className="border-t bg-gray-200">
+                        <td colSpan={2} className="px-4 py-3 text-left font-semibold text-gray-800">
+                          Total de la venta:
+                        </td>
+                        <td className="px-4 py-3 font-bold text-red-700">
+                          S/ {totalAmount.toFixed(2)}
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
