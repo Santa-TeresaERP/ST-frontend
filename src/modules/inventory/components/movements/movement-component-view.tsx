@@ -44,6 +44,10 @@ const MovementComponentView: React.FC = () => {
     setFilters(newFilters);
   };
 
+  const getWarehouseName = (id: string) => warehouses.find((w: any) => w.id === id)?.name || id;
+  const getResourceName = (id: string) => resources.find((r: any) => r.id === id)?.name || id;
+  const getProductName = (id: string) => products.find((p: any) => p.id === id)?.name || id;
+
   // Filtrar movimientos por producto, almacén o tienda
   const filteredMovements = movements.filter(
     (mov) =>
@@ -53,8 +57,8 @@ const MovementComponentView: React.FC = () => {
       (filters.start_date ? new Date(mov.movement_date) >= new Date(filters.start_date) : true) &&
       (filters.end_date ? new Date(mov.movement_date) <= new Date(filters.end_date) : true) &&
       (searchTerm ? (
-        mov.product_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        mov.warehouse_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getProductName(mov.product_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getWarehouseName(mov.warehouse_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
         mov.store_id?.toLowerCase().includes(searchTerm.toLowerCase())
       ) : true)
   );
@@ -67,15 +71,10 @@ const MovementComponentView: React.FC = () => {
       (filters.start_date ? new Date(mov.movement_date) >= new Date(filters.start_date) : true) &&
       (filters.end_date ? new Date(mov.movement_date) <= new Date(filters.end_date) : true) &&
       (searchTerm ? (
-        mov.resource_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        mov.warehouse_id?.toLowerCase().includes(searchTerm.toLowerCase())
+        getResourceName(mov.resource_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getWarehouseName(mov.warehouse_id).toLowerCase().includes(searchTerm.toLowerCase())
       ) : true)
   );
-
-  // Funciones para mostrar nombre en vez de UUID
-  const getWarehouseName = (id: string) => warehouses.find((w: any) => w.id === id)?.name || id;
-  const getResourceName = (id: string) => resources.find((r: any) => r.id === id)?.name || id;
-  const getProductName = (id: string) => products.find((p: any) => p.id === id)?.name || id;
 
   return (
     <div className="p-6 space-y-4 bg-gray-50 min-h-screen">
@@ -119,6 +118,13 @@ const MovementComponentView: React.FC = () => {
             <Users size={18} /> Recurso
           </button>
       </div>
+      <FilterMovement
+        selectedType={selectedType}
+        onFilter={handleFilter}
+        onSearchChange={setSearchTerm} // NUEVO
+        filters={filters} // NUEVO
+      />
+
 
       {/* Display active filters */}
       <div className="flex flex-wrap gap-2 mb-4">
@@ -189,7 +195,6 @@ const MovementComponentView: React.FC = () => {
               <table className="min-w-full text-sm">
                 <thead className="bg-gray-800 text-white">
                   <tr>
-                    <th className="px-4 py-2 text-center">ID</th>
                     <th className="px-4 py-2 text-center">Almacén</th>
                     <th className="px-4 py-2 text-center">Tienda</th>
                     <th className="px-4 py-2 text-center">Producto</th>
@@ -203,7 +208,6 @@ const MovementComponentView: React.FC = () => {
                 <tbody>
                   {filteredMovements.map((mov, index) => (
                     <tr key={mov.movement_id || `movement-${index}`} className="hover:bg-gray-50 border-t">
-                      <td className="px-4 py-2 text-center">{mov.movement_id}</td>
                       <td className="px-4 py-2 text-center">{getWarehouseName(mov.warehouse_id)}</td>
                       <td className="px-4 py-2 text-center">{mov.store_id}</td>
                       <td className="px-4 py-2 text-center">{getProductName(mov.product_id)}</td>

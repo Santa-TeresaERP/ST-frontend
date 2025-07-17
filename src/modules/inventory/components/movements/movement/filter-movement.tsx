@@ -6,10 +6,11 @@ import { useFetchResources } from '@/modules/inventory/hook/useResources';
 interface FilterMovementProps {
   selectedType: 'producto' | 'recurso';
   onFilter: (filters: any) => void;
-  onCreate?: () => void;
+  onSearchChange: (term: string) => void; // NUEVO
+  filters: any;
 }
 
-const FilterMovement: React.FC<FilterMovementProps> = ({ selectedType, onFilter }) => {
+const FilterMovement: React.FC<FilterMovementProps> = ({ selectedType, onFilter, onSearchChange }) => {
   const { data: products = [] } = useFetchProducts();
   const { data: resources = [] } = useFetchResources();
 
@@ -21,6 +22,14 @@ const FilterMovement: React.FC<FilterMovementProps> = ({ selectedType, onFilter 
     }));
   };
 
+  const [movementTypeSearch, setMovementTypeSearch] = React.useState('');
+  const movementTypes = ['entrada', 'salida']; // o los que tengas
+
+  const filteredMovementTypes = movementTypes.filter((type) =>
+    type.toLowerCase().includes(movementTypeSearch.toLowerCase())
+  );
+
+
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm w-full">
       <div className="flex flex-wrap items-end gap-3">
@@ -29,6 +38,7 @@ const FilterMovement: React.FC<FilterMovementProps> = ({ selectedType, onFilter 
           <input
             type="text"
             placeholder="Buscar..."
+            onChange={(e) => onSearchChange(e.target.value)} // NUEVO
             className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
           />
         </div>
@@ -86,8 +96,9 @@ const FilterMovement: React.FC<FilterMovementProps> = ({ selectedType, onFilter 
             className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
           >
             <option value="">Todos</option>
-            <option value="ENTRADA">Entrada</option>
-            <option value="SALIDA">Salida</option>
+            {filteredMovementTypes.map((type) => (
+              <option key={type} value={type}>{type}</option>
+            ))}
           </select>
         </div>
 
