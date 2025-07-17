@@ -1,126 +1,152 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { X, Filter } from 'lucide-react';
 import React from 'react';
-import { useFetchProducts } from '@/modules/inventory/hook/useProducts';
-import { useFetchResources } from '@/modules/inventory/hook/useResources';
 
 interface FilterMovementProps {
   selectedType: 'producto' | 'recurso';
   onFilter: (filters: any) => void;
-  onSearchChange: (term: string) => void; // NUEVO
+  onSearchChange: (term: string) => void;
   filters: any;
+  searchTerm: string;
+  products: any[];
+  stores: any[];
 }
 
-const FilterMovement: React.FC<FilterMovementProps> = ({ selectedType, onFilter, onSearchChange }) => {
-  const { data: products = [] } = useFetchProducts();
-  const { data: resources = [] } = useFetchResources();
-
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    onFilter((prevFilters: any) => ({
-      ...prevFilters,
-      [name]: value,
-    }));
+const FilterMovement: React.FC<FilterMovementProps> = ({
+  selectedType,
+  onFilter,
+  onSearchChange,
+  filters,
+  searchTerm,
+  products,
+  stores,
+}) => {
+  const handleFilterChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    onFilter({
+      ...filters,
+      [e.target.name]: e.target.value,
+    });
   };
 
-  const [movementTypeSearch, setMovementTypeSearch] = React.useState('');
-  const movementTypes = ['entrada', 'salida']; // o los que tengas
-
-  const filteredMovementTypes = movementTypes.filter((type) =>
-    type.toLowerCase().includes(movementTypeSearch.toLowerCase())
-  );
-
+  const clearAllFilters = () => {
+    onFilter({
+      product_id: '',
+      resource_id: '',
+      store_id: '',
+      movement_type: '',
+      start_date: '',
+      end_date: '',
+    });
+    onSearchChange('');
+  };
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-sm w-full">
-      <div className="flex flex-wrap items-end gap-3">
-        {/* Buscador */}
-        <div className="flex-1 min-w-[200px]">
-          <input
-            type="text"
-            placeholder="Buscar..."
-            onChange={(e) => onSearchChange(e.target.value)} // NUEVO
-            className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
-          />
+    <div className="bg-white rounded-lg p-4 shadow-md overflow-x-auto">
+      {/* Encabezado */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2">
+          <Filter className="text-gray-600" size={20} />
+          <h3 className="text-lg font-medium text-gray-800">Filtros</h3>
         </div>
+        <button
+          onClick={clearAllFilters}
+          className="flex items-center gap-1 text-gray-600 hover:text-gray-800 px-2 py-1 rounded hover:bg-gray-100"
+        >
+          <X size={16} /> Limpiar Filtros
+        </button>
+      </div>
 
-        {/* Filtros específicos */}
+      {/* Grid de filtros */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+        {/* Search — ahora más ancho */}
+        <input
+          type="text"
+          name="search"
+          placeholder="Buscar..."
+          value={searchTerm}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="col-span-1 sm:col-span-2 md:col-span-2 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+        />
+
+        {/* Producto */}
         {selectedType === 'producto' && (
-          <>
-            <div className="min-w-[180px]">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Producto</label>
-              <select
-                name="product_id"
-                onChange={handleFilterChange}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
-              >
-                <option value="">Todos</option>
-                {products.map((product: any) => (
-                  <option key={product.id} value={product.id}>{product.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="min-w-[150px]">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Tienda</label>
-              <input
-                type="text"
-                name="store_id"
-                onChange={handleFilterChange}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
-              />
-            </div>
-          </>
-        )}
-
-        {selectedType === 'recurso' && (
-          <div className="min-w-[180px]">
-            <label className="block text-xs font-medium text-gray-500 mb-1">Recurso</label>
-            <select
-              name="resource_id"
-              onChange={handleFilterChange}
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
-            >
-              <option value="">Todos</option>
-              {resources.map((resource: any) => (
-                <option key={resource.id} value={resource.id}>{resource.name}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Filtros comunes */}
-        <div className="min-w-[180px]">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Tipo Movimiento</label>
           <select
-            name="movement_type"
+            name="product_id"
+            value={filters.product_id || ''}
             onChange={handleFilterChange}
-            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
           >
-            <option value="">Todos</option>
-            {filteredMovementTypes.map((type) => (
-              <option key={type} value={type}>{type}</option>
+            <option value="">Todos Productos</option>
+            {products.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
             ))}
           </select>
-        </div>
+        )}
 
-        <div className="min-w-[150px]">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Desde</label>
-          <input
-            type="date"
-            name="start_date"
+        {/* Recurso */}
+        {selectedType === 'recurso' && (
+          <select
+            name="resource_id"
+            value={filters.resource_id || ''}
             onChange={handleFilterChange}
-            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
-          />
-        </div>
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+          >
+            <option value="">Todos Recursos</option>
+            {stores.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+        )}
 
-        <div className="min-w-[150px]">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Hasta</label>
-          <input
-            type="date"
-            name="end_date"
-            onChange={handleFilterChange}
-            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
-          />
-        </div>
+        {/* Tipo de movimiento */}
+        <select
+          name="movement_type"
+          value={filters.movement_type || ''}
+          onChange={handleFilterChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+        >
+          <option value="">Todos Tipos</option>
+          <option value="entrada">Entrada</option>
+          <option value="salida">Salida</option>
+        </select>
+
+        {/* Tienda */}
+        <select
+          name="store_id"
+          value={filters.store_id || ''}
+          onChange={handleFilterChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+        >
+          <option value="">Todas Tiendas</option>
+          {stores.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+
+        {/* Desde */}
+        <input
+          type="date"
+          name="start_date"
+          value={filters.start_date || ''}
+          onChange={handleFilterChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+        />
+
+        {/* Hasta */}
+        <input
+          type="date"
+          name="end_date"
+          value={filters.end_date || ''}
+          onChange={handleFilterChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+        />
       </div>
     </div>
   );

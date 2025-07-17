@@ -20,6 +20,7 @@ import { useFetchResources } from '@/modules/inventory/hook/useResources';
 import { useFetchProducts } from '@/modules/inventory/hook/useProducts';
 import FilterMovement from './movement/filter-movement';
 
+
 const MovementComponentView: React.FC = () => {
   const [filters, setFilters] = useState<any>({});
   // Productos
@@ -120,11 +121,13 @@ const MovementComponentView: React.FC = () => {
       </div>
       <FilterMovement
         selectedType={selectedType}
+        filters={filters}
         onFilter={handleFilter}
-        onSearchChange={setSearchTerm} // NUEVO
-        filters={filters} // NUEVO
+        onSearchChange={setSearchTerm}
+        searchTerm={searchTerm}
+        products={products}
+        stores={warehouses}
       />
-
 
       {/* Display active filters */}
       <div className="flex flex-wrap gap-2 mb-4">
