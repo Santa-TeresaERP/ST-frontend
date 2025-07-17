@@ -84,8 +84,21 @@ const MovementComponentView: React.FC = () => {
         <h2 className="text-3xl font-semibold text-red-700">
           Movimientos de {selectedType === 'producto' ? 'Productos' : 'Recursos'}
         </h2>
-        <div className="flex gap-2">
-          <button
+      </div>
+
+      {/* Acciones y Filtro */}
+      <div className="flex gap-2 justify-end">
+        <button
+            onClick={() => setShowCreate(true)}
+            className={`px-4 py-2 rounded-full font-semibold transition-colors duration-300 flex items-center gap-2 ${
+              selectedType === 'producto'
+                ? 'bg-red-700 text-white hover:bg-red-800'
+                : 'bg-orange-500 text-white hover:bg-orange-600'
+            }`}
+          >
+          <PlusCircle size={18} /> Crear {selectedType === 'producto' ? 'Producto' : 'Recurso'}
+        </button>
+        <button
             className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
               selectedType === 'producto'
                 ? 'bg-red-700 text-white'
@@ -105,37 +118,7 @@ const MovementComponentView: React.FC = () => {
           >
             <Users size={18} /> Recurso
           </button>
-        </div>
       </div>
-
-      {/* Acciones y Filtro */}
-      <div className="flex justify-between items-center space-x-6">
-        {/* Search input */}
-        <div className="flex items-center space-x-2">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar..."
-            className="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-700"
-          />
-        </div>
-        <div className="flex items-center space-x-3 select-none">
-          <button
-            onClick={() => setShowCreate(true)}
-            className={`px-4 py-2 rounded-full font-semibold transition-colors duration-300 flex items-center gap-2 ${
-              selectedType === 'producto'
-                ? 'bg-red-700 text-white hover:bg-red-800'
-                : 'bg-orange-500 text-white hover:bg-orange-600'
-            }`}
-          >
-            <PlusCircle size={18} /> Crear {selectedType === 'producto' ? 'Producto' : 'Recurso'}
-          </button>
-        </div>
-        <div className="relative inline-flex items-center shadow-sm rounded-xl bg-white">
-        </div>
-      </div>
-      <FilterMovement selectedType={selectedType} onFilter={handleFilter} />
 
       {/* Display active filters */}
       <div className="flex flex-wrap gap-2 mb-4">
