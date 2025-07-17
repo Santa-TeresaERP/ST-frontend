@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useUpdateProduction } from '../../hook/useProductions';
 import { useFetchPlants } from '../../hook/usePlants';
-import { X } from 'lucide-react';
+import { X, Save } from 'lucide-react';
 
 interface ModalEditProductionProps {
   isOpen: boolean;
@@ -40,12 +40,12 @@ const ModalEditProduction: React.FC<ModalEditProductionProps> = ({ isOpen, onClo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!produccion || !cantidad || !descripcion || !planta || !fecha) {
       alert('Por favor, completa todos los campos obligatorios.');
       return;
     }
-    
+
     const updatedProduction = {
       production_id: production?.id || '',
       productId: produccion,
@@ -54,7 +54,7 @@ const ModalEditProduction: React.FC<ModalEditProductionProps> = ({ isOpen, onClo
       observation: descripcion,
       plant_id: planta,
     };
-    
+
     try {
       if (production && production.id) {
         await updateProductionMutation.mutateAsync({ id: production.id, payload: updatedProduction });
@@ -68,18 +68,24 @@ const ModalEditProduction: React.FC<ModalEditProductionProps> = ({ isOpen, onClo
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-        <div className="flex justify-between items-center border-b p-4">
-          <h3 className="text-xl font-bold text-gray-800">Editar Producción</h3>
+    <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        
+        <div className="bg-gradient-to-r from-red-700 to-red-900 rounded-t-2xl p-6 flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-white">Editar Producción</h2>
+            <p className="text-red-100 mt-1 text-sm">Modifica los datos de la producción</p>
+          </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="p-2 rounded-full hover:bg-red-800 text-white transition"
+            aria-label="Cerrar modal"
           >
-            <X size={24} />
+            <X size={22} />
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-gray-700 mb-2">Producto*</label>
             <input
@@ -91,6 +97,7 @@ const ModalEditProduction: React.FC<ModalEditProductionProps> = ({ isOpen, onClo
               required
             />
           </div>
+
           <div>
             <label className="block text-gray-700 mb-2">Cantidad Producida*</label>
             <input
@@ -102,6 +109,7 @@ const ModalEditProduction: React.FC<ModalEditProductionProps> = ({ isOpen, onClo
               required
             />
           </div>
+
           <div>
             <label className="block text-gray-700 mb-2">Observación*</label>
             <input
@@ -113,6 +121,7 @@ const ModalEditProduction: React.FC<ModalEditProductionProps> = ({ isOpen, onClo
               required
             />
           </div>
+
           <div>
             <label className="block text-gray-700 mb-2">Planta*</label>
             {isLoadingPlantas ? (
@@ -136,6 +145,7 @@ const ModalEditProduction: React.FC<ModalEditProductionProps> = ({ isOpen, onClo
               </select>
             )}
           </div>
+
           <div>
             <label className="block text-gray-700 mb-2">Fecha de Producción*</label>
             <input
@@ -147,7 +157,8 @@ const ModalEditProduction: React.FC<ModalEditProductionProps> = ({ isOpen, onClo
               required
             />
           </div>
-          <div className="flex justify-end space-x-3 pt-4">
+
+          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
@@ -157,9 +168,9 @@ const ModalEditProduction: React.FC<ModalEditProductionProps> = ({ isOpen, onClo
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-600"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white shadow-md hover:shadow-lg transition"
             >
-              Actualizar Producción
+              <Save size={18} /> Actualizar
             </button>
           </div>
         </form>

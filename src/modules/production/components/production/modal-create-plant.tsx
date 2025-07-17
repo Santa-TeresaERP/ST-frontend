@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Trash2, Save, Plus, X, Check } from 'lucide-react';
+import { Trash2, Save, Plus, X, Check} from 'lucide-react';
+import { FiEdit, FiSave, FiX } from 'react-icons/fi';
 import { useFetchProductions } from '../../hook/useProductions';
 import { useFetchPlants, useCreatePlant, useUpdatePlant, useDeletePlant } from '../../hook/usePlants';
 import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses'; // Asegúrate de tener este hook
@@ -407,56 +408,59 @@ const ModalCreatePlant = ({ isOpen, onClose }: ModalCreatePlantProps) => {
         {editingPlant && (
           <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 backdrop-blur-sm">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg transform transition-all duration-300 scale-95 hover:scale-100">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-t-xl p-6">
+              <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-t-xl p-6">
                 <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-bold text-white">Editar Planta</h2>
+                  <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                    <FiEdit /> Editar Planta
+                  </h2>
                   <button 
                     onClick={() => setEditingPlant(null)} 
-                    className="p-2 rounded-full hover:bg-blue-800 transition-colors duration-200 text-white"
+                    className="p-2 rounded-full hover:bg-red-800 transition-colors duration-200 text-white"
                   >
-                    <X size={20} />
+                    <FiX size={20} />
                   </button>
                 </div>
               </div>
               
               <div className="p-6 space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                    Nombre de la Planta
-                    <span className="ml-2 text-red-500">*</span>
+                  <label className="block text-base font-bold text-gray-700 mb-2 flex items-center">
+                    Nombre de la Planta <span className="ml-1 text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={editingPlant.plant_name}
                     onChange={(e) => setEditingPlant({...editingPlant, plant_name: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200"
                     placeholder="Ej: Planta Norte"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Dirección</label>
+                  <label className="block text-base font-bold text-gray-700 mb-2">Dirección</label>
                   <input
                     type="text"
                     value={editingPlant.address}
                     onChange={(e) => setEditingPlant({...editingPlant, address: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200"
                     placeholder="Ej: Calle Principal 123"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">ID del Almacén</label>
+                  <label className="block text-base font-bold text-gray-700 mb-2">Almacén</label>
                   {isLoadingWarehouses ? (
                     <p className="text-gray-500">Cargando almacenes...</p>
                   ) : (
                     <select
-                      value={editingPlant?.warehouse_id || ''} // Asegúrate de que el valor sea el warehouse_id actual
+                      value={editingPlant?.warehouse_id || ''}
                       onChange={(e) => setEditingPlant({ ...editingPlant, warehouse_id: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition duration-200"
                     >
                       <option value="" disabled>Selecciona un almacén</option>
                       {warehouses?.map((warehouse) => (
                         <option key={warehouse.id} value={warehouse.id}>
-                          {warehouse.name} {/* Cambia `name` si el campo es diferente */}
+                          {warehouse.name}
                         </option>
                       ))}
                     </select>
@@ -467,15 +471,15 @@ const ModalCreatePlant = ({ isOpen, onClose }: ModalCreatePlantProps) => {
               <div className="flex justify-end space-x-4 p-6 border-t border-gray-200">
                 <button
                   onClick={() => setEditingPlant(null)}
-                  className="px-5 py-2.5 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors duration-200"
+                  className="px-5 py-2.5 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors duration-200 flex items-center gap-2"
                 >
-                  Cancelar
+                  <FiX /> Cancelar
                 </button>
                 <button
                   onClick={handleActualizar}
-                  className="px-5 py-3 rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white shadow-md hover:shadow-lg transition-all duration-200"
+                  className="px-5 py-3 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
                 >
-                  Guardar Cambios
+                  <FiSave /> Guardar Cambios
                 </button>
               </div>
             </div>

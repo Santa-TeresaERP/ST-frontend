@@ -32,7 +32,7 @@ const ModalCreateStore: React.FC<ModalCreateStoreProps> = ({ isOpen, onClose }) 
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl relative mx-2">
         <div className="bg-gradient-to-r from-red-700 to-red-900 text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
           <FiHome size={24} />
-          <h2 className="text-xl font-semibold text-center">Crear Tienda</h2>
+          <h2 className="text-xl font-semibold text-center">Crear SSSSS</h2>
           <button
             onClick={onClose}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
