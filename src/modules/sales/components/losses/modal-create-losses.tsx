@@ -1,27 +1,67 @@
-import React, { useState } from 'react';
-import { X, Save } from 'lucide-react';
-import { FiAlertOctagon } from 'react-icons/fi';
-import { useCreateReturn } from '@/modules/sales/hooks/useReturns'; // ajusta el path según tu proyecto
+import React, { useState, useEffect, useRef } from "react";
+import { X, Save } from "lucide-react";
+import { FiAlertOctagon } from "react-icons/fi";
+import { useCreateReturn } from "@/modules/sales/hooks/useReturns";
+import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
+import { useFetchSales } from "@/modules/sales/hooks/useSales";
 
 interface ModalCreateLossProps {
   isOpen: boolean;
   onClose: () => void;
+  onSave: (data: any) => void;
 }
 
-const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({ isOpen, onClose }) => {
-  const [productId, setProductId] = useState('');
-  const [salesId, setSalesId] = useState('');
-  const [reason, setReason] = useState('');
-  const [observations, setObservations] = useState('');
-  const [localError, setLocalError] = useState('');
+const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
+  isOpen,
+  onClose,
+}) => {
+  const [productSearch, setProductSearch] = useState("");
+  const [productId, setProductId] = useState("");
+  const [salesSearch, setSalesSearch] = useState("");
+  const [salesId, setSalesId] = useState("");
+  const [reason, setReason] = useState("");
+  const [observations, setObservations] = useState("");
+  const [localError, setLocalError] = useState("");
 
+  const { data: products = [] } = useFetchProducts();
+  const { data: sales = [] } = useFetchSales();
   const createReturnMutation = useCreateReturn();
+
+  const salesDropdownRef = useRef<HTMLDivElement>(null);
+  const [showSalesDropdown, setShowSalesDropdown] = useState(false);
+
+  const filteredProducts = productSearch
+    ? products.filter((p) =>
+        p.name.toLowerCase().includes(productSearch.toLowerCase())
+      )
+    : [];
+
+  const filteredSales = sales.filter((sale) => {
+    const formattedDate = new Date(sale.income_date).toLocaleString("es-PE");
+    return (
+      formattedDate.toLowerCase().includes(salesSearch.toLowerCase()) ||
+      sale.total_income.toString().includes(salesSearch)
+    );
+  });
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        salesDropdownRef.current &&
+        !salesDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowSalesDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!productId || !salesId || !reason || !observations) {
-      setLocalError('Por favor, completa todos los campos.');
+      setLocalError("Por favor, completa todos los campos.");
       return;
     }
 
@@ -33,14 +73,16 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({ isOpen, onClose }) =>
         observations,
       });
       onClose();
-      // Limpia campos después de guardar
-      setProductId('');
-      setSalesId('');
-      setReason('');
-      setObservations('');
-      setLocalError('');
+      setProductSearch("");
+      setProductId("");
+      setSalesSearch("");
+      setSalesId("");
+      setReason("");
+      setObservations("");
+      setLocalError("");
     } catch (error) {
-      setLocalError('Hubo un error al guardar la pérdida.');
+      console.error("Error al guardar la pérdida:", error);
+      setLocalError("Hubo un error al guardar la pérdida.");
     }
   };
 
@@ -61,35 +103,91 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({ isOpen, onClose }) =>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5 text-left">
-          {localError && <p className="text-sm text-red-600 font-medium">{localError}</p>}
+          {localError && (
+            <p className="text-sm text-red-600 font-medium">{localError}</p>
+          )}
 
           <div className="space-y-4">
-            <div>
+            {/* Selector de producto */}
+            <div className="relative">
               <label className="block text-gray-700 mb-1 font-medium">
-                ID del Producto <span className="text-red-600">*</span>
+                Producto <span className="text-red-600">*</span>
               </label>
               <input
                 type="text"
-                value={productId}
-                onChange={(e) => setProductId(e.target.value)}
+                value={productSearch}
+                onChange={(e) => {
+                  setProductSearch(e.target.value);
+                  setProductId("");
+                }}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="UUID del producto"
+                placeholder="Buscar producto por nombre"
               />
+              {filteredProducts.length > 0 && (
+                <ul className="absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {filteredProducts.map((product) => (
+                    <li
+                      key={product.id}
+                      className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
+                      onClick={() => {
+                        setProductSearch(product.name);
+                        setProductId(product.id);
+                      }}
+                    >
+                      {product.name}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
-            <div>
+            {/* Selector de venta */}
+            <div className="relative" ref={salesDropdownRef}>
               <label className="block text-gray-700 mb-1 font-medium">
-                ID de la Venta <span className="text-red-600">*</span>
+                Venta <span className="text-red-600">*</span>
               </label>
               <input
                 type="text"
-                value={salesId}
-                onChange={(e) => setSalesId(e.target.value)}
+                value={salesSearch}
+                onChange={(e) => {
+                  setSalesSearch(e.target.value);
+                  setSalesId("");
+                  setShowSalesDropdown(true);
+                }}
+                onFocus={() => setShowSalesDropdown(true)}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="UUID de la venta"
+                placeholder="Buscar por fecha o monto"
               />
+              {showSalesDropdown && (
+                <ul className="absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {(salesSearch
+                    ? filteredSales
+                    : [...sales]
+                        .sort(
+                          (a, b) =>
+                            new Date(b.income_date).getTime() -
+                            new Date(a.income_date).getTime()
+                        )
+                        .slice(0, 3)
+                  ).map((sale) => (
+                    <li
+                      key={sale.id}
+                      className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
+                      onClick={() => {
+                        const formatted = new Date(sale.income_date).toLocaleString("es-PE");
+                        setSalesSearch(`${formatted} - S/ ${sale.total_income}`);
+                        setSalesId(sale.id!);
+                        setShowSalesDropdown(false);
+                      }}
+                    >
+                      📅 {new Date(sale.income_date).toLocaleString("es-PE")} — 💵 S/ {sale.total_income}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
+            {/* Razón */}
             <div>
               <label className="block text-gray-700 mb-1 font-medium">
                 Razón <span className="text-red-600">*</span>
@@ -103,6 +201,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({ isOpen, onClose }) =>
               />
             </div>
 
+            {/* Observaciones */}
             <div>
               <label className="block text-gray-700 mb-1 font-medium">
                 Observación <span className="text-red-600">*</span>
