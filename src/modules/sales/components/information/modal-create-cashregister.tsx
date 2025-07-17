@@ -1,66 +1,90 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FiX } from 'react-icons/fi';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { CashSessionAttributes } from '../../types/cash_sessions.d';
+import { useFetchUsers } from '../../hooks/useCashSession';
+import { StoreAttributes } from '@/modules/stores/types/store';
+import { z } from 'zod';
 
 interface ModalCreateCashRegisterProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: CashRegisterData) => void;
+  onSubmit: (data: Omit<CashSessionAttributes, 'id'>) => void;
+  selectedStore?: StoreAttributes | null;
 }
 
-interface CashRegisterData {
-  usuario: string;
-  tienda: string;
-  dineroInicial: number;
-  dineroFinal: number;
-  totalPerdidas: number;
-  fechaTermino: string;
-  observaciones: string;
-}
+// Definir un schema para el formulario compatible con react-hook-form
+const cashSessionFormSchema = z.object({
+  user_id: z.string().min(1, 'Seleccione un usuario'),
+  store_id: z.string().min(1, 'Seleccione una tienda'),
+  start_amount: z.string().min(1, 'El monto inicial es obligatorio'),
+  end_amount: z.string().min(1, 'El monto final es obligatorio'),
+  total_returns: z.string().min(1, 'El total de devoluciones es obligatorio'),
+  ended_at: z.string().min(1, 'La fecha de cierre es obligatoria'),
+});
+
+type FormValues = z.infer<typeof cashSessionFormSchema>;
 
 const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  selectedStore,
 }) => {
-  const [formData, setFormData] = React.useState<CashRegisterData>({
-    usuario: '',
-    tienda: 'Dulce Sabor',
-    dineroInicial: 0,
-    dineroFinal: 0,
-    totalPerdidas: 0,
-    fechaTermino: '',
-    observaciones: ''
+  const { data: users = [], isLoading: loadingUsers } = useFetchUsers();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    setValue,
+  } = useForm<FormValues>({
+    resolver: zodResolver(cashSessionFormSchema),
+    defaultValues: {
+      store_id: selectedStore?.id ? String(selectedStore.id) : '',
+      ended_at: '',
+      start_amount: '',
+      end_amount: '',
+      total_returns: '',
+    },
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: ['dineroInicial', 'dineroFinal', 'totalPerdidas'].includes(name) ? 
-              parseFloat(value) || 0 : value
-    }));
-  };
+  // Sincronizar el valor de store_id con la tienda seleccionada
+  useEffect(() => {
+    if (isOpen && selectedStore?.id) {
+      setValue('store_id', String(selectedStore.id));
+    }
+  }, [selectedStore, isOpen, setValue]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validación adicional
-    if (formData.dineroFinal < formData.dineroInicial) {
-      alert('El dinero final no puede ser menor que el dinero inicial');
+  const handleFormSubmit = (data: FormValues) => {
+    // Usa directamente el id (UUID) de usuario y tienda
+    const selectedUser = users.find(u => String(u.id) === String(data.user_id));
+    const userId = selectedUser?.id || null;
+    const storeId = selectedStore?.id || null;
+
+    console.log('selectedUser:', selectedUser);
+    console.log('selectedStore:', selectedStore);
+    console.log('userId:', userId, 'storeId:', storeId);
+
+    if (!userId || !storeId) {
+      alert('Debes seleccionar un usuario y una tienda válidos.');
       return;
     }
-    
-    onSubmit(formData);
+
+    const payload: Omit<CashSessionAttributes, 'id'> = {
+      user_id: userId,
+      store_id: storeId,
+      start_amount: Number(data.start_amount),
+      end_amount: Number(data.end_amount),
+      total_returns: Number(data.total_returns),
+      ended_at: new Date(data.ended_at).toISOString(),
+    };
+    console.log('Payload enviado a createCashSession:', payload);
+    onSubmit(payload);
+    reset();
     onClose();
-    setFormData({
-      usuario: '',
-      tienda: 'Dulce Sabor',
-      dineroInicial: 0,
-      dineroFinal: 0,
-      totalPerdidas: 0,
-      fechaTermino: '',
-      observaciones: ''
-    });
   };
 
   if (!isOpen) return null;
@@ -83,135 +107,109 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Usuario */}
               <div>
-                <label htmlFor="usuario" className="block text-gray-700 mb-1">
+                <label htmlFor="user_id" className="block text-gray-700 mb-1">
                   Usuario <span className="text-red-500">*</span>
                 </label>
-                <input
-                  id="usuario"
-                  type="text"
-                  name="usuario"
-                  value={formData.usuario}
-                  onChange={handleChange}
+                <select
+                  id="user_id"
+                  {...register('user_id')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder="Nombre del responsable"
-                  required
-                />
+                  disabled={loadingUsers}
+                >
+                  <option value="">Seleccione un usuario</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>{user.name} ({user.email})</option>
+                  ))}
+                </select>
+                {errors.user_id && <p className="text-red-500 text-sm mt-1">{errors.user_id.message}</p>}
               </div>
 
               {/* Tienda */}
               <div>
-                <label htmlFor="tienda" className="block text-gray-700 mb-1">
+                <label htmlFor="store_id" className="block text-gray-700 mb-1">
                   Tienda <span className="text-red-500">*</span>
                 </label>
-                <select
-                  id="tienda"
-                  name="tienda"
-                  value={formData.tienda}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  required
-                >
-                  <option value="Dulce Sabor">Dulce Sabor</option>
-                  <option value="Sucursal Norte">Sucursal Norte</option>
-                  <option value="Sucursal Sur">Sucursal Sur</option>
-                </select>
+                <input
+                  id="store_id"
+                  type="text"
+                  value={selectedStore?.store_name || ''}
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="Nombre de la tienda"
+                />
+                {/* El id real se envía oculto */}
+                <input type="hidden" {...register('store_id')} value={selectedStore?.id || ''} />
+                {errors.store_id && <p className="text-red-500 text-sm mt-1">{errors.store_id.message}</p>}
               </div>
 
               {/* Dinero Inicial */}
               <div>
-                <label htmlFor="dineroInicial" className="block text-gray-700 mb-1">
+                <label htmlFor="start_amount" className="block text-gray-700 mb-1">
                   Dinero Inicial (S/) <span className="text-red-500">*</span>
                 </label>
                 <input
-                  id="dineroInicial"
-                  type="number"
-                  name="dineroInicial"
-                  value={formData.dineroInicial || ''}
-                  onChange={handleChange}
+                  id="start_amount"
+                  type="text"
+                  inputMode="decimal"
+                  pattern="^[0-9]+(\.[0-9]{1,2})?$"
+                  {...register('start_amount')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="200.00"
-                  step="0.01"
-                  min="0"
-                  required
                 />
+                {errors.start_amount && <p className="text-red-500 text-sm mt-1">{errors.start_amount.message}</p>}
               </div>
 
               {/* Dinero Final */}
               <div>
-                <label htmlFor="dineroFinal" className="block text-gray-700 mb-1">
+                <label htmlFor="end_amount" className="block text-gray-700 mb-1">
                   Dinero Final (S/) <span className="text-red-500">*</span>
                 </label>
                 <input
-                  id="dineroFinal"
-                  type="number"
-                  name="dineroFinal"
-                  value={formData.dineroFinal || ''}
-                  onChange={handleChange}
+                  id="end_amount"
+                  type="text"
+                  inputMode="decimal"
+                  pattern="^[0-9]+(\.[0-9]{1,2})?$"
+                  {...register('end_amount')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="500.00"
-                  step="0.01"
-                  min={formData.dineroInicial}
-                  required
                 />
+                {errors.end_amount && <p className="text-red-500 text-sm mt-1">{errors.end_amount.message}</p>}
               </div>
 
               {/* Total Pérdidas */}
               <div>
-                <label htmlFor="totalPerdidas" className="block text-gray-700 mb-1">
+                <label htmlFor="total_returns" className="block text-gray-700 mb-1">
                   Total Pérdidas (S/) <span className="text-red-500">*</span>
                 </label>
                 <input
-                  id="totalPerdidas"
-                  type="number"
-                  name="totalPerdidas"
-                  value={formData.totalPerdidas || ''}
-                  onChange={handleChange}
+                  id="total_returns"
+                  type="text"
+                  inputMode="decimal"
+                  pattern="^[0-9]+(\.[0-9]{1,2})?$"
+                  {...register('total_returns')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="20.00"
-                  step="0.01"
-                  min="0"
-                  max={formData.dineroInicial}
-                  required
                 />
+                {errors.total_returns && <p className="text-red-500 text-sm mt-1">{errors.total_returns.message}</p>}
               </div>
 
               {/* Fecha de Término */}
               <div>
-                <label htmlFor="fechaTermino" className="block text-gray-700 mb-1">
+                <label htmlFor="ended_at" className="block text-gray-700 mb-1">
                   Fecha de Término <span className="text-red-500">*</span>
                 </label>
                 <input
-                  id="fechaTermino"
+                  id="ended_at"
                   type="date"
-                  name="fechaTermino"
-                  value={formData.fechaTermino}
-                  onChange={handleChange}
+                  {...register('ended_at')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  required
-                  max={new Date().toISOString().split('T')[0]} // No permite fechas futuras
                 />
+                {errors.ended_at && <p className="text-red-500 text-sm mt-1">{errors.ended_at.message}</p>}
               </div>
-            </div>
-
-            {/* Observaciones */}
-            <div>
-              <label htmlFor="observaciones" className="block text-gray-700 mb-1">
-                Observaciones <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                id="observaciones"
-                name="observaciones"
-                value={formData.observaciones}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                rows={3}
-                placeholder="Detalles sobre diferencias, incidentes o comentarios relevantes"
-                required
-              ></textarea>
             </div>
 
             <div className="flex justify-end space-x-3 pt-4">
