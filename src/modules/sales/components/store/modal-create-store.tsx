@@ -61,7 +61,7 @@ const ModalCreateStore: React.FC<ModalCreateStoreProps> = ({
         <div className="relative bg-gradient-to-r from-blue-600 to-blue-800 rounded-t-xl -m-6 mb-6 p-6">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold text-white">Crear Nueva Tienda</h2>
+              <h2 className="text-2xl font-bold text-white">Crear Nueva TiendaSSS</h2>
               <p className="text-blue-100 mt-1">Agrega una nueva tienda al sistema</p>
             </div>
             <button
