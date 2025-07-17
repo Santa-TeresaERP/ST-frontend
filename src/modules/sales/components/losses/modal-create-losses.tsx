@@ -3,6 +3,8 @@ import { X, Save } from "lucide-react";
 import { FiAlertOctagon } from "react-icons/fi";
 import { useCreateReturn } from "@/modules/sales/hooks/useReturns";
 import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
+import { useFetchSales } from "@/modules/sales/hooks/useSales";
+import { useEffect, useRef } from "react";
 
 interface ModalCreateLossProps {
   isOpen: boolean;
@@ -17,12 +19,14 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
 }) => {
   const [productSearch, setProductSearch] = useState("");
   const [productId, setProductId] = useState("");
+  const [salesSearch, setSalesSearch] = useState("");
   const [salesId, setSalesId] = useState("");
   const [reason, setReason] = useState("");
   const [observations, setObservations] = useState("");
   const [localError, setLocalError] = useState("");
 
   const { data: products = [] } = useFetchProducts();
+  const { data: sales = [] } = useFetchSales();
   const createReturnMutation = useCreateReturn();
 
   const filteredProducts = productSearch
@@ -30,6 +34,33 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
         p.name.toLowerCase().includes(productSearch.toLowerCase())
       )
     : [];
+
+  const filteredSales = sales.filter((sale) => {
+    const formattedDate = new Date(sale.income_date).toLocaleString("es-PE");
+    return (
+      formattedDate.toLowerCase().includes(salesSearch.toLowerCase()) ||
+      sale.total_income.toString().includes(salesSearch)
+    );
+  });
+  const salesDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Cerrar el menú si se hace clic fuera
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        salesDropdownRef.current &&
+        !salesDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowSalesDropdown(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+  const [showSalesDropdown, setShowSalesDropdown] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +81,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
       onClose();
       setProductSearch("");
       setProductId("");
+      setSalesSearch("");
       setSalesId("");
       setReason("");
       setObservations("");
@@ -117,20 +149,65 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
               )}
             </div>
 
-            {/* Campos restantes */}
-            <div>
+            {/* Selector de venta */}
+            <div className="relative" ref={salesDropdownRef}>
               <label className="block text-gray-700 mb-1 font-medium">
-                Tienda <span className="text-red-600">*</span>
+                Venta <span className="text-red-600">*</span>
               </label>
-              <input
-                type="text"
-                value={salesId}
-                onChange={(e) => setSalesId(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="UUID de la venta"
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={salesSearch}
+                  onChange={(e) => {
+                    setSalesSearch(e.target.value);
+                    setSalesId("");
+                    setShowSalesDropdown(true);
+                  }}
+                  onFocus={() => setShowSalesDropdown(true)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                  placeholder="Buscar por fecha o monto"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSalesDropdown(!showSalesDropdown)}
+                  className="text-gray-700 bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded-lg border"
+                  title="Mostrar todo"
+                >
+                  {showSalesDropdown ? "⏶" : "⏷"}
+                </button>
+              </div>
+
+              {showSalesDropdown &&
+                (filteredSales.length > 0 || salesSearch === "") && (
+                  <ul className="absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {(salesSearch
+                      ? filteredSales
+                      : sales.slice(-3).reverse()
+                    ).map((sale) => {
+                      const formatted = new Date(
+                        sale.income_date
+                      ).toLocaleString("es-PE");
+                      return (
+                        <li
+                          key={sale.id}
+                          className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
+                          onClick={() => {
+                            setSalesSearch(
+                              `${formatted} - S/ ${sale.total_income}`
+                            );
+                            setSalesId(sale.id!);
+                            setShowSalesDropdown(false);
+                          }}
+                        >
+                          📅 {formatted} — 💵 S/ {sale.total_income}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
             </div>
 
+            {/* Razón */}
             <div>
               <label className="block text-gray-700 mb-1 font-medium">
                 Razón <span className="text-red-600">*</span>
@@ -144,6 +221,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
               />
             </div>
 
+            {/* Observaciones */}
             <div>
               <label className="block text-gray-700 mb-1 font-medium">
                 Observación <span className="text-red-600">*</span>
