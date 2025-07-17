@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
   DialogFooter
 } from "../../../app/components/ui/dialog";
@@ -14,7 +13,7 @@ import { Label } from "../../../app/components/ui/label";
 import { Role } from '@/modules/roles/types/roles';
 import { roleSchema } from "@/modules/roles/schemas/rolValidation";
 import { z } from 'zod';
-import { Check, User, Edit3, AlertTriangle, X } from 'lucide-react';
+import { Check, User, Edit3, AlertTriangle } from 'lucide-react';
 import { Card } from "../../../app/components/ui/card";
 
 type RoleModalProps = {
@@ -26,8 +25,8 @@ type RoleModalProps = {
 
 const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onSubmit }) => {
   const [formData, setFormData] = useState<Partial<Role>>({ name: "", description: "" });
-  const [showConfirmation, setShowConfirmation] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof Role, string>>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (role) {
@@ -42,12 +41,20 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onSubmit }
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Validar los datos con el esquema
       roleSchema.parse(formData);
       setErrors({});
-      setShowConfirmation(true);
+      setIsSubmitting(true);
+      
+      // Ejecutar la función onSubmit directamente
+      await onSubmit(formData as { id?: string; name: string; description: string });
+      
+      // Limpiar formulario y cerrar modal
+      setFormData({ name: "", description: "" });
+      onClose();
     } catch (error) {
       if (error instanceof z.ZodError) {
         const fieldErrors: Partial<Record<keyof Role, string>> = {};
@@ -57,18 +64,11 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onSubmit }
           }
         });
         setErrors(fieldErrors);
+      } else {
+        console.error('Error submitting role:', error);
       }
-    }
-  };
-
-  const handleConfirmSubmit = async () => {
-    try {
-      await onSubmit(formData as { id?: string; name: string; description: string });
-      setShowConfirmation(false);
-      onClose();
-      setFormData({ name: "", description: "" });
-    } catch (error) {
-      console.error('Error submitting role:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -143,16 +143,21 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onSubmit }
                 type="button"
                 variant="outline"
                 onClick={onClose}
-                className="w-full border-gray-400 text-gray-700 hover:bg-gray-100 rounded-3xl px-5"
+                disabled={isSubmitting}
+                className="w-full border-gray-400 text-gray-700 hover:bg-gray-100 rounded-3xl px-5 disabled:opacity-50"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                className=" w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-md rounded-3xl px-5"
+                disabled={isSubmitting}
+                className=" w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-md rounded-3xl px-5 disabled:opacity-50"
               >
                 <Check className="h-4 w-4 mr-2" />
-                {role ? "Actualizar Rol" : "Crear Rol"}
+                {isSubmitting 
+                  ? (role ? "Actualizando..." : "Creando...") 
+                  : (role ? "Actualizar Rol" : "Crear Rol")
+                }
               </Button>
             </DialogFooter>
           </form>
