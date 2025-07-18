@@ -87,37 +87,37 @@ const MovementComponentView: React.FC = () => {
       </div>
 
       {/* Acciones y Filtro */}
-      <div className="flex gap-2 justify-end">
+      <div className="flex flex-wrap gap-2 sm:justify-center md:justify-end sm:flex-nowrap">
         <button
-            onClick={() => setShowCreate(true)}
-            className={`px-4 py-2 rounded-full font-semibold transition-colors duration-300 flex items-center gap-2 ${
-              selectedType === 'producto'
-                ? 'bg-red-700 text-white hover:bg-red-800'
-                : 'bg-orange-500 text-white hover:bg-orange-600'
-            }`}
-          >
+          onClick={() => setShowCreate(true)}
+          className={`w-full sm:w-auto px-4 py-2 rounded-full font-semibold transition-colors duration-300 flex items-center justify-center gap-2 ${
+            selectedType === 'producto'
+              ? 'bg-red-700 text-white hover:bg-red-800'
+              : 'bg-orange-500 text-white hover:bg-orange-600'
+          }`}
+        >
           <PlusCircle size={18} /> Crear {selectedType === 'producto' ? 'Producto' : 'Recurso'}
         </button>
         <button
-            className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
-              selectedType === 'producto'
-                ? 'bg-red-700 text-white'
-                : 'bg-white text-red-700 border border-red-700'
-            }`}
-            onClick={() => setSelectedType('producto')}
-          >
-            <Package size={18} /> Producto
-          </button>
-          <button
-            className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
-              selectedType === 'recurso'
-                ? 'bg-orange-500 text-white'
-                : 'bg-white text-orange-500 border border-orange-500'
-            }`}
-            onClick={() => setSelectedType('recurso')}
-          >
-            <Users size={18} /> Recurso
-          </button>
+          onClick={() => setSelectedType('producto')}
+          className={`w-1/2 sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
+            selectedType === 'producto'
+              ? 'bg-red-700 text-white'
+              : 'bg-white text-red-700 border border-red-700'
+          }`}
+        >
+          <Package size={18} /> Producto
+        </button>
+        <button
+          onClick={() => setSelectedType('recurso')}
+          className={`w-1/2 sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
+            selectedType === 'recurso'
+              ? 'bg-orange-500 text-white'
+              : 'bg-white text-orange-500 border border-orange-500'
+          }`}
+        >
+          <Users size={18} /> Recurso
+        </button>
       </div>
       <FilterMovement
         selectedType={selectedType}
