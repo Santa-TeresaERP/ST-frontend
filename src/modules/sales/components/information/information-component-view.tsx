@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FiInfo, FiMapPin, FiHome, FiClipboard, FiDollarSign, FiPlus } from 'react-icons/fi';
-import { StoreAttributes } from '@/modules/stores/types/store';
 import ModalCreateCashRegister from './modal-create-cashregister';
+import { StoreAttributes } from '@/modules/stores';
 
 interface CashRegisterData {
   usuario: string;
@@ -21,6 +21,13 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({ sel
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleCreateCashRegister = (data: CashRegisterData) => {
+    console.log('Registro de caja completado:', {
+      ...data,
+      fechaRegistro: new Date().toISOString()
+    });
+    // Aquí iría la llamada a la API para guardar el registro
+    alert(`Cierre de caja registrado exitsamente!\nUsuario: ${data.usuario}\nTotal Final: S/${data.dineroFinal.toFixed(2)}`);
+
     console.log('Datos del cierre de caja:', data);
     // Aquí iría la lógica para crear el registro de cierre de caja
     setIsModalOpen(false);

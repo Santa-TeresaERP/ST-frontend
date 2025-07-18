@@ -20,6 +20,7 @@ import { useFetchResources } from '@/modules/inventory/hook/useResources';
 import { useFetchProducts } from '@/modules/inventory/hook/useProducts';
 import FilterMovement from './movement/filter-movement';
 
+
 const MovementComponentView: React.FC = () => {
   const [filters, setFilters] = useState<any>({});
   // Productos
@@ -44,6 +45,10 @@ const MovementComponentView: React.FC = () => {
     setFilters(newFilters);
   };
 
+  const getWarehouseName = (id: string) => warehouses.find((w: any) => w.id === id)?.name || id;
+  const getResourceName = (id: string) => resources.find((r: any) => r.id === id)?.name || id;
+  const getProductName = (id: string) => products.find((p: any) => p.id === id)?.name || id;
+
   // Filtrar movimientos por producto, almacén o tienda
   const filteredMovements = movements.filter(
     (mov) =>
@@ -53,8 +58,8 @@ const MovementComponentView: React.FC = () => {
       (filters.start_date ? new Date(mov.movement_date) >= new Date(filters.start_date) : true) &&
       (filters.end_date ? new Date(mov.movement_date) <= new Date(filters.end_date) : true) &&
       (searchTerm ? (
-        mov.product_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        mov.warehouse_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getProductName(mov.product_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getWarehouseName(mov.warehouse_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
         mov.store_id?.toLowerCase().includes(searchTerm.toLowerCase())
       ) : true)
   );
@@ -67,15 +72,10 @@ const MovementComponentView: React.FC = () => {
       (filters.start_date ? new Date(mov.movement_date) >= new Date(filters.start_date) : true) &&
       (filters.end_date ? new Date(mov.movement_date) <= new Date(filters.end_date) : true) &&
       (searchTerm ? (
-        mov.resource_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        mov.warehouse_id?.toLowerCase().includes(searchTerm.toLowerCase())
+        getResourceName(mov.resource_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getWarehouseName(mov.warehouse_id).toLowerCase().includes(searchTerm.toLowerCase())
       ) : true)
   );
-
-  // Funciones para mostrar nombre en vez de UUID
-  const getWarehouseName = (id: string) => warehouses.find((w: any) => w.id === id)?.name || id;
-  const getResourceName = (id: string) => resources.find((r: any) => r.id === id)?.name || id;
-  const getProductName = (id: string) => products.find((p: any) => p.id === id)?.name || id;
 
   return (
     <div className="p-6 space-y-4 bg-gray-50 min-h-screen">
@@ -84,8 +84,21 @@ const MovementComponentView: React.FC = () => {
         <h2 className="text-3xl font-semibold text-red-700">
           Movimientos de {selectedType === 'producto' ? 'Productos' : 'Recursos'}
         </h2>
-        <div className="flex gap-2">
-          <button
+      </div>
+
+      {/* Acciones y Filtro */}
+      <div className="flex gap-2 justify-end">
+        <button
+            onClick={() => setShowCreate(true)}
+            className={`px-4 py-2 rounded-full font-semibold transition-colors duration-300 flex items-center gap-2 ${
+              selectedType === 'producto'
+                ? 'bg-red-700 text-white hover:bg-red-800'
+                : 'bg-orange-500 text-white hover:bg-orange-600'
+            }`}
+          >
+          <PlusCircle size={18} /> Crear {selectedType === 'producto' ? 'Producto' : 'Recurso'}
+        </button>
+        <button
             className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
               selectedType === 'producto'
                 ? 'bg-red-700 text-white'
@@ -105,37 +118,16 @@ const MovementComponentView: React.FC = () => {
           >
             <Users size={18} /> Recurso
           </button>
-        </div>
       </div>
-
-      {/* Acciones y Filtro */}
-      <div className="flex justify-between items-center space-x-6">
-        {/* Search input */}
-        <div className="flex items-center space-x-2">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar..."
-            className="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-700"
-          />
-        </div>
-        <div className="flex items-center space-x-3 select-none">
-          <button
-            onClick={() => setShowCreate(true)}
-            className={`px-4 py-2 rounded-full font-semibold transition-colors duration-300 flex items-center gap-2 ${
-              selectedType === 'producto'
-                ? 'bg-red-700 text-white hover:bg-red-800'
-                : 'bg-orange-500 text-white hover:bg-orange-600'
-            }`}
-          >
-            <PlusCircle size={18} /> Crear {selectedType === 'producto' ? 'Producto' : 'Recurso'}
-          </button>
-        </div>
-        <div className="relative inline-flex items-center shadow-sm rounded-xl bg-white">
-        </div>
-      </div>
-      <FilterMovement selectedType={selectedType} onFilter={handleFilter} />
+      <FilterMovement
+        selectedType={selectedType}
+        filters={filters}
+        onFilter={handleFilter}
+        onSearchChange={setSearchTerm}
+        searchTerm={searchTerm}
+        products={products}
+        stores={warehouses}
+      />
 
       {/* Display active filters */}
       <div className="flex flex-wrap gap-2 mb-4">
@@ -206,7 +198,6 @@ const MovementComponentView: React.FC = () => {
               <table className="min-w-full text-sm">
                 <thead className="bg-gray-800 text-white">
                   <tr>
-                    <th className="px-4 py-2 text-center">ID</th>
                     <th className="px-4 py-2 text-center">Almacén</th>
                     <th className="px-4 py-2 text-center">Tienda</th>
                     <th className="px-4 py-2 text-center">Producto</th>
@@ -220,7 +211,6 @@ const MovementComponentView: React.FC = () => {
                 <tbody>
                   {filteredMovements.map((mov, index) => (
                     <tr key={mov.movement_id || `movement-${index}`} className="hover:bg-gray-50 border-t">
-                      <td className="px-4 py-2 text-center">{mov.movement_id}</td>
                       <td className="px-4 py-2 text-center">{getWarehouseName(mov.warehouse_id)}</td>
                       <td className="px-4 py-2 text-center">{mov.store_id}</td>
                       <td className="px-4 py-2 text-center">{getProductName(mov.product_id)}</td>

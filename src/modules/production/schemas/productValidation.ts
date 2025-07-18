@@ -15,6 +15,11 @@ export const productSchema = z.object({
     .max(255, 'La descripción no debe exceder los 255 caracteres')
     .optional(),
 
-  imagen_url: z.string().url('La URL de la imagen debe ser válida').optional(),
+  imagen_url: z
+    .union([
+      z.string().url('La URL de la imagen debe ser válida'),
+      z.literal(''),
+    ])
+    .optional(),
 });
 

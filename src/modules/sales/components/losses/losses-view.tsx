@@ -7,16 +7,15 @@ import {
   useFetchReturns,
   useCreateReturn,
   useUpdateReturn,
-  useDeleteReturn,
-} from "@/modules/sales/hooks/useReturns";
+  useDeleteReturn
+} from '@/modules/sales/hooks/useReturns'
 
-import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
-import { useFetchSales } from "@/modules/sales/hooks/useSales";
+import { useFetchProducts } from '@/modules/inventory/hook/useProducts'
+
 
 const LossesComponentView: React.FC = () => {
   const { data: losses = [], isLoading } = useFetchReturns();
   const { data: products = [] } = useFetchProducts();
-  const { data: sales = [] } = useFetchSales();
 
   const createReturnMutation = useCreateReturn();
   const updateReturnMutation = useUpdateReturn();
@@ -45,14 +44,10 @@ const LossesComponentView: React.FC = () => {
     setIsDeleteModalOpen(false);
   };
 
+  // Obtener nombre del producto desde el ID
   const getProductName = (productId: string) => {
     const product = products.find((p) => p.id === productId);
-    return product ? product.name : productId;
-  };
-
-  const getStoreNameFromSale = (saleId: string) => {
-    const sale = sales.find((s) => s.id === saleId);
-    return sale?.store?.store_name ?? saleId;
+    return product ? product.name : productId; // fallback al ID si no está cargado
   };
 
   return (
@@ -91,9 +86,7 @@ const LossesComponentView: React.FC = () => {
                   <td className="px-4 py-2 text-center">
                     {getProductName(item.productId)}
                   </td>
-                  <td className="px-4 py-2 text-center">
-                    {getStoreNameFromSale(item.salesId)}
-                  </td>
+                  <td className="px-4 py-2 text-center">{item.salesId}</td>
                   <td className="px-4 py-2 text-center">{item.reason}</td>
                   <td className="px-4 py-2 text-center">{item.observations}</td>
                   <td className="px-4 py-2 text-center">
