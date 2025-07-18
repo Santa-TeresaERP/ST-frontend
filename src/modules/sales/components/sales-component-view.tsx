@@ -126,7 +126,7 @@ const SalesView: React.FC = () => {
       {/* Render de componentes según tab */}
       <div className="mt-6">
         {activeTab === 'informacion' && <InformationComponentView selectedStore={selectedStore} />}
-        {activeTab === 'ventas' && <SalesComponentsView />}
+        {activeTab === 'ventas' && <SalesComponentsView selectedStore={selectedStore} />}
         {activeTab === 'inventario' && <InventoryComponentsView />}
         {activeTab === 'perdidas' && <LossesComponentView/>}
       </div>

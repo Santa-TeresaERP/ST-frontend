@@ -9,9 +9,9 @@ import { CreateSalePayload } from '../../types/sales';
 import { useCreateSale } from '../../hooks/useSales';
 import { useCreateSalesDetail } from '../../hooks/useSalesDetails';
 import { useFetchProducts } from '@/modules/production/hook/useProducts';
+import { useFetchStores } from '@/modules/stores/hook/useStores'; // Importar el hook para obtener las tiendas
 import { Product as ProductType } from '@/modules/production/types/products';
 
-// Interfaz local para los productos en el carrito
 interface CartProduct {
   id: string;
   nombre: string;
@@ -29,15 +29,14 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
   const createSale = useCreateSale();
   const createSalesDetail = useCreateSalesDetail();
   const { data: allProducts = [], isLoading: loadingProducts } = useFetchProducts();
-  
-  // Estados para productos
+  const { data: stores = [], isLoading: loadingStores } = useFetchStores(); // Obtener las tiendas
+
   const [selectedProductId, setSelectedProductId] = useState('');
   const [cantidad, setCantidad] = useState('');
   const [productos, setProductos] = useState<CartProduct[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
-  // React Hook Form
   const {
     register,
     handleSubmit,
@@ -54,23 +53,18 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
     },
   });
 
-  // Calcular total automáticamente cuando cambian los productos
   useEffect(() => {
     const nuevoTotal = productos.reduce((sum, prod) => sum + prod.total, 0);
     setValue('total_income', nuevoTotal);
   }, [productos, setValue]);
 
-  // Obtener el producto seleccionado
   const selectedProduct = allProducts.find(p => p.id === selectedProductId);
 
-  // Función para obtener el precio de forma segura desde el tipo ProductType
   const getProductPrice = (product: ProductType): number => {
-    // Manejar tanto number como string que venga del API
     const price = typeof product.price === 'string' ? parseFloat(product.price) : product.price;
     return isNaN(price) ? 0 : price;
   };
 
-  // Calcular total del producto actual
   const totalProductoActual = selectedProduct && cantidad 
     ? getProductPrice(selectedProduct) * parseInt(cantidad || '0') 
     : 0;
@@ -97,10 +91,8 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
       nuevosProductos[editingIndex] = nuevoProducto;
       setEditingIndex(null);
     } else {
-      // Verificar si el producto ya existe
       const existingIndex = productos.findIndex(p => p.id === selectedProductId);
       if (existingIndex !== -1) {
-        // Si existe, actualizar la cantidad
         nuevosProductos = [...productos];
         nuevosProductos[existingIndex] = {
           ...nuevosProductos[existingIndex],
@@ -108,14 +100,11 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
           total: (nuevosProductos[existingIndex].cantidad + cantidadNum) * precio,
         };
       } else {
-        // Si no existe, agregarlo
         nuevosProductos = [...productos, nuevoProducto];
       }
     }
     
     setProductos(nuevosProductos);
-    
-    // Limpiar campos
     setSelectedProductId('');
     setCantidad('');
   };
@@ -139,98 +128,33 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
     }
 
     setIsCreating(true);
-    console.log('Iniciando creación de venta...', data);
-    console.log('Productos a procesar:', productos);
-    
     try {
-      // 1. Crear la venta primero
-      console.log('Creando venta...');
       const createdSale = await createSale.mutateAsync(data);
-      console.log('Venta creada:', createdSale);
-      
-      // 2. Verificar que la venta tenga ID
       if (!createdSale?.id) {
         throw new Error('La venta se creó pero no tiene ID');
       }
 
-      // 3. Crear los detalles de venta uno por uno
-      console.log('Creando detalles de venta...');
-      
       for (let i = 0; i < productos.length; i++) {
         const producto = productos[i];
-        
-        // Crear el payload con los tipos correctos
         const detailData = {
           saleId: String(createdSale.id),
           productId: String(producto.id),
           quantity: Number(producto.cantidad),
-          mount: Number(producto.total)
+          mount: Number(producto.total),
         };
-        
-        // Validar que todos los campos estén presentes y sean válidos
-        if (!detailData.saleId || !detailData.productId) {
-          throw new Error(`IDs faltantes para el producto ${i + 1}`);
-        }
-        
-        if (isNaN(detailData.quantity) || detailData.quantity <= 0) {
-          throw new Error(`Cantidad inválida para el producto ${i + 1}: ${detailData.quantity}`);
-        }
-        
-        if (isNaN(detailData.mount) || detailData.mount <= 0) {
-          throw new Error(`Monto inválido para el producto ${i + 1}: ${detailData.mount}`);
-        }
-        
-        console.log(`Creando detalle ${i + 1}:`, detailData);
-        console.log('Tipos de datos:', {
-          saleId: typeof detailData.saleId,
-          productId: typeof detailData.productId,
-          quantity: typeof detailData.quantity,
-          mount: typeof detailData.mount
-        });
-        
-        try {
-          const result = await createSalesDetail.mutateAsync(detailData);
-          console.log(`Detalle ${i + 1} creado exitosamente:`, result);
-        } catch (detailError) {
-          console.error(`Error creando detalle ${i + 1}:`, detailError);
-          
-          // Si es un error de Axios, mostrar más detalles
-          if (detailError && typeof detailError === 'object' && 'response' in detailError) {
-            const axiosError = detailError as any;
-            console.error('Respuesta del servidor:', axiosError.response?.data);
-            console.error('Status:', axiosError.response?.status);
-            console.error('Config de la petición:', axiosError.config);
-          }
-          
-          throw new Error(`Error en detalle ${i + 1}: ${detailError instanceof Error ? detailError.message : 'Error desconocido'}`);
-        }
+
+        await createSalesDetail.mutateAsync(detailData);
       }
 
-      console.log('Todos los detalles creados exitosamente');
-
-      // 4. Limpiar formulario y cerrar
       reset();
       setProductos([]);
       setSelectedProductId('');
       setCantidad('');
       setEditingIndex(null);
       onClose();
-      
-      alert('Venta creada exitosamente');
-      
     } catch (error) {
-      console.error('Error completo:', error);
-      
-      // Mostrar un error más específico
-      let errorMessage = 'Error desconocido al crear la venta';
-      
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (typeof error === 'object' && error !== null && 'message' in error) {
-        errorMessage = String(error.message);
-      }
-      
-      alert(`Error al crear la venta: ${errorMessage}`);
+      console.error('Error al crear la venta:', error);
+      alert('Error al crear la venta');
     } finally {
       setIsCreating(false);
     }
@@ -265,19 +189,25 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
         </div>
 
         <div className="p-6 flex flex-col lg:flex-row gap-6">
-          {/* Formulario principal */}
           <form onSubmit={handleSubmit(onSubmit)} className="lg:w-1/2 space-y-4 text-left">
             <div>
               <label className="block text-gray-700 font-medium mb-1">
-                ID de Tienda <span className="text-red-600">*</span>
+                Tienda <span className="text-red-600">*</span>
               </label>
-              <input
-                type="text"
+              <select
                 {...register('store_id')}
-                disabled={isCreating}
+                disabled={loadingStores || isCreating}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-600 focus:outline-none shadow-sm disabled:bg-gray-100"
-                placeholder="UUID de la tienda"
-              />
+              >
+                <option value="">
+                  {loadingStores ? 'Cargando tiendas...' : 'Seleccionar tienda'}
+                </option>
+                {stores.map((store) => (
+                  <option key={store.id} value={store.id}>
+                    {store.store_name}
+                  </option>
+                ))}
+              </select>
               {errors.store_id && (
                 <p className="text-red-600 text-xs mt-1">{errors.store_id.message}</p>
               )}
@@ -285,13 +215,13 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
 
             <div>
               <label className="block text-gray-700 font-medium mb-1">
-                Total de Ingresos <span className="text-red-600">*</span>
+                Total de Ingresos <span className="text-red-100">*</span>
               </label>
               <input
                 type="number"
                 step="0.01"
                 {...register('total_income', { valueAsNumber: true })}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-600 focus:outline-none shadow-sm bg-gray-50"
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-600 focus:outline-none shadow-sm bg-gray-300"
                 placeholder="0.00"
                 readOnly
               />
@@ -363,7 +293,6 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
 
           <div className="w-px bg-gray-300 hidden lg:block"></div>
 
-          {/* Sección de productos */}
           <div className="lg:w-1/2">
             <h3 className="text-base font-semibold text-gray-700 mb-4 flex items-center gap-2">
               <FiPackage size={18} /> Productos de la venta
@@ -433,7 +362,6 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
               {editingIndex !== null ? 'Actualizar Producto' : 'Agregar Producto'}
             </button>
 
-            {/* Lista de productos agregados */}
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {productos.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">
@@ -478,7 +406,6 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
               )}
             </div>
 
-            {/* Resumen */}
             {productos.length > 0 && (
               <div className="mt-4 p-3 bg-red-50 rounded-lg border">
                 <div className="flex justify-between items-center text-sm">
