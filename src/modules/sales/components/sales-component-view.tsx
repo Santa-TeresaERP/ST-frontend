@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { FiUsers, FiShoppingCart, FiPackage, FiAlertOctagon } from 'react-icons/fi';
 
 import InformationComponentView from '@/modules/sales/components/information/information-component-view';
-import StoreListView from '@/modules/stores/components/store-list-view';
-import SalesComponentsView from './ sales/sale-view';
-import InventoryComponentsView from './ inventory/inventory-view';
+import StoreListView from '@/modules/stores/components/store-list-view-fixed';
+import SalesComponentsView from './\ sales/sale-view';
+import InventoryComponentsView from './\ inventory/inventory-view';
 import LossesComponentView from './losses/losses-view';
 import { StoreAttributes } from '@/modules/stores/types/store';
 import { useFetchStores } from '@/modules/stores/hook/useStores';
@@ -12,7 +12,7 @@ import { useFetchStores } from '@/modules/stores/hook/useStores';
 const SalesView: React.FC = () => {
   const [activeTab, setActiveTab] = useState('informacion');
   const [selectedStore, setSelectedStore] = useState<StoreAttributes | null>(null);
-  const { data: stores, refetch } = useFetchStores();
+  const { refetch } = useFetchStores();
 
   // Refresca la tienda seleccionada tras editar
   const handleStoreUpdate = async (storeId: string) => {
@@ -143,9 +143,9 @@ const SalesView: React.FC = () => {
       {/* Render de componentes según tab */}
       <div className="mt-6">
         {activeTab === 'informacion' && <InformationComponentView selectedStore={selectedStore} onStoreUpdate={handleStoreUpdate} />}
-        {activeTab === 'ventas' && <SalesComponentsView />}
+        {activeTab === 'ventas' && <SalesComponentsView selectedStore={selectedStore} />}
         {activeTab === 'inventario' && <InventoryComponentsView />}
-        {activeTab === 'perdidas' && <LossesComponentView/>}
+        {activeTab === 'perdidas' && <LossesComponentView />}
       </div>
     </div>
   );
