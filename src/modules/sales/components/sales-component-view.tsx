@@ -145,7 +145,8 @@ const SalesView: React.FC = () => {
         {activeTab === 'informacion' && <InformationComponentView selectedStore={selectedStore} onStoreUpdate={handleStoreUpdate} />}
         {activeTab === 'ventas' && <SalesComponentsView selectedStore={selectedStore} />}
         {activeTab === 'inventario' && <InventoryComponentsView />}
-        {activeTab === 'perdidas' && <LossesComponentView />}
+        {activeTab === 'perdidas' && <LossesComponentView selectedStoreId={selectedStore?.id} />}
+
       </div>
     </div>
   );

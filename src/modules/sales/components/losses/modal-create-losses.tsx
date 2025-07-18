@@ -10,11 +10,13 @@ interface ModalCreateLossProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: any) => void;
+  selectedStoreId?: string;
 }
 
 const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
   isOpen,
   onClose,
+  selectedStoreId,
 }) => {
   const [productSearch, setProductSearch] = useState("");
   const [productId, setProductId] = useState("");
@@ -28,6 +30,12 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
   const { data: sales = [] } = useFetchSales();
   const createReturnMutation = useCreateReturn();
 
+  const salesDropdownRef = useRef<HTMLDivElement>(null);
+  const productDropdownRef = useRef<HTMLDivElement>(null);
+
+  const [showSalesDropdown, setShowSalesDropdown] = useState(false);
+  const [showProductsDropdown, setShowProductsDropdown] = useState(false);
+
   const filteredProducts = productSearch
     ? products.filter((p) =>
         p.name.toLowerCase().includes(productSearch.toLowerCase())
@@ -35,11 +43,15 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
     : [];
 
   const filteredSales = sales.filter((sale) => {
+    const belongsToStore = selectedStoreId
+      ? sale.store?.id === selectedStoreId
+      : true;
     const formattedDate = new Date(sale.income_date).toLocaleString("es-PE");
-    return (
+    const matchesSearch =
       formattedDate.toLowerCase().includes(salesSearch.toLowerCase()) ||
-      sale.total_income.toString().includes(salesSearch)
-    );
+      sale.total_income.toString().includes(salesSearch);
+
+    return belongsToStore && matchesSearch;
   });
   const salesDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -52,8 +64,13 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
       ) {
         setShowSalesDropdown(false);
       }
-    }
-
+      if (
+        productDropdownRef.current &&
+        !productDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowProductsDropdown(false);
+      }
+    };
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
@@ -115,7 +132,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
 
           <div className="space-y-4">
             {/* Selector de producto */}
-            <div className="relative">
+            <div className="relative" ref={productDropdownRef}>
               <label className="block text-gray-700 mb-1 font-medium">
                 Producto <span className="text-red-600">*</span>
               </label>
@@ -125,11 +142,13 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
                 onChange={(e) => {
                   setProductSearch(e.target.value);
                   setProductId("");
+                  setShowProductsDropdown(true);
                 }}
+                onFocus={() => setShowProductsDropdown(true)}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
                 placeholder="Buscar producto por nombre"
               />
-              {filteredProducts.length > 0 && (
+              {showProductsDropdown && filteredProducts.length > 0 && (
                 <ul className="absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {filteredProducts.map((product) => (
                     <li
@@ -138,6 +157,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
                       onClick={() => {
                         setProductSearch(product.name);
                         setProductId(product.id);
+                        setShowProductsDropdown(false);
                       }}
                     >
                       {product.name}
@@ -152,57 +172,49 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
               <label className="block text-gray-700 mb-1 font-medium">
                 Venta <span className="text-red-600">*</span>
               </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={salesSearch}
-                  onChange={(e) => {
-                    setSalesSearch(e.target.value);
-                    setSalesId("");
-                    setShowSalesDropdown(true);
-                  }}
-                  onFocus={() => setShowSalesDropdown(true)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                  placeholder="Buscar por fecha o monto"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowSalesDropdown(!showSalesDropdown)}
-                  className="text-gray-700 bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded-lg border"
-                  title="Mostrar todo"
-                >
-                  {showSalesDropdown ? "⏶" : "⏷"}
-                </button>
-              </div>
-
-              {showSalesDropdown &&
-                (filteredSales.length > 0 || salesSearch === "") && (
-                  <ul className="absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                    {(salesSearch
-                      ? filteredSales
-                      : sales.slice(-3).reverse()
-                    ).map((sale) => {
-                      const formatted = new Date(
-                        sale.income_date
-                      ).toLocaleString("es-PE");
-                      return (
-                        <li
-                          key={sale.id}
-                          className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
-                          onClick={() => {
-                            setSalesSearch(
-                              `${formatted} - S/ ${sale.total_income}`
-                            );
-                            setSalesId(sale.id!);
-                            setShowSalesDropdown(false);
-                          }}
-                        >
-                          📅 {formatted} — 💵 S/ {sale.total_income}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
+              <input
+                type="text"
+                value={salesSearch}
+                onChange={(e) => {
+                  setSalesSearch(e.target.value);
+                  setSalesId("");
+                  setShowSalesDropdown(true);
+                }}
+                onFocus={() => setShowSalesDropdown(true)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                placeholder="Buscar por fecha o monto"
+              />
+              {showSalesDropdown && (
+                <ul className="absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {(salesSearch
+                    ? filteredSales
+                    : [...filteredSales]
+                        .sort(
+                          (a, b) =>
+                            new Date(b.income_date).getTime() -
+                            new Date(a.income_date).getTime()
+                        )
+                        .slice(0, 3)
+                  ).map((sale) => (
+                    <li
+                      key={sale.id}
+                      className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
+                      onClick={() => {
+                        const formatted = new Date(
+                          sale.income_date
+                        ).toLocaleString("es-PE");
+                        setSalesSearch(
+                          `${formatted} - S/ ${sale.total_income}`
+                        );
+                        setSalesId(sale.id!);
+                        setShowSalesDropdown(false);
+                      }}
+                    >
+                      📅 {new Date(sale.income_date).toLocaleString("es-PE")} — 💵 S/ {sale.total_income}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             {/* Razón */}
