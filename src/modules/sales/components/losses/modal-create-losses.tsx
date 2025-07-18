@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import { FiAlertOctagon } from 'react-icons/fi';
 import { useCreateReturn } from '@/modules/sales/hooks/useReturns'; // ajusta el path según tu proyecto
@@ -10,12 +10,48 @@ interface ModalCreateLossProps {
 
 const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({ isOpen, onClose }) => {
   const [productId, setProductId] = useState('');
+  const [productSearch, setProductSearch] = useState('');
   const [salesId, setSalesId] = useState('');
+  const [salesSearch, setSalesSearch] = useState('');
+  const [showSalesDropdown, setShowSalesDropdown] = useState(false);
   const [reason, setReason] = useState('');
   const [observations, setObservations] = useState('');
   const [localError, setLocalError] = useState('');
 
+  const salesDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Interfaces para tipos
+  interface Product {
+    id: string;
+    name: string;
+  }
+
+  interface Sale {
+    id: string;
+    income_date: string;
+    total_income: number;
+  }
+
+  // Mock data - reemplaza con datos reales de tus hooks
+  const filteredProducts: Product[] = [];
+  const filteredSales: Sale[] = [];
+  const sales: Sale[] = [];
+
   const createReturnMutation = useCreateReturn();
+
+  // Cerrar dropdown cuando se hace clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (salesDropdownRef.current && !salesDropdownRef.current.contains(event.target as Node)) {
+        setShowSalesDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,11 +71,15 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({ isOpen, onClose }) =>
       onClose();
       // Limpia campos después de guardar
       setProductId('');
+      setProductSearch('');
       setSalesId('');
+      setSalesSearch('');
       setReason('');
       setObservations('');
       setLocalError('');
+      setShowSalesDropdown(false);
     } catch (error) {
+      console.error('Error creating loss:', error);
       setLocalError('Hubo un error al guardar la pérdida.');
     }
   };
@@ -73,10 +113,13 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({ isOpen, onClose }) =>
               </label>
               <input
                 type="text"
-                value={productId}
-                onChange={(e) => setProductId(e.target.value)}
+                value={productSearch}
+                onChange={(e) => {
+                  setProductSearch(e.target.value);
+                  setProductId(e.target.value);
+                }}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="UUID del producto"
+                placeholder="Buscar producto o ingresar UUID"
               />
               {filteredProducts.length > 0 && (
                 <ul className="absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -103,10 +146,15 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({ isOpen, onClose }) =>
               </label>
               <input
                 type="text"
-                value={salesId}
-                onChange={(e) => setSalesId(e.target.value)}
+                value={salesSearch}
+                onChange={(e) => {
+                  setSalesSearch(e.target.value);
+                  setSalesId(e.target.value);
+                  setShowSalesDropdown(true);
+                }}
+                onFocus={() => setShowSalesDropdown(true)}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="UUID de la venta"
+                placeholder="Buscar venta o ingresar UUID"
               />
               {showSalesDropdown && (
                 <ul className="absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -126,7 +174,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({ isOpen, onClose }) =>
                       onClick={() => {
                         const formatted = new Date(sale.income_date).toLocaleString("es-PE");
                         setSalesSearch(`${formatted} - S/ ${sale.total_income}`);
-                        setSalesId(sale.id!);
+                        setSalesId(sale.id);
                         setShowSalesDropdown(false);
                       }}
                     >
