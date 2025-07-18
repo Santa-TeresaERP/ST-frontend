@@ -9,15 +9,28 @@ import { useFetchProductions } from '@/modules/production/hook/useProductions';
 import { useFetchCategories } from '@/modules/production/hook/useCategories'; // Importado para obtener categorías
 import { FiBox } from 'react-icons/fi';
 import { Tooltip } from '@/app/components/ui/tooltip';
-import ModalFilterProduct from './modal-filter-product';
+
 
 const ProductosView = () => {
   const { data: productos, isLoading, error } = useFetchProducts();
   const { data: producciones } = useFetchProductions();
   const { data: categories } = useFetchCategories(); // Hook para obtener categorías
   const deleteProductMutation = useDeleteProduct();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
 
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false); // Estado para el modal de filtros
+  useEffect(() => {
+    if (!productos) return;
+
+    const filtered = productos.filter((product) => {
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = !selectedCategoryId || product.category_id === selectedCategoryId;
+      return matchesSearch && matchesCategory;
+    });
+
+    setFilteredProducts(filtered);
+  }, [searchTerm, selectedCategoryId, productos]);
+
   const [filteredProducts, setFilteredProducts] = useState<
     {
       id: string;
@@ -50,22 +63,6 @@ const ProductosView = () => {
 
   const isProductLinkedToProduction = (productId: string): boolean => {
     return producciones?.some(production => production.productId === productId) ?? false;
-  };
-
-  const handleApplyFilters = (filters: { startDate: string; endDate: string; category: string }) => {
-    const { startDate, endDate, category } = filters;
-
-    const filtered = productos?.filter((product) => {
-      const productDate = new Date(product.createdAt); // Fecha de creación del producto
-      const isWithinDateRange =
-        (!startDate || productDate >= new Date(startDate)) &&
-        (!endDate || productDate <= new Date(endDate));
-      const matchesCategory = !category || product.category_id === category;
-
-      return isWithinDateRange && matchesCategory;
-    });
-
-    setFilteredProducts(filtered || []);
   };
 
   const handleDeleteClick = (product: typeof selectedProduct) => {
@@ -153,14 +150,6 @@ const ProductosView = () => {
         <div className="w-full md:w-auto">
           <div className="flex flex-col sm:flex-row gap-3">
             <button
-              onClick={() => setIsFilterModalOpen(true)}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-500 hover:to-blue-400 transition-all duration-300 shadow hover:shadow-md w-full sm:w-auto"
-            >
-              <List size={18} />
-              <span>Filtrar</span>
-            </button>
-
-            <button
               onClick={() => setIsCreateModalOpen(true)}
               className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-lg hover:from-red-500 hover:to-red-400 transition-all duration-300 shadow hover:shadow-md w-full sm:w-auto"
             >
@@ -178,6 +167,35 @@ const ProductosView = () => {
           </div>
         </div>
       </div>
+
+      {/* Filtros */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Buscador por nombre */}
+          <input
+            type="text"
+            placeholder="Buscar por nombre"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+          />
+
+          {/* Selector por categoría */}
+          <select
+            value={selectedCategoryId}
+            onChange={(e) => setSelectedCategoryId(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+          >
+            <option value="">Todas las categorías</option>
+            {categories?.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
 
       {/* Lista de productos */}
       {filteredProducts.length === 0 ? (
@@ -293,18 +311,9 @@ const ProductosView = () => {
         </div>
       )}
 
-      {/* Modales */}
-      <ModalFilterProduct
-        isOpen={isFilterModalOpen}
-        onClose={() => setIsFilterModalOpen(false)}
-        categories={categories || []} // Pasa las categorías disponibles
-        onFilter={handleApplyFilters}
-      />
-
       <ModalCreateProducto
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        categories={categories || []} // Pasa las categorías disponibles
       />
 
       <ModalEditProducto
