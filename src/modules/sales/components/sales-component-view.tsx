@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FiUsers, FiShoppingCart, FiPackage, FiAlertOctagon } from 'react-icons/fi';
 
 import InformationComponentView from '@/modules/sales/components/information/information-component-view';
-import StoreListView from '@/modules/stores/components/store-list-view-fixed';
+import StoreListView from '@/modules/stores/components/store-list-view';
 import SalesComponentsView from './\ sales/sale-view';
 import InventoryComponentsView from './\ inventory/inventory-view';
 import LossesComponentView from './losses/losses-view';
