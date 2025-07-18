@@ -5,9 +5,9 @@ import ModalCreateSales from './modal-create-sales';
 import ModalEditSales from './modal-edit-sales';
 import ModalDetailSales from './modal-details-sales';
 import { useFetchSales } from '../../hooks/useSales';
-import { useFetchStores } from '@/modules/stores/hook/useStores';
+import { useFetchStores } from '@/modules/sales/hooks/useStore';
 import { salesAttributes } from '../../types/sales';
-import { StoreAttributes } from '@/modules/stores/types/store';
+import { StoreAttributes } from '@/modules/sales/types/store.d';
 
 // Agregué una interfaz para aceptar la tienda seleccionada como prop
 interface SalesComponentsViewProps {
@@ -17,7 +17,8 @@ interface SalesComponentsViewProps {
 const SalesComponentsView: React.FC<SalesComponentsViewProps> = ({ selectedStore }) => {
   // Obtengo las ventas y las tiendas usando los hooks correspondientes
   const { data: sales = [], isLoading, error } = useFetchSales();
-  const { data: stores = [] } = useFetchStores();
+  const { data: storesData } = useFetchStores();
+  const stores = storesData?.stores || [];
 
   // Estados para manejar los modales y la venta actual
   const [isModalOpen, setIsModalOpen] = useState(false);
