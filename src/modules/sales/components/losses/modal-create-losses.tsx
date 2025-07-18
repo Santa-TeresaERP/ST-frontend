@@ -9,11 +9,13 @@ interface ModalCreateLossProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: any) => void;
+  selectedStoreId?: string;
 }
 
 const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
   isOpen,
   onClose,
+  selectedStoreId,
 }) => {
   const [productSearch, setProductSearch] = useState("");
   const [productId, setProductId] = useState("");
@@ -37,11 +39,15 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
     : [];
 
   const filteredSales = sales.filter((sale) => {
+    const belongsToStore = selectedStoreId
+      ? sale.store?.id === selectedStoreId
+      : true;
     const formattedDate = new Date(sale.income_date).toLocaleString("es-PE");
-    return (
+    const matchesSearch =
       formattedDate.toLowerCase().includes(salesSearch.toLowerCase()) ||
-      sale.total_income.toString().includes(salesSearch)
-    );
+      sale.total_income.toString().includes(salesSearch);
+
+    return belongsToStore && matchesSearch;
   });
 
   useEffect(() => {
@@ -93,7 +99,9 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl relative mx-2">
         <div className="bg-gradient-to-r from-red-700 to-red-900 text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
           <FiAlertOctagon size={24} />
-          <h2 className="text-xl font-semibold text-center">Registrar Pérdida</h2>
+          <h2 className="text-xl font-semibold text-center">
+            Registrar Pérdida
+          </h2>
           <button
             onClick={onClose}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
@@ -162,7 +170,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
                 <ul className="absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {(salesSearch
                     ? filteredSales
-                    : [...sales]
+                    : [...filteredSales]
                         .sort(
                           (a, b) =>
                             new Date(b.income_date).getTime() -
@@ -174,13 +182,18 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
                       key={sale.id}
                       className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
                       onClick={() => {
-                        const formatted = new Date(sale.income_date).toLocaleString("es-PE");
-                        setSalesSearch(`${formatted} - S/ ${sale.total_income}`);
+                        const formatted = new Date(
+                          sale.income_date
+                        ).toLocaleString("es-PE");
+                        setSalesSearch(
+                          `${formatted} - S/ ${sale.total_income}`
+                        );
                         setSalesId(sale.id!);
                         setShowSalesDropdown(false);
                       }}
                     >
-                      📅 {new Date(sale.income_date).toLocaleString("es-PE")} — 💵 S/ {sale.total_income}
+                      📅 {new Date(sale.income_date).toLocaleString("es-PE")} —
+                      💵 S/ {sale.total_income}
                     </li>
                   ))}
                 </ul>

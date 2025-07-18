@@ -161,6 +161,7 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({ selectedStore
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSave={handleCreateLoss}
+        selectedStoreId={selectedStoreId}
       />
 
       <ModalEditLoss
