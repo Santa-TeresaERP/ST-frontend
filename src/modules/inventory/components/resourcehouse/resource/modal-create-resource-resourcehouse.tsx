@@ -57,6 +57,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
       resource_id: '',
       quantity: undefined, // Cambiar de 0 a undefined para evitar enviar 0
       type_unit: '',
+      unit_price: 0, // Agregar el campo unit_price
       total_cost: undefined, // Cambiar de 0 a undefined para evitar enviar 0
       supplier_id: '',
       entry_date: new Date().toISOString().split('T')[0], // Fecha de hoy por defecto
@@ -83,41 +84,53 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
 
   useEffect(() => {
     if (quantity > 0 && totalCost > 0) {
-      // El precio unitario se calcula automáticamente y se muestra en el UI
+      // El precio unitario se calcula automáticamente y se actualiza en el formulario
       const calculatedUnitPrice = totalCost / quantity;
       console.log('Precio unitario calculado:', calculatedUnitPrice);
+      setValue('unit_price', Number(calculatedUnitPrice.toFixed(2)));
+    } else {
+      setValue('unit_price', 0);
     }
-  }, [quantity, totalCost]);
+  }, [quantity, totalCost, setValue]);
 
   const onSubmit = async (data: BuysResourceFormData) => {
+    console.log('🚀 onSubmit ejecutado con data:', data);
+    console.log('🔍 selectedResourceId:', selectedResourceId);
+    
     // Validar que se haya seleccionado un recurso
     if (!selectedResourceId) {
+      console.log('❌ Error: No se seleccionó un recurso');
       setServerError('Debe seleccionar un recurso');
       return;
     }
 
     // Validar que todos los campos requeridos tengan valores
     if (!data.warehouse_id || data.warehouse_id.trim() === '') {
+      console.log('❌ Error: No se seleccionó un almacén');
       setServerError('Debe seleccionar un almacén');
       return;
     }
 
     if (!data.supplier_id || data.supplier_id.trim() === '') {
+      console.log('❌ Error: No se seleccionó un proveedor');
       setServerError('Debe seleccionar un proveedor');
       return;
     }
 
     if (!data.type_unit || data.type_unit.trim() === '') {
+      console.log('❌ Error: No se seleccionó una unidad');
       setServerError('Debe seleccionar una unidad');
       return;
     }
 
     if (!data.quantity || data.quantity <= 0) {
+      console.log('❌ Error: Cantidad inválida:', data.quantity);
       setServerError('La cantidad debe ser mayor a 0');
       return;
     }
 
     if (!data.total_cost || data.total_cost <= 0) {
+      console.log('❌ Error: Costo total inválido:', data.total_cost);
       setServerError('El costo total debe ser mayor a 0');
       return;
     }
@@ -135,14 +148,17 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
       entry_date: new Date(data.entry_date),
     };
 
-    console.log('Payload validado a enviar:', payload);
+    console.log('✅ Payload validado a enviar:', payload);
 
     try {
+      console.log('🔄 Llamando a onCreate...');
       await onCreate(payload);
+      console.log('✅ onCreate ejecutado exitosamente');
       reset();
       setSelectedResourceId('');
       setServerError(null);
     } catch (error: unknown) {
+      console.error('❌ Error en onCreate:', error);
       const message = error instanceof Error ? error.message : 'Error inesperado al crear el recurso.';
       setServerError(message);
     }
@@ -167,10 +183,28 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4 text-left">
+        <form onSubmit={handleSubmit((data) => {
+          console.log('📋 Form submit triggered with data:', data);
+          console.log('🔍 Form errors:', errors);
+          return onSubmit(data);
+        }, (errors) => {
+          console.log('❌ Form validation errors:', errors);
+        })} className="p-6 space-y-4 text-left">
           {serverError && (
             <div className="bg-red-100 text-red-700 p-3 rounded-md text-sm border border-red-300">
               {serverError}
+            </div>
+          )}
+
+          {/* Debug: Mostrar errores de validación */}
+          {Object.keys(errors).length > 0 && (
+            <div className="bg-yellow-100 text-yellow-700 p-3 rounded-md text-sm border border-yellow-300">
+              <strong>Errores de validación:</strong>
+              <ul className="mt-1">
+                {Object.entries(errors).map(([field, error]) => (
+                  <li key={field}>• {field}: {error?.message}</li>
+                ))}
+              </ul>
             </div>
           )}
 
@@ -186,6 +220,11 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
               }}
               required
               error={errors.resource_id?.message}
+            />
+            {/* Campo oculto para resource_id */}
+            <input
+              type="hidden"
+              {...register('resource_id')}
             />
           </div>
 
@@ -292,6 +331,11 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
                 className="h-10 mt-1 bg-gray-100 text-gray-600 cursor-not-allowed border-gray-300"
                 placeholder="0.00"
               />
+              {/* Campo oculto para el valor real */}
+              <input
+                type="hidden"
+                {...register('unit_price', { valueAsNumber: true })}
+              />
               <p className="text-xs text-gray-500 mt-1">Calculado automáticamente</p>
             </div>
           </div>
@@ -348,6 +392,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
               type="submit"
               disabled={isCreating}
               className="bg-red-800 hover:bg-red-700 text-white disabled:opacity-50"
+              onClick={() => console.log('🖱️ Button clicked, isCreating:', isCreating)}
             >
               {isCreating ? (
                 <>
