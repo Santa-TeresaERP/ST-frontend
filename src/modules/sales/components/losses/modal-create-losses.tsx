@@ -30,7 +30,10 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
   const createReturnMutation = useCreateReturn();
 
   const salesDropdownRef = useRef<HTMLDivElement>(null);
+  const productDropdownRef = useRef<HTMLDivElement>(null);
+
   const [showSalesDropdown, setShowSalesDropdown] = useState(false);
+  const [showProductsDropdown, setShowProductsDropdown] = useState(false);
 
   const filteredProducts = productSearch
     ? products.filter((p) =>
@@ -57,6 +60,12 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
         !salesDropdownRef.current.contains(event.target as Node)
       ) {
         setShowSalesDropdown(false);
+      }
+      if (
+        productDropdownRef.current &&
+        !productDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowProductsDropdown(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -117,7 +126,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
 
           <div className="space-y-4">
             {/* Selector de producto */}
-            <div className="relative">
+            <div className="relative" ref={productDropdownRef}>
               <label className="block text-gray-700 mb-1 font-medium">
                 Producto <span className="text-red-600">*</span>
               </label>
@@ -127,11 +136,13 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
                 onChange={(e) => {
                   setProductSearch(e.target.value);
                   setProductId("");
+                  setShowProductsDropdown(true);
                 }}
+                onFocus={() => setShowProductsDropdown(true)}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
                 placeholder="Buscar producto por nombre"
               />
-              {filteredProducts.length > 0 && (
+              {showProductsDropdown && filteredProducts.length > 0 && (
                 <ul className="absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {filteredProducts.map((product) => (
                     <li
@@ -140,6 +151,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
                       onClick={() => {
                         setProductSearch(product.name);
                         setProductId(product.id);
+                        setShowProductsDropdown(false);
                       }}
                     >
                       {product.name}
@@ -192,8 +204,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
                         setShowSalesDropdown(false);
                       }}
                     >
-                      📅 {new Date(sale.income_date).toLocaleString("es-PE")} —
-                      💵 S/ {sale.total_income}
+                      📅 {new Date(sale.income_date).toLocaleString("es-PE")} — 💵 S/ {sale.total_income}
                     </li>
                   ))}
                 </ul>

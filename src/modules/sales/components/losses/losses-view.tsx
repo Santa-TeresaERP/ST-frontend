@@ -17,7 +17,9 @@ interface LossesComponentViewProps {
   selectedStoreId?: string;
 }
 
-const LossesComponentView: React.FC<LossesComponentViewProps> = ({ selectedStoreId }) => {
+const LossesComponentView: React.FC<LossesComponentViewProps> = ({
+  selectedStoreId,
+}) => {
   const { data: losses = [], isLoading: isLoadingLosses } = useFetchReturns();
   const { data: products = [] } = useFetchProducts();
   const { data: sales = [], isLoading: isLoadingSales } = useFetchSales();
@@ -93,7 +95,9 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({ selectedStore
 
       {/* Estado de carga o mensajes según el contexto */}
       {isLoadingLosses || isLoadingSales ? (
-        <div className="text-center text-gray-500 italic">Cargando datos...</div>
+        <div className="text-center text-gray-500 italic">
+          Cargando datos...
+        </div>
       ) : !selectedStoreId ? (
         <div className="text-center text-gray-500 italic">
           Seleccione una tienda para ver las pérdidas registradas.
@@ -169,6 +173,7 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({ selectedStore
         onClose={() => setIsEditModalOpen(false)}
         currentLoss={currentLoss}
         onSave={handleEditLoss}
+        selectedStoreId={selectedStoreId}
       />
 
       <ModalDeleteLoss
