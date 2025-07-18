@@ -1,43 +1,55 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchInventory, createInventoryProduct, updateInventoryProduct, deleteInventoryProduct } from '../action/inventory';
-import { InventoryItem, CreateInventoryItem, UpdateInventoryItem } from '../types/inventory.types';
+import { 
+  fetchWarehouseStoreItems,
+  createWarehouseStoreItem,
+  updateWarehouseStoreItem,
+  deleteWarehouseStoreItem
+} from '../action/inventory';
+import { 
+  WarehouseStoreItem, 
+  CreateWarehouseStorePayload,
+  UpdateWarehouseStorePayload
+} from '../types/inventory.types';
 
-const INVENTORY_QUERY_KEY = 'inventory';
+const WAREHOUSE_STORE_QUERY_KEY = 'warehouseStore';
 
-export const useFetchInventory = () => {
-  return useQuery<InventoryItem[], Error>({
-    queryKey: [INVENTORY_QUERY_KEY],
-    queryFn: fetchInventory,
+// HOOK PARA LEER (GET ALL)
+export const useFetchWarehouseStoreItems = () => {
+  return useQuery<WarehouseStoreItem[], Error>({
+    queryKey: [WAREHOUSE_STORE_QUERY_KEY],
+    queryFn: fetchWarehouseStoreItems,
   });
 };
 
-export const useCreateInventoryProduct = () => {
+// HOOK PARA CREAR (POST)
+export const useCreateWarehouseStoreItem = () => {
   const queryClient = useQueryClient();
-  return useMutation<InventoryItem, Error, CreateInventoryItem>({
-    mutationFn: createInventoryProduct,
+  return useMutation<WarehouseStoreItem, Error, CreateWarehouseStorePayload>({
+    mutationFn: createWarehouseStoreItem,
     onSuccess: () => {
-      // Invalida y refetchea la query del inventario
-      queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [WAREHOUSE_STORE_QUERY_KEY] });
     },
   });
 };
 
-export const useUpdateInventoryProduct = () => {
+// HOOK PARA ACTUALIZAR (PUT)
+export const useUpdateWarehouseStoreItem = () => {
   const queryClient = useQueryClient();
-  return useMutation<InventoryItem, Error, { id: string; payload: UpdateInventoryItem }>({
-    mutationFn: ({ id, payload }) => updateInventoryProduct(id, payload),
+  return useMutation<WarehouseStoreItem, Error, { id: string; payload: UpdateWarehouseStorePayload }>({
+    mutationFn: ({ id, payload }) => updateWarehouseStoreItem(id, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [WAREHOUSE_STORE_QUERY_KEY] });
     },
   });
 };
 
-export const useDeleteInventoryProduct = () => {
+// HOOK PARA ELIMINAR (DELETE)
+export const useDeleteWarehouseStoreItem = () => {
   const queryClient = useQueryClient();
   return useMutation<void, Error, string>({
-    mutationFn: deleteInventoryProduct,
+    mutationFn: deleteWarehouseStoreItem,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [WAREHOUSE_STORE_QUERY_KEY] });
     },
   });
 };

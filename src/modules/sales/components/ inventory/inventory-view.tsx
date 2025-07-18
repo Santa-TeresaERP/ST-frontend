@@ -1,52 +1,55 @@
-// src/modules/sales/components/inventory/inventory-view.tsx
 'use client';
 import React, { useState } from 'react';
 import { FiPackage, FiPlus, FiEdit, FiTrash2 } from 'react-icons/fi';
-
-// Importamos nuestros hooks de React Query
-import { useFetchInventory, useDeleteInventoryProduct } from '../../hooks/useInventoryQueries';
-import { InventoryItem } from '../../types/inventory.types';
-
-// Importamos los modales
-import ModalCreateProduct from './modal-create-inventory';
-import ModalEditProduct from './modal-edit-inventory';
-import ModalDeleteProduct from './modal-delete-inventory';
+import { useFetchWarehouseStoreItems, useDeleteWarehouseStoreItem } from '../../hooks/useInventoryQueries';
+import { WarehouseStoreItem } from '../../types/inventory.types';
+import ModalCreateInventory from './modal-create-inventory';
+import ModalEditInventory from './modal-edit-inventory';
+import ModalDeleteInventory from './modal-delete-inventory'; 
 
 const InventoryComponentsView: React.FC = () => {
-  // 1. Hook para obtener los datos
-  const { data: inventory = [], isLoading, error } = useFetchInventory();
-  
-  // 2. Hook para la mutación de borrado
-  const { mutate: deleteProduct } = useDeleteInventoryProduct();
+  // HOOKS DE DATOS
+  const { data: inventory = [], isLoading, error } = useFetchWarehouseStoreItems();
+  const { mutate: deleteItem, isPending: isDeleting } = useDeleteWarehouseStoreItem();
 
-  // Estado local para manejar los modales y el producto seleccionado
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [currentProduct, setCurrentProduct] = useState<InventoryItem | null>(null);
+  // ESTADO LOCAL PARA GESTIONAR MODALES
+  const [isCreateModalOpen, setCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<WarehouseStoreItem | null>(null);
 
-  const handleDelete = () => {
-    if (!currentProduct) return;
-    deleteProduct(currentProduct.id, {
+  // MANEJADORES DE EVENTOS
+  const handleOpenEditModal = (item: WarehouseStoreItem) => {
+    setSelectedItem(item);
+    setEditModalOpen(true);
+  };
+
+  const handleOpenDeleteModal = (item: WarehouseStoreItem) => {
+    setSelectedItem(item);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!selectedItem) return;
+    deleteItem(selectedItem.id, {
       onSuccess: () => {
-        // La tabla se actualizará automáticamente gracias a la invalidación
-        setIsDeleteModalOpen(false); // Cerramos el modal
-        // Opcional: Mostrar notificación de éxito
-      },
-      onError: (error) => {
-        console.error("Error al eliminar:", error);
-        // Opcional: Mostrar notificación de error
+        setDeleteModalOpen(false);
+        setSelectedItem(null);
       },
     });
   };
 
-  // El esqueleto principal del componente ahora se renderiza siempre
+  const closeModal = () => {
+    setEditModalOpen(false);
+    setDeleteModalOpen(false);
+    setSelectedItem(null);
+  };
+
   return (
     <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 space-y-6 text-gray-700">
-      {/* --- Encabezado y Botón (Siempre visible) --- */}
       <div className="flex justify-end items-center">
         <button
-          onClick={() => setIsCreateModalOpen(true)}
+          onClick={() => setCreateModalOpen(true)}
           className="flex items-center bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white px-4 py-2 rounded-lg"
         >
           <FiPlus className="mr-2 h-5 w-5" />
@@ -59,8 +62,7 @@ const InventoryComponentsView: React.FC = () => {
         <span>Inventario de Productos</span>
       </h2>
 
-      {/* --- Contenido de la Tabla (Carga condicional) --- */}
-      <div className="min-h-[200px]"> {/* Contenedor para evitar saltos de layout */}
+      <div className="min-h-[200px]">
         {isLoading ? (
           <p className="text-center text-gray-500 py-10">Cargando inventario...</p>
         ) : error ? (
@@ -72,33 +74,21 @@ const InventoryComponentsView: React.FC = () => {
                 <tr>
                   <th className="px-4 py-2 text-center">Producto</th>
                   <th className="px-4 py-2 text-center">Cantidad</th>
-                  <th className="px-4 py-2 text-center">Fecha</th>
+                  <th className="px-4 py-2 text-center">Última Actualización</th>
                   <th className="px-4 py-2 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {inventory.map((item) => (
                   <tr key={item.id} className="border-t hover:bg-gray-50">
-                    <td className="px-4 py-2 text-center">{item.producto}</td>
-                    <td className="px-4 py-2 text-center">{item.cantidad}</td>
-                    <td className="px-4 py-2 text-center">{item.fecha}</td>
+                    <td className="px-4 py-2 text-center">{item.product.name}</td>
+                    <td className="px-4 py-2 text-center">{item.quantity}</td>
+                    <td className="px-4 py-2 text-center">{new Date(item.updatedAt).toLocaleDateString()}</td>
                     <td className="px-4 py-2 text-center flex justify-center space-x-3">
-                      <button
-                        className="text-blue-500 hover:text-yellow-600"
-                        onClick={() => {
-                          setCurrentProduct(item);
-                          setIsEditModalOpen(true);
-                        }}
-                      >
+                      <button onClick={() => handleOpenEditModal(item)} className="text-blue-500 hover:text-yellow-600">
                         <FiEdit size={18} />
                       </button>
-                      <button
-                        className="text-red-500 hover:text-red-600"
-                        onClick={() => {
-                          setCurrentProduct(item);
-                          setIsDeleteModalOpen(true);
-                        }}
-                      >
+                      <button onClick={() => handleOpenDeleteModal(item)} className="text-red-500 hover:text-red-600">
                         <FiTrash2 size={18} />
                       </button>
                     </td>
@@ -110,24 +100,21 @@ const InventoryComponentsView: React.FC = () => {
         )}
       </div>
 
-      {/* --- Modales (Siempre renderizados pero controlados por estado) --- */}
-      <ModalCreateProduct
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+      {/* --- Modales --- */}
+      <ModalCreateInventory isOpen={isCreateModalOpen} onClose={() => setCreateModalOpen(false)} />
+      
+      <ModalEditInventory 
+        isOpen={isEditModalOpen} 
+        onClose={closeModal} 
+        item={selectedItem} 
       />
 
-      {currentProduct && (
-        <ModalEditProduct
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          currentProduct={currentProduct}
-        />
-      )}
-
-      <ModalDeleteProduct
+      <ModalDeleteInventory
         isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleDelete}
+        onClose={closeModal}
+        onConfirm={handleDeleteConfirm}
+        itemName={selectedItem?.product.name || ''}
+        isPending={isDeleting}
       />
     </div>
   );
