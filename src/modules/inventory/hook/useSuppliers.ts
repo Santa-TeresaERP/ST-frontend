@@ -26,8 +26,9 @@ export const useUpdateSupplier = () => {
 
 export const useDeleteSupplier = () => {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, string>({
+  return useMutation<Supplier, Error, string>({
     mutationFn: deleteSupplier,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['suppliers'] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] }), // ← objeto, no array
   });
 };
