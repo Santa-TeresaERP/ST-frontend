@@ -5,7 +5,8 @@ import { useCreateWarehouseMovementResource } from '@/modules/inventory/hook/use
 import { CreateWarehouseMovementResourcePayload } from '@/modules/inventory/types/movementResource';
 import { X, Save } from 'lucide-react';
 import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
-import { useFetchResources } from '@/modules/inventory/hook/useResources'; // Asegúrate de tener este hook
+import { useFetchResources } from '@/modules/inventory/hook/useResources';
+import ModalError from '../../../ModalError'; 
 
 interface Props {
   onCreated: () => void;
@@ -25,6 +26,7 @@ const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
   const [form, setForm] = useState<CreateWarehouseMovementResourcePayload>(initialForm);
   const [error, setError] = useState<string | null>(null);
   const { mutateAsync, isPending } = useCreateWarehouseMovementResource();
+  const [modalError, setModalError] = useState<string | null>(null);
 
   // Obtener almacenes y recursos existentes
   const { data: warehouses = [], isLoading: loadingWarehouses, error: errorWarehouses } = useFetchWarehouses();
@@ -73,6 +75,19 @@ const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
     
     // Debug: Mostrar resultado de validación
     console.log('Parsed data:', parsed);
+
+    // Validar campos antes de enviar
+    if (!form.warehouse_id || form.warehouse_id.trim() === '' || form.warehouse_id === 'Seleccione un almacén') {
+      setError('Debe seleccionar un almacén');
+      return;
+    }
+
+    // Validar si el almacén está inactivo
+    const selectedWarehouse = warehouses?.find(w => w.id === form.warehouse_id);
+    if (selectedWarehouse && selectedWarehouse.status === false) {
+      setModalError('El almacén seleccionado está inactivo. Actívelo para poder utilizarlo.');
+      return;
+    }
     
     if (!parsed.success) {
       console.log('Validation errors:', parsed.error.errors);
@@ -107,6 +122,12 @@ const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
           )}
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-5 text-left">
+          {modalError && (
+            <ModalError
+              message={modalError}
+              onClose={() => setModalError(null)}
+            />
+          )}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-3">
               <p className="text-sm text-red-600 font-medium">Error:</p>
@@ -129,7 +150,7 @@ const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
             </div>
           )}
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Almacén*</label>
+            <label className="block text-gray-700 mb-1 font-medium">Almacén<span className="text-red-500">*</span></label>
             <select
               name="warehouse_id"
               value={form.warehouse_id}
@@ -147,7 +168,7 @@ const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
             </select>
           </div>
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Recurso*</label>
+            <label className="block text-gray-700 mb-1 font-medium">Recurso<span className="text-red-500">*</span></label>
             <select
               name="resource_id"
               value={form.resource_id}
@@ -165,7 +186,7 @@ const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
             </select>
           </div>
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Tipo de Movimiento*</label>
+            <label className="block text-gray-700 mb-1 font-medium">Tipo de Movimiento<span className="text-red-500">*</span></label>
             <select
               name="movement_type"
               value={form.movement_type}
@@ -179,7 +200,7 @@ const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-gray-700 mb-1 font-medium">Cantidad*</label>
+              <label className="block text-gray-700 mb-1 font-medium">Cantidad<span className="text-red-500">*</span></label>
               <input
                 type="number"
                 name="quantity"
@@ -192,7 +213,7 @@ const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
               />
             </div>
             <div>
-              <label className="block text-gray-700 mb-1 font-medium">Fecha de Movimiento*</label>
+              <label className="block text-gray-700 mb-1 font-medium">Fecha de Movimiento<span className="text-red-500">*</span></label>
               <input
                 type="date"
                 name="movement_date"
