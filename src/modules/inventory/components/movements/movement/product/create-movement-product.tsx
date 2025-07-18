@@ -5,6 +5,7 @@ import { movementProductSchema } from '@/modules/inventory/schemas/movementProdu
 import { createMovement, CreateMovementProductPayload } from '@/modules/inventory/action/movementProduct';
 import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
 import { useFetchProducts } from '@/modules/inventory/hook/useProducts';
+import { useFetchStores } from '@/modules/stores/hook/useStores'; // Agrega esta línea
 import { WarehouseAttributes } from '@/modules/inventory/types/warehouse';
 import { ProductAttributes } from '@/modules/inventory/types/ListProduct';
 
@@ -27,6 +28,7 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
   const [form, setForm] = useState(initialForm);
   const { data: warehouses, isLoading: isLoadingWarehouses, error: errorWarehouses } = useFetchWarehouses();
   const { data: products, isLoading: isLoadingProducts, error: errorProducts } = useFetchProducts();
+  const { data: stores, isLoading: isLoadingStores, error: errorStores } = useFetchStores(); // Agrega esta línea
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -166,12 +168,15 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
               value={form.store_id}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-slate-600 focus:outline-none"
+              disabled={isLoadingStores}
             >
-              <option value="">Sin tienda asignada</option>
-              <option value="Tienda Centro">Tienda Centro</option>
-              <option value="Sucursal Norte">Sucursal Norte</option>
-              <option value="Tienda Sur">Tienda Sur</option>
-              <option value="Almacén Principal">Almacén Principal</option>
+              <option value="">{isLoadingStores ? 'Cargando tiendas...' : 'Sin tienda asignada'}</option>
+              {errorStores && <option value="" disabled>Error al cargar tiendas</option>}
+              {stores?.map((store) => (
+                <option key={store.id} value={store.id}>
+                  {store.store_name}
+                </option>
+              ))}
             </select>
           </div>
 
