@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import { salesAttributes } from '../../types/sales';
 import { useFetchSalesDetails } from '../../hooks/useSalesDetails';
 import { useFetchProducts } from '@/modules/production/hook/useProducts';
-import { useFetchStores } from '@/modules/stores/hook/useStores';
+import { useFetchStores } from '@/modules/sales/hooks/useStore';
 interface ModalDetailSalesProps {
   isOpen: boolean;
   onClose: () => void;
@@ -11,7 +11,8 @@ interface ModalDetailSalesProps {
 }
 
 const ModalDetailSales: React.FC<ModalDetailSalesProps> = ({ isOpen, onClose, saleDetail }) => {
-  const { data: stores = [] } = useFetchStores(); // Obtener las tiendas
+  const { data: storesData } = useFetchStores(); // Obtener las tiendas
+  const stores = storesData?.stores || [];
   const { 
     data: allSalesDetails = [], 
     isLoading: loadingSalesDetails, 
