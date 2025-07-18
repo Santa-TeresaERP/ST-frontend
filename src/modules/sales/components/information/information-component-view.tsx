@@ -7,10 +7,9 @@ import { useCashSession, useFetchUsers } from '../../hooks/useCashSession';
 import { CashSessionAttributes } from '../../types/cash_sessions.d';
 interface InformationComponentViewProps {
   selectedStore?: StoreAttributes | null;
-  onStoreUpdate?: (storeId: string) => void; // NUEVO
 }
 
-const InformationComponentView: React.FC<InformationComponentViewProps> = ({ selectedStore, onStoreUpdate }) => {
+const InformationComponentView: React.FC<InformationComponentViewProps> = ({ selectedStore }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditStoreModalOpen, setIsEditStoreModalOpen] = useState(false);
   const { cashSessions, isLoading, isError, createCashSession } = useCashSession();
@@ -141,12 +140,6 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({ sel
         isOpen={isEditStoreModalOpen}
         onClose={() => setIsEditStoreModalOpen(false)}
         store={selectedStore ?? null}
-        onSuccess={async () => {
-          setIsEditStoreModalOpen(false);
-          if (selectedStore && typeof onStoreUpdate === 'function') {
-            await onStoreUpdate(selectedStore.id);
-          }
-        }}
       />
     </div>
   );

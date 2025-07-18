@@ -5,11 +5,12 @@ import { useCreateReturn } from "@/modules/sales/hooks/useReturns";
 import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
 import { useFetchSales } from "@/modules/sales/hooks/useSales";
 import { useEffect, useRef } from "react";
+import { returnsAttributes } from "../../types/returns";
 
 interface ModalCreateLossProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: any) => void;
+  onSave: (data: returnsAttributes) => void;
   selectedStoreId?: string;
 }
 
@@ -30,7 +31,6 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
   const { data: sales = [] } = useFetchSales();
   const createReturnMutation = useCreateReturn();
 
-  const salesDropdownRef = useRef<HTMLDivElement>(null);
   const productDropdownRef = useRef<HTMLDivElement>(null);
 
   const [showSalesDropdown, setShowSalesDropdown] = useState(false);
@@ -44,7 +44,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
 
   const filteredSales = sales.filter((sale) => {
     const belongsToStore = selectedStoreId
-      ? sale.store?.id === selectedStoreId
+      ? sale.store_id === selectedStoreId
       : true;
     const formattedDate = new Date(sale.income_date).toLocaleString("es-PE");
     const matchesSearch =
@@ -76,7 +76,6 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-  const [showSalesDropdown, setShowSalesDropdown] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
