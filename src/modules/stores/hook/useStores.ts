@@ -96,3 +96,13 @@ export const useDeleteStore = () => {
     },
   });
 };
+const useStores = {
+  useFetchStores,
+  useFetchStoreById,
+  useCreateStore,
+  useUpdateStore,
+  useDeleteStore,
+  STORE_QUERY_KEYS,
+};
+
+export default useStores; // ✅ EXPORTACIÓN POR DEFECTO

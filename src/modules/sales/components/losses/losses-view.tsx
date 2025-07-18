@@ -7,15 +7,16 @@ import {
   useFetchReturns,
   useCreateReturn,
   useUpdateReturn,
-  useDeleteReturn
-} from '@/modules/sales/hooks/useReturns'
+  useDeleteReturn,
+} from "@/modules/sales/hooks/useReturns";
 
-import { useFetchProducts } from '@/modules/inventory/hook/useProducts'
-
+import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
+import { useFetchSales } from "@/modules/sales/hooks/useSales";
 
 const LossesComponentView: React.FC = () => {
   const { data: losses = [], isLoading } = useFetchReturns();
   const { data: products = [] } = useFetchProducts();
+  const { data: sales = [] } = useFetchSales();
 
   const createReturnMutation = useCreateReturn();
   const updateReturnMutation = useUpdateReturn();
@@ -48,6 +49,14 @@ const LossesComponentView: React.FC = () => {
   const getProductName = (productId: string) => {
     const product = products.find((p) => p.id === productId);
     return product ? product.name : productId; // fallback al ID si no está cargado
+  };
+
+  // Obtener nombre de la tienda desde el ID de la venta
+  const getStoreName = (salesId: string) => {
+    const rawSale = sales.find((s) => s.id === salesId);
+    const store_name = (rawSale as { store?: { store_name?: string } })?.store
+      ?.store_name;
+    return store_name || `Tienda ${salesId.slice(0, 6)}...`;
   };
 
   return (
@@ -86,7 +95,9 @@ const LossesComponentView: React.FC = () => {
                   <td className="px-4 py-2 text-center">
                     {getProductName(item.productId)}
                   </td>
-                  <td className="px-4 py-2 text-center">{item.salesId}</td>
+                  <td className="px-4 py-2 text-center">
+                    {getStoreName(item.salesId)}
+                  </td>
                   <td className="px-4 py-2 text-center">{item.reason}</td>
                   <td className="px-4 py-2 text-center">{item.observations}</td>
                   <td className="px-4 py-2 text-center">
