@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CashSessionAttributes } from '../../types/cash_sessions.d';
 import { useFetchUsers } from '../../hooks/useCashSession';
-import { StoreAttributes } from '@/modules/stores/types/store';
+import { StoreAttributes } from '@/modules/sales/types/store.d';
 import { z } from 'zod';
 
 interface ModalCreateCashRegisterProps {

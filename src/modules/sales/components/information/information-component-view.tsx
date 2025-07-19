@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { FiInfo, FiMapPin, FiHome, FiClipboard, FiDollarSign, FiPlus } from 'react-icons/fi';
-import { StoreAttributes } from '@/modules/stores/types/store';
+import { StoreAttributes } from '@/modules/sales/types/store.d';
 import ModalCreateCashRegister from './modal-create-cashregister';
-import ModalEditStore from '@/modules/stores/components/store/modal-edit-store';
+import ModalEditStore from '@/modules/sales/components/store/modal-edit-store';
 import { useCashSession, useFetchUsers } from '../../hooks/useCashSession';
 import { CashSessionAttributes } from '../../types/cash_sessions.d';
 interface InformationComponentViewProps {

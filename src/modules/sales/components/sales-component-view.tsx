@@ -2,17 +2,17 @@ import React, { useState } from 'react';
 import { FiUsers, FiShoppingCart, FiPackage, FiAlertOctagon } from 'react-icons/fi';
 
 import InformationComponentView from '@/modules/sales/components/information/information-component-view';
-import StoreListView from '@/modules/stores/components/store-list-view';
+import StoreListView from '@/modules/sales/components/store/store-list-view';
 import SalesComponentsView from './\ sales/sale-view';
 import InventoryComponentsView from './\ inventory/inventory-view';
 import LossesComponentView from './losses/losses-view';
-import { StoreAttributes } from '@/modules/stores/types/store';
-import { useFetchStores } from '@/modules/stores/hook/useStores';
+import { StoreAttributes } from '@/modules/sales/types/store.d';
+import { useFetchStores } from '@/modules/sales/hooks/useStore';
 
 const SalesView: React.FC = () => {
   const [activeTab, setActiveTab] = useState('informacion');
   const [selectedStore, setSelectedStore] = useState<StoreAttributes | null>(null);
-  const { refetch } = useFetchStores();
+  const { data: storesData, refetch } = useFetchStores();
 
   // Refresca la tienda seleccionada tras editar
   const handleStoreUpdate = async (storeId: string) => {
@@ -20,7 +20,7 @@ const SalesView: React.FC = () => {
       // Refresca la lista de tiendas
       const { data: updatedStores } = await refetch();
       // Busca la tienda seleccionada en la lista actualizada
-      const updatedStore = (updatedStores || []).find((store: StoreAttributes) => store.id === storeId);
+      const updatedStore = updatedStores?.stores?.find((store: StoreAttributes) => store.id === storeId);
       if (updatedStore) {
         setSelectedStore(updatedStore);
       }
@@ -37,15 +37,14 @@ const SalesView: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6 space-y-6">
       {/* Cabecera */}
-      <div>
-        <h1 className="text-5xl font-bold text-center text-red-700 pb-4">Panel de Ventas</h1>
-        <p className="text-gray-600 text-center">Gestión completa de información, ventas, inventario y pérdidas.</p>
+      <div className="text-center">
+        <p className="text-gray-600 text-sm">Gestión completa de información, ventas, inventario y pérdidas.</p>
       </div>
 
       {/* Lista de Tiendas */}
       <StoreListView 
         onStoreSelect={handleStoreSelect}
-        selectedStoreId={selectedStore?.id || ''}
+        selectedStore={selectedStore}
       />
 
       {/* Botones de navegación */}

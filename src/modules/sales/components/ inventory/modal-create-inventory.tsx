@@ -7,7 +7,7 @@ import { FiPackage } from 'react-icons/fi';
 
 // 1. IMPORTAR HOOKS DE OTROS MÓDULOS
 import { useFetchProducts } from '@/modules/production/hook/useProducts'; // Asegúrate que esta ruta es correcta
-import { useFetchStores } from '@/modules/stores/hook/useStores';         // Asegúrate que esta ruta es correcta
+import { useFetchStores } from '@/modules/sales/hooks/useStore';         // Hook corregido para obtener tiendas
 
 // Importaciones del módulo actual
 import { useCreateWarehouseStoreItem } from '../../hooks/useInventoryQueries';
@@ -18,7 +18,8 @@ interface Props { isOpen: boolean; onClose: () => void; }
 const ModalCreateInventory: React.FC<Props> = ({ isOpen, onClose }) => {
   // 2. OBTENER DATOS PARA LOS DESPLEGABLES
   const { data: products = [], isLoading: isLoadingProducts } = useFetchProducts();
-  const { data: stores = [], isLoading: isLoadingStores } = useFetchStores();
+  const { data: storesResponse, isLoading: isLoadingStores } = useFetchStores(1, 100);
+  const stores = storesResponse?.stores || [];
   
   const { mutate: createItem, isPending, error: mutationError } = useCreateWarehouseStoreItem();
 

@@ -9,7 +9,7 @@ import { CreateSalePayload } from '../../types/sales';
 import { useCreateSale } from '../../hooks/useSales';
 import { useCreateSalesDetail } from '../../hooks/useSalesDetails';
 import { useFetchProducts } from '@/modules/production/hook/useProducts';
-import { useFetchStores } from '@/modules/stores/hook/useStores'; // Importar el hook para obtener las tiendas
+import { useFetchStores } from '@/modules/sales/hooks/useStore'; // Importar el hook para obtener las tiendas
 import { Product as ProductType } from '@/modules/production/types/products';
 
 interface CartProduct {
@@ -29,7 +29,8 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
   const createSale = useCreateSale();
   const createSalesDetail = useCreateSalesDetail();
   const { data: allProducts = [], isLoading: loadingProducts } = useFetchProducts();
-  const { data: stores = [], isLoading: loadingStores } = useFetchStores(); // Obtener las tiendas
+  const { data: storesData, isLoading: loadingStores } = useFetchStores(); // Obtener las tiendas
+  const stores = storesData?.stores || [];
 
   const [selectedProductId, setSelectedProductId] = useState('');
   const [cantidad, setCantidad] = useState('');
