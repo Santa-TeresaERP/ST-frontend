@@ -18,8 +18,7 @@ import { WarehouseMovementResource } from '@/modules/inventory/types/movementRes
 import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
 import { useFetchResources } from '@/modules/inventory/hook/useResources';
 import { useFetchProducts } from '@/modules/inventory/hook/useProducts';
-import { fetchStores } from '@/modules/stores/action/store-actions';
-import { useQuery } from '@tanstack/react-query';
+import { useFetchStores } from '@/modules/sales/hooks/useStore';
 import FilterMovement from './movement/filter-movement';
 
 
@@ -33,18 +32,12 @@ const MovementComponentView: React.FC = () => {
   const { data: resourceMovements = [], isLoading: loadingResource, error: errorResource, refetch: fetchResourceMovements } = useFetchWarehouseMovementResources(filters);
   const [editingResource, setEditingResource] = useState<WarehouseMovementResource | null>(null);
 
-  // Hook local para obtener tiendas
-  const useFetchStores = () => {
-    return useQuery({
-      queryKey: ['stores'],
-      queryFn: fetchStores,
-    });
-  };
   // Almacenes, recursos y productos para mostrar nombres
   const { data: warehouses = [] } = useFetchWarehouses();
   const { data: resources = [] } = useFetchResources();
   const { data: products = [] } = useFetchProducts();
-  const { data: stores = [] } = useFetchStores();
+  const { data: storesResponse } = useFetchStores(1, 100);
+  const stores = storesResponse?.stores || [];
 
   // General
   const [searchTerm, setSearchTerm] = useState('');
