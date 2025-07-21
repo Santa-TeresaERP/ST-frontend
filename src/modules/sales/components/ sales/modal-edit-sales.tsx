@@ -5,7 +5,7 @@ import { FiShoppingCart, FiPackage } from 'react-icons/fi';
 import { useUpdateSale } from '../../hooks/useSales';
 import { useCreateSalesDetail, useUpdateSalesDetail, useDeleteSalesDetail, useFetchSalesDetails } from '../../hooks/useSalesDetails';
 import { useFetchProducts } from '@/modules/production/hook/useProducts';
-import { useFetchStores } from '@/modules/stores/hook/useStores';
+import { useFetchStores } from '@/modules/sales/hooks/useStore';
 import { salesAttributes } from '../../types/sales';
 import { Product as ProductType } from '@/modules/production/types/products';
 
@@ -36,7 +36,8 @@ const ModalEditSales: React.FC<ModalEditSalesProps> = ({ isOpen, onClose, curren
   // Hooks para datos
   const { data: allSalesDetails = [], isLoading: loadingSalesDetails } = useFetchSalesDetails();
   const { data: allProducts = [], isLoading: loadingProducts } = useFetchProducts();
-  const { data: stores = [], isLoading: loadingStores } = useFetchStores(); // Obtener las tiendas
+  const { data: storesData, isLoading: loadingStores } = useFetchStores(); // Obtener las tiendas
+  const stores = storesData?.stores || [];
   
   // Estados del formulario
   const [tienda, setTienda] = useState('');
