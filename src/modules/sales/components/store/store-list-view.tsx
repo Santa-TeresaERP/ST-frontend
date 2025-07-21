@@ -22,6 +22,11 @@ const StoreListView: React.FC<StoreListViewProps> = ({
   const { data: storesData, isLoading, error } = useFetchStores(1, 10);
   const deleteStoreMutation = useDeleteStore();
 
+  // Log para debug
+  console.log('StoreListView - storesData:', storesData);
+  console.log('StoreListView - isLoading:', isLoading);
+  console.log('StoreListView - error:', error);
+
   const handleDeleteStore = async (id: string) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar esta tienda?')) {
       try {
@@ -56,7 +61,15 @@ const StoreListView: React.FC<StoreListViewProps> = ({
   const allStores = storesData?.stores || [];
 
   if (isLoading) return <div className="p-4">Cargando tiendas...</div>;
-  if (error) return <div className="p-4 text-red-500">Error al cargar las tiendas</div>;
+  if (error) {
+    console.error('Error in StoreListView:', error);
+    return (
+      <div className="p-4 text-red-500">
+        <p>Error al cargar las tiendas:</p>
+        <p className="text-sm">{error.message}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

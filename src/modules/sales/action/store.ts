@@ -1,131 +1,71 @@
 import { CreateStoreRequest, UpdateStoreRequest, StoreAttributes, StoreResponse } from '../types/store.d';
-
-// Datos falsos para simular la base de datos
-let mockStores: StoreAttributes[] = [
-  { 
-    id: '1', 
-    store_name: 'Tienda Santa Teresa', 
-    address: 'Av. Principal 123', 
-    observations: 'Tienda principal del monasterio',
-    createdAt: new Date('2025-01-01'),
-    updatedAt: new Date('2025-01-01')
-  },
-  { 
-    id: '2', 
-    store_name: 'Tienda Goyeneche', 
-    address: 'Calle Goyeneche 456', 
-    observations: 'Sucursal en el centro histórico',
-    createdAt: new Date('2025-01-15'),
-    updatedAt: new Date('2025-01-15')
-  },
-  { 
-    id: '3', 
-    store_name: 'Tienda Santa Catalina', 
-    address: 'Plaza Santa Catalina 789', 
-    observations: 'Tienda cerca del monasterio',
-    createdAt: new Date('2025-02-01'),
-    updatedAt: new Date('2025-02-01')
-  },
-];
-
-const simulateDelay = (ms: number) => new Promise(res => setTimeout(res, ms));
+import api from '@/core/config/client';
 
 // Obtener todas las tiendas
 export const fetchStores = async (page: number = 1, limit: number = 10): Promise<StoreResponse> => {
-  console.log('ACTION: Fetching mock stores...');
-  await simulateDelay(500);
-  
-  const startIndex = (page - 1) * limit;
-  const endIndex = startIndex + limit;
-  const paginatedStores = mockStores.slice(startIndex, endIndex);
-  
-  return Promise.resolve({
-    stores: paginatedStores,
-    total: mockStores.length,
-    page,
-    limit
-  });
+  try {
+    const response = await api.get('/store', {
+      params: { page, limit }
+    });
+    
+    // Si la API devuelve directamente un array, transformarlo al formato esperado
+    if (Array.isArray(response.data)) {
+      return {
+        stores: response.data,
+        total: response.data.length,
+        page,
+        limit
+      };
+    }
+    
+    // Si ya viene con la estructura esperada
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching stores:', error);
+    throw error;
+  }
 };
 
 // Obtener una tienda por ID
 export const fetchStoreById = async (id: string): Promise<StoreAttributes> => {
-  console.log(`ACTION: Fetching mock store ${id}...`);
-  await simulateDelay(300);
-  
-  const store = mockStores.find(s => s.id === id);
-  if (!store) {
-    throw new Error('Tienda no encontrada');
-  }
-  
-  return Promise.resolve(store);
+  const response = await api.get(`/store/${id}`);
+  return response.data;
 };
 
 // Crear una nueva tienda
 export const createStore = async (data: CreateStoreRequest): Promise<StoreAttributes> => {
-  console.log('ACTION: Creating mock store...', data);
-  await simulateDelay(500);
-  
-  const newStore: StoreAttributes = {
-    id: Date.now().toString(),
-    ...data,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  };
-  
-  mockStores = [...mockStores, newStore];
-  return Promise.resolve(newStore);
+  try {
+    const response = await api.post('/store', data);  
+    return response.data;
+  } catch (error) {
+    console.error('Error creating store:', error);
+    if (error instanceof Error && 'response' in error) {
+      const axiosError = error as { response?: { data?: unknown; status?: number } };
+      console.error('Error response:', axiosError.response?.data);
+      console.error('Error status:', axiosError.response?.status);
+    }
+    throw error;
+  }
 };
 
 // Actualizar una tienda existente
 export const updateStore = async (data: UpdateStoreRequest): Promise<StoreAttributes> => {
-  console.log(`ACTION: Updating mock store ${data.id}...`, data);
-  await simulateDelay(400);
-  
   const { id, ...updateData } = data;
-  let updatedStore: StoreAttributes | undefined;
-  
-  mockStores = mockStores.map(store => {
-    if (store.id === id) {
-      updatedStore = { 
-        ...store, 
-        ...updateData,
-        updatedAt: new Date()
-      };
-      return updatedStore;
-    }
-    return store;
-  });
-  
-  if (!updatedStore) {
-    throw new Error('Tienda no encontrada');
-  }
-  
-  return Promise.resolve(updatedStore);
+  const response = await api.patch(`/store/${id}`, updateData);
+  return response.data;
 };
 
 // Eliminar una tienda
 export const deleteStore = async (id: string): Promise<void> => {
-  console.log(`ACTION: Deleting mock store ${id}...`);
-  await simulateDelay(300);
-  
-  const storeExists = mockStores.some(store => store.id === id);
-  if (!storeExists) {
-    throw new Error('Tienda no encontrada');
-  }
-  
-  mockStores = mockStores.filter(store => store.id !== id);
-  return Promise.resolve();
+
+  await api.delete(`/store/${id}`);
 };
 
 // Buscar tiendas por nombre
 export const searchStores = async (query: string): Promise<StoreAttributes[]> => {
-  console.log(`ACTION: Searching mock stores for "${query}"...`);
-  await simulateDelay(200);
-  
-  const filteredStores = mockStores.filter(store =>
-    store.store_name.toLowerCase().includes(query.toLowerCase()) ||
-    store.address.toLowerCase().includes(query.toLowerCase())
-  );
-  
-  return Promise.resolve(filteredStores);
+  const response = await api.get('/store', {
+    params: { search: query }
+  });
+  // Si la API devuelve paginado, extraer solo las tiendas
+  return response.data.stores || response.data;
 };

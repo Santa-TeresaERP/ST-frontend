@@ -31,18 +31,20 @@ const ModalCreateStore: React.FC<ModalCreateStoreProps> = ({ isOpen, onClose }) 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!nombre || !direccion || !observaciones) {
-      setLocalError('Por favor, completa todos los campos.');
+    if (!nombre.trim() || !direccion.trim()) {
+      setLocalError('Por favor, completa el nombre y la dirección de la tienda.');
       return;
     }
 
+    const storeData = {
+      store_name: nombre.trim(),
+      address: direccion.trim(),
+      ...(observaciones.trim() && { observations: observaciones.trim() })
+    };
+
     try {
-      console.log('Creando tienda con datos:', { store_name: nombre, address: direccion, observations: observaciones });
-      await createStoreMutation.mutateAsync({
-        store_name: nombre,
-        address: direccion,
-        observations: observaciones
-      });
+      console.log('Creando tienda con datos:', storeData);
+      await createStoreMutation.mutateAsync(storeData);
       
       console.log('Tienda creada exitosamente');
       
@@ -51,7 +53,15 @@ const ModalCreateStore: React.FC<ModalCreateStoreProps> = ({ isOpen, onClose }) 
       onClose();
     } catch (error) {
       console.error('Error al crear tienda:', error);
-      setLocalError('Error al crear la tienda. Intenta nuevamente.');
+      
+      // Mostrar error más específico
+      if (error instanceof Error && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string }; status?: number } };
+        const errorMessage = axiosError.response?.data?.message || `Error ${axiosError.response?.status}: No se pudo crear la tienda`;
+        setLocalError(errorMessage);
+      } else {
+        setLocalError('Error al crear la tienda. Intenta nuevamente.');
+      }
     }
   };
 
