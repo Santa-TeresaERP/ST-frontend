@@ -5,6 +5,8 @@ import { movementProductSchema } from '@/modules/inventory/schemas/movementProdu
 import { createMovement, CreateMovementProductPayload } from '@/modules/inventory/action/movementProduct';
 import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
 import { useFetchProducts } from '@/modules/inventory/hook/useProducts';
+import { useFetchStores } from '@/modules/sales/hooks/useStore';
+import { StoreAttributes } from '@/modules/sales/types/store';
 import { WarehouseAttributes } from '@/modules/inventory/types/warehouse';
 import { ProductAttributes } from '@/modules/inventory/types/ListProduct';
 import ModalError from '../../../ModalError';
@@ -28,6 +30,7 @@ interface Props {
 const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
   const [form, setForm] = useState(initialForm);
   const { data: warehouses, isLoading: isLoadingWarehouses, error: errorWarehouses } = useFetchWarehouses();
+  const { data: stores, isLoading: isLoadingStores, error: errorStores } = useFetchStores();
   const { data: products, isLoading: isLoadingProducts, error: errorProducts } = useFetchProducts();
   const [loading, setLoading] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
@@ -185,11 +188,13 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-slate-600 focus:outline-none"
             >
-              <option value="">Sin tienda asignada</option>
-              <option value="Tienda Centro">Tienda Centro</option>
-              <option value="Sucursal Norte">Sucursal Norte</option>
-              <option value="Tienda Sur">Tienda Sur</option>
-              <option value="Almacén Principal">Almacén Principal</option>
+              <option key="select-store" value="">{isLoadingStores ? 'Cargando tiendas...' : 'Seleccione una tienda'}</option>
+              {errorStores && <option key="error-store" value="" disabled>Error al cargar tiendas</option>}
+              {Array.isArray(stores) && stores.map((store: StoreAttributes) => (
+                <option key={store.id} value={store.id}>
+                  {store.store_name}
+                </option>
+              ))}
             </select>
           </div>
 
