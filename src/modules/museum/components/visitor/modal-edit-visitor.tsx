@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Pencil } from 'lucide-react';
+import { useTypePerson } from '../../hook/useTypePerson';
+import { useSalesChannel } from '../../hook/useSalesChannel';
 
 interface ModalEditVisitorProps {
   isOpen: boolean;
@@ -23,6 +25,10 @@ const ModalEditVisitor: React.FC<ModalEditVisitorProps> = ({ isOpen, onClose, on
   const [monto, setMonto] = useState('');
   const [gratis, setGratis] = useState('');
   const [error, setError] = useState('');
+
+  // Hooks para datos dinámicos
+  const { data: tiposPersona, loading: loadingTipos, error: errorTipos } = useTypePerson();
+  const { data: canalesVenta, loading: loadingCanales, error: errorCanales } = useSalesChannel();
 
   useEffect(() => {
     if (initialData) {
@@ -72,12 +78,21 @@ const ModalEditVisitor: React.FC<ModalEditVisitorProps> = ({ isOpen, onClose, on
                 value={tipoVisitante}
                 onChange={(e) => setTipoVisitante(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                disabled={loadingTipos}
               >
                 <option value="">Seleccione un tipo</option>
-                <option value="Nacional">Nacional</option>
-                <option value="Extranjero">Extranjero</option>
-                <option value="Estudiante">Estudiante</option>
+                {tiposPersona && tiposPersona.map((tipo) => (
+                  <option key={tipo.id} value={tipo.name}>
+                    {tipo.name}
+                  </option>
+                ))}
               </select>
+              {loadingTipos && (
+                <p className="text-xs text-gray-500 mt-1">Cargando tipos de persona...</p>
+              )}
+              {errorTipos && (
+                <p className="text-xs text-red-600 mt-1">{errorTipos}</p>
+              )}
             </div>
 
             <div>
@@ -86,12 +101,21 @@ const ModalEditVisitor: React.FC<ModalEditVisitorProps> = ({ isOpen, onClose, on
                 value={canalVenta}
                 onChange={(e) => setCanalVenta(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                disabled={loadingCanales}
               >
                 <option value="">Seleccione un canal</option>
-                <option value="Taquilla">Taquilla</option>
-                <option value="Web">Web</option>
-                <option value="Agencia">Agencia</option>
+                {canalesVenta && canalesVenta.map((canal) => (
+                  <option key={canal.id} value={canal.name}>
+                    {canal.name}
+                  </option>
+                ))}
               </select>
+              {loadingCanales && (
+                <p className="text-xs text-gray-500 mt-1">Cargando canales...</p>
+              )}
+              {errorCanales && (
+                <p className="text-xs text-red-600 mt-1">{errorCanales}</p>
+              )}
             </div>
           </div>
 

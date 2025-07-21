@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { X, Save, Users } from 'lucide-react';
+import { useSalesChannel } from '../../hook/useSalesChannel';
+import { useTypePerson } from '../../hook/useTypePerson';
 
 interface ModalCreateVisitorProps {
   isOpen: boolean;
@@ -22,6 +24,11 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
   const [monto, setMonto] = useState('');
   const [gratis, setGratis] = useState('');
   const [error, setError] = useState('');
+
+  // Hook para obtener los canales de venta
+  const { data: canalesVenta, loading: loadingCanales, error: errorCanales } = useSalesChannel();
+  // Hook para obtener los tipos de persona
+  const { data: tiposPersona, loading: loadingTipos, error: errorTipos } = useTypePerson();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,12 +70,21 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
                 value={tipoVisitante}
                 onChange={(e) => setTipoVisitante(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                disabled={loadingTipos}
               >
                 <option value="">Seleccione un tipo</option>
-                <option value="Nacional">Nacional</option>
-                <option value="Extranjero">Extranjero</option>
-                <option value="Estudiante">Estudiante</option>
+                {tiposPersona && tiposPersona.map((tipo) => (
+                  <option key={tipo.id} value={tipo.name}>
+                    {tipo.name}
+                  </option>
+                ))}
               </select>
+              {loadingTipos && (
+                <p className="text-xs text-gray-500 mt-1">Cargando tipos de persona...</p>
+              )}
+              {errorTipos && (
+                <p className="text-xs text-red-600 mt-1">{errorTipos}</p>
+              )}
             </div>
 
             <div>
@@ -79,12 +95,21 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
                 value={canalVenta}
                 onChange={(e) => setCanalVenta(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                disabled={loadingCanales}
               >
                 <option value="">Seleccione un canal</option>
-                <option value="Taquilla">Taquilla</option>
-                <option value="Web">Web</option>
-                <option value="Agencia">Agencia</option>
+                {canalesVenta && canalesVenta.map((canal) => (
+                  <option key={canal.id} value={canal.name}>
+                    {canal.name}
+                  </option>
+                ))}
               </select>
+              {loadingCanales && (
+                <p className="text-xs text-gray-500 mt-1">Cargando canales...</p>
+              )}
+              {errorCanales && (
+                <p className="text-xs text-red-600 mt-1">{errorCanales}</p>
+              )}
             </div>
           </div>
 
