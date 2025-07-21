@@ -7,15 +7,22 @@ import {
   useFetchReturns,
   useCreateReturn,
   useUpdateReturn,
-  useDeleteReturn
-} from '@/modules/sales/hooks/useReturns'
+  useDeleteReturn,
+} from "@/modules/sales/hooks/useReturns";
+import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
+import { useFetchSales } from "@/modules/sales/hooks/useSales";
 
-import { useFetchProducts } from '@/modules/inventory/hook/useProducts'
+// ✅ NUEVO: recibe ID de tienda como prop
+interface LossesComponentViewProps {
+  selectedStoreId?: string;
+}
 
-
-const LossesComponentView: React.FC = () => {
-  const { data: losses = [], isLoading } = useFetchReturns();
+const LossesComponentView: React.FC<LossesComponentViewProps> = ({
+  selectedStoreId,
+}) => {
+  const { data: losses = [], isLoading: isLoadingLosses } = useFetchReturns();
   const { data: products = [] } = useFetchProducts();
+  const { data: sales = [], isLoading: isLoadingSales } = useFetchSales();
 
   const createReturnMutation = useCreateReturn();
   const updateReturnMutation = useUpdateReturn();
@@ -25,6 +32,15 @@ const LossesComponentView: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentLoss, setCurrentLoss] = useState<any>(null);
+
+  // ✅ Filtro por tienda seleccionada
+  const filteredLosses =
+    selectedStoreId && !isLoadingSales
+      ? losses.filter((loss) => {
+          const relatedSale = sales.find((s) => s.id === loss.salesId);
+          return relatedSale?.store?.id === selectedStoreId;
+        })
+      : [];
 
   const handleCreateLoss = async (newLoss: any) => {
     await createReturnMutation.mutateAsync(newLoss);
@@ -50,12 +66,26 @@ const LossesComponentView: React.FC = () => {
     return product ? product.name : productId; // fallback al ID si no está cargado
   };
 
+  // Obtener nombre de la tienda desde el ID de la venta
+  const getStoreName = (salesId: string) => {
+    const rawSale = sales.find((s) => s.id === salesId);
+    const store_name = (rawSale as { store?: { store_name?: string } })?.store
+      ?.store_name;
+    return store_name || `Tienda ${salesId.slice(0, 6)}...`;
+  };
+
   return (
     <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 space-y-6 text-gray-700">
+      {/* Botón "Nueva Pérdida" */}
       <div className="flex justify-end items-center">
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white px-4 py-2 rounded-lg"
+          disabled={!selectedStoreId}
+          className={`flex items-center px-4 py-2 rounded-lg transition-all ${
+            selectedStoreId
+              ? "bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          }`}
         >
           <FiPlus className="mr-2 h-5 w-5" />
           Nueva Pérdida
@@ -67,26 +97,41 @@ const LossesComponentView: React.FC = () => {
         <span>Registro de Pérdidas</span>
       </h2>
 
-      <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm bg-white">
-        <table className="min-w-full text-left text-gray-700">
-          <thead className="bg-gray-800 text-white">
-            <tr>
-              <th className="px-4 py-2 text-center">Producto</th>
-              <th className="px-4 py-2 text-center">Tienda</th>
-              <th className="px-4 py-2 text-center">Razón</th>
-              <th className="px-4 py-2 text-center">Observación</th>
-              <th className="px-4 py-2 text-center">Fecha</th>
-              <th className="px-4 py-2 text-center">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {!isLoading &&
-              losses.map((item) => (
+      {/* Estado de carga o mensajes según el contexto */}
+      {isLoadingLosses || isLoadingSales ? (
+        <div className="text-center text-gray-500 italic">
+          Cargando datos...
+        </div>
+      ) : !selectedStoreId ? (
+        <div className="text-center text-gray-500 italic">
+          Seleccione una tienda para ver las pérdidas registradas.
+        </div>
+      ) : filteredLosses.length === 0 ? (
+        <div className="text-center text-gray-500 italic">
+          No hay pérdidas registradas para esta tienda.
+        </div>
+      ) : (
+        <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm bg-white">
+          <table className="min-w-full text-left text-gray-700">
+            <thead className="bg-gray-800 text-white">
+              <tr>
+                <th className="px-4 py-2 text-center">Producto</th>
+                <th className="px-4 py-2 text-center">Tienda</th>
+                <th className="px-4 py-2 text-center">Razón</th>
+                <th className="px-4 py-2 text-center">Observación</th>
+                <th className="px-4 py-2 text-center">Fecha</th>
+                <th className="px-4 py-2 text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredLosses.map((item) => (
                 <tr key={item.id} className="border-t hover:bg-gray-50">
                   <td className="px-4 py-2 text-center">
                     {getProductName(item.productId)}
                   </td>
-                  <td className="px-4 py-2 text-center">{item.salesId}</td>
+                  <td className="px-4 py-2 text-center">
+                    {getStoreName(item.salesId)}
+                  </td>
                   <td className="px-4 py-2 text-center">{item.reason}</td>
                   <td className="px-4 py-2 text-center">{item.observations}</td>
                   <td className="px-4 py-2 text-center">
@@ -114,14 +159,17 @@ const LossesComponentView: React.FC = () => {
                   </td>
                 </tr>
               ))}
-          </tbody>
-        </table>
-      </div>
+            </tbody>
+          </table>
+        </div>
+      )}
 
+      {/* Modales */}
       <ModalCreateLoss
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSave={handleCreateLoss}
+        selectedStoreId={selectedStoreId}
       />
 
       <ModalEditLoss
@@ -129,6 +177,7 @@ const LossesComponentView: React.FC = () => {
         onClose={() => setIsEditModalOpen(false)}
         currentLoss={currentLoss}
         onSave={handleEditLoss}
+        selectedStoreId={selectedStoreId}
       />
 
       <ModalDeleteLoss

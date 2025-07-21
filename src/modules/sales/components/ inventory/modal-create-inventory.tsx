@@ -1,54 +1,50 @@
-// src/modules/sales/components/inventory/modal-create-inventory.tsx
 'use client';
-import React, { useEffect } from 'react';
+import React from 'react'; // Eliminado useEffect ya que reset se maneja en onSuccess
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X, Save } from 'lucide-react';
 import { FiPackage } from 'react-icons/fi';
 
-import { useCreateInventoryProduct } from '../../hooks/useInventoryQueries';
-import { inventoryFormSchema, InventoryFormData } from '../../schemas/inventory.schema';
+// 1. IMPORTAR HOOKS DE OTROS MÓDULOS
+import { useFetchProducts } from '@/modules/production/hook/useProducts'; // Asegúrate que esta ruta es correcta
+import { useFetchStores } from '@/modules/stores/hook/useStores';         // Asegúrate que esta ruta es correcta
 
-interface ModalCreateProductProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
+// Importaciones del módulo actual
+import { useCreateWarehouseStoreItem } from '../../hooks/useInventoryQueries';
+import { createWarehouseStoreSchema, CreateWarehouseStoreFormData } from '../../schemas/inventory.schema';
 
-const ModalCreateProduct: React.FC<ModalCreateProductProps> = ({ isOpen, onClose }) => {
-  const { mutate: createProduct, isPending, error: mutationError } = useCreateInventoryProduct();
+interface Props { isOpen: boolean; onClose: () => void; }
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm<InventoryFormData>({
-    resolver: zodResolver(inventoryFormSchema),
+const ModalCreateInventory: React.FC<Props> = ({ isOpen, onClose }) => {
+  // 2. OBTENER DATOS PARA LOS DESPLEGABLES
+  const { data: products = [], isLoading: isLoadingProducts } = useFetchProducts();
+  const { data: stores = [], isLoading: isLoadingStores } = useFetchStores();
+  
+  const { mutate: createItem, isPending, error: mutationError } = useCreateWarehouseStoreItem();
+
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<CreateWarehouseStoreFormData>({
+    resolver: zodResolver(createWarehouseStoreSchema),
   });
 
-  useEffect(() => {
-    // Limpia el formulario cada vez que se cierra
-    if (!isOpen) {
-      reset();
-    }
-  }, [isOpen, reset]);
-
-  const onSubmit = (data: InventoryFormData) => {
-    createProduct(data, {
+  const onSubmit = (data: CreateWarehouseStoreFormData) => {
+    createItem(data, {
       onSuccess: () => {
-        onClose(); // Cierra el modal si la creación es exitosa
+        reset(); // Limpia el formulario
+        onClose(); // Cierra el modal
       },
     });
   };
 
   if (!isOpen) return null;
 
+  const areDependenciesLoading = isLoadingProducts || isLoadingStores;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl mx-2">
         <div className="bg-gradient-to-r from-red-700 to-red-900 text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
           <FiPackage size={24} />
-          <h2 className="text-xl font-semibold text-center">Crear Producto</h2>
+          <h2 className="text-xl font-semibold text-center">Añadir Stock al Inventario</h2>
           <button onClick={onClose} className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300">
             <X size={22} />
           </button>
@@ -60,35 +56,39 @@ const ModalCreateProduct: React.FC<ModalCreateProductProps> = ({ isOpen, onClose
           <div className="space-y-4">
             <div>
               <label className="block text-gray-700 mb-1 font-medium">Producto <span className="text-red-600">*</span></label>
-              <input
-                type="text"
-                {...register('producto')}
-                className={`w-full border ${errors.producto ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none`}
-                placeholder="Nombre del producto"
-              />
-              {errors.producto && <p className="text-sm text-red-600 mt-1">{errors.producto.message}</p>}
+              <select
+                {...register('productId')}
+                className={`w-full border ${errors.productId ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none`}
+                disabled={areDependenciesLoading}
+              >
+                <option value="">{isLoadingProducts ? 'Cargando productos...' : 'Seleccione un producto'}</option>
+                {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+              {errors.productId && <p className="text-sm text-red-600 mt-1">{errors.productId.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-gray-700 mb-1 font-medium">Tienda <span className="text-red-600">*</span></label>
+              <select
+                {...register('storeId')}
+                className={`w-full border ${errors.storeId ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none`}
+                disabled={areDependenciesLoading}
+              >
+                <option value="">{isLoadingStores ? 'Cargando tiendas...' : 'Seleccione una tienda'}</option>
+                {stores.map(s => <option key={s.id} value={s.id}>{s.store_name}</option>)}
+              </select>
+              {errors.storeId && <p className="text-sm text-red-600 mt-1">{errors.storeId.message}</p>}
             </div>
 
             <div>
               <label className="block text-gray-700 mb-1 font-medium">Cantidad <span className="text-red-600">*</span></label>
               <input
                 type="number"
-                {...register('cantidad')}
-                className={`w-full border ${errors.cantidad ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none`}
+                {...register('quantity')}
+                className={`w-full border ${errors.quantity ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none`}
                 placeholder="Cantidad en stock"
               />
-              {errors.cantidad && <p className="text-sm text-red-600 mt-1">{errors.cantidad.message}</p>}
-            </div>
-
-            {/* --- CAMPO DE FECHA AÑADIDO --- */}
-            <div>
-              <label className="block text-gray-700 mb-1 font-medium">Fecha <span className="text-red-600">*</span></label>
-              <input
-                type="date"
-                {...register('fecha')}
-                className={`w-full border ${errors.fecha ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none`}
-              />
-              {errors.fecha && <p className="text-sm text-red-600 mt-1">{errors.fecha.message}</p>}
+              {errors.quantity && <p className="text-sm text-red-600 mt-1">{errors.quantity.message}</p>}
             </div>
           </div>
 
@@ -98,7 +98,7 @@ const ModalCreateProduct: React.FC<ModalCreateProductProps> = ({ isOpen, onClose
             </button>
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || areDependenciesLoading}
               className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-600 transition flex items-center gap-2 disabled:bg-gray-400"
             >
               {isPending ? 'Guardando...' : <><Save size={18} /> Guardar</>}
@@ -109,5 +109,4 @@ const ModalCreateProduct: React.FC<ModalCreateProductProps> = ({ isOpen, onClose
     </div>
   );
 };
-
-export default ModalCreateProduct;
+export default ModalCreateInventory;

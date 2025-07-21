@@ -261,10 +261,22 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({ sel
       )}
       
       {/* Información de la Tienda */}
-      <h2 className="text-2xl font-bold text-red-700 flex items-center space-x-2">
-        <FiInfo className="text-red-600" size={24} />
-        <span>Información de la Tienda</span>
-      </h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-red-700 flex items-center space-x-2">
+          <FiInfo className="text-red-600" size={24} />
+          <span>Información de la Tienda</span>
+        </h2>
+        {selectedStore && (
+          <button
+            onClick={() => setIsEditStoreModalOpen(true)}
+            className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors ml-auto"
+            style={{ minWidth: 0 }}
+          >
+            <FiPlus size={18} />
+            <span>Editar Tienda</span>
+          </button>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
         <div className="border border-gray-300 rounded-lg p-4 shadow-sm">

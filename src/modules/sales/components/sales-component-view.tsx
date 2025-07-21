@@ -3,14 +3,31 @@ import { FiUsers, FiShoppingCart, FiPackage, FiAlertOctagon } from 'react-icons/
 
 import InformationComponentView from '@/modules/sales/components/information/information-component-view';
 import StoreListView from '@/modules/stores/components/store-list-view';
-import SalesComponentsView from './ sales/sale-view';
-import InventoryComponentsView from './ inventory/inventory-view';
+import SalesComponentsView from './\ sales/sale-view';
+import InventoryComponentsView from './\ inventory/inventory-view';
 import LossesComponentView from './losses/losses-view';
 import { StoreAttributes } from '@/modules/stores/types/store';
+import { useFetchStores } from '@/modules/stores/hook/useStores';
 
 const SalesView: React.FC = () => {
   const [activeTab, setActiveTab] = useState('informacion');
   const [selectedStore, setSelectedStore] = useState<StoreAttributes | null>(null);
+  const { refetch } = useFetchStores();
+
+  // Refresca la tienda seleccionada tras editar
+  const handleStoreUpdate = async (storeId: string) => {
+    try {
+      // Refresca la lista de tiendas
+      const { data: updatedStores } = await refetch();
+      // Busca la tienda seleccionada en la lista actualizada
+      const updatedStore = (updatedStores || []).find((store: StoreAttributes) => store.id === storeId);
+      if (updatedStore) {
+        setSelectedStore(updatedStore);
+      }
+    } catch (error) {
+      console.error('Error al refrescar la tienda:', error);
+    }
+  };
 
   const handleStoreSelect = (store: StoreAttributes | null) => {
     console.log('🏪 Store selected in sales view:', store);
@@ -28,7 +45,7 @@ const SalesView: React.FC = () => {
       {/* Lista de Tiendas */}
       <StoreListView 
         onStoreSelect={handleStoreSelect}
-        selectedStoreId={selectedStore?.id}
+        selectedStoreId={selectedStore?.id || ''}
       />
 
       {/* Botones de navegación */}
@@ -125,10 +142,11 @@ const SalesView: React.FC = () => {
 
       {/* Render de componentes según tab */}
       <div className="mt-6">
-        {activeTab === 'informacion' && <InformationComponentView selectedStore={selectedStore} />}
+        {activeTab === 'informacion' && <InformationComponentView selectedStore={selectedStore} onStoreUpdate={handleStoreUpdate} />}
         {activeTab === 'ventas' && <SalesComponentsView selectedStore={selectedStore} />}
         {activeTab === 'inventario' && <InventoryComponentsView />}
-        {activeTab === 'perdidas' && <LossesComponentView/>}
+        {activeTab === 'perdidas' && <LossesComponentView selectedStoreId={selectedStore?.id} />}
+
       </div>
     </div>
   );

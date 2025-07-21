@@ -18,7 +18,10 @@ import { WarehouseMovementResource } from '@/modules/inventory/types/movementRes
 import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
 import { useFetchResources } from '@/modules/inventory/hook/useResources';
 import { useFetchProducts } from '@/modules/inventory/hook/useProducts';
+import { fetchStores } from '@/modules/stores/action/store-actions';
+import { useQuery } from '@tanstack/react-query';
 import FilterMovement from './movement/filter-movement';
+
 
 const MovementComponentView: React.FC = () => {
   const [filters, setFilters] = useState<any>({});
@@ -30,10 +33,18 @@ const MovementComponentView: React.FC = () => {
   const { data: resourceMovements = [], isLoading: loadingResource, error: errorResource, refetch: fetchResourceMovements } = useFetchWarehouseMovementResources(filters);
   const [editingResource, setEditingResource] = useState<WarehouseMovementResource | null>(null);
 
+  // Hook local para obtener tiendas
+  const useFetchStores = () => {
+    return useQuery({
+      queryKey: ['stores'],
+      queryFn: fetchStores,
+    });
+  };
   // Almacenes, recursos y productos para mostrar nombres
   const { data: warehouses = [] } = useFetchWarehouses();
   const { data: resources = [] } = useFetchResources();
   const { data: products = [] } = useFetchProducts();
+  const { data: stores = [] } = useFetchStores();
 
   // General
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,6 +55,11 @@ const MovementComponentView: React.FC = () => {
     setFilters(newFilters);
   };
 
+  const getWarehouseName = (id: string) => warehouses.find((w: any) => w.id === id)?.name || id;
+  const getResourceName = (id: string) => resources.find((r: any) => r.id === id)?.name || id;
+  const getProductName = (id: string) => products.find((p: any) => p.id === id)?.name || id;
+  const getStoreName = (id: string | null | undefined) => stores.find((s: any) => s.id === (id || ''))?.store_name || (id || '');
+
   // Filtrar movimientos por producto, almacén o tienda
   const filteredMovements = movements.filter(
     (mov) =>
@@ -53,8 +69,8 @@ const MovementComponentView: React.FC = () => {
       (filters.start_date ? new Date(mov.movement_date) >= new Date(filters.start_date) : true) &&
       (filters.end_date ? new Date(mov.movement_date) <= new Date(filters.end_date) : true) &&
       (searchTerm ? (
-        mov.product_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        mov.warehouse_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getProductName(mov.product_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getWarehouseName(mov.warehouse_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
         mov.store_id?.toLowerCase().includes(searchTerm.toLowerCase())
       ) : true)
   );
@@ -67,15 +83,10 @@ const MovementComponentView: React.FC = () => {
       (filters.start_date ? new Date(mov.movement_date) >= new Date(filters.start_date) : true) &&
       (filters.end_date ? new Date(mov.movement_date) <= new Date(filters.end_date) : true) &&
       (searchTerm ? (
-        mov.resource_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        mov.warehouse_id?.toLowerCase().includes(searchTerm.toLowerCase())
+        getResourceName(mov.resource_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getWarehouseName(mov.warehouse_id).toLowerCase().includes(searchTerm.toLowerCase())
       ) : true)
   );
-
-  // Funciones para mostrar nombre en vez de UUID
-  const getWarehouseName = (id: string) => warehouses.find((w: any) => w.id === id)?.name || id;
-  const getResourceName = (id: string) => resources.find((r: any) => r.id === id)?.name || id;
-  const getProductName = (id: string) => products.find((p: any) => p.id === id)?.name || id;
 
   return (
     <div className="p-6 space-y-4 bg-gray-50 min-h-screen">
@@ -84,58 +95,50 @@ const MovementComponentView: React.FC = () => {
         <h2 className="text-3xl font-semibold text-red-700">
           Movimientos de {selectedType === 'producto' ? 'Productos' : 'Recursos'}
         </h2>
-        <div className="flex gap-2">
-          <button
-            className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
-              selectedType === 'producto'
-                ? 'bg-red-700 text-white'
-                : 'bg-white text-red-700 border border-red-700'
-            }`}
-            onClick={() => setSelectedType('producto')}
-          >
-            <Package size={18} /> Producto
-          </button>
-          <button
-            className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
-              selectedType === 'recurso'
-                ? 'bg-orange-500 text-white'
-                : 'bg-white text-orange-500 border border-orange-500'
-            }`}
-            onClick={() => setSelectedType('recurso')}
-          >
-            <Users size={18} /> Recurso
-          </button>
-        </div>
       </div>
 
       {/* Acciones y Filtro */}
-      <div className="flex justify-between items-center space-x-6">
-        {/* Search input */}
-        <div className="flex items-center space-x-2">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar..."
-            className="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-700"
-          />
-        </div>
-        <div className="flex items-center space-x-3 select-none">
-          <button
-            onClick={() => setShowCreate(true)}
-            className={`px-4 py-2 rounded-full font-semibold transition-colors duration-300 flex items-center gap-2 ${
-              selectedType === 'producto'
-                ? 'bg-red-700 text-white hover:bg-red-800'
-                : 'bg-orange-500 text-white hover:bg-orange-600'
-            }`}
-          >
-            <PlusCircle size={18} /> Crear {selectedType === 'producto' ? 'Producto' : 'Recurso'}
-          </button>
-        </div>
-        <div className="relative inline-flex items-center shadow-sm rounded-xl bg-white">
-        </div>
+      <div className="flex flex-wrap gap-2 sm:justify-center md:justify-end sm:flex-nowrap">
+        <button
+          onClick={() => setShowCreate(true)}
+          className={`w-full sm:w-auto px-4 py-2 rounded-full font-semibold transition-colors duration-300 flex items-center justify-center gap-2 ${
+            selectedType === 'producto'
+              ? 'bg-red-700 text-white hover:bg-red-800'
+              : 'bg-orange-500 text-white hover:bg-orange-600'
+          }`}
+        >
+          <PlusCircle size={18} /> Crear {selectedType === 'producto' ? 'Producto' : 'Recurso'}
+        </button>
+        <button
+          onClick={() => setSelectedType('producto')}
+          className={`w-1/2 sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
+            selectedType === 'producto'
+              ? 'bg-red-700 text-white'
+              : 'bg-white text-red-700 border border-red-700'
+          }`}
+        >
+          <Package size={18} /> Producto
+        </button>
+        <button
+          onClick={() => setSelectedType('recurso')}
+          className={`w-1/2 sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
+            selectedType === 'recurso'
+              ? 'bg-orange-500 text-white'
+              : 'bg-white text-orange-500 border border-orange-500'
+          }`}
+        >
+          <Users size={18} /> Recurso
+        </button>
       </div>
-      <FilterMovement selectedType={selectedType} onFilter={handleFilter} />
+      <FilterMovement
+        selectedType={selectedType}
+        filters={filters}
+        onFilter={handleFilter}
+        onSearchChange={setSearchTerm}
+        searchTerm={searchTerm}
+        products={products}
+        stores={warehouses}
+      />
 
       {/* Display active filters */}
       <div className="flex flex-wrap gap-2 mb-4">
@@ -206,7 +209,6 @@ const MovementComponentView: React.FC = () => {
               <table className="min-w-full text-sm">
                 <thead className="bg-gray-800 text-white">
                   <tr>
-                    <th className="px-4 py-2 text-center">ID</th>
                     <th className="px-4 py-2 text-center">Almacén</th>
                     <th className="px-4 py-2 text-center">Tienda</th>
                     <th className="px-4 py-2 text-center">Producto</th>
@@ -220,9 +222,8 @@ const MovementComponentView: React.FC = () => {
                 <tbody>
                   {filteredMovements.map((mov, index) => (
                     <tr key={mov.movement_id || `movement-${index}`} className="hover:bg-gray-50 border-t">
-                      <td className="px-4 py-2 text-center">{mov.movement_id}</td>
                       <td className="px-4 py-2 text-center">{getWarehouseName(mov.warehouse_id)}</td>
-                      <td className="px-4 py-2 text-center">{mov.store_id}</td>
+                      <td className="px-4 py-2 text-center">{getStoreName(mov.store_id)}</td>
                       <td className="px-4 py-2 text-center">{getProductName(mov.product_id)}</td>
                       <td className="px-4 py-2 text-center capitalize">{mov.movement_type}</td>
                       <td className="px-4 py-2 text-center">{mov.quantity}</td>

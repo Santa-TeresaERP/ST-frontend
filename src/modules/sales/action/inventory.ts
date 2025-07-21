@@ -1,75 +1,44 @@
-/*import api from '@/core/config/client';
-import { InventoryItem, CreateInventoryItem, UpdateInventoryItem } from '../types/inventory.types';
+import api from '@/core/config/client'; // Tu cliente API que debe manejar la autorización
+import { 
+  WarehouseStoreItem, 
+  CreateWarehouseStorePayload, 
+  UpdateWarehouseStorePayload 
+} from '../types/inventory.types';
 
-export const fetchInventory = async (): Promise<InventoryItem[]> => {
-  const response = await api.get<InventoryItem[]>('/inventory');
+// El endpoint correcto, en plural, como se define en las rutas del backend.
+const WAREHOUSE_ENDPOINT = '/warehouseStores';
+
+/**
+ * Llama a: GET /warehouseStores
+ * Obtiene todos los artículos del inventario.
+ */
+export const fetchWarehouseStoreItems = async (): Promise<WarehouseStoreItem[]> => {
+  const response = await api.get<WarehouseStoreItem[]>(WAREHOUSE_ENDPOINT);
   return response.data;
 };
 
-export const createInventoryProduct = async (payload: CreateInventoryItem): Promise<InventoryItem> => {
-  const response = await api.post<InventoryItem>('/inventory', payload);
+/**
+ * Llama a: POST /warehouseStores
+ * Crea un nuevo registro en el inventario.
+ */
+export const createWarehouseStoreItem = async (payload: CreateWarehouseStorePayload): Promise<WarehouseStoreItem> => {
+  const response = await api.post<WarehouseStoreItem>(WAREHOUSE_ENDPOINT, payload);
   return response.data;
 };
 
-export const updateInventoryProduct = async (id: string, payload: UpdateInventoryItem): Promise<InventoryItem> => {
-  const response = await api.patch<InventoryItem>(`/inventory/${id}`, payload);
+/**
+ * Llama a: PUT /warehouseStores/:id
+ * Actualiza un registro existente. Usamos 'put' para que coincida con `router.put`.
+ */
+export const updateWarehouseStoreItem = async (id: string, payload: UpdateWarehouseStorePayload): Promise<WarehouseStoreItem> => {
+  const response = await api.put<WarehouseStoreItem>(`${WAREHOUSE_ENDPOINT}/${id}`, payload);
   return response.data;
 };
 
-export const deleteInventoryProduct = async (id: string): Promise<void> => {
-  await api.delete(`/inventory/${id}`);
-};*/
-
-
-//Simulacion de backend
-
-import { InventoryItem, CreateInventoryItem, UpdateInventoryItem } from '../types/inventory.types';
-
-// Datos falsos para simular la base de datos
-let mockInventory: InventoryItem[] = [
-  { id: '1', producto: 'Harina Mock', cantidad: 50, fecha: '2025-07-15' },
-  { id: '2', producto: 'Azúcar Mock', cantidad: 30, fecha: '2025-07-14' },
-  { id: '3', producto: 'Huevos Mock', cantidad: 120, fecha: '2025-07-16' },
-];
-
-const simulateDelay = (ms: number) => new Promise(res => setTimeout(res, ms));
-
-export const fetchInventory = async (): Promise<InventoryItem[]> => {
-  console.log('ACTION: Fetching mock inventory...');
-  await simulateDelay(500); // Simula una demora de red de 1.5 segundos
-  // En lugar de llamar a `api.get`, devolvemos nuestros datos falsos.
-  return Promise.resolve(mockInventory);
-};
-
-export const createInventoryProduct = async (payload: CreateInventoryItem): Promise<InventoryItem> => {
-  console.log('ACTION: Creating mock product...', payload);
-  await simulateDelay(100);
-  const newProduct: InventoryItem = {
-    id: Date.now().toString(),
-    ...payload, 
-  };
-  mockInventory = [...mockInventory, newProduct];
-  return Promise.resolve(newProduct);
-};
-
-export const updateInventoryProduct = async (id: string, payload: UpdateInventoryItem): Promise<InventoryItem> => {
-  console.log(`ACTION: Updating mock product ${id}...`, payload);
-  await simulateDelay(100);
-  let updatedProduct: InventoryItem | undefined;
-  mockInventory = mockInventory.map(item => {
-    if (item.id === id) {
-      updatedProduct = { ...item, ...payload };
-      return updatedProduct;
-    }
-    return item;
-  });
-  if (!updatedProduct) throw new Error("Producto no encontrado");
-  return Promise.resolve(updatedProduct);
-};
-
-export const deleteInventoryProduct = async (id: string): Promise<void> => {
-  console.log(`ACTION: Deleting mock product ${id}...`);
-  await simulateDelay(100);
-  mockInventory = mockInventory.filter(item => item.id !== id);
-  return Promise.resolve();
+/**
+ * Llama a: DELETE /warehouseStores/:id
+ * Elimina un registro del inventario.
+ */
+export const deleteWarehouseStoreItem = async (id: string): Promise<void> => {
+  await api.delete(`${WAREHOUSE_ENDPOINT}/${id}`);
 };
