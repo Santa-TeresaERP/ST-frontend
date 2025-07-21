@@ -1,65 +1,128 @@
 import React from 'react';
 import { FiX } from 'react-icons/fi';
+import { CashSessionAttributes, CreateCashSessionPayload, CloseCashSessionPayload } from '../../types/cash-session';
+import { StoreAttributes } from '@/modules/stores/types/store';
 
 interface ModalCreateCashRegisterProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: CashRegisterData) => void;
+  onSubmit: (data: CreateCashSessionPayload | CloseCashSessionPayload) => void;
+  isInitialSetup: boolean;
+  activeCashSession?: CashSessionAttributes | null;
+  selectedStoreId?: string;
+  selectedStore?: StoreAttributes | null;
+  currentSessionSales?: number;
 }
 
-interface CashRegisterData {
-  usuario: string;
-  tienda: string;
-  dineroInicial: number;
-  dineroFinal: number;
-  totalPerdidas: number;
-  fechaTermino: string;
-  observaciones: string;
+interface CashRegisterFormData {
+  store_id: string;
+  start_amount: number;
+  end_amount: number;
+  total_returns: number;
+  total_sales: number;
 }
 
 const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  isInitialSetup,
+  activeCashSession,
+  selectedStoreId,
+  selectedStore,
+  currentSessionSales = 0
 }) => {
-  const [formData, setFormData] = React.useState<CashRegisterData>({
-    usuario: '',
-    tienda: 'Dulce Sabor',
-    dineroInicial: 0,
-    dineroFinal: 0,
-    totalPerdidas: 0,
-    fechaTermino: '',
-    observaciones: ''
+  const [formData, setFormData] = React.useState<CashRegisterFormData>({
+    store_id: selectedStoreId || '',
+    start_amount: 0,
+    end_amount: 0,
+    total_returns: 0,
+    total_sales: currentSessionSales || 0
   });
+
+  // Efecto para establecer valores iniciales cuando hay una sesión activa
+  React.useEffect(() => {
+    if (activeCashSession && !isInitialSetup) {
+      setFormData(prev => ({
+        ...prev,
+        store_id: activeCashSession.store_id,
+        start_amount: Number(activeCashSession.start_amount),
+        total_sales: currentSessionSales
+      }));
+    } else if (selectedStoreId) {
+      setFormData(prev => ({
+        ...prev,
+        store_id: selectedStoreId
+      }));
+    }
+  }, [activeCashSession, isInitialSetup, selectedStoreId, currentSessionSales]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: ['dineroInicial', 'dineroFinal', 'totalPerdidas'].includes(name) ? 
+      [name]: ['start_amount', 'end_amount', 'total_returns', 'total_sales'].includes(name) ? 
               parseFloat(value) || 0 : value
     }));
   };
 
+  // Calcular el dinero final automáticamente
+  React.useEffect(() => {
+    if (!isInitialSetup) {
+      const calculatedEndAmount = formData.start_amount + formData.total_sales - formData.total_returns;
+      setFormData(prev => ({
+        ...prev,
+        end_amount: Math.max(0, calculatedEndAmount) // No permitir negativos
+      }));
+    }
+  }, [formData.start_amount, formData.total_sales, formData.total_returns, isInitialSetup]);
+
+  // Si no hay tienda seleccionada, no mostrar el modal
+  if (!selectedStore?.id && isOpen) {
+    return null;
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validación adicional
-    if (formData.dineroFinal < formData.dineroInicial) {
-      alert('El dinero final no puede ser menor que el dinero inicial');
-      return;
+    if (isInitialSetup) {
+      // Configuración inicial - solo enviar datos para crear sesión
+      if (!formData.store_id && selectedStoreId) {
+        setFormData(prev => ({ ...prev, store_id: selectedStoreId }));
+        return;
+      }
+      
+      // Para modo de prueba, usar un store_id temporal
+      const storeId = formData.store_id || selectedStoreId || 'temp-store-id';
+      
+      const createPayload: CreateCashSessionPayload = {
+        store_id: storeId,
+        start_amount: formData.start_amount
+      };
+      onSubmit(createPayload);
+    } else {
+      // Cierre de sesión - validación adicional
+      if (formData.end_amount < 0) {
+        alert('El dinero final no puede ser negativo');
+        return;
+      }
+      
+      const closePayload: CloseCashSessionPayload = {
+        end_amount: formData.end_amount,
+        total_returns: formData.total_returns,
+        ended_at: new Date().toISOString(),
+        status: 'closed'
+      };
+      onSubmit(closePayload);
     }
     
-    onSubmit(formData);
     onClose();
     setFormData({
-      usuario: '',
-      tienda: 'Dulce Sabor',
-      dineroInicial: 0,
-      dineroFinal: 0,
-      totalPerdidas: 0,
-      fechaTermino: '',
-      observaciones: ''
+      store_id: selectedStoreId || '',
+      start_amount: 0,
+      end_amount: 0,
+      total_returns: 0,
+      total_sales: 0
     });
   };
 
@@ -73,7 +136,9 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl">
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-gray-800">Registro Completo de Cierre de Caja</h3>
+            <h3 className="text-xl font-bold text-gray-800">
+              {isInitialSetup ? 'Configuración Inicial de Caja' : 'Cierre de Sesión de Caja'}
+            </h3>
             <button 
               onClick={onClose}
               className="text-gray-500 hover:text-gray-700 transition-colors"
@@ -84,135 +149,131 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Usuario */}
-              <div>
-                <label htmlFor="usuario" className="block text-gray-700 mb-1">
-                  Usuario <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="usuario"
-                  type="text"
-                  name="usuario"
-                  value={formData.usuario}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder="Nombre del responsable"
-                  required
-                />
-              </div>
+            {isInitialSetup ? (
+              // Formulario para configuración inicial - SOLO UNA VEZ
+              <>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <p className="text-blue-800 text-sm">
+                    <strong>Configuración Inicial:</strong> Esta información se solicita solo una vez para inicializar el sistema de caja.
+                  </p>
+                </div>
 
-              {/* Tienda */}
-              <div>
-                <label htmlFor="tienda" className="block text-gray-700 mb-1">
-                  Tienda <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="tienda"
-                  name="tienda"
-                  value={formData.tienda}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  required
-                >
-                  <option value="Dulce Sabor">Dulce Sabor</option>
-                  <option value="Sucursal Norte">Sucursal Norte</option>
-                  <option value="Sucursal Sur">Sucursal Sur</option>
-                </select>
-              </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="start_amount" className="block text-gray-700 mb-1">
+                      Dinero Inicial (S/) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="start_amount"
+                      type="number"
+                      name="start_amount"
+                      value={formData.start_amount || ''}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                      placeholder="200.00"
+                      step="0.01"
+                      min="0"
+                      required
+                    />
+                  </div>
 
-              {/* Dinero Inicial */}
-              <div>
-                <label htmlFor="dineroInicial" className="block text-gray-700 mb-1">
-                  Dinero Inicial (S/) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="dineroInicial"
-                  type="number"
-                  name="dineroInicial"
-                  value={formData.dineroInicial || ''}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder="200.00"
-                  step="0.01"
-                  min="0"
-                  required
-                />
-              </div>
+                  <div>
+                    <label className="block text-gray-700 mb-1">
+                      Tienda
+                    </label>
+                    <input
+                      type="text"
+                      value={selectedStore?.store_name || 'Tienda de prueba (no seleccionada)'}
+                      className={`w-full px-3 py-2 border rounded-md ${
+                        selectedStore 
+                          ? 'border-gray-300 bg-gray-100' 
+                          : 'border-amber-300 bg-amber-50 text-amber-800'
+                      }`}
+                      disabled
+                    />
+                    {!selectedStore && (
+                      <p className="text-xs text-amber-600 mt-1">
+                        ⚠️ Modo de prueba - selecciona una tienda real para uso en producción
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              // Formulario para cierre de mes
+              <>
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                  <p className="text-amber-800 text-sm">
+                    <strong>Cierre de Mes:</strong> El total de ventas se calcula automáticamente a partir de los registros del sistema.
+                  </p>
+                </div>
 
-              {/* Dinero Final */}
-              <div>
-                <label htmlFor="dineroFinal" className="block text-gray-700 mb-1">
-                  Dinero Final (S/) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="dineroFinal"
-                  type="number"
-                  name="dineroFinal"
-                  value={formData.dineroFinal || ''}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder="500.00"
-                  step="0.01"
-                  min={formData.dineroInicial}
-                  required
-                />
-              </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-700 mb-1">
+                      Dinero Inicial (S/)
+                    </label>
+                    <input
+                      type="number"
+                      value={Number(activeCashSession?.start_amount || 0).toFixed(2)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                      disabled
+                    />
+                  </div>
 
-              {/* Total Pérdidas */}
-              <div>
-                <label htmlFor="totalPerdidas" className="block text-gray-700 mb-1">
-                  Total Pérdidas (S/) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="totalPerdidas"
-                  type="number"
-                  name="totalPerdidas"
-                  value={formData.totalPerdidas || ''}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder="20.00"
-                  step="0.01"
-                  min="0"
-                  max={formData.dineroInicial}
-                  required
-                />
-              </div>
+                  <div>
+                    <label htmlFor="total_sales" className="block text-gray-700 mb-1">
+                      Total Ventas del Mes (S/)
+                    </label>
+                    <input
+                      id="total_sales"
+                      type="number"
+                      name="total_sales"
+                      value={formData.total_sales || ''}
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                      placeholder="Calculado automáticamente"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Calculado automáticamente del sistema
+                    </p>
+                  </div>
 
-              {/* Fecha de Término */}
-              <div>
-                <label htmlFor="fechaTermino" className="block text-gray-700 mb-1">
-                  Fecha de Término <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="fechaTermino"
-                  type="date"
-                  name="fechaTermino"
-                  value={formData.fechaTermino}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  required
-                  max={new Date().toISOString().split('T')[0]} // No permite fechas futuras
-                />
-              </div>
-            </div>
+                  <div>
+                    <label htmlFor="total_returns" className="block text-gray-700 mb-1">
+                      Total Pérdidas del Mes (S/) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="total_returns"
+                      type="number"
+                      name="total_returns"
+                      value={formData.total_returns || ''}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                      placeholder="50.00"
+                      step="0.01"
+                      min="0"
+                      required
+                    />
+                  </div>
 
-            {/* Observaciones */}
-            <div>
-              <label htmlFor="observaciones" className="block text-gray-700 mb-1">
-                Observaciones <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                id="observaciones"
-                name="observaciones"
-                value={formData.observaciones}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                rows={3}
-                placeholder="Detalles sobre diferencias, incidentes o comentarios relevantes"
-                required
-              ></textarea>
-            </div>
+                  <div>
+                    <label className="block text-gray-700 mb-1">
+                      Dinero Final Calculado (S/)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.end_amount.toFixed(2)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-green-50 text-green-800 font-semibold"
+                      disabled
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Calculado automáticamente: Inicial + Ventas - Pérdidas
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
 
             <div className="flex justify-end space-x-3 pt-4">
               <button
@@ -226,7 +287,7 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
                 type="submit"
                 className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
               >
-                Registrar Cierre
+                {isInitialSetup ? 'Configurar Caja' : 'Cerrar Mes'}
               </button>
             </div>
           </form>
