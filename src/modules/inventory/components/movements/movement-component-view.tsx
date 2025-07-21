@@ -257,7 +257,7 @@ const MovementComponentView: React.FC = () => {
               </div>
             ) : (
               <table className="min-w-full text-sm">
-                <thead className="bg-orange-500 text-white">
+                <thead className="bg-gray-800 text-white">
                   <tr>
                     <th className="px-4 py-2 text-center">Recurso</th>
                     <th className="px-4 py-2 text-center">Almacén</th>
