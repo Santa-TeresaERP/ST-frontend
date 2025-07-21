@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchWarehouses, createWarehouse, updateWarehouse, deleteWarehouse, activateWarehouse } from '../action/warehouses';
+import { fetchWarehouses, createWarehouse, updateWarehouse, deleteWarehouse} from '../action/warehouses';
 import { WarehouseAttributes, CreateWarehousePayload, UpdateWarehousePayload } from '../types/warehouse';
 
 // Hook para obtener todos los almacenes
@@ -30,18 +30,12 @@ export const useUpdateWarehouse = () => {
 
 // Hook para eliminar un almacén (desactivar)
 export const useDeleteWarehouse = () => {
-  const queryClient = useQueryClient();
-  return useMutation<void, Error, string>({
-    mutationFn: deleteWarehouse,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['warehouses'] }),
-  });
-};
+  const queryClient = useQueryClient()
 
-// Hook para reactivar un almacén
-export const useActivateWarehouse = () => {
-  const queryClient = useQueryClient();
-  return useMutation<WarehouseAttributes, Error, string>({
-    mutationFn: activateWarehouse,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['warehouses'] }),
-  });
-};
+  return useMutation<void, Error, { id: string; status: boolean }>({
+    mutationFn: ({ id, status }) => deleteWarehouse(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['warehouses'] })
+    },
+  })
+}
