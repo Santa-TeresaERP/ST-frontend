@@ -18,7 +18,7 @@ import { WarehouseMovementResource } from '@/modules/inventory/types/movementRes
 import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
 import { useFetchResources } from '@/modules/inventory/hook/useResources';
 import { useFetchProducts } from '@/modules/inventory/hook/useProducts';
-import { fetchStores } from '@/modules/stores/action/store-actions';
+import { fetchStores } from '@/modules/sales/action/store';
 import { useQuery } from '@tanstack/react-query';
 import FilterMovement from './movement/filter-movement';
 
