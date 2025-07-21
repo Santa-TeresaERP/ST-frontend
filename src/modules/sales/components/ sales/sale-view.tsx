@@ -75,12 +75,25 @@ const SalesComponentsView: React.FC<SalesComponentsViewProps> = ({ selectedStore
       <div className="flex justify-end items-center">
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white px-4 py-2 rounded-lg"
+          disabled={!selectedStore}
+          className={`flex items-center px-4 py-2 rounded-lg transition-all ${
+            selectedStore
+              ? "bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          }`}
         >
           <FiPlus className="mr-2 h-5 w-5" />
-          Nueva Venta
+          {selectedStore ? 'Nueva Venta' : 'Selecciona Tienda'}
         </button>
       </div>
+
+      {!selectedStore && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <p className="text-yellow-800">
+            ⚠️ <strong>Tienda requerida:</strong> Selecciona una tienda en el panel principal para gestionar las ventas.
+          </p>
+        </div>
+      )}
 
       {/* Título de la sección */}
       <h2 className="text-2xl font-bold text-red-700 flex items-center space-x-2">

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, {  } from 'react';
 import { FiX } from 'react-icons/fi';
 import { CashSessionAttributes, CreateCashSessionPayload, CloseCashSessionPayload } from '../../types/cash-session';
 import { StoreAttributes } from '@/modules/stores/types/store';
@@ -12,6 +12,7 @@ interface ModalCreateCashRegisterProps {
   selectedStoreId?: string;
   selectedStore?: StoreAttributes | null;
   currentSessionSales?: number;
+  currentSessionReturns?: number; // Agregar pérdidas calculadas
 }
 
 interface CashRegisterFormData {
@@ -30,32 +31,43 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
   activeCashSession,
   selectedStoreId,
   selectedStore,
-  currentSessionSales = 0
+  currentSessionSales = 0,
+  currentSessionReturns = 0 // Agregar valor por defecto para pérdidas
 }) => {
   const [formData, setFormData] = React.useState<CashRegisterFormData>({
     store_id: selectedStoreId || '',
     start_amount: 0,
     end_amount: 0,
-    total_returns: 0,
+    total_returns: currentSessionReturns || 0, // Usar pérdidas calculadas
     total_sales: currentSessionSales || 0
   });
 
   // Efecto para establecer valores iniciales cuando hay una sesión activa
   React.useEffect(() => {
+    console.log('📊 Actualizando datos del modal:', {
+      currentSessionSales,
+      currentSessionReturns,
+      activeCashSession: activeCashSession?.id,
+      isInitialSetup
+    });
+
     if (activeCashSession && !isInitialSetup) {
       setFormData(prev => ({
         ...prev,
         store_id: activeCashSession.store_id,
         start_amount: Number(activeCashSession.start_amount),
-        total_sales: currentSessionSales
+        total_sales: currentSessionSales,
+        total_returns: currentSessionReturns
       }));
     } else if (selectedStoreId) {
       setFormData(prev => ({
         ...prev,
-        store_id: selectedStoreId
+        store_id: selectedStoreId,
+        total_sales: currentSessionSales,
+        total_returns: currentSessionReturns
       }));
     }
-  }, [activeCashSession, isInitialSetup, selectedStoreId, currentSessionSales]);
+  }, [activeCashSession, isInitialSetup, selectedStoreId, currentSessionSales, currentSessionReturns]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -241,20 +253,20 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
 
                   <div>
                     <label htmlFor="total_returns" className="block text-gray-700 mb-1">
-                      Total Pérdidas del Mes (S/) <span className="text-red-500">*</span>
+                      Total Pérdidas del Mes (S/)
                     </label>
                     <input
                       id="total_returns"
                       type="number"
                       name="total_returns"
                       value={formData.total_returns || ''}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                      placeholder="50.00"
-                      step="0.01"
-                      min="0"
-                      required
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                      placeholder="Calculado automáticamente"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Calculado automáticamente del sistema
+                    </p>
                   </div>
 
                   <div>

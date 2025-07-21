@@ -202,6 +202,9 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
                 <option value="">
                   {loadingStores ? 'Cargando tiendas...' : 'Seleccionar tienda'}
                 </option>
+                {stores.length === 0 && !loadingStores && (
+                  <option value="" disabled>No hay tiendas disponibles</option>
+                )}
                 {stores.map((store) => (
                   <option key={store.id} value={store.id}>
                     {store.store_name}
@@ -210,6 +213,13 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
               </select>
               {errors.store_id && (
                 <p className="text-red-600 text-xs mt-1">{errors.store_id.message}</p>
+              )}
+              {stores.length === 0 && !loadingStores && (
+                <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-yellow-800 text-sm">
+                    ⚠️ <strong>No hay tiendas disponibles.</strong> Debes crear al menos una tienda antes de poder registrar ventas.
+                  </p>
+                </div>
               )}
             </div>
 

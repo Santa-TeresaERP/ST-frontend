@@ -12,6 +12,20 @@ interface SingleCashSessionResponse {
   cashSession: CashSessionAttributes;
 }
 
+// Interface para los detalles de la sesión de caja con totales calculados
+interface CashSessionDetailsResponse {
+  sessionId: string;
+  storeId: string;
+  startDate: string;
+  endDate: string | null;
+  initialMoney: string;
+  totalSales: number;
+  totalReturns: number;
+  finalAmount: number;
+  salesCount: number;
+  returnsCount: number;
+}
+
 export const fetchCashSessions = async (): Promise<CashSessionAttributes[]> => {
   const response = await api.get<CashSessionResponse>('/cash_session');
   return response.data.cashSessions || [];
@@ -20,6 +34,12 @@ export const fetchCashSessions = async (): Promise<CashSessionAttributes[]> => {
 export const fetchCashSession = async (id: string): Promise<CashSessionAttributes> => {
   const response = await api.get<SingleCashSessionResponse>(`/cash_session/${id}`);
   return response.data.cashSession;
+};
+
+// Obtener detalles completos de una sesión de caja con totales calculados
+export const fetchCashSessionDetails = async (id: string): Promise<CashSessionDetailsResponse> => {
+  const response = await api.get<CashSessionDetailsResponse>(`/cash_session/${id}/details`);
+  return response.data;
 };
 
 export const createCashSession = async (

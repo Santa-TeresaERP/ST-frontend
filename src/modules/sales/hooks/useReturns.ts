@@ -13,6 +13,9 @@ export const useFetchReturns = () => {
   return useQuery<returnsAttributes[], Error>({
     queryKey: ['returns'],
     queryFn: fetchReturns,
+    refetchInterval: 3000, // Refrescar cada 3 segundos
+    refetchOnWindowFocus: true,
+    staleTime: 1000, // Considerar datos obsoletos después de 1 segundo
   })
 }
 

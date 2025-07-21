@@ -4,17 +4,20 @@ import { FiInfo, FiMapPin, FiHome, FiClipboard, FiDollarSign, FiPlus } from 'rea
 import { StoreAttributes } from '@/modules/stores/types/store';
 import ModalCreateCashRegister from './modal-create-cashregister';
 import { CreateCashSessionPayload, CloseCashSessionPayload } from '../../types/cash-session';
-import { useCreateCashSession, useCloseCashSession, useFetchActiveCashSession, useFetchCashSessionHistory } from '../../hooks/useCashSession';
+import { useCreateCashSession, useCloseCashSession, useFetchActiveCashSession, useFetchCashSessionHistory, useFetchCashSessionDetails } from '../../hooks/useCashSession';
 import { useFetchSales } from '../../hooks/useSales';
+import { useFetchReturns } from '../../hooks/useReturns';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface InformationComponentViewProps {
   selectedStore?: StoreAttributes | null;
+  onStoreUpdate: (storeId: string) => Promise<void>;
 }
 
 const InformationComponentView: React.FC<InformationComponentViewProps> = ({ selectedStore }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInitialSetup, setIsInitialSetup] = useState(true);
+  const [, setIsEditStoreModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // Helper para convertir valores monetarios a número - convertido a useCallback para evitar recreación en cada render
@@ -32,22 +35,6 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({ sel
   const { data: activeCashSession, isLoading: loadingActive, error: errorActive } = useFetchActiveCashSession(selectedStore?.id);
   const { data: cashSessionHistory = [], isLoading: loadingHistory, error: errorHistory } = useFetchCashSessionHistory(selectedStore?.id);
   
-  // Obtener todas las ventas para calcular los totales por tienda
-  const { data: allSales = [], isLoading: loadingSales } = useFetchSales();
-
-  // Refrescar queries cuando cambie la tienda seleccionada
-  React.useEffect(() => {
-    console.log('🔄 Tienda cambió:', selectedStore?.id, selectedStore?.store_name);
-    
-    // Si hay una tienda seleccionada, invalidar para refrescar
-    if (selectedStore?.id) {
-      console.log('🔄 Refrescando queries para tienda:', selectedStore.id, selectedStore.store_name);
-      // Solo invalidar para refrescar, no remover del cache
-      queryClient.invalidateQueries({ queryKey: ['activeCashSession', selectedStore.id] });
-      queryClient.invalidateQueries({ queryKey: ['cashSessionHistory', selectedStore.id] });
-    }
-  }, [selectedStore?.id, selectedStore?.store_name, queryClient]);
-  
   // Filtrar los datos específicamente para la tienda seleccionada
   const filteredActiveCashSession = React.useMemo(() => {
     // Verificar que la sesión sea activa (status: 'open') además de pertenecer a la tienda seleccionada
@@ -55,12 +42,37 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({ sel
       ? activeCashSession 
       : null;
   }, [selectedStore, activeCashSession]);
+  
+  // Obtener detalles de la sesión activa con totales calculados desde el backend
+  const { data: sessionDetails, isLoading: loadingDetails } = useFetchCashSessionDetails(
+    filteredActiveCashSession?.id
+  );
+  
+  // Obtener todas las ventas para calcular los totales por tienda (mantenemos para historial)
+  const { data: allSales = [], isLoading: loadingSales } = useFetchSales();
+  
+  // Obtener todas las devoluciones para calcular las pérdidas por tienda (mantenemos para historial)
+  const { data: allReturns = [], isLoading: loadingReturns } = useFetchReturns();
     
   const filteredCashSessionHistory = React.useMemo(() => {
     return selectedStore 
       ? cashSessionHistory.filter(session => session.store_id === selectedStore.id)
       : [];
   }, [selectedStore, cashSessionHistory]);
+
+  // Efecto para actualizar los datos cuando cambian las ventas
+  React.useEffect(() => {
+    if (allSales && allSales.length > 0) {
+      console.log('🔄 Ventas actualizadas, refrescando datos...');
+      // Re-invalidar consultas para asegurar datos frescos
+      queryClient.invalidateQueries({ queryKey: ['sales'] });
+      
+      if (selectedStore?.id) {
+        queryClient.invalidateQueries({ queryKey: ['activeCashSession', selectedStore.id] });
+        queryClient.invalidateQueries({ queryKey: ['cashSessionHistory', selectedStore.id] });
+      }
+    }
+  }, [allSales, queryClient, selectedStore?.id]);
 
   // Calcular ventas totales por tienda y por sesión
   const salesBySession = React.useMemo(() => {
@@ -91,13 +103,19 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({ sel
     return result;
   }, [selectedStore, allSales, filteredCashSessionHistory]);
   
-  // Calcular las ventas totales para la sesión activa
+  // Usar los totales calculados desde el backend para la sesión activa
   const currentSessionSales = React.useMemo(() => {
+    // Si tenemos detalles de la sesión desde el backend, usar esos valores
+    if (sessionDetails && !loadingDetails) {
+      console.log('📊 Usando totales del backend:', sessionDetails);
+      return sessionDetails.totalSales || 0;
+    }
+    
+    // Fallback: calcular en el frontend si no hay datos del backend
     if (!filteredActiveCashSession || !allSales.length || !selectedStore) return 0;
     
     const sessionStartDate = new Date(filteredActiveCashSession.started_at);
     
-    // Filtrar ventas que pertenecen a esta tienda y están dentro del período de la sesión activa
     const activeSales = allSales.filter(sale => {
       const saleDate = new Date(sale.income_date);
       return (
@@ -106,9 +124,46 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({ sel
       );
     });
     
-    // Sumar el total de ventas para la sesión activa
     return activeSales.reduce((sum, sale) => sum + Number(sale.total_income), 0);
-  }, [filteredActiveCashSession, allSales, selectedStore]);
+  }, [sessionDetails, loadingDetails, filteredActiveCashSession, allSales, selectedStore]);
+
+  // Usar las pérdidas calculadas desde el backend para la sesión activa
+  const currentSessionReturns = React.useMemo(() => {
+    // Si tenemos detalles de la sesión desde el backend, usar esos valores
+    if (sessionDetails && !loadingDetails) {
+      return sessionDetails.totalReturns || 0;
+    }
+    
+    // Fallback: calcular en el frontend si no hay datos del backend
+    if (!filteredActiveCashSession || !allReturns.length || !allSales.length || !selectedStore) return 0;
+    
+    const sessionStartDate = new Date(filteredActiveCashSession.started_at);
+    
+    const activeSales = allSales.filter(sale => {
+      const saleDate = new Date(sale.income_date);
+      return (
+        sale.store_id === selectedStore.id &&
+        saleDate >= sessionStartDate
+      );
+    });
+
+    const activeSalesIds = activeSales.map(sale => sale.id);
+    
+    const activeReturns = allReturns.filter(returnItem => 
+      activeSalesIds.includes(returnItem.salesId)
+    );
+    
+    let totalReturnsValue = 0;
+    
+    activeReturns.forEach(returnItem => {
+      const relatedSale = activeSales.find(sale => sale.id === returnItem.salesId);
+      if (relatedSale) {
+        totalReturnsValue += Number(relatedSale.total_income || 0);
+      }
+    });
+    
+    return totalReturnsValue;
+  }, [sessionDetails, loadingDetails, filteredActiveCashSession, allReturns, allSales, selectedStore]);
 
   // Debug logs - solo en entorno de desarrollo y menos verboso
   React.useEffect(() => {
@@ -118,10 +173,13 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({ sel
         hasActiveSession: !!filteredActiveCashSession,
         historyCount: filteredCashSessionHistory.length,
         currentSales: currentSessionSales ? `S/ ${toMoney(currentSessionSales)}` : '0.00',
+        currentReturns: currentSessionReturns ? `S/ ${toMoney(currentSessionReturns)}` : '0.00',
+        usingBackendData: !!sessionDetails && !loadingDetails,
+        sessionDetails: sessionDetails || 'No data',
         isInitialSetup
       });
     }
-  }, [selectedStore?.id, filteredActiveCashSession, filteredCashSessionHistory.length, currentSessionSales, isInitialSetup, toMoney]);
+  }, [selectedStore?.id, filteredActiveCashSession, filteredCashSessionHistory.length, currentSessionSales, currentSessionReturns, sessionDetails, loadingDetails, isInitialSetup, toMoney]);
 
   // Determinar si necesitamos configuración inicial de forma más eficiente
   React.useEffect(() => {
@@ -177,14 +235,26 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({ sel
     } else if (filteredActiveCashSession?.id) {
       // Es un cierre de sesión
       console.log('Cerrando sesión:', filteredActiveCashSession.id); // Debug log
+      console.log('Datos actuales para cierre:', {
+        currentSessionSales,
+        currentSessionReturns,
+        usingBackendData: !!sessionDetails && !loadingDetails,
+        sessionDetails
+      });
       
       // Agregar automáticamente las ventas del período a los datos de cierre
       const closureData = data as CloseCashSessionPayload;
       
       // Siempre incluir las ventas actuales calculadas
-      if (currentSessionSales > 0) {
+      if (currentSessionSales >= 0) { // Cambiar > 0 a >= 0 para incluir también cero
         console.log('Incluyendo ventas actuales en el cierre:', currentSessionSales);
         closureData.total_sales = currentSessionSales;
+      }
+      
+      // Incluir también las pérdidas calculadas
+      if (currentSessionReturns >= 0) { // Cambiar > 0 a >= 0 para incluir también cero
+        console.log('Incluyendo pérdidas actuales en el cierre:', currentSessionReturns);
+        closureData.total_returns = currentSessionReturns;
       }
       
       closeCashSessionMutation.mutate(
@@ -198,6 +268,7 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({ sel
             queryClient.removeQueries({ queryKey: ['activeCashSession', selectedStore?.id] });
             queryClient.invalidateQueries({ queryKey: ['activeCashSession', selectedStore?.id] });
             queryClient.invalidateQueries({ queryKey: ['cashSessionHistory', selectedStore?.id] });
+            queryClient.invalidateQueries({ queryKey: ['cashSessionDetails'] }); // Invalidar también los detalles
             
             // Crear nueva sesión automáticamente con el monto final como monto inicial
             const endAmount = response.end_amount;
@@ -253,12 +324,6 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({ sel
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 space-y-6">
-      {/* Debug info - remover después */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded p-2 text-xs">
-          <strong>Seleccionado:</strong> {selectedStore ? selectedStore.store_name : 'null/undefined'}
-        </div>
-      )}
       
       {/* Información de la Tienda */}
       <div className="flex justify-between items-center">
@@ -390,20 +455,34 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({ sel
             </div>
             <div>
               <span className="font-medium text-green-700">Ventas Actuales:</span>
-              <p className="text-green-900">S/ {toMoney(currentSessionSales)}</p>
+              <p className="text-green-900">
+                S/ {toMoney(currentSessionSales)}
+                {sessionDetails && !loadingDetails && (
+                  <span className="text-xs text-green-600 ml-1">(✓)</span>
+                )}
+              </p>
+            </div>
+            <div>
+              <span className="font-medium text-green-700">Pérdidas Actuales:</span>
+              <p className="text-red-900">
+                S/ {toMoney(currentSessionReturns)}
+                {sessionDetails && !loadingDetails && (
+                  <span className="text-xs text-red-600 ml-1">(✓)</span>
+                )}
+              </p>
             </div>
             <div>
               <span className="font-medium text-green-700">Fecha de Inicio:</span>
               <p className="text-green-900">{new Date(filteredActiveCashSession.started_at).toLocaleDateString()}</p>
             </div>
-            <div>
-              <span className="font-medium text-green-700">Estado:</span>
-              <p className="text-green-900">
-                <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
-                  Activo
-                </span>
-              </p>
-            </div>
+          </div>
+          <div className="mt-2">
+            <span className="font-medium text-green-700">Estado:</span>
+            <p className="text-green-900">
+              <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                Activo
+              </span>
+            </p>
           </div>
           {/* Mensaje para sesión creada automáticamente */}
           {filteredCashSessionHistory.length > 0 &&
@@ -465,7 +544,21 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({ sel
                 </td>
               </tr>
             ) : filteredCashSessionHistory.length > 0 ? (
-              filteredCashSessionHistory.map((session, index) => (
+              filteredCashSessionHistory.map((session, index) => {
+                // Log para debug - mostrar datos de la sesión
+                if (process.env.NODE_ENV === 'development') {
+                  console.log(`📋 Session ${index + 1} (${session.status}):`, {
+                    id: session.id,
+                    total_sales_stored: session.total_sales,
+                    total_returns_stored: session.total_returns,
+                    calculated_sales_frontend: salesBySession[session.id || ''],
+                    will_show_sales: session.status === 'closed' 
+                      ? (session.total_sales ? session.total_sales : salesBySession[session.id || ''] || 0)
+                      : 'current session'
+                  });
+                }
+                
+                return (
                 <tr key={session.id || index} className={index % 2 === 0 ? "border-t" : "border-t bg-gray-50"}>
                   <td className="px-4 py-2 text-center">
                     {new Date(session.started_at).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
@@ -473,13 +566,17 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({ sel
                   <td className="px-4 py-2 text-center">S/ {toMoney(session.start_amount)}</td>
                   <td className="px-4 py-2 text-center">
                     {session.status === 'closed' 
-                      ? `S/ ${toMoney(salesBySession[session.id || ''] || 0)}`
+                      ? (session.total_sales ? `S/ ${toMoney(session.total_sales)}` : `S/ ${toMoney(salesBySession[session.id || ''] || 0)}`)
                       : currentSessionSales > 0 
                         ? `S/ ${toMoney(currentSessionSales)} (en proceso)`
                         : 'En proceso...'}
                   </td>
                   <td className="px-4 py-2 text-center">
-                    {session.total_returns ? `S/ ${toMoney(session.total_returns)}` : 'S/ 0.00'}
+                    {session.status === 'closed' 
+                      ? (session.total_returns ? `S/ ${toMoney(session.total_returns)}` : 'S/ 0.00')
+                      : currentSessionReturns > 0 
+                        ? `S/ ${toMoney(currentSessionReturns)} (en proceso)`
+                        : 'S/ 0.00'}
                   </td>
                   <td className="px-4 py-2 text-center">
                     {session.end_amount ? `S/ ${toMoney(session.end_amount)}` : 'Pendiente'}
@@ -497,7 +594,8 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({ sel
                     {session.ended_at ? new Date(session.ended_at).toLocaleDateString() : '-'}
                   </td>
                 </tr>
-              ))
+                );
+              })
             ) : (
               <tr className="border-t">
                 <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
@@ -520,6 +618,7 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({ sel
         selectedStoreId={selectedStore?.id}
         selectedStore={selectedStore}
         currentSessionSales={currentSessionSales}
+        currentSessionReturns={currentSessionReturns}
       />
     </div>
   );

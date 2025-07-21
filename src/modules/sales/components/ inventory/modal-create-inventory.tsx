@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 import React from 'react'; // Eliminado useEffect ya que reset se maneja en onSuccess
 import { useForm } from 'react-hook-form';
@@ -13,12 +14,19 @@ import { useFetchStores } from '@/modules/stores/hook/useStores';         // Ase
 import { useCreateWarehouseStoreItem } from '../../hooks/useInventoryQueries';
 import { createWarehouseStoreSchema, CreateWarehouseStoreFormData } from '../../schemas/inventory.schema';
 
+// Importar validaciones de tienda
+import { getEnabledStores } from '../../utils/store-validation';
+
 interface Props { isOpen: boolean; onClose: () => void; }
 
 const ModalCreateInventory: React.FC<Props> = ({ isOpen, onClose }) => {
   // 2. OBTENER DATOS PARA LOS DESPLEGABLES
   const { data: products = [], isLoading: isLoadingProducts } = useFetchProducts();
-  const { data: stores = [], isLoading: isLoadingStores } = useFetchStores();
+  const { data: allStores = [], isLoading: isLoadingStores } = useFetchStores();
+  
+  // 3. FILTRAR SOLO TIENDAS HABILITADAS
+  const enabledStores = getEnabledStores(allStores);
+  const hasValidStores = enabledStores.length > 0;
   
   const { mutate: createItem, isPending, error: mutationError } = useCreateWarehouseStoreItem();
 
@@ -72,12 +80,31 @@ const ModalCreateInventory: React.FC<Props> = ({ isOpen, onClose }) => {
               <select
                 {...register('storeId')}
                 className={`w-full border ${errors.storeId ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none`}
-                disabled={areDependenciesLoading}
+                disabled={areDependenciesLoading || !hasValidStores}
               >
-                <option value="">{isLoadingStores ? 'Cargando tiendas...' : 'Seleccione una tienda'}</option>
-                {stores.map(s => <option key={s.id} value={s.id}>{s.store_name}</option>)}
+                <option value="">
+                  {isLoadingStores ? 'Cargando tiendas...' : 
+                   !hasValidStores ? 'No hay tiendas disponibles' : 
+                   'Seleccione una tienda'}
+                </option>
+                {enabledStores.map(s => (
+                  <option key={s.id} value={s.id}>
+                    {s.store_name}
+                  </option>
+                ))}
               </select>
               {errors.storeId && <p className="text-sm text-red-600 mt-1">{errors.storeId.message}</p>}
+              {!hasValidStores && !isLoadingStores && (
+                <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-yellow-800 text-sm">
+                    ⚠️ <strong>No hay tiendas habilitadas.</strong> 
+                    {allStores.length === 0 
+                      ? ' Debes crear al menos una tienda antes de poder agregar inventario.'
+                      : ' Las tiendas existentes no están configuradas correctamente. Verifica que tengan nombre y dirección completos.'
+                    }
+                  </p>
+                </div>
+              )}
             </div>
 
             <div>

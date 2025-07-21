@@ -1,9 +1,9 @@
-<<<<<<< HEAD
 import { CashSessionAttributes, CreateCashSessionPayload, UpdateCashSessionPayload, CloseCashSessionPayload } from '../types/cash-session';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { 
   fetchCashSessions, 
   fetchCashSession, 
+  fetchCashSessionDetails,
   createCashSession, 
   updateCashSession, 
   closeCashSession,
@@ -24,6 +24,18 @@ export const useFetchCashSession = (id: string) => {
     queryKey: ['cashSession', id],
     queryFn: () => fetchCashSession(id),
     enabled: !!id, // Solo ejecutar si id está definido
+  });
+};
+
+// Hook para obtener detalles completos de una sesión de caja con totales calculados
+export const useFetchCashSessionDetails = (id?: string) => {
+  return useQuery({
+    queryKey: ['cashSessionDetails', id],
+    queryFn: () => fetchCashSessionDetails(id!),
+    enabled: !!id, // Solo ejecutar si id está definido
+    refetchInterval: 3000, // Refrescar cada 3 segundos
+    refetchOnWindowFocus: true,
+    staleTime: 1000, // Considerar datos obsoletos después de 1 segundo
   });
 };
 
@@ -91,40 +103,3 @@ export const useDeleteCashSession = () => {
     },
   });
 };
-=======
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getCashSessions, createCashSession } from '../action/cash_session'
-import { CashSessionAttributes } from '../types/cash_sessions.d'
-import { fetchUsers } from '@/modules/user-creations/action/user';
-import { User } from '@/modules/user-creations/types/user';
-
-export const useCashSession = () => {
-  const queryClient = useQueryClient()
-
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['cash_sessions'],
-    queryFn: getCashSessions,
-  })
-
-  const createMutation = useMutation({
-    mutationFn: createCashSession,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cash_sessions'] })
-    },
-  })
-
-  return {
-    cashSessions: data,
-    isLoading,
-    isError,
-    createCashSession: createMutation.mutateAsync,
-  }
-}
-
-export const useFetchUsers = () => {
-  return useQuery<User[], Error>({
-    queryKey: ['users'],
-    queryFn: fetchUsers,
-  });
-};
->>>>>>> main

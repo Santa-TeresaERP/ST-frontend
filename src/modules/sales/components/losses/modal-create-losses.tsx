@@ -85,6 +85,12 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
       return;
     }
 
+    // Validar que hay tienda seleccionada
+    if (!selectedStoreId) {
+      setLocalError("Debes seleccionar una tienda antes de registrar pérdidas.");
+      return;
+    }
+
     try {
       await createReturnMutation.mutateAsync({
         productId,
@@ -127,6 +133,14 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-5 text-left">
           {localError && (
             <p className="text-sm text-red-600 font-medium">{localError}</p>
+          )}
+
+          {!selectedStoreId && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-yellow-800 text-sm">
+                ⚠️ <strong>Tienda requerida:</strong> Debes seleccionar una tienda en el panel principal antes de registrar pérdidas.
+              </p>
+            </div>
           )}
 
           <div className="space-y-4">
@@ -255,9 +269,15 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-600 transition flex items-center gap-2"
+              disabled={!selectedStoreId}
+              className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
+                selectedStoreId 
+                  ? 'bg-red-800 text-white hover:bg-red-600' 
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
             >
-              <Save size={18} /> Guardar
+              <Save size={18} /> 
+              {selectedStoreId ? 'Guardar' : 'Selecciona Tienda'}
             </button>
           </div>
         </form>
