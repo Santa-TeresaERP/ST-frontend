@@ -52,7 +52,7 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
     
     // Validar campos antes de enviar
     if (!form.warehouse_id || form.warehouse_id.trim() === '' || form.warehouse_id === 'Seleccione un almacén') {
-      setError('Debe seleccionar un almacén');
+      setModalError('Debe seleccionar un almacén');
       return;
     }
 
@@ -65,12 +65,12 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
 
     
     if (!form.product_id || form.product_id.trim() === '' || form.product_id === 'Seleccione un producto') {
-      setError('Debe seleccionar un producto');
+      setModalError('Debe seleccionar un producto');
       return;
     }
     
     if (form.quantity < 0) {
-      setError('La cantidad debe ser mayor o igual a 0');
+      setModalError('La cantidad debe ser mayor o igual a 0');
       return;
     }
 

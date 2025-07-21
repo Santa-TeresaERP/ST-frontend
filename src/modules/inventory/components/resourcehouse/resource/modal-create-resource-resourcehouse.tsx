@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X, Save, Loader2 } from 'lucide-react';
 import { BuysResourceValidationSchema, BuysResourceFormData } from '../../../schemas/buysResourceValidation';
-import { CreateBuysResourcePayload } from '../../../types/buysResource';
+import { CreateBuysResourcePayload } from '../../../types/buysResource.d';
 import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button';
 import { Label } from '@/app/components/ui/label';
@@ -57,9 +57,10 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
     defaultValues: {
       warehouse_id: '',
       resource_id: '',
-      quantity: 0,
+      quantity: undefined, // Cambiar de 0 a undefined para evitar enviar 0
       type_unit: '',
-      total_cost: 0,
+      unit_price: 0, // Agregar el campo unit_price
+      total_cost: undefined, // Cambiar de 0 a undefined para evitar enviar 0
       supplier_id: '',
       entry_date: new Date().toISOString().split('T')[0], // Fecha de hoy por defecto
     },
@@ -85,11 +86,14 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
 
   useEffect(() => {
     if (quantity > 0 && totalCost > 0) {
-      // El precio unitario se calcula automáticamente y se muestra en el UI
+      // El precio unitario se calcula automáticamente y se actualiza en el formulario
       const calculatedUnitPrice = totalCost / quantity;
       console.log('Precio unitario calculado:', calculatedUnitPrice);
+      setValue('unit_price', Number(calculatedUnitPrice.toFixed(2)));
+    } else {
+      setValue('unit_price', 0);
     }
-  }, [quantity, totalCost]);
+  }, [quantity, totalCost, setValue]);
 
   const onSubmit = async (data: BuysResourceFormData) => {
     console.log('🚀 onSubmit ejecutado con data:', data);
@@ -108,35 +112,66 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
 
     // Validar que se haya seleccionado un recurso
     if (!selectedResourceId) {
+      console.log('❌ Error: No se seleccionó un recurso');
       setServerError('Debe seleccionar un recurso');
       return;
     }
 
-    const unitPrice = data.quantity > 0 && data.total_cost > 0 ? data.total_cost / data.quantity : 0;
+    // Validar que todos los campos requeridos tengan valores
+    if (!data.warehouse_id || data.warehouse_id.trim() === '') {
+      console.log('❌ Error: No se seleccionó un almacén');
+      setServerError('Debe seleccionar un almacén');
+      return;
+    }
+
+    if (!data.supplier_id || data.supplier_id.trim() === '') {
+      console.log('❌ Error: No se seleccionó un proveedor');
+      setServerError('Debe seleccionar un proveedor');
+      return;
+    }
+
+    if (!data.type_unit || data.type_unit.trim() === '') {
+      console.log('❌ Error: No se seleccionó una unidad');
+      setServerError('Debe seleccionar una unidad');
+      return;
+    }
+
+    if (!data.quantity || data.quantity <= 0) {
+      console.log('❌ Error: Cantidad inválida:', data.quantity);
+      setServerError('La cantidad debe ser mayor a 0');
+      return;
+    }
+
+    if (!data.total_cost || data.total_cost <= 0) {
+      console.log('❌ Error: Costo total inválido:', data.total_cost);
+      setServerError('El costo total debe ser mayor a 0');
+      return;
+    }
+
+    const unitPrice = data.total_cost / data.quantity;
     
     const payload: CreateBuysResourcePayload = {
-      warehouse_id: data.warehouse_id,
-      resource_id: selectedResourceId, // Usar el ID del recurso seleccionado
-      quantity: data.quantity,
-      type_unit: data.type_unit,
-      unit_price: unitPrice,
-      total_cost: data.total_cost,
-      supplier_id: data.supplier_id,
+      warehouse_id: data.warehouse_id.trim(),
+      resource_id: selectedResourceId,
+      quantity: Number(data.quantity),
+      type_unit: data.type_unit.trim(),
+      unit_price: Number(unitPrice.toFixed(2)),
+      total_cost: Number(data.total_cost),
+      supplier_id: data.supplier_id.trim(),
       entry_date: new Date(data.entry_date),
     };
 
-    // Debug logs para verificar los valores enviados
-    console.log('Datos del formulario:', data);
-    console.log('Payload a enviar:', payload);
-    console.log('Cantidad original:', data.quantity);
-    console.log('Cantidad en payload:', payload.quantity);
+    console.log('✅ Payload validado a enviar:', payload);
 
     try {
+      console.log('🔄 Llamando a onCreate...');
       await onCreate(payload);
+      console.log('✅ onCreate ejecutado exitosamente');
       reset();
       setSelectedResourceId('');
       setServerError(null);
     } catch (error: unknown) {
+      console.error('❌ Error en onCreate:', error);
       const message = error instanceof Error ? error.message : 'Error inesperado al crear el recurso.';
       setServerError(message);
     }
@@ -161,7 +196,13 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4 text-left">
+        <form onSubmit={handleSubmit((data) => {
+          console.log('📋 Form submit triggered with data:', data);
+          console.log('🔍 Form errors:', errors);
+          return onSubmit(data);
+        }, (errors) => {
+          console.log('❌ Form validation errors:', errors);
+        })} className="p-6 space-y-4 text-left">
           {serverError && (
             <div className="bg-red-100 text-red-700 p-3 rounded-md text-sm border border-red-300">
               {serverError}
@@ -172,6 +213,18 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
               message={modalError}
               onClose={() => setModalError(null)}
             />
+          )}
+
+          {/* Debug: Mostrar errores de validación */}
+          {Object.keys(errors).length > 0 && (
+            <div className="bg-yellow-100 text-yellow-700 p-3 rounded-md text-sm border border-yellow-300">
+              <strong>Errores de validación:</strong>
+              <ul className="mt-1">
+                {Object.entries(errors).map(([field, error]) => (
+                  <li key={field}>• {field}: {error?.message}</li>
+                ))}
+              </ul>
+            </div>
           )}
 
           {/* Campo Recurso - Ocupa todo el ancho */}
@@ -186,6 +239,11 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
               }}
               required
               error={errors.resource_id?.message}
+            />
+            {/* Campo oculto para resource_id */}
+            <input
+              type="hidden"
+              {...register('resource_id')}
             />
           </div>
 
@@ -207,7 +265,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
                   className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white text-gray-900 border-gray-300"
                   defaultValue=""
                 >
-                  <option value="">Seleccione un proveedor</option>
+                  <option key="select-supplier" value="">Seleccione un proveedor</option>
                   {suppliers?.map((supplier) => (
                     <option key={supplier.id} value={supplier.id}>
                       {supplier.suplier_name}
@@ -234,7 +292,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
                   className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white text-gray-900 border-gray-300"
                   defaultValue=""
                 >
-                  <option value="">Seleccione un almacén</option>
+                  <option key="select-warehouse" value="">Seleccione un almacén</option>
                   {warehouses?.map((warehouse) => (
                     <option key={warehouse.id} value={warehouse.id}>
                       {warehouse.name}
@@ -292,6 +350,11 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
                 className="h-10 mt-1 bg-gray-100 text-gray-600 cursor-not-allowed border-gray-300"
                 placeholder="0.00"
               />
+              {/* Campo oculto para el valor real */}
+              <input
+                type="hidden"
+                {...register('unit_price', { valueAsNumber: true })}
+              />
               <p className="text-xs text-gray-500 mt-1">Calculado automáticamente</p>
             </div>
           </div>
@@ -308,7 +371,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
                 {...register('type_unit')}
                 className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white text-gray-900 border-gray-300"
               >
-                <option value="">Selecciona una unidad</option>
+                <option key="select-unit" value="">Selecciona una unidad</option>
                 {UNIT_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -347,9 +410,9 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
             <Button
               type="submit"
               disabled={isCreating}
-              className="bg-red-800 hover:bg-red-700 text-white disabled:opacity-50"
               className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-6700 text-white transition flex items-center justify-center space-x-2"
               onClick={() => console.log('🖱️ Button clicked, isCreating:', isCreating)}
+            >
               {isCreating ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
