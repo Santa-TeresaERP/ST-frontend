@@ -35,7 +35,5 @@ export type CreateWarehouseStorePayload = {
 
 // El payload para actualizar necesita los 3 campos del formulario.
 export type UpdateWarehouseStorePayload = {
-  productId: string;
-  storeId: string;
   quantity: number;
 };
