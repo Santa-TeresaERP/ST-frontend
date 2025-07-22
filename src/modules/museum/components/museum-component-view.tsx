@@ -83,6 +83,7 @@ const MuseumComponentView: React.FC = () => {
               <th className="px-3 py-2">Usuario</th>
               <th className="px-3 py-2">Tipo de Visitante</th>
               <th className="px-3 py-2">Canal de Venta</th>
+              <th className="px-3 py-2">Método de Pago</th>
               <th className="px-3 py-2">Monto Total</th>
               <th className="px-3 py-2">¿Gratis?</th>
               <th className="px-3 py-2">Acciones</th>
@@ -96,6 +97,7 @@ const MuseumComponentView: React.FC = () => {
                 fecha: '2025-07-01',
                 monto: '20.00',
                 gratis: 'No',
+                tipoPago: 'Tarjeta',
               },
               {
                 tipoVisitante: 'Estudiante',
@@ -103,12 +105,14 @@ const MuseumComponentView: React.FC = () => {
                 fecha: '2025-07-02',
                 monto: '0.00',
                 gratis: 'Si',
+                tipoPago: 'Efectivo',
               },
             ].map((visitor, index) => (
               <tr key={index} className="border-t text-center">
                 <td className="px-3 py-2">{index === 0 ? 'Juan Pérez' : 'María López'}</td>
                 <td className="px-3 py-2">{visitor.tipoVisitante}</td>
                 <td className="px-3 py-2">{visitor.canalVenta}</td>
+                <td className="px-3 py-2">{visitor.tipoPago}</td>
                 <td className="px-3 py-2">S/ {visitor.monto}</td>
                 <td className="px-3 py-2">
                   {visitor.gratis === 'Si' ? (
