@@ -30,7 +30,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
 
   const { data: storeInventory = [] } = useFetchWarehouseStoreItems();
   const { data: sales = [] } = useFetchSales();
-  const { mutateAsync, isLoading } = useCreateReturn();
+  const { mutateAsync, isPending } = useCreateReturn();
 
   const productDropdownRef = useRef<HTMLDivElement>(null);
   const salesDropdownRef = useRef<HTMLDivElement>(null);
@@ -120,7 +120,9 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl relative mx-2">
         <div className="bg-gradient-to-r from-red-700 to-red-900 text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
           <FiAlertOctagon size={24} />
-          <h2 className="text-xl font-semibold text-center">Registrar Pérdida</h2>
+          <h2 className="text-xl font-semibold text-center">
+            Registrar Pérdida
+          </h2>
           <button
             onClick={onClose}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
@@ -198,20 +200,27 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
                 {(salesSearch
                   ? filteredSales
                   : [...filteredSales]
-                      .sort((a, b) => new Date(b.income_date).getTime() - new Date(a.income_date).getTime())
+                      .sort(
+                        (a, b) =>
+                          new Date(b.income_date).getTime() -
+                          new Date(a.income_date).getTime()
+                      )
                       .slice(0, 3)
                 ).map((sale) => (
                   <li
                     key={sale.id}
                     className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
                     onClick={() => {
-                      const formatted = new Date(sale.income_date).toLocaleString("es-PE");
+                      const formatted = new Date(
+                        sale.income_date
+                      ).toLocaleString("es-PE");
                       setSalesSearch(`${formatted} - S/ ${sale.total_income}`);
                       setSalesId(sale.id!);
                       setShowSalesDropdown(false);
                     }}
                   >
-                    🗕️ {new Date(sale.income_date).toLocaleString("es-PE")} — 💵 S/ {sale.total_income}
+                    🗕️ {new Date(sale.income_date).toLocaleString("es-PE")} — 💵
+                    S/ {sale.total_income}
                   </li>
                 ))}
               </ul>
@@ -271,12 +280,15 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
             </button>
             <button
               type="submit"
-              disabled={isLoading}
-              className={`px-4 py-2 rounded-lg text-white flex items-center gap-2 transition ${
-                isLoading ? "bg-red-400" : "bg-red-800 hover:bg-red-600"
+              disabled={isPending}
+              className={`px-4 py-2 rounded-lg flex items-center gap-2 transition ${
+                isPending
+                  ? "bg-red-400 text-white"
+                  : "bg-red-800 hover:bg-red-600 text-white"
               }`}
             >
-              <Save size={18} /> Guardar
+              <Save size={18} className="text-white" />
+              Guardar
             </button>
           </div>
         </form>
