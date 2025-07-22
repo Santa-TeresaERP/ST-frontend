@@ -47,7 +47,7 @@ const MovementComponentView: React.FC = () => {
   const handleFilter = (newFilters: any) => {
     setFilters(newFilters);
   };
-
+ 
   const getWarehouseName = (id: string) => warehouses.find((w: any) => w.id === id)?.name || id;
   const getResourceName = (id: string) => resources.find((r: any) => r.id === id)?.name || id;
   const getProductName = (id: string) => products.find((p: any) => p.id === id)?.name || id;

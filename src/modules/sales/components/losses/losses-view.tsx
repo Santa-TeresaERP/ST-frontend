@@ -43,9 +43,10 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
       : [];
 
   const handleCreateLoss = async (newLoss: any) => {
-    await createReturnMutation.mutateAsync(newLoss);
-    setIsCreateModalOpen(false);
-  };
+  await createReturnMutation.mutateAsync({ ...newLoss, quantity: 1 });
+  setIsCreateModalOpen(false);
+};
+
 
   const handleEditLoss = async (updatedLoss: any) => {
     await updateReturnMutation.mutateAsync({
@@ -96,6 +97,39 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
         <FiAlertOctagon className="text-red-600" size={24} />
         <span>Registro de Pérdidas</span>
       </h2>
+
+      {/* Estadísticas y botón */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-grow">
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+            <h3 className="text-sm font-medium text-blue-800">Total Pérdidas</h3>
+            <p className="text-2xl font-bold text-blue-600">
+              {filteredLosses.length}
+            </p>
+          </div>
+
+          <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+            <h3 className="text-sm font-medium text-green-800">Por Gastos</h3>
+            <p className="text-2xl font-bold text-green-600">
+              {filteredLosses.filter(item => item.reason === 'Gasto').length}
+            </p>
+          </div>
+
+          <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+            <h3 className="text-sm font-medium text-purple-800">Por Vencimiento</h3>
+            <p className="text-2xl font-bold text-purple-600">
+              {filteredLosses.filter(item => item.reason === 'Vencimiento').length}
+            </p>
+          </div>
+
+          <div className="bg-pink-50 p-4 rounded-lg border border-pink-100">
+            <h3 className="text-sm font-medium text-pink-800">Por Transporte</h3>
+            <p className="text-2xl font-bold text-pink-600">
+              {filteredLosses.filter(item => item.reason === 'Transporte').length}
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Estado de carga o mensajes según el contexto */}
       {isLoadingLosses || isLoadingSales ? (
