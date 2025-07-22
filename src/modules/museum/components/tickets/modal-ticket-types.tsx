@@ -1,6 +1,6 @@
 // components/ticket/modal-ticket-types.tsx
 import React, { useState } from 'react';
-import { X, Plus, Trash2, ClipboardPlus } from 'lucide-react';
+import { X, Plus, Trash2, ClipboardPlus, Pencil } from 'lucide-react';
 
 interface TicketType {
   type: string;
@@ -18,6 +18,8 @@ const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose }) 
   const [newPrice, setNewPrice] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [ticketToDelete, setTicketToDelete] = useState<{ index: number; name: string } | null>(null);
+  const [editModal, setEditModal] = useState(false);
+  const [ticketToEdit, setTicketToEdit] = useState<{ index: number; type: string; price: string } | null>(null);
 
   const handleAddTicket = () => {
     if (newType.trim() && newPrice.trim()) {
@@ -39,6 +41,21 @@ const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose }) 
     const name = ticketTypes[index].type;
     setTicketToDelete({ index, name });
     setShowDeleteModal(true);
+  };
+
+  const handleRequestEdit = (index: number) => {
+    const ticket = ticketTypes[index];
+    setTicketToEdit({ index, type: ticket.type, price: ticket.price });
+    setEditModal(true);
+  };
+
+  const handleConfirmEdit = () => {
+    if (ticketToEdit) {
+      const updated = [...ticketTypes];
+      updated[ticketToEdit.index] = { type: ticketToEdit.type, price: ticketToEdit.price };
+      setTicketTypes(updated);
+      setEditModal(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -113,14 +130,80 @@ const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose }) 
                   <p className="font-semibold text-sm">{ticket.type}</p>
                   <p className="text-red-700 text-sm">S/. {parseFloat(ticket.price).toFixed(2)}</p>
                 </div>
+                <div className="flex space-x-3">
+                <button
+                  onClick={() => handleRequestEdit(index)}
+                  className="text-blue-500 hover:text-blue-700"
+                >
+                  <Pencil size={18} />
+                </button>
                 <button
                   onClick={() => handleRequestDelete(index)}
                   className="text-red-600 hover:text-red-800"
                 >
                   <Trash2 size={18} />
                 </button>
+                </div>
               </div>
             ))}
+
+        {/* MODAL DE EDICIÓN */}
+          {editModal && ticketToEdit && (
+            <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 backdrop-blur-sm">
+              <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs sm:max-w-sm p-4 max-h-[70vh] overflow-y-auto">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-t-xl p-4">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-lg font-bold text-white">Editar Ticket</h2>
+                    <button
+                      onClick={() => setEditModal(false)}
+                      className="p-1.5 rounded-full hover:bg-red-800 transition-colors duration-200 text-white"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-4 space-y-3">
+                  <div className="flex flex-col space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">Tipo de Ticket</label>
+                    <input
+                      type="text"
+                      placeholder="Tipo de Ticket"
+                      value={ticketToEdit.type}
+                      onChange={(e) => setTicketToEdit({ ...ticketToEdit, type: e.target.value })}
+                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">Precio</label>
+                    <input
+                      type="number"
+                      placeholder="Precio"
+                      value={ticketToEdit.price}
+                      onChange={(e) => setTicketToEdit({ ...ticketToEdit, price: e.target.value })}
+                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-center space-x-3 px-4 pb-4 pt-2">
+                  <button
+                    onClick={() => setEditModal(false)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-200 hover:bg-gray-300 text-sm text-gray-700"
+                  >
+                    <X size={16} /> Cancelar
+                  </button>
+                  <button
+                    onClick={handleConfirmEdit}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white text-sm shadow hover:shadow-md"
+                  >
+                    <ClipboardPlus size={16} /> Guardar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
             {showDeleteModal && ticketToDelete && (
             <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 backdrop-blur-sm">

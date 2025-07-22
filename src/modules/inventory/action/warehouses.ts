@@ -20,12 +20,7 @@ export const updateWarehouse = async (id: string, payload: UpdateWarehousePayloa
 };
 
 // Eliminar un almacén (desactivar)
-export const deleteWarehouse = async (id: string): Promise<void> => {
-  await api.put(`/warehouses/${id}`);
-};
-
-// Reactivar un almacén 
-export const activateWarehouse = async (id: string): Promise<WarehouseAttributes> => {
-  const response = await api.patch<WarehouseAttributes>(`/warehouses/${id}/activate`);
+export const deleteWarehouse = async (id: string, status: boolean): Promise<void> => {
+  const response = await api.patch(`/warehouses/${id}`, { status });
   return response.data;
 };
