@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { FiPackage, FiPlus, FiEdit, FiTrash2 } from 'react-icons/fi';
 import { useFetchWarehouseStoreItems, useDeleteWarehouseStoreItem } from '../../hooks/useInventoryQueries';
 import { WarehouseStoreItem } from '../../types/inventory.types';
-import { StoreAttributes } from '@/modules/stores/types/store';
+import { StoreAttributes } from '@/modules/sales/types/store';
 import { useCheckStoreActiveSession } from '../../hooks/useCashSession';
 import { isStoreOperational, getStoreOperationalMessage } from '../../utils/store-status';
 import ModalCreateInventory from './modal-create-inventory';

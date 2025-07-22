@@ -7,7 +7,7 @@ import ModalDetailSales from './modal-details-sales';
 import { useFetchSales } from '../../hooks/useSales';
 import { useFetchStores } from '@/modules/sales/hooks/useStore';
 import { salesAttributes } from '../../types/sales';
-import { StoreAttributes } from '@/modules/stores/types/store';
+import { StoreAttributes } from '@/modules/sales/types/store';
 import { useCheckStoreActiveSession } from '../../hooks/useCashSession';
 import { isStoreOperational, getStoreOperationalMessage } from '../../utils/store-status';
 
@@ -44,7 +44,8 @@ const SalesComponentsView: React.FC<SalesComponentsViewProps> = ({ selectedStore
 
   // Función para obtener el nombre de la tienda por su ID
   const getStoreName = (storeId: string) => {
-    const store = stores.find((store) => store.id === storeId);
+    const storeArray = Array.isArray(stores) ? stores : [];
+    const store = storeArray.find((store: StoreAttributes) => store.id === storeId) as StoreAttributes | undefined;
     return store?.store_name || 'Tienda no encontrada';
   };
 
