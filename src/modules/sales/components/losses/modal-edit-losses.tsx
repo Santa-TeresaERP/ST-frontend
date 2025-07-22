@@ -11,7 +11,8 @@ interface Loss {
   reason: string;
   observations: string;
   quantity: number;
-  createdAt?: string;
+  createdAt?: string
+  updatedAt?: string;
 }
 
 interface ModalEditLossProps {
@@ -55,7 +56,7 @@ const ModalEditLoss: React.FC<ModalEditLossProps> = ({
 
   const filteredSales = sales.filter((sale) => {
     const belongsToStore = selectedStoreId
-      ? sale.store?.id === selectedStoreId
+      ? sale.store_id === selectedStoreId
       : true;
     const formattedDate = new Date(sale.income_date).toLocaleString('es-PE');
     const matchesSearch =

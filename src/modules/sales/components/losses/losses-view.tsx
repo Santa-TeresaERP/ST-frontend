@@ -236,7 +236,24 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
       <ModalEditLoss
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        currentLoss={currentLoss}
+        currentLoss={
+          currentLoss && currentLoss.id
+            ? {
+                ...currentLoss,
+                id: String(currentLoss.id),
+                createdAt: currentLoss.createdAt
+                  ? typeof currentLoss.createdAt === "string"
+                    ? currentLoss.createdAt
+                    : currentLoss.createdAt.toISOString()
+                  : undefined,
+                updatedAt: currentLoss.updatedAt
+                  ? typeof currentLoss.updatedAt === "string"
+                    ? currentLoss.updatedAt
+                    : currentLoss.updatedAt.toISOString()
+                  : undefined,
+              }
+            : null
+        }
         onSave={handleEditLoss}
         selectedStoreId={selectedStoreId}
       />
