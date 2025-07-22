@@ -29,6 +29,7 @@ const DepartmentSection = ({ title, items }: DepartmentSectionProps) => {
       case "Goyeneche": router.push('/pages/dashboard/goyoneche'); break;
       case "Santa Marta": router.push('/pages/dashboard/santa-marta'); break;
       case "Museo": router.push('/pages/dashboard/museo'); break;
+      case "Alquileres": router.push('/pages/dashboard/alquileres'); break; // 👈 agregado
       default: console.warn(`No route defined for ${name}`);
     }
   };
@@ -84,7 +85,6 @@ const DepartmentSection = ({ title, items }: DepartmentSectionProps) => {
                 />
               </div>
               
-  
               <h4 className="relative z-10 text-2xl font-bold text-[#393939] text-center mb-2">
                 {item.name}
               </h4>
