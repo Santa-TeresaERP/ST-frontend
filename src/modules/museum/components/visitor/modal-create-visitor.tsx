@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { X, Save, Users, ShoppingCart, CreditCard } from 'lucide-react';
 import { useSalesChannel } from '../../hook/useSalesChannel';
 import { useTypePerson } from '../../hook/useTypePerson';
+import { EntrancePayload } from '../../types/entrance';
+import { createEntrance} from '../../action/entrance'; 
+import { useAuthStore } from '@/core/store/auth';
 
 interface ModalCreateVisitorProps {
   isOpen: boolean;
@@ -19,6 +22,8 @@ export interface VisitorData {
 }
 
 const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose, onSave }) => {
+  const user = useAuthStore((state) => state.user);
+  
   const [pagoOptions, setPagoOptions] = useState<string[]>([
     'Efectivo',
     'Tarjeta',
@@ -47,15 +52,33 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
   // Hook para obtener los tipos de persona
   const { data: tiposPersona, loading: loadingTipos, error: errorTipos } = useTypePerson();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!tipoVisitante || !canalVenta || !tipoPago || !fecha || !monto || !gratis) {
-      setError('Por favor, completa todos los campos.');
-      return;
-    }
-    onSave({ tipoVisitante, canalVenta, tipoPago, fecha, monto, gratis });
-    onClose();
+
+    const visitorData: VisitorData = {
+      tipoVisitante,
+      canalVenta,
+      tipoPago,
+      fecha,
+      monto,
+      gratis,
+    };
+
+    const payload: EntrancePayload = {
+      user_id: user.id,
+      type_person_id: String(visitorData.tipoVisitante),
+      sale_date: visitorData.fecha,
+      sale_number: 'V-' + Date.now(),
+      sale_channel: visitorData.canalVenta,
+      total_sale: parseFloat(visitorData.monto),
+      payment_method: visitorData.tipoPago,
+      free: visitorData.gratis === 'Si',
+    };
+
+    createEntrance(payload);
+    onClose(); // opcional
   };
+
 
   if (!isOpen) return null;
 
@@ -90,7 +113,7 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
               >
                 <option value="">Seleccione un tipo</option>
                 {tiposPersona && tiposPersona.map((tipo) => (
-                  <option key={tipo.id} value={tipo.name}>
+                  <option key={tipo.id} value={tipo.id}>
                     {tipo.name}
                   </option>
                 ))}

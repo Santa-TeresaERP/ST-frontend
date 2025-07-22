@@ -1,47 +1,60 @@
-import React, { useState } from 'react';
-import Image from 'next/image';
-import { Users, PlusCircle, Ticket, Pencil, Trash2, CheckCircle, XCircle } from 'lucide-react';
-import ModalCreateVisitor, { VisitorData } from './visitor/modal-create-visitor';
-import ModalEditVisitor from './visitor/modal-edit-visitor';
-import ModalDeleteVisitor from './visitor/modal-delete-visitor';
-import ModalTicketTypes from './tickets/modal-ticket-types';
+// MuseumComponentView.tsx
+import React, { useState, useEffect } from 'react'
+import Image from 'next/image'
+import { PlusCircle, Pencil, Trash2, CheckCircle, XCircle } from 'lucide-react'
+import { useEntrance } from '../hook/useEntrance'
+import ModalEditEntrance from './visitor/modal-edit-visitor'
+import ModalDeleteEntrance from './visitor/modal-delete-visitor'
+import ModalTicketTypes from './tickets/modal-ticket-types'
+import { Entrance, EntrancePayload } from '../types/entrance'
+import ModalCreateVisitor, { VisitorData } from './visitor/modal-create-visitor'
+import { useAuthStore } from '@/core/store/auth';
 
 const MuseumComponentView: React.FC = () => {
-  const [isModalCreateOpen, setIsModalCreateOpen] = useState(false);
-  const [isModalEditOpen, setIsModalEditOpen] = useState(false);
-  const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
-  const [selectedVisitor, setSelectedVisitor] = useState<VisitorData | null>(null);
-  const [isModalTicketOpen, setIsModalTicketOpen] = useState(false);
+  const { data, loading, error, create, update, remove, refetch } = useEntrance()
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [isEditOpen,   setIsEditOpen]   = useState(false)
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [selected,     setSelected]     = useState<Entrance | null>(null)
+  const [isTicketOpen, setIsTicketOpen] = useState(false)
+  const user = useAuthStore((state) => state.user);
 
-  const handleOpenCreate = () => setIsModalCreateOpen(true);
-  const handleCloseCreate = () => setIsModalCreateOpen(false);
+  useEffect(() => { refetch() }, [])
 
-  const handleOpenEdit = (visitor: VisitorData) => {
-    setSelectedVisitor(visitor);
-    setIsModalEditOpen(true);
+  const handleCreate = async (data: VisitorData) => {
+    if (!user) return;
+
+    const payload: EntrancePayload = {
+      user_id: user.id,
+      type_person_id: data.tipoVisitante,
+      sale_date: data.fecha,
+      sale_number: 'V-' + Date.now(), // o como se genere
+      sale_channel: data.canalVenta,
+      total_sale: parseFloat(data.monto),
+      payment_method: data.tipoPago,
+      free: data.gratis === 'Si',
+    };
+
+    await create(payload);
+    setIsCreateOpen(false);
   };
-  const handleCloseEdit = () => setIsModalEditOpen(false);
 
-  const handleOpenDelete = (visitor: VisitorData) => {
-    setSelectedVisitor(visitor);
-    setIsModalDeleteOpen(true);
-  };
-  const handleCloseDelete = () => setIsModalDeleteOpen(false);
-
-  const handleSaveVisitor = (data: VisitorData) => {
-    console.log('Nuevo visitante guardado:', data);
-  };
+  const handleEdit = async (payload: Partial<Omit<Entrance, 'id'>>) => {
+    if (!selected?.id) return
+    await update(selected.id, payload)
+    setIsEditOpen(false)
+  }
+  const handleDelete = async () => {
+    if (!selected?.id) return
+    await remove(selected.id)
+    setIsDeleteOpen(false)
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       {/* Header */}
-      <div className="mb-6 md:mb-8">
-        <h1 className="text-3xl md:text-5xl font-bold text-center text-red-700 pb-2 md:pb-4">
-          Panel de Museo
-        </h1>
-        <p className="text-gray-600 text-center text-sm md:text-base">
-          Gestión de visitantes y tickets
-        </p>
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-center text-red-700">Panel de Visitantes</h1>
       </div>
 
       <div className="flex justify-center mt-4 mb-6 md:mt-6 md:mb-8">
@@ -54,85 +67,59 @@ const MuseumComponentView: React.FC = () => {
         />
       </div>
 
-      <div className="flex flex-col md:flex-row justify-end md:space-x-4 space-y-3 md:space-y-0 mb-5">
-        <button
-          onClick={handleOpenCreate}
-          className="flex items-center justify-center bg-gradient-to-r from-red-600 to-red-800 text-white px-4 py-2 rounded-lg shadow hover:opacity-90 w-full md:w-auto"
-        >
-          <PlusCircle className="mr-2" size={20} />
-          Nuevo Visitante
-        </button>
-        <button
-          onClick={() => setIsModalTicketOpen(true)}
-          className="flex items-center justify-center bg-gradient-to-r from-red-600 to-red-800 text-white px-4 py-2 rounded-lg shadow hover:opacity-90 w-full md:w-auto"
-        >
-          <Ticket className="mr-2" size={20} />
-          Tipos de Tickets
-        </button>
+      <div className="flex justify-between mb-4">
+        <h2 className="text-3xl font-semibold text-red-700">Lista de Visitantes</h2>
+        <div className='justify-end flex gap-2'>
+          <button
+            onClick={() => setIsCreateOpen(true)}
+            className="flex items-center bg-red-700 text-white px-4 py-2 rounded-3xl"
+          >
+            <PlusCircle className="mr-2" /> Nuevo Visitante
+          </button>
+          <button
+            onClick={() => setIsTicketOpen(true)}
+            className="flex items-center bg-red-700 text-white px-4 py-2 rounded-3xl"
+          >
+            <PlusCircle className="mr-2" /> Tipos de Tickets
+          </button>
+        </div>
       </div>
 
-      <div className="flex items-center text-red-700 text-2xl md:text-4xl font-bold mb-4">
-        <Users className="mr-2" size={28} />
-        Visitantes
-      </div>
+      {loading && <p>Cargando visitantes…</p>}
+      {error   && <p className="text-red-600">Error: {error}</p>}
 
-      <div className="overflow-x-auto bg-white rounded-xl shadow border border-gray-200 px-4 py-2">
-        <table className="min-w-full text-sm md:text-base text-gray-700">
-          <thead className="bg-gray-700 text-white text-center">
+      <div className="overflow-x-auto bg-white rounded shadow">
+        <table className="min-w-full text-gray-700">
+          <thead className="bg-gray-800 text-white">
             <tr>
-              <th className="px-3 py-2">Usuario</th>
-              <th className="px-3 py-2">Tipo de Visitante</th>
-              <th className="px-3 py-2">Canal de Venta</th>
-              <th className="px-3 py-2">Método de Pago</th>
-              <th className="px-3 py-2">Monto Total</th>
-              <th className="px-3 py-2">¿Gratis?</th>
-              <th className="px-3 py-2">Acciones</th>
+              <th className="px-4 py-2">Usuario</th>
+              <th className="px-4 py-2">Fecha</th>
+              <th className="px-4 py-2">Canal</th>
+              <th className="px-4 py-2">Total</th>
+              <th className="px-4 py-2">Pago</th>
+              <th className="px-4 py-2">Gratis</th>
+              <th className="px-4 py-2">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {[
-              {
-                tipoVisitante: 'Nacional',
-                canalVenta: 'Web',
-                fecha: '2025-07-01',
-                monto: '20.00',
-                gratis: 'No',
-                tipoPago: 'Tarjeta',
-              },
-              {
-                tipoVisitante: 'Estudiante',
-                canalVenta: 'Presencial',
-                fecha: '2025-07-02',
-                monto: '0.00',
-                gratis: 'Si',
-                tipoPago: 'Efectivo',
-              },
-            ].map((visitor, index) => (
-              <tr key={index} className="border-t text-center">
-                <td className="px-3 py-2">{index === 0 ? 'Juan Pérez' : 'María López'}</td>
-                <td className="px-3 py-2">{visitor.tipoVisitante}</td>
-                <td className="px-3 py-2">{visitor.canalVenta}</td>
-                <td className="px-3 py-2">{visitor.tipoPago}</td>
-                <td className="px-3 py-2">S/ {visitor.monto}</td>
-                <td className="px-3 py-2">
-                  {visitor.gratis === 'Si' ? (
-                    <CheckCircle size={20} className="text-green-600 mx-auto" />
-                  ) : (
-                    <XCircle size={20} className="text-red-600 mx-auto" />
-                  )}
+            {data.map((e) => (
+              <tr key={e.id} className="border-t">
+                <td className="px-4 py-2">{e.user_id}</td>
+                <td className="px-4 py-2">{e.sale_date}</td>
+                <td className="px-4 py-2">{e.sale_channel}</td>
+                <td className="px-4 py-2">S/ {e.total_sale.toFixed(2)}</td>
+                <td className="px-4 py-2">{e.payment_method}</td>
+                <td className="px-4 py-2 text-center">
+                  {e.free
+                    ? <CheckCircle className="inline text-green-500"/>
+                    : <XCircle     className="inline text-red-500"/>}
                 </td>
-                <td className="px-3 py-2 space-x-2">
-                  <button
-                    className="text-blue-600 hover:scale-105"
-                    onClick={() => handleOpenEdit(visitor)}
-                  >
-                    <Pencil size={18} />
+                <td className="px-4 py-2 space-x-2">
+                  <button onClick={() => { setSelected(e); setIsEditOpen(true) }}>
+                    <Pencil className="text-blue-600"/>
                   </button>
-                  <button
-                    className="text-red-600 hover:scale-105"
-                    onClick={() => handleOpenDelete(visitor)}
-                  >
-                    <Trash2 size={18} />
+                  <button onClick={() => { setSelected(e); setIsDeleteOpen(true) }}>
+                    <Trash2 className="text-red-600"/>
                   </button>
                 </td>
               </tr>
@@ -141,34 +128,32 @@ const MuseumComponentView: React.FC = () => {
         </table>
       </div>
 
+      {/* Modales */}
       <ModalCreateVisitor
-        isOpen={isModalCreateOpen}
-        onClose={handleCloseCreate}
-        onSave={handleSaveVisitor}
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSave={handleCreate}
+      />
+      
+      <ModalEditEntrance
+        isOpen={isEditOpen}
+        initialData={selected}
+        onClose={() => setIsEditOpen(false)}
+        onSave={handleEdit}
       />
 
-      <ModalEditVisitor
-        isOpen={isModalEditOpen}
-        onClose={handleCloseEdit}
-        initialData={selectedVisitor}
-        onSave={handleSaveVisitor}
-        />
-
-      <ModalDeleteVisitor
-        isOpen={isModalDeleteOpen}
-        onClose={handleCloseDelete}
-        onConfirm={() => {
-          console.log('Visitante eliminado:', selectedVisitor);
-          handleCloseDelete();
-        }}
+      <ModalDeleteEntrance
+        isOpen={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        onConfirm={handleDelete}
       />
 
       <ModalTicketTypes
-        isOpen={isModalTicketOpen}
-        onClose={() => setIsModalTicketOpen(false)}
+        isOpen={isTicketOpen}
+        onClose={() => setIsTicketOpen(false)}
       />
     </div>
-  );
-};
+  )
+}
 
-export default MuseumComponentView;
+export default MuseumComponentView
