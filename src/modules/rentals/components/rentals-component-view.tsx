@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FiPlus, FiInfo, FiMapPin, FiHome, FiBarChart2, FiCheckCircle, FiEdit } from 'react-icons/fi';
-import ModalCreateLocation from '../location/modal-create-location';
-import ModalEditLocation from '../location/modal-edit-location';
+import ModalCreateLocation from './information location/modal-create-location';
+import ModalEditLocation from './information location/modal-edit-location';
 
 const RentalsComponentView = () => {
   const [isCreateLocationModalOpen, setIsCreateLocationModalOpen] = useState(false);
