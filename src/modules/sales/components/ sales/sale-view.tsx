@@ -8,6 +8,8 @@ import { useFetchSales } from '../../hooks/useSales';
 import { useFetchStores } from '@/modules/stores/hook/useStores';
 import { salesAttributes } from '../../types/sales';
 import { StoreAttributes } from '@/modules/stores/types/store';
+import { useCheckStoreActiveSession } from '../../hooks/useCashSession';
+import { isStoreOperational, getStoreOperationalMessage } from '../../utils/store-status';
 
 // Agregué una interfaz para aceptar la tienda seleccionada como prop
 interface SalesComponentsViewProps {
@@ -18,6 +20,9 @@ const SalesComponentsView: React.FC<SalesComponentsViewProps> = ({ selectedStore
   // Obtengo las ventas y las tiendas usando los hooks correspondientes
   const { data: sales = [], isLoading, error } = useFetchSales();
   const { data: stores = [] } = useFetchStores();
+  
+  // Hook para verificar si la tienda tiene una sesión de caja activa
+  const { data: storeSessionData } = useCheckStoreActiveSession(selectedStore?.id);
 
   // Estados para manejar los modales y la venta actual
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -75,15 +80,22 @@ const SalesComponentsView: React.FC<SalesComponentsViewProps> = ({ selectedStore
       <div className="flex justify-end items-center">
         <button
           onClick={() => setIsModalOpen(true)}
-          disabled={!selectedStore}
+          disabled={!selectedStore || !isStoreOperational(storeSessionData)}
           className={`flex items-center px-4 py-2 rounded-lg transition-all ${
-            selectedStore
+            selectedStore && isStoreOperational(storeSessionData)
               ? "bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white"
               : "bg-gray-300 text-gray-500 cursor-not-allowed"
           }`}
+          title={
+            !selectedStore 
+              ? "Seleccione una tienda primero" 
+              : !isStoreOperational(storeSessionData)
+                ? getStoreOperationalMessage(storeSessionData)
+                : "Crear nueva venta"
+          }
         >
           <FiPlus className="mr-2 h-5 w-5" />
-          {selectedStore ? 'Nueva Venta' : 'Selecciona Tienda'}
+          {selectedStore && isStoreOperational(storeSessionData) ? 'Nueva Venta' : 'Selecciona Tienda'}
         </button>
       </div>
 
@@ -92,6 +104,15 @@ const SalesComponentsView: React.FC<SalesComponentsViewProps> = ({ selectedStore
           <p className="text-yellow-800">
             ⚠️ <strong>Tienda requerida:</strong> Selecciona una tienda en el panel principal para gestionar las ventas.
           </p>
+        </div>
+      )}
+
+      {selectedStore && !isStoreOperational(storeSessionData) && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <p className="text-orange-800">
+            ⚠️ <strong>Sesión de caja requerida:</strong> {getStoreOperationalMessage(storeSessionData)}
+          </p>
+          <small className="text-orange-600">Para realizar ventas, la tienda debe tener una sesión de caja activa.</small>
         </div>
       )}
 

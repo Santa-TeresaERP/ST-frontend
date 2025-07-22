@@ -1,5 +1,5 @@
 // Utilidades para validar el estado de las tiendas
-import { StoreAttributes } from '@/modules/stores/types/store.d';
+import { StoreAttributes } from '@/modules/stores/types/store';
 
 export interface StoreValidationResult {
   isEnabled: boolean;
@@ -8,12 +8,16 @@ export interface StoreValidationResult {
 }
 
 /**
- * Determina si una tienda está habilitada para ser utilizada
+ * Determina si una tienda está habilitada/configurada para ser utilizada
  * 
- * Una tienda se considera habilitada si:
- * 1. Existe (no es null/undefined)
- * 2. Tiene información básica completa (nombre y dirección)
- * 3. Su status está en true (activa)
+ * Por ahora, una tienda se considera habilitada si:
+ * 1. Existe (tiene información básica completa)
+ * 2. Tiene nombre y dirección
+ * 
+ * En el futuro se puede expandir para incluir:
+ * - Si tiene al menos una sesión de caja configurada
+ * - Si tiene productos asignados
+ * - Si tiene un campo 'status' o 'enabled' específico
  * 
  * @param store - La tienda a validar
  * @returns Resultado de la validación con información de estado
@@ -41,15 +45,19 @@ export const validateStoreStatus = (store: StoreAttributes | null | undefined): 
     };
   }
 
-  // Verificar el status de la tienda
-  if (store.status === false) {
-    return {
-      isEnabled: false,
-      reason: 'La tienda está deshabilitada'
-    };
+  // Si tiene un campo status explícito, úsalo
+  const storeWithStatus = store as StoreAttributes & { status?: boolean; enabled?: boolean };
+  if (storeWithStatus.hasOwnProperty('status') || storeWithStatus.hasOwnProperty('enabled')) {
+    const status = storeWithStatus.status ?? storeWithStatus.enabled;
+    if (status === false) {
+      return {
+        isEnabled: false,
+        reason: 'La tienda está deshabilitada'
+      };
+    }
   }
 
-  // Si pasa todas las validaciones, está habilitada
+  // Por ahora, si pasa las validaciones básicas, se considera habilitada
   return {
     isEnabled: true,
     warning: 'Tienda disponible para usar'

@@ -9,7 +9,8 @@ import {
   closeCashSession,
   deleteCashSession,
   fetchActiveCashSession,
-  fetchCashSessionHistory
+  fetchCashSessionHistory,
+  checkStoreActiveSession
 } from '../action/cashSession';
 
 export const useFetchCashSessions = () => {
@@ -52,6 +53,17 @@ export const useFetchCashSessionHistory = (storeId?: string) => {
     queryKey: ['cashSessionHistory', storeId],
     queryFn: () => fetchCashSessionHistory(storeId!),
     enabled: !!storeId, // Solo ejecutar si storeId está definido
+  });
+};
+
+// Hook para verificar si una tienda tiene una sesión de caja activa usando la nueva ruta
+export const useCheckStoreActiveSession = (storeId?: string) => {
+  return useQuery({
+    queryKey: ['checkStoreActiveSession', storeId],
+    queryFn: () => checkStoreActiveSession(storeId!),
+    enabled: !!storeId, // Solo ejecutar si storeId está definido
+    refetchInterval: 30000, // Refrescar cada 30 segundos para mantener el estado actualizado
+    refetchOnWindowFocus: true,
   });
 };
 

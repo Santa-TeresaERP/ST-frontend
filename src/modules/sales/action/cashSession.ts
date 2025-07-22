@@ -26,6 +26,33 @@ interface CashSessionDetailsResponse {
   returnsCount: number;
 }
 
+// Interface para la respuesta de verificación de sesión activa de una tienda
+interface StoreActiveSessionResponse {
+  success: boolean;
+  isActive: boolean;
+  message: string;
+  store: {
+    id: string;
+    store_name: string;
+    address: string;
+  };
+  activeSession?: {
+    id: string;
+    user_id: string;
+    start_amount: number;
+    started_at: string;
+    status: string;
+  };
+  lastClosedSession?: {
+    id: string;
+    end_amount: number;
+    ended_at: string;
+    total_sales: number;
+    total_returns: number;
+  } | null;
+  error?: string;
+}
+
 export const fetchCashSessions = async (): Promise<CashSessionAttributes[]> => {
   const response = await api.get<CashSessionResponse>('/cash_session');
   return response.data.cashSessions || [];
@@ -91,4 +118,10 @@ export const fetchActiveCashSession = async (storeId: string): Promise<CashSessi
 export const fetchCashSessionHistory = async (storeId: string): Promise<CashSessionAttributes[]> => {
   const response = await api.get<CashSessionResponse>(`/cash_session?store_id=${storeId}`);
   return response.data.cashSessions || [];
+};
+
+// Nueva función para verificar si una tienda tiene una sesión de caja activa
+export const checkStoreActiveSession = async (storeId: string): Promise<StoreActiveSessionResponse> => {
+  const response = await api.get<StoreActiveSessionResponse>(`/cash_session/store/${storeId}/active`);
+  return response.data;
 };

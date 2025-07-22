@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import { FiAlertOctagon, FiPlus, FiEdit, FiTrash2 } from "react-icons/fi";
 import ModalCreateLoss from "./modal-create-losses";
@@ -11,6 +12,8 @@ import {
 } from "@/modules/sales/hooks/useReturns";
 import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
 import { useFetchSales } from "@/modules/sales/hooks/useSales";
+import { useCheckStoreActiveSession } from "@/modules/sales/hooks/useCashSession";
+import { isStoreOperational, getStoreOperationalMessage } from "@/modules/sales/utils/store-status";
 
 // ✅ NUEVO: recibe ID de tienda como prop
 interface LossesComponentViewProps {
@@ -23,6 +26,9 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
   const { data: losses = [], isLoading: isLoadingLosses } = useFetchReturns();
   const { data: products = [] } = useFetchProducts();
   const { data: sales = [], isLoading: isLoadingSales } = useFetchSales();
+  
+  // Hook para verificar si la tienda tiene una sesión de caja activa
+  const { data: storeSessionData, isLoading: isLoadingSessionData } = useCheckStoreActiveSession(selectedStoreId);
 
   const createReturnMutation = useCreateReturn();
   const updateReturnMutation = useUpdateReturn();
@@ -38,7 +44,7 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
     selectedStoreId && !isLoadingSales
       ? losses.filter((loss) => {
           const relatedSale = sales.find((s) => s.id === loss.salesId);
-          return relatedSale?.store?.id === selectedStoreId;
+          return relatedSale?.store_id === selectedStoreId;
         })
       : [];
 
@@ -80,12 +86,19 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
       <div className="flex justify-end items-center">
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          disabled={!selectedStoreId}
+          disabled={!selectedStoreId || !isStoreOperational(storeSessionData)}
           className={`flex items-center px-4 py-2 rounded-lg transition-all ${
-            selectedStoreId
+            selectedStoreId && isStoreOperational(storeSessionData)
               ? "bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white"
               : "bg-gray-300 text-gray-500 cursor-not-allowed"
           }`}
+          title={
+            !selectedStoreId 
+              ? "Seleccione una tienda primero" 
+              : !isStoreOperational(storeSessionData)
+                ? getStoreOperationalMessage(storeSessionData)
+                : "Crear nueva pérdida"
+          }
         >
           <FiPlus className="mr-2 h-5 w-5" />
           Nueva Pérdida
@@ -98,13 +111,19 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
       </h2>
 
       {/* Estado de carga o mensajes según el contexto */}
-      {isLoadingLosses || isLoadingSales ? (
+      {isLoadingLosses || isLoadingSales || isLoadingSessionData ? (
         <div className="text-center text-gray-500 italic">
           Cargando datos...
         </div>
       ) : !selectedStoreId ? (
         <div className="text-center text-gray-500 italic">
           Seleccione una tienda para ver las pérdidas registradas.
+        </div>
+      ) : !isStoreOperational(storeSessionData) ? (
+        <div className="text-center text-orange-600 italic bg-orange-50 p-4 rounded-lg border border-orange-200">
+          {getStoreOperationalMessage(storeSessionData)}
+          <br />
+          <small>Para registrar pérdidas, la tienda debe tener una sesión de caja activa.</small>
         </div>
       ) : filteredLosses.length === 0 ? (
         <div className="text-center text-gray-500 italic">

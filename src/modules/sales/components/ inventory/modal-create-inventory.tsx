@@ -80,13 +80,12 @@ const ModalCreateInventory: React.FC<Props> = ({ isOpen, onClose }) => {
               <select
                 {...register('storeId')}
                 className={`w-full border ${errors.storeId ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none`}
-                disabled={areDependenciesLoading || !hasValidStores}
+                disabled={areDependenciesLoading}
               >
-                <option value="">
-                  {isLoadingStores ? 'Cargando tiendas...' : 
-                   !hasValidStores ? 'No hay tiendas disponibles' : 
-                   'Seleccione una tienda'}
-                </option>
+                <option value="">{isLoadingStores ? 'Cargando tiendas...' : 'Seleccione una tienda'}</option>
+                {enabledStores.length === 0 && !isLoadingStores && (
+                  <option value="" disabled>No hay tiendas disponibles</option>
+                )}
                 {enabledStores.map(s => (
                   <option key={s.id} value={s.id}>
                     {s.store_name}
@@ -94,14 +93,10 @@ const ModalCreateInventory: React.FC<Props> = ({ isOpen, onClose }) => {
                 ))}
               </select>
               {errors.storeId && <p className="text-sm text-red-600 mt-1">{errors.storeId.message}</p>}
-              {!hasValidStores && !isLoadingStores && (
+              {enabledStores.length === 0 && !isLoadingStores && (
                 <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <p className="text-yellow-800 text-sm">
-                    ⚠️ <strong>No hay tiendas habilitadas.</strong> 
-                    {allStores.length === 0 
-                      ? ' Debes crear al menos una tienda antes de poder agregar inventario.'
-                      : ' Las tiendas existentes no están configuradas correctamente. Verifica que tengan nombre y dirección completos.'
-                    }
+                    ⚠️ <strong>No hay tiendas disponibles.</strong> Debes crear al menos una tienda antes de poder agregar inventario.
                   </p>
                 </div>
               )}
