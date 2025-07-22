@@ -83,6 +83,7 @@ const DepartmentSection = ({ title, items }: DepartmentSectionProps) => {
                   height={48}
                 />
               </div>
+              
   
               <h4 className="relative z-10 text-2xl font-bold text-[#393939] text-center mb-2">
                 {item.name}
