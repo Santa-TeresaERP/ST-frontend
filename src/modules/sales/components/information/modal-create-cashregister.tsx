@@ -5,13 +5,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { CashSessionAttributes } from '../../types/cash_sessions.d';
 import { useFetchUsers } from '../../hooks/useCashSession';
 import { StoreAttributes } from '@/modules/sales/types/store.d';
+import { useStoreState } from '@/core/store/store';
 import { z } from 'zod';
 
 interface ModalCreateCashRegisterProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: Omit<CashSessionAttributes, 'id'>) => void;
-  selectedStore?: StoreAttributes | null;
+  selectedStore?: StoreAttributes | null; // Mantenemos por compatibilidad
 }
 
 // Definir un schema para el formulario compatible con react-hook-form
@@ -30,9 +31,13 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
   isOpen,
   onClose,
   onSubmit,
-  selectedStore,
+  selectedStore: propSelectedStore, // Renombramos para evitar conflictos
 }) => {
   const { data: users = [], isLoading: loadingUsers } = useFetchUsers();
+  const { selectedStore } = useStoreState();
+  
+  // Usamos la tienda del store global, o la prop como fallback
+  const currentStore = selectedStore || propSelectedStore;
 
   const {
     register,
@@ -43,7 +48,7 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
   } = useForm<FormValues>({
     resolver: zodResolver(cashSessionFormSchema),
     defaultValues: {
-      store_id: selectedStore?.id ? String(selectedStore.id) : '',
+      store_id: currentStore?.id ? String(currentStore.id) : '',
       ended_at: '',
       start_amount: '',
       end_amount: '',
@@ -53,19 +58,19 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
 
   // Sincronizar el valor de store_id con la tienda seleccionada
   useEffect(() => {
-    if (isOpen && selectedStore?.id) {
-      setValue('store_id', String(selectedStore.id));
+    if (isOpen && currentStore?.id) {
+      setValue('store_id', String(currentStore.id));
     }
-  }, [selectedStore, isOpen, setValue]);
+  }, [currentStore, isOpen, setValue]);
 
   const handleFormSubmit = (data: FormValues) => {
     // Usa directamente el id (UUID) de usuario y tienda
     const selectedUser = users.find(u => String(u.id) === String(data.user_id));
     const userId = selectedUser?.id || null;
-    const storeId = selectedStore?.id || null;
+    const storeId = currentStore?.id || null;
 
     console.log('selectedUser:', selectedUser);
-    console.log('selectedStore:', selectedStore);
+    console.log('currentStore:', currentStore);
     console.log('userId:', userId, 'storeId:', storeId);
 
     if (!userId || !storeId) {
@@ -74,8 +79,8 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
     }
 
     const payload: Omit<CashSessionAttributes, 'id'> = {
-      user_id: userId,
-      store_id: storeId,
+      user_id: Number(userId),
+      store_id: Number(storeId),
       start_amount: Number(data.start_amount),
       end_amount: Number(data.end_amount),
       total_returns: Number(data.total_returns),
@@ -133,17 +138,32 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
                 <label htmlFor="store_id" className="block text-gray-700 mb-1">
                   Tienda <span className="text-red-500">*</span>
                 </label>
-                <input
-                  id="store_id"
-                  type="text"
-                  value={selectedStore?.store_name || ''}
-                  disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder="Nombre de la tienda"
-                />
+                {currentStore ? (
+                  <input
+                    id="store_id"
+                    type="text"
+                    value={currentStore.store_name}
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-not-allowed"
+                    placeholder="Nombre de la tienda"
+                  />
+                ) : (
+                  <input
+                    id="store_id"
+                    type="text"
+                    placeholder="Selecciona una tienda desde la vista principal"
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-not-allowed"
+                  />
+                )}
                 {/* El id real se envía oculto */}
-                <input type="hidden" {...register('store_id')} value={selectedStore?.id || ''} />
+                <input type="hidden" {...register('store_id')} value={currentStore?.id || ''} />
                 {errors.store_id && <p className="text-red-500 text-sm mt-1">{errors.store_id.message}</p>}
+                {!currentStore && (
+                  <p className="text-amber-600 text-xs mt-1">
+                    💡 Selecciona una tienda desde la vista principal para facilitar el llenado
+                  </p>
+                )}
               </div>
 
               {/* Dinero Inicial */}

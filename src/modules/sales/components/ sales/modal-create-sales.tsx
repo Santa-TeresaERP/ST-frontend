@@ -11,6 +11,7 @@ import { useCreateSalesDetail } from '../../hooks/useSalesDetails';
 import { useFetchProducts } from '@/modules/production/hook/useProducts';
 import { useFetchStores } from '@/modules/sales/hooks/useStore'; // Importar el hook para obtener las tiendas
 import { Product as ProductType } from '@/modules/production/types/products';
+import { useStoreState } from '@/core/store/store';
 
 interface CartProduct {
   id: string;
@@ -31,6 +32,7 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
   const { data: allProducts = [], isLoading: loadingProducts } = useFetchProducts();
   const { data: storesData, isLoading: loadingStores } = useFetchStores(); // Obtener las tiendas
   const stores = storesData?.stores || [];
+  const { selectedStore } = useStoreState();
 
   const [selectedProductId, setSelectedProductId] = useState('');
   const [cantidad, setCantidad] = useState('');
@@ -48,11 +50,18 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
     resolver: zodResolver(createSaleSchema),
     defaultValues: {
       income_date: '',
-      store_id: '',
+      store_id: selectedStore?.id || '',
       total_income: 0,
       observations: '',
     },
   });
+
+  // Sincronizar el store_id cuando cambia la tienda seleccionada o se abre el modal
+  useEffect(() => {
+    if (isOpen && selectedStore?.id) {
+      setValue('store_id', selectedStore.id);
+    }
+  }, [selectedStore, isOpen, setValue]);
 
   useEffect(() => {
     const nuevoTotal = productos.reduce((sum, prod) => sum + prod.total, 0);
@@ -195,22 +204,42 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
               <label className="block text-gray-700 font-medium mb-1">
                 Tienda <span className="text-red-600">*</span>
               </label>
-              <select
-                {...register('store_id')}
-                disabled={loadingStores || isCreating}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-600 focus:outline-none shadow-sm disabled:bg-gray-100"
-              >
-                <option value="">
-                  {loadingStores ? 'Cargando tiendas...' : 'Seleccionar tienda'}
-                </option>
-                {stores.map((store) => (
-                  <option key={store.id} value={store.id}>
-                    {store.store_name}
+              {selectedStore ? (
+                <input
+                  type="text"
+                  value={selectedStore.store_name}
+                  disabled
+                  className="w-full border rounded-lg px-3 py-2 text-sm bg-gray-100 text-gray-700 cursor-not-allowed"
+                />
+              ) : (
+                <select
+                  {...register('store_id')}
+                  disabled={loadingStores || isCreating}
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-600 focus:outline-none shadow-sm disabled:bg-gray-100"
+                >
+                  <option value="">
+                    {loadingStores ? 'Cargando tiendas...' : 'Seleccionar tienda'}
                   </option>
-                ))}
-              </select>
+                  {stores.map((store) => (
+                    <option key={store.id} value={store.id}>
+                      {store.store_name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {/* Campo oculto para enviar el ID de la tienda */}
+              <input 
+                type="hidden" 
+                {...register('store_id')} 
+                value={selectedStore?.id || ''} 
+              />
               {errors.store_id && (
                 <p className="text-red-600 text-xs mt-1">{errors.store_id.message}</p>
+              )}
+              {!selectedStore && (
+                <p className="text-amber-600 text-xs mt-1">
+                  💡 Selecciona una tienda desde la vista principal para facilitar el llenado
+                </p>
               )}
             </div>
 

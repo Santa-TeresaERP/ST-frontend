@@ -1,19 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/app/components/ui/button';
 import { FiPlus } from 'react-icons/fi';
 import { useFetchStores, useDeleteStore } from '../../hooks/useStore';
 import { StoreAttributes } from '../../types/store.d';
 import ModalCreateStore from './modal-create-store';
 import ModalEditStore from './modal-edit-store';
+import { useStoreState } from '@/core/store/store';
 
 interface StoreListViewProps {
-  onStoreSelect?: (store: StoreAttributes | null) => void;
-  selectedStore?: StoreAttributes | null;
+  onStoreSelect?: (store: StoreAttributes | null) => void; // Mantenemos por compatibilidad
+  selectedStore?: StoreAttributes | null; // Mantenemos por compatibilidad
 }
 
 const StoreListView: React.FC<StoreListViewProps> = ({ 
   onStoreSelect, 
-  selectedStore 
+  selectedStore: propSelectedStore // Renombramos para evitar conflictos
 }) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -21,11 +22,19 @@ const StoreListView: React.FC<StoreListViewProps> = ({
 
   const { data: storesData, isLoading, error } = useFetchStores(1, 10);
   const deleteStoreMutation = useDeleteStore();
+  const { selectedStore, setSelectedStore } = useStoreState();
 
   // Log para debug
   console.log('StoreListView - storesData:', storesData);
   console.log('StoreListView - isLoading:', isLoading);
   console.log('StoreListView - error:', error);
+
+  // Sincronizar el store global con las props cuando sea necesario
+  useEffect(() => {
+    if (propSelectedStore && !selectedStore) {
+      setSelectedStore(propSelectedStore);
+    }
+  }, [propSelectedStore, selectedStore, setSelectedStore]);
 
   const handleDeleteStore = async (id: string) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar esta tienda?')) {
@@ -33,6 +42,7 @@ const StoreListView: React.FC<StoreListViewProps> = ({
         await deleteStoreMutation.mutateAsync(id);
         // Si la tienda eliminada era la seleccionada, limpiar la selección
         if (selectedStore?.id === id) {
+          setSelectedStore(null);
           onStoreSelect?.(null);
         }
       } catch (error) {
@@ -49,10 +59,12 @@ const StoreListView: React.FC<StoreListViewProps> = ({
   const handleStoreChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const storeId = e.target.value;
     if (storeId === '') {
+      setSelectedStore(null);
       onStoreSelect?.(null);
     } else {
       const store = allStores.find(s => s.id === storeId);
       if (store) {
+        setSelectedStore(store);
         onStoreSelect?.(store);
       }
     }

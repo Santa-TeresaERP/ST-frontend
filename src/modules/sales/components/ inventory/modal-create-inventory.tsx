@@ -1,5 +1,5 @@
 'use client';
-import React from 'react'; // Eliminado useEffect ya que reset se maneja en onSuccess
+import React, { useEffect } from 'react'; // Eliminado useEffect ya que reset se maneja en onSuccess
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X, Save } from 'lucide-react';
@@ -12,6 +12,7 @@ import { useFetchStores } from '@/modules/sales/hooks/useStore';         // Hook
 // Importaciones del módulo actual
 import { useCreateWarehouseStoreItem } from '../../hooks/useInventoryQueries';
 import { createWarehouseStoreSchema, CreateWarehouseStoreFormData } from '../../schemas/inventory.schema';
+import { useStoreState } from '@/core/store/store';
 
 interface Props { isOpen: boolean; onClose: () => void; }
 
@@ -20,12 +21,25 @@ const ModalCreateInventory: React.FC<Props> = ({ isOpen, onClose }) => {
   const { data: products = [], isLoading: isLoadingProducts } = useFetchProducts();
   const { data: storesResponse, isLoading: isLoadingStores } = useFetchStores(1, 100);
   const stores = storesResponse?.stores || [];
+  const { selectedStore } = useStoreState();
   
   const { mutate: createItem, isPending, error: mutationError } = useCreateWarehouseStoreItem();
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<CreateWarehouseStoreFormData>({
+  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<CreateWarehouseStoreFormData>({
     resolver: zodResolver(createWarehouseStoreSchema),
+    defaultValues: {
+      productId: '',
+      storeId: selectedStore?.id || '',
+      quantity: 0,
+    },
   });
+
+  // Sincronizar el storeId cuando cambia la tienda seleccionada o se abre el modal
+  useEffect(() => {
+    if (isOpen && selectedStore?.id) {
+      setValue('storeId', selectedStore.id);
+    }
+  }, [selectedStore, isOpen, setValue]);
 
   const onSubmit = (data: CreateWarehouseStoreFormData) => {
     createItem(data, {
@@ -70,15 +84,35 @@ const ModalCreateInventory: React.FC<Props> = ({ isOpen, onClose }) => {
 
             <div>
               <label className="block text-gray-700 mb-1 font-medium">Tienda <span className="text-red-600">*</span></label>
-              <select
-                {...register('storeId')}
-                className={`w-full border ${errors.storeId ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none`}
-                disabled={areDependenciesLoading}
-              >
-                <option value="">{isLoadingStores ? 'Cargando tiendas...' : 'Seleccione una tienda'}</option>
-                {stores.map(s => <option key={s.id} value={s.id}>{s.store_name}</option>)}
-              </select>
+              {selectedStore ? (
+                <input
+                  type="text"
+                  value={selectedStore.store_name}
+                  disabled
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-100 text-gray-700 cursor-not-allowed"
+                />
+              ) : (
+                <select
+                  {...register('storeId')}
+                  className={`w-full border ${errors.storeId ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none`}
+                  disabled={areDependenciesLoading}
+                >
+                  <option value="">{isLoadingStores ? 'Cargando tiendas...' : 'Seleccione una tienda'}</option>
+                  {stores.map(s => <option key={s.id} value={s.id}>{s.store_name}</option>)}
+                </select>
+              )}
+              {/* Campo oculto para enviar el ID de la tienda */}
+              <input 
+                type="hidden" 
+                {...register('storeId')} 
+                value={selectedStore?.id || ''} 
+              />
               {errors.storeId && <p className="text-sm text-red-600 mt-1">{errors.storeId.message}</p>}
+              {!selectedStore && (
+                <p className="text-amber-600 text-xs mt-1">
+                  💡 Selecciona una tienda desde la vista principal para facilitar el llenado
+                </p>
+              )}
             </div>
 
             <div>
