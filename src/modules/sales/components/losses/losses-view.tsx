@@ -14,8 +14,8 @@ import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
 import { useFetchSales } from "@/modules/sales/hooks/useSales";
 import { useCheckStoreActiveSession } from "@/modules/sales/hooks/useCashSession";
 import { isStoreOperational, getStoreOperationalMessage } from "@/modules/sales/utils/store-status";
+import { returnsAttributes } from "@/modules/sales/types/returns";
 
-// ✅ NUEVO: recibe ID de tienda como prop
 interface LossesComponentViewProps {
   selectedStoreId?: string;
 }
@@ -37,9 +37,8 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [currentLoss, setCurrentLoss] = useState<any>(null);
+  const [currentLoss, setCurrentLoss] = useState<returnsAttributes | null>(null);
 
-  // ✅ Filtro por tienda seleccionada
   const filteredLosses =
     selectedStoreId && !isLoadingSales
       ? losses.filter((loss) => {
@@ -48,32 +47,35 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
         })
       : [];
 
-  const handleCreateLoss = async (newLoss: any) => {
-  await createReturnMutation.mutateAsync({ ...newLoss, quantity: 1 });
-  setIsCreateModalOpen(false);
-};
+  const handleCreateLoss = async (
+    newLoss: Omit<returnsAttributes, "id" | "createdAt" | "updatedAt">
+  ) => {
+    await createReturnMutation.mutateAsync(newLoss);
+    setIsCreateModalOpen(false);
+  };
 
-
-  const handleEditLoss = async (updatedLoss: any) => {
+  const handleEditLoss = async (
+    updatedLoss: Partial<Omit<returnsAttributes, "id" | "createdAt" | "updatedAt">>
+  ) => {
+    if (!currentLoss) return;
     await updateReturnMutation.mutateAsync({
-      id: currentLoss.id,
+      id: currentLoss.id!,
       payload: updatedLoss,
     });
     setIsEditModalOpen(false);
   };
 
   const handleDeleteLoss = async () => {
-    await deleteReturnMutation.mutateAsync(currentLoss.id);
+    if (!currentLoss) return;
+    await deleteReturnMutation.mutateAsync(currentLoss.id!);
     setIsDeleteModalOpen(false);
   };
 
-  // Obtener nombre del producto desde el ID
   const getProductName = (productId: string) => {
     const product = products.find((p) => p.id === productId);
-    return product ? product.name : productId; // fallback al ID si no está cargado
+    return product ? product.name : productId;
   };
 
-  // Obtener nombre de la tienda desde el ID de la venta
   const getStoreName = (salesId: string) => {
     const rawSale = sales.find((s) => s.id === salesId);
     const store_name = (rawSale as { store?: { store_name?: string } })?.store
@@ -83,7 +85,6 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 space-y-6 text-gray-700">
-      {/* Botón "Nueva Pérdida" */}
       <div className="flex justify-end items-center">
         <button
           onClick={() => setIsCreateModalOpen(true)}
@@ -170,6 +171,8 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
               <tr>
                 <th className="px-4 py-2 text-center">Producto</th>
                 <th className="px-4 py-2 text-center">Tienda</th>
+                <th className="px-4 py-2 text-center">Cantidad</th>
+                <th className="px-4 py-2 text-center">Precio (S/)</th>
                 <th className="px-4 py-2 text-center">Razón</th>
                 <th className="px-4 py-2 text-center">Observación</th>
                 <th className="px-4 py-2 text-center">Fecha</th>
@@ -185,10 +188,16 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
                   <td className="px-4 py-2 text-center">
                     {getStoreName(item.salesId)}
                   </td>
+                  <td className="px-4 py-2 text-center">{item.quantity}</td>
+                  <td className="px-4 py-2 text-center">
+                    {Number(item.price).toFixed(2)}
+                  </td>
                   <td className="px-4 py-2 text-center">{item.reason}</td>
                   <td className="px-4 py-2 text-center">{item.observations}</td>
                   <td className="px-4 py-2 text-center">
-                    {new Date(item.createdAt!).toLocaleDateString()}
+                    {item.createdAt
+                      ? new Date(item.createdAt).toLocaleDateString()
+                      : "-"}
                   </td>
                   <td className="px-4 py-2 text-center flex justify-center space-x-3">
                     <button
@@ -217,7 +226,6 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
         </div>
       )}
 
-      {/* Modales */}
       <ModalCreateLoss
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}

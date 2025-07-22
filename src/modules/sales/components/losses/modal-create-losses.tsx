@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { X, Save } from "lucide-react";
 import { FiAlertOctagon } from "react-icons/fi";
 import { useCreateReturn } from "@/modules/sales/hooks/useReturns";
-import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
 import { useFetchSales } from "@/modules/sales/hooks/useSales";
 import { useFetchWarehouseStoreItems } from "@/modules/sales/hooks/useInventoryQueries";
 import { returnsAttributes } from "../../types/returns";
+import { returnSchema } from "@/modules/sales/schemas/returnsSchema";
 
 interface ModalCreateLossProps {
   isOpen: boolean;
@@ -25,18 +25,18 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
   const [salesId, setSalesId] = useState("");
   const [reason, setReason] = useState("");
   const [observations, setObservations] = useState("");
+  const [quantity, setQuantity] = useState(1);
   const [localError, setLocalError] = useState("");
 
   const { data: storeInventory = [] } = useFetchWarehouseStoreItems();
   const { data: sales = [] } = useFetchSales();
-  const createReturnMutation = useCreateReturn();
+  const { mutateAsync } = useCreateReturn();
 
   const productDropdownRef = useRef<HTMLDivElement>(null);
   const salesDropdownRef = useRef<HTMLDivElement>(null);
   const [showSalesDropdown, setShowSalesDropdown] = useState(false);
   const [showProductsDropdown, setShowProductsDropdown] = useState(false);
 
-  // Productos disponibles filtrados por tienda y con cantidad > 0
   const filteredInventory = storeInventory.filter(
     (item) => item.storeId === selectedStoreId && item.quantity > 0
   );
@@ -94,12 +94,23 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
     }
 
     try {
-      await createReturnMutation.mutateAsync({
-        productId,
-        salesId,
+      const data = {
+        product_id: productId,
+        sale_id: salesId,
         reason,
         observations,
-      });
+        quantity,
+        store_id: selectedStoreId,
+      };
+
+      // Validate data with returnSchema
+      const validation = returnSchema.safeParse(data);
+      if (!validation.success) {
+        setLocalError("Datos inválidos: " + validation.error.errors.map(e => e.message).join(", "));
+        return;
+      }
+
+      await mutateAsync(validation.data);
       onClose();
       setProductSearch("");
       setProductId("");
@@ -107,7 +118,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
       setSalesId("");
       setReason("");
       setObservations("");
-      setLocalError("");
+      setQuantity(1);
     } catch (error) {
       console.error("Error al guardar la pérdida:", error);
       setLocalError("Hubo un error al guardar la pérdida.");
@@ -121,9 +132,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl relative mx-2">
         <div className="bg-gradient-to-r from-red-700 to-red-900 text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
           <FiAlertOctagon size={24} />
-          <h2 className="text-xl font-semibold text-center">
-            Registrar Pérdida
-          </h2>
+          <h2 className="text-xl font-semibold text-center">Registrar Pérdida</h2>
           <button
             onClick={onClose}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
@@ -190,7 +199,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
               )}
             </div>
 
-            {/* Selector de venta */}
+            {/* Venta */}
             <div className="relative" ref={salesDropdownRef}>
               <label className="block text-gray-700 mb-1 font-medium">
                 Venta <span className="text-red-600">*</span>
@@ -212,33 +221,39 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
                   {(salesSearch
                     ? filteredSales
                     : [...filteredSales]
-                        .sort(
-                          (a, b) =>
-                            new Date(b.income_date).getTime() -
-                            new Date(a.income_date).getTime()
-                        )
+                        .sort((a, b) => new Date(b.income_date).getTime() - new Date(a.income_date).getTime())
                         .slice(0, 3)
                   ).map((sale) => (
                     <li
                       key={sale.id}
                       className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
                       onClick={() => {
-                        const formatted = new Date(
-                          sale.income_date
-                        ).toLocaleString("es-PE");
-                        setSalesSearch(
-                          `${formatted} - S/ ${sale.total_income}`
-                        );
+                        const formatted = new Date(sale.income_date).toLocaleString("es-PE");
+                        setSalesSearch(`${formatted} - S/ ${sale.total_income}`);
                         setSalesId(sale.id!);
                         setShowSalesDropdown(false);
                       }}
                     >
-                      📅 {new Date(sale.income_date).toLocaleString("es-PE")} —
-                      💵 S/ {sale.total_income}
+                      🗕️ {new Date(sale.income_date).toLocaleString("es-PE")} — 💵 S/ {sale.total_income}
                     </li>
                   ))}
                 </ul>
               )}
+            </div>
+
+            {/* Cantidad */}
+            <div>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Cantidad <span className="text-red-600">*</span>
+              </label>
+              <input
+                type="number"
+                value={quantity}
+                min={1}
+                onChange={(e) => setQuantity(Number(e.target.value))}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                placeholder="Cantidad de productos devueltos"
+              />
             </div>
 
             {/* Razón */}
@@ -246,18 +261,14 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
               <label className="block text-gray-700 mb-1 font-medium">
                 Razón <span className="text-red-600">*</span>
               </label>
-              <select
+              <input
+                type="text"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-              >
-                <option value="">Seleccionar razón</option>
-                <option value="Gasto">Gasto</option>
-                <option value="Vencimiento">Vencimiento</option>
-                <option value="Transporte">Transporte</option>
-              </select>
+                placeholder="Razón de la pérdida"
+              />
             </div>
-
 
             {/* Observaciones */}
             <div>
