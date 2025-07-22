@@ -47,7 +47,7 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
   } = useForm<CreateSalePayload>({
     resolver: zodResolver(createSaleSchema),
     defaultValues: {
-      income_date: '',
+      income_date: new Date().toISOString().split('T')[0],
       store_id: '',
       total_income: 0,
       observations: '',

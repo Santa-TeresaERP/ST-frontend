@@ -33,7 +33,7 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
   const [tipoVisitante, setTipoVisitante] = useState('');
   const [canalVenta, setCanalVenta] = useState('');
   const [tipoPago, setTipoPago] = useState('');
-  const [fecha, setFecha] = useState('');
+  const [fecha, setFecha] = useState(() => new Date().toISOString().split('T')[0]);
   const [monto, setMonto] = useState('');
   const [gratis, setGratis] = useState('');
   const [error, setError] = useState('');
@@ -61,7 +61,7 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg relative mx-2">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl relative mx-2">
         <div className="bg-gradient-to-r from-red-700 to-red-900 text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
           <Users size={24} />
           <h2 className="text-lg md:text-xl font-semibold text-center">Nuevo Visitante</h2>
