@@ -5,7 +5,9 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  DialogFooter
+  DialogFooter,
+  DialogHeader,
+  DialogDescription
 } from "../../../app/components/ui/dialog";
 import { Button } from "../../../app/components/ui/button";
 import { Input } from "../../../app/components/ui/input";
@@ -78,14 +80,20 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onSubmit }
         <DialogContent
           className="w-full max-w-[90%] sm:max-w-[600px] rounded-xl shadow-lg px-0 pb-6 pt-0"
         >
-
-          {/* Header con degradado */}
-          <div className="w-full bg-gradient-to-r from-green-600 to-green-500 rounded-t-xl px-6 py-4 flex items-center space-x-3">
-            <User className="h-6 w-6 text-white" />
-            <DialogTitle className="text-white text-2xl font-semibold">
-              {role ? `Editar Rol - ${role.name}` : "Crear Nuevo Rol"}
-            </DialogTitle>
-          </div>
+          <DialogHeader>
+            <div className="w-full bg-gradient-to-r from-green-600 to-green-500 rounded-t-xl px-6 py-4 flex items-center space-x-3">
+              <User className="h-6 w-6 text-white" />
+              <DialogTitle className="text-white text-2xl font-semibold">
+                {role ? `Editar Rol - ${role.name}` : "Crear Nuevo Rol"}
+              </DialogTitle>
+            </div>
+            <DialogDescription className="mt-2 text-sm text-gray-600">
+              {role 
+                ? 'Modifica los datos del rol existente.' 
+                : 'Completa los datos para crear un nuevo rol en el sistema.'
+              }
+            </DialogDescription>
+          </DialogHeader>
 
           {/* Contenido del formulario */}
           <form onSubmit={handleSubmit} className="space-y-6 px-4 sm:px-6 mt-6">

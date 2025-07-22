@@ -13,7 +13,6 @@ export interface VisitorData {
   tipoVisitante: string;
   canalVenta: string;
   tipoPago: string;
-  canalDeVenta: string;
   fecha: string;
   monto: string;
   gratis: string;
@@ -34,7 +33,6 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
   const [tipoVisitante, setTipoVisitante] = useState('');
   const [canalVenta, setCanalVenta] = useState('');
   const [tipoPago, setTipoPago] = useState('');
-  const [canalDeVenta] = useState('');
   const [fecha, setFecha] = useState('');
   const [monto, setMonto] = useState('');
   const [gratis, setGratis] = useState('');
@@ -55,7 +53,7 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
       setError('Por favor, completa todos los campos.');
       return;
     }
-    onSave({ tipoVisitante, canalVenta, tipoPago, canalDeVenta, fecha, monto, gratis });
+    onSave({ tipoVisitante, canalVenta, tipoPago, fecha, monto, gratis });
     onClose();
   };
 
@@ -261,16 +259,17 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
                 onClick={() => {
                   if (!newOption.trim()) return;
                   if (miniOpen === 'pago') {
-                    setPagoOptions(prev => [...prev, newOption]);
-                    setTipoPago(newOption);
+                    setPagoOptions(prev => [...prev, newOption.trim()]);
+                    setTipoPago(newOption.trim());
                   } else {
-                    setCanalOptions(prev => [...prev, newOption]);
-                    setCanalVenta(newOption);
+                    setCanalOptions(prev => [...prev, newOption.trim()]);
+                    setCanalVenta(newOption.trim());
                   }
                   setNewOption('');
                   setMiniOpen('none');
                 }}
                 className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-600 transition"
+                disabled={!newOption.trim()}
               >
                 Agregar
               </button>
