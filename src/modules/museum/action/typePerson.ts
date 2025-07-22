@@ -1,40 +1,28 @@
+import api from '@/core/config/client';
 import { TypePerson } from '../types/typePerson';
 
 const BASE_URL = '/type_person';
 
 export const getTypePersons = async (): Promise<TypePerson[]> => {
-  const res = await fetch(BASE_URL);
-  if (!res.ok) throw new Error('Error al obtener tipos de persona');
-  return res.json();
+  const res = await api.get<TypePerson[]>(BASE_URL);
+  return res.data;
 };
 
 export const getTypePerson = async (id: string): Promise<TypePerson> => {
-  const res = await fetch(`${BASE_URL}/${id}`);
-  if (!res.ok) throw new Error('Error al obtener tipo de persona');
-  return res.json();
+  const res = await api.get<TypePerson>(`${BASE_URL}/${id}`);
+  return res.data;
 };
 
 export const createTypePerson = async (data: Omit<TypePerson, 'id'>): Promise<TypePerson> => {
-  const res = await fetch(BASE_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Error al crear tipo de persona');
-  return res.json();
+  const res = await api.post<TypePerson>(BASE_URL, data);
+  return res.data;
 };
 
 export const updateTypePerson = async (id: string, data: Partial<TypePerson>): Promise<TypePerson> => {
-  const res = await fetch(`${BASE_URL}/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Error al actualizar tipo de persona');
-  return res.json();
+  const res = await api.patch<TypePerson>(`${BASE_URL}/${id}`, data);
+  return res.data;
 };
 
 export const deleteTypePerson = async (id: string): Promise<void> => {
-  const res = await fetch(`${BASE_URL}/${id}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error('Error al eliminar tipo de persona');
+  await api.delete(`${BASE_URL}/${id}`);
 }; 

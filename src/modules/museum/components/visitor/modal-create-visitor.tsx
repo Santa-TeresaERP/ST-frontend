@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { X, Save, Users, CreditCard, ShoppingCart } from 'lucide-react';
+import { X, Save, Users } from 'lucide-react';
+import { useSalesChannel } from '../../hook/useSalesChannel';
+import { useTypePerson } from '../../hook/useTypePerson';
 
 interface ModalCreateVisitorProps {
   isOpen: boolean;
@@ -39,9 +41,10 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
   const [gratis, setGratis] = useState('');
   const [error, setError] = useState('');
 
-  // Estados para mini‑modales
-  const [miniOpen, setMiniOpen] = useState<'none' | 'pago' | 'canal'>('none');
-  const [newOption, setNewOption] = useState('');
+  // Hook para obtener los canales de venta
+  const { data: canalesVenta, loading: loadingCanales, error: errorCanales } = useSalesChannel();
+  // Hook para obtener los tipos de persona
+  const { data: tiposPersona, loading: loadingTipos, error: errorTipos } = useTypePerson();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,14 +59,115 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
   if (!isOpen) return null;
 
   return (
-    <>
-      {/* Overlay principal */}
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-40">
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg relative mx-2">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-red-700 to-red-900 text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
-            <Users size={24} />
-            <h2 className="text-lg md:text-xl font-semibold text-center">Nuevo Visitante</h2>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg relative mx-2">
+        <div className="bg-gradient-to-r from-red-700 to-red-900 text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
+          <Users size={24} />
+          <h2 className="text-lg md:text-xl font-semibold text-center">Nuevo Visitante</h2>
+          <button
+            onClick={onClose}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
+          >
+            <X size={22} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 text-left">
+          {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Tipo de Visitante <span className="text-red-600">*</span>
+              </label>
+              <select
+                value={tipoVisitante}
+                onChange={(e) => setTipoVisitante(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                disabled={loadingTipos}
+              >
+                <option value="">Seleccione un tipo</option>
+                {tiposPersona && tiposPersona.map((tipo) => (
+                  <option key={tipo.id} value={tipo.name}>
+                    {tipo.name}
+                  </option>
+                ))}
+              </select>
+              {loadingTipos && (
+                <p className="text-xs text-gray-500 mt-1">Cargando tipos de persona...</p>
+              )}
+              {errorTipos && (
+                <p className="text-xs text-red-600 mt-1">{errorTipos}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Canal de Venta <span className="text-red-600">*</span>
+              </label>
+              <select
+                value={canalVenta}
+                onChange={(e) => setCanalVenta(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                disabled={loadingCanales}
+              >
+                <option value="">Seleccione un canal</option>
+                {canalesVenta && canalesVenta.map((canal) => (
+                  <option key={canal.id} value={canal.name}>
+                    {canal.name}
+                  </option>
+                ))}
+              </select>
+              {loadingCanales && (
+                <p className="text-xs text-gray-500 mt-1">Cargando canales...</p>
+              )}
+              {errorCanales && (
+                <p className="text-xs text-red-600 mt-1">{errorCanales}</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-gray-700 mb-1 font-medium">
+              Fecha <span className="text-red-600">*</span>
+            </label>
+            <input
+              type="date"
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-700 mb-1 font-medium">
+              Monto Total <span className="text-red-600">*</span>
+            </label>
+            <input
+              type="number"
+              value={monto}
+              onChange={(e) => setMonto(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+              placeholder="S/ 0.00"
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-700 mb-1 font-medium">
+              ¿Gratis? <span className="text-red-600">*</span>
+            </label>
+            <select
+              value={gratis}
+              onChange={(e) => setGratis(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+            >
+              <option value="">Seleccione</option>
+              <option value="Si">Sí</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4">
             <button
               onClick={onClose}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
