@@ -48,21 +48,26 @@ const RoleList: React.FC = () => {
 
   const handleCreateRole = async (data: { name: string; description: string }) => {
     try {
-      await createRoleMutation.mutateAsync(data);
+      console.log('Creating role with data:', data);
+      const result = await createRoleMutation.mutateAsync(data);
+      console.log('Role created successfully:', result);
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       handleCloseRoleModal();
     } catch (error) {
       console.error('Error creating role:', error);
+      // You might want to show an error message to the user here
     }
   };
 
   const handleUpdateRole = async (data: { id?: string; name: string; description: string }) => {
     try {
+      console.log('Updating role with data:', data);
       if (data.id) {
-        await updateRoleMutation.mutateAsync({ 
+        const result = await updateRoleMutation.mutateAsync({ 
           id: data.id, 
           payload: { name: data.name, description: data.description } 
         });
+        console.log('Role updated successfully:', result);
         queryClient.invalidateQueries({ queryKey: ['roles'] });
       }
       handleCloseRoleModal();

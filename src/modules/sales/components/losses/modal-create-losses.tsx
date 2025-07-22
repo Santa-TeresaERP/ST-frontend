@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { X, Save } from "lucide-react";
 import { FiAlertOctagon } from "react-icons/fi";
 import { useCreateReturn } from "@/modules/sales/hooks/useReturns";
 import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
 import { useFetchSales } from "@/modules/sales/hooks/useSales";
-import { useEffect, useRef } from "react";
+import { useFetchWarehouseStoreItems } from "@/modules/sales/hooks/useInventoryQueries";
 import { returnsAttributes } from "../../types/returns";
 
 interface ModalCreateLossProps {
@@ -27,20 +27,25 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
   const [observations, setObservations] = useState("");
   const [localError, setLocalError] = useState("");
 
-  const { data: products = [] } = useFetchProducts();
+  const { data: storeInventory = [] } = useFetchWarehouseStoreItems();
   const { data: sales = [] } = useFetchSales();
   const createReturnMutation = useCreateReturn();
 
   const productDropdownRef = useRef<HTMLDivElement>(null);
-
+  const salesDropdownRef = useRef<HTMLDivElement>(null);
   const [showSalesDropdown, setShowSalesDropdown] = useState(false);
   const [showProductsDropdown, setShowProductsDropdown] = useState(false);
 
+  // Productos disponibles filtrados por tienda y con cantidad > 0
+  const filteredInventory = storeInventory.filter(
+    (item) => item.storeId === selectedStoreId && item.quantity > 0
+  );
+
   const filteredProducts = productSearch
-    ? products.filter((p) =>
-        p.name.toLowerCase().includes(productSearch.toLowerCase())
+    ? filteredInventory.filter((item) =>
+        item.product.name.toLowerCase().includes(productSearch.toLowerCase())
       )
-    : [];
+    : filteredInventory;
 
   const filteredSales = sales.filter((sale) => {
     const belongsToStore = selectedStoreId
@@ -50,12 +55,9 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
     const matchesSearch =
       formattedDate.toLowerCase().includes(salesSearch.toLowerCase()) ||
       sale.total_income.toString().includes(salesSearch);
-
     return belongsToStore && matchesSearch;
   });
-  const salesDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Cerrar el menú si se hace clic fuera
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -70,7 +72,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
       ) {
         setShowProductsDropdown(false);
       }
-    };
+    }
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
@@ -147,21 +149,29 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
                 placeholder="Buscar producto por nombre"
               />
-              {showProductsDropdown && filteredProducts.length > 0 && (
+
+              {showProductsDropdown && (
                 <ul className="absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {filteredProducts.map((product) => (
-                    <li
-                      key={product.id}
-                      className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
-                      onClick={() => {
-                        setProductSearch(product.name);
-                        setProductId(product.id);
-                        setShowProductsDropdown(false);
-                      }}
-                    >
-                      {product.name}
+                  {filteredProducts.length > 0 ? (
+                    filteredProducts.map((item) => (
+                      <li
+                        key={item.product.id}
+                        className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
+                        onClick={() => {
+                          setProductSearch(item.product.name);
+                          setProductId(item.product.id);
+                          setShowProductsDropdown(false);
+                        }}
+                      >
+                        {item.product.name} ({item.quantity} disponibles)
+                      </li>
+                    ))
+                  ) : (
+                    <li className="px-4 py-2 text-gray-500 text-sm text-center cursor-default">
+                      No hay productos disponibles para la tienda en este
+                      momento.
                     </li>
-                  ))}
+                  )}
                 </ul>
               )}
             </div>
@@ -209,7 +219,8 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
                         setShowSalesDropdown(false);
                       }}
                     >
-                      📅 {new Date(sale.income_date).toLocaleString("es-PE")} — 💵 S/ {sale.total_income}
+                      📅 {new Date(sale.income_date).toLocaleString("es-PE")} —
+                      💵 S/ {sale.total_income}
                     </li>
                   ))}
                 </ul>
@@ -221,14 +232,18 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
               <label className="block text-gray-700 mb-1 font-medium">
                 Razón <span className="text-red-600">*</span>
               </label>
-              <input
-                type="text"
+              <select
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="Razón de la pérdida"
-              />
+              >
+                <option value="">Seleccionar razón</option>
+                <option value="Gasto">Gasto</option>
+                <option value="Vencimiento">Vencimiento</option>
+                <option value="Transporte">Transporte</option>
+              </select>
             </div>
+
 
             {/* Observaciones */}
             <div>

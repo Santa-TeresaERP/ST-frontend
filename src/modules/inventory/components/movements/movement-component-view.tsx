@@ -36,8 +36,9 @@ const MovementComponentView: React.FC = () => {
   const { data: warehouses = [] } = useFetchWarehouses();
   const { data: resources = [] } = useFetchResources();
   const { data: products = [] } = useFetchProducts();
-  const { data: storesResponse } = useFetchStores(1, 100);
-  const stores = storesResponse?.stores || [];
+  const { data: storesData } = useFetchStores();
+  const stores = Array.isArray(storesData) ? storesData : [];
+
 
   // General
   const [searchTerm, setSearchTerm] = useState('');
@@ -47,7 +48,7 @@ const MovementComponentView: React.FC = () => {
   const handleFilter = (newFilters: any) => {
     setFilters(newFilters);
   };
-
+ 
   const getWarehouseName = (id: string) => warehouses.find((w: any) => w.id === id)?.name || id;
   const getResourceName = (id: string) => resources.find((r: any) => r.id === id)?.name || id;
   const getProductName = (id: string) => products.find((p: any) => p.id === id)?.name || id;
