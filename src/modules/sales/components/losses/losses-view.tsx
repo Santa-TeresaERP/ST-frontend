@@ -13,7 +13,6 @@ import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
 import { useFetchSales } from "@/modules/sales/hooks/useSales";
 import { returnsAttributes } from "@/modules/sales/types/returns";
 
-// ✅ NUEVO: recibe ID de tienda como prop
 interface LossesComponentViewProps {
   selectedStoreId?: string;
 }
@@ -34,7 +33,6 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentLoss, setCurrentLoss] = useState<returnsAttributes | null>(null);
 
-  // ✅ Filtro por tienda seleccionada
   const filteredLosses =
     selectedStoreId && !isLoadingSales
       ? losses.filter((loss) => {
@@ -67,13 +65,11 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
     setIsDeleteModalOpen(false);
   };
 
-  // Obtener nombre del producto desde el ID
   const getProductName = (productId: string) => {
     const product = products.find((p) => p.id === productId);
     return product ? product.name : productId;
   };
 
-  // Obtener nombre de la tienda desde el ID de la venta
   const getStoreName = (salesId: string) => {
     const rawSale = sales.find((s) => s.id === salesId);
     const store_name = (rawSale as { store?: { store_name?: string } })?.store
@@ -83,7 +79,6 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 space-y-6 text-gray-700">
-      {/* Botón "Nueva Pérdida" */}
       <div className="flex justify-end items-center">
         <button
           onClick={() => setIsCreateModalOpen(true)}
@@ -178,7 +173,6 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
         </div>
       )}
 
-      {/* Modales */}
       <ModalCreateLoss
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
