@@ -72,7 +72,7 @@ const SalesComponentsView: React.FC<SalesComponentsViewProps> = ({ selectedStore
   // Filtré las ventas según la tienda seleccionada
   const filteredSales = selectedStore
     ? sales.filter((sale) => sale.store_id === selectedStore.id) // Solo mostrar ventas de la tienda seleccionada
-    : sales; // Si no hay tienda seleccionada, mostrar todas las ventas
+    : []; // Si no hay tienda seleccionada, no mostrar ninguna venta
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 space-y-6 text-gray-700">
