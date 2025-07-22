@@ -27,5 +27,4 @@ export interface UpdateSupplierPayload {
   email?: string;
   phone?: number;
   address?: string;
-  status?: boolean;
 }

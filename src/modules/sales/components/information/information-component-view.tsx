@@ -5,12 +5,16 @@ import ModalCreateCashRegister from './modal-create-cashregister';
 import ModalEditStore from '@/modules/sales/components/store/modal-edit-store';
 import { useCashSession, useFetchUsers } from '../../hooks/useCashSession';
 import { CashSessionAttributes } from '../../types/cash_sessions.d';
+
 interface InformationComponentViewProps {
-  selectedStore?: StoreAttributes | null;
-  onStoreUpdate?: (storeId: string) => void; // NUEVO
+  selectedStore: StoreAttributes | null;
+  onStoreUpdate: (storeId: string) => void;
 }
 
-const InformationComponentView: React.FC<InformationComponentViewProps> = ({ selectedStore, onStoreUpdate }) => {
+const InformationComponentView: React.FC<InformationComponentViewProps> = ({
+  selectedStore,
+  onStoreUpdate,    // 📌 asegúrate de desestructurar
+}) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditStoreModalOpen, setIsEditStoreModalOpen] = useState(false);
   const { cashSessions, isLoading, isError, createCashSession } = useCashSession();
@@ -32,7 +36,7 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({ sel
         {selectedStore && (
           <button
             onClick={() => setIsEditStoreModalOpen(true)}
-            className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors ml-auto"
+            className="flex items-center space-x-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors ml-auto"
             style={{ minWidth: 0 }}
           >
             <FiPlus size={18} />
@@ -140,13 +144,8 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({ sel
       <ModalEditStore
         isOpen={isEditStoreModalOpen}
         onClose={() => setIsEditStoreModalOpen(false)}
-        store={selectedStore ?? null}
-        onSuccess={async () => {
-          setIsEditStoreModalOpen(false);
-          if (selectedStore && typeof onStoreUpdate === 'function') {
-            await onStoreUpdate(selectedStore.id);
-          }
-        }}
+        store={selectedStore}
+        onStoreUpdate={onStoreUpdate}  // 📌 pásalo aquí
       />
     </div>
   );

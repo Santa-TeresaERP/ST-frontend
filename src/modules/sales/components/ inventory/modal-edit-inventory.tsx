@@ -8,7 +8,7 @@ import { FiPackage } from 'react-icons/fi';
 <<<<<<< Updated upstream
 // 1. IMPORTAR HOOKS DE OTROS MÓDULOS
 import { useFetchProducts } from '@/modules/production/hook/useProducts';
-import { useFetchStores } from '@/modules/stores/hook/useStores';
+import { useFetchStores } from '@/modules/sales/hooks/useStore';
 
 // Importaciones del módulo actual
 =======
@@ -28,7 +28,8 @@ const ModalEditInventory: React.FC<ModalEditProps> = ({ isOpen, onClose, item })
 <<<<<<< Updated upstream
   // 2. OBTENER DATOS PARA LOS DESPLEGABLES
   const { data: products = [], isLoading: isLoadingProducts } = useFetchProducts();
-  const { data: stores = [], isLoading: isLoadingStores } = useFetchStores();
+  const { data: storesResponse, isLoading: isLoadingStores } = useFetchStores(1, 100);
+  const stores = storesResponse?.stores || [];
   
 =======
 >>>>>>> Stashed changes

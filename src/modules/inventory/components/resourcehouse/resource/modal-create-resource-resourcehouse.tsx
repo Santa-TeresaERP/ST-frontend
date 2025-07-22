@@ -10,6 +10,7 @@ import { Label } from '@/app/components/ui/label';
 import { useFetchSuppliers } from '@/modules/inventory/hook/useSuppliers';
 import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
 import ResourceSearchInput from './ResourceSearchInput';
+import ModalError from '../../ModalError';
 
 type ModalNuevoRecursoProps = {
   isOpen: boolean;
@@ -34,6 +35,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
 }) => {
   const [serverError, setServerError] = React.useState<string | null>(null);
   const [selectedResourceId, setSelectedResourceId] = useState<string>('');
+  const [modalError, setModalError] = useState<string | null>(null);
 
   // Función para limpiar el formulario y estados
   const handleCloseModal = () => {
@@ -96,7 +98,18 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
   const onSubmit = async (data: BuysResourceFormData) => {
     console.log('🚀 onSubmit ejecutado con data:', data);
     console.log('🔍 selectedResourceId:', selectedResourceId);
-    
+
+    if (!data.warehouse_id || data.warehouse_id.trim() === '' || data.warehouse_id === 'Seleccione un almacén') {
+      setServerError('Debe seleccionar un almacén');
+      return;
+    }
+
+    const selectedWarehouse = warehouses?.find(w => w.id === data.warehouse_id);
+    if (selectedWarehouse && selectedWarehouse.status === false) {
+      setModalError('El almacén seleccionado está inactivo. Actívelo para poder utilizarlo.');
+      return;
+    }
+
     // Validar que se haya seleccionado un recurso
     if (!selectedResourceId) {
       console.log('❌ Error: No se seleccionó un recurso');
@@ -169,8 +182,8 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg relative">
-        <div className="bg-red-800 text-white p-5 rounded-t-2xl flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Nuevo Recurso</h2>
+        <div className="bg-gradient-to-r from-red-600 to-red-700 text-white p-5 rounded-t-2xl flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Nuevo Recurso</h2>
           <Button
             variant="ghost"
             size="icon"
@@ -193,6 +206,24 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
           {serverError && (
             <div className="bg-red-100 text-red-700 p-3 rounded-md text-sm border border-red-300">
               {serverError}
+            </div>
+          )}
+          {modalError && (
+            <ModalError
+              message={modalError}
+              onClose={() => setModalError(null)}
+            />
+          )}
+
+          {/* Debug: Mostrar errores de validación */}
+          {Object.keys(errors).length > 0 && (
+            <div className="bg-yellow-100 text-yellow-700 p-3 rounded-md text-sm border border-yellow-300">
+              <strong>Errores de validación:</strong>
+              <ul className="mt-1">
+                {Object.entries(errors).map(([field, error]) => (
+                  <li key={field}>• {field}: {error?.message}</li>
+                ))}
+              </ul>
             </div>
           )}
 
@@ -233,7 +264,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
             {/* supplier_id */}
             <div>
               <Label htmlFor="supplier_id" className="block text-sm font-medium mb-1">
-                Proveedor*
+                Proveedor<span className="text-red-500">*</span>
               </Label>
               {isLoadingSuppliers ? (
                 <div className="animate-pulse bg-gray-200 h-10 rounded-lg"></div>
@@ -260,7 +291,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
             {/* warehouse_id */}
             <div>
               <Label htmlFor="warehouse_id" className="block text-sm font-medium mb-1">
-                Almacén*
+                Almacén<span className="text-red-500">*</span>
               </Label>
               {isLoadingWarehouses ? (
                 <div className="animate-pulse bg-gray-200 h-10 rounded-lg"></div>
@@ -290,7 +321,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
             {/* total_cost */}
             <div>
               <Label htmlFor="total_cost" className="block text-sm font-medium mb-1">
-                Costo Total*
+                Costo Total<span className="text-red-500">*</span>
               </Label>
               <Input
                 id="total_cost"
@@ -306,7 +337,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
             {/* quantity */}
             <div>
               <Label htmlFor="quantity" className="block text-sm font-medium mb-1">
-                Cantidad*
+                Cantidad<span className="text-red-500">*</span>
               </Label>
               <Input
                 id="quantity"
@@ -345,7 +376,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
             {/* type_unit */}
             <div>
               <Label htmlFor="type_unit" className="block text-sm font-medium mb-1">
-                Unidad*
+                Unidad<span className="text-red-500">*</span>
               </Label>
               <select
                 id="type_unit"
@@ -365,7 +396,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
             {/* entry_date */}
             <div>
               <Label htmlFor="entry_date" className="block text-sm font-medium mb-1">
-                Fecha de Entrada*
+                Fecha de Entrada<span className="text-red-500">*</span>
               </Label>
               <Input
                 id="entry_date"
@@ -391,7 +422,7 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
             <Button
               type="submit"
               disabled={isCreating}
-              className="bg-red-800 hover:bg-red-700 text-white disabled:opacity-50"
+              className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-6700 text-white transition flex items-center justify-center space-x-2"
               onClick={() => console.log('🖱️ Button clicked, isCreating:', isCreating)}
             >
               {isCreating ? (
