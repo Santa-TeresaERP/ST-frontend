@@ -31,13 +31,15 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [currentLoss, setCurrentLoss] = useState<returnsAttributes | null>(null);
+  const [currentLoss, setCurrentLoss] = useState<returnsAttributes | null>(
+    null
+  );
 
   const filteredLosses =
     selectedStoreId && !isLoadingSales
       ? losses.filter((loss) => {
           const relatedSale = sales.find((s) => s.id === loss.salesId);
-          return relatedSale?.store?.id === selectedStoreId;
+          return relatedSale?.store_id === selectedStoreId;
         })
       : [];
 
@@ -49,7 +51,9 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
   };
 
   const handleEditLoss = async (
-    updatedLoss: Partial<Omit<returnsAttributes, "id" | "createdAt" | "updatedAt">>
+    updatedLoss: Partial<
+      Omit<returnsAttributes, "id" | "createdAt" | "updatedAt">
+    >
   ) => {
     if (!currentLoss) return;
     await updateReturnMutation.mutateAsync({

@@ -1,24 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { X, Save } from 'lucide-react';
-import { FiAlertOctagon } from 'react-icons/fi';
-import { useFetchProducts } from '@/modules/inventory/hook/useProducts';
-import { useFetchSales } from '@/modules/sales/hooks/useSales';
+import React, { useState, useEffect, useRef } from "react";
+import { X, Save } from "lucide-react";
+import { FiAlertOctagon } from "react-icons/fi";
+import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
+import { useFetchSales } from "@/modules/sales/hooks/useSales";
 
-interface Loss {
-  id: string;
-  productId: string;
-  salesId: string;
-  reason: string;
-  observations: string;
-  quantity: number;
-  createdAt?: string;
-}
+import { returnsAttributes } from "@/modules/sales/types/returns";
 
 interface ModalEditLossProps {
   isOpen: boolean;
   onClose: () => void;
-  currentLoss: Loss | null;
-  onSave: (updatedLoss: Omit<Loss, 'id' | 'createdAt'>) => void;
+  currentLoss: returnsAttributes | null;
+  onSave: (
+    updatedLoss: Omit<returnsAttributes, "id" | "createdAt" | "updatedAt">
+  ) => void;
   selectedStoreId?: string;
 }
 
@@ -27,16 +21,16 @@ const ModalEditLoss: React.FC<ModalEditLossProps> = ({
   onClose,
   currentLoss,
   onSave,
-  selectedStoreId
+  selectedStoreId,
 }) => {
-  const [productSearch, setProductSearch] = useState('');
-  const [productId, setProductId] = useState('');
-  const [salesSearch, setSalesSearch] = useState('');
-  const [salesId, setSalesId] = useState('');
-  const [reason, setReason] = useState('');
-  const [observations, setObservations] = useState('');
+  const [productSearch, setProductSearch] = useState("");
+  const [productId, setProductId] = useState("");
+  const [salesSearch, setSalesSearch] = useState("");
+  const [salesId, setSalesId] = useState("");
+  const [reason, setReason] = useState("");
+  const [observations, setObservations] = useState("");
   const [quantity, setQuantity] = useState<number>(1);
-  const [localError, setLocalError] = useState('');
+  const [localError, setLocalError] = useState("");
 
   const { data: products = [] } = useFetchProducts();
   const { data: sales = [] } = useFetchSales();
@@ -55,29 +49,33 @@ const ModalEditLoss: React.FC<ModalEditLossProps> = ({
 
   const filteredSales = sales.filter((sale) => {
     const belongsToStore = selectedStoreId
-      ? sale.store?.id === selectedStoreId
+      ? sale.store_id === selectedStoreId
       : true;
-    const formattedDate = new Date(sale.income_date).toLocaleString('es-PE');
+
+    const formattedDate = new Date(sale.income_date).toLocaleString("es-PE");
     const matchesSearch =
       formattedDate.toLowerCase().includes(salesSearch.toLowerCase()) ||
       sale.total_income.toString().includes(salesSearch);
+
     return belongsToStore && matchesSearch;
   });
 
   useEffect(() => {
     if (currentLoss && products.length > 0 && sales.length > 0) {
-      const product = products.find(p => p.id === currentLoss.productId);
-      const sale = sales.find(s => s.id === currentLoss.salesId);
-      const formattedDate = sale ? new Date(sale.income_date).toLocaleString('es-PE') : '';
+      const product = products.find((p) => p.id === currentLoss.productId);
+      const sale = sales.find((s) => s.id === currentLoss.salesId);
+      const formattedDate = sale
+        ? new Date(sale.income_date).toLocaleString("es-PE")
+        : "";
 
-      setProductId(currentLoss.productId || '');
-      setProductSearch(product?.name || '');
+      setProductId(currentLoss.productId || "");
+      setProductSearch(product?.name || "");
 
-      setSalesId(currentLoss.salesId || '');
-      setSalesSearch(sale ? `${formattedDate} - S/ ${sale.total_income}` : '');
+      setSalesId(currentLoss.salesId || "");
+      setSalesSearch(sale ? `${formattedDate} - S/ ${sale.total_income}` : "");
 
-      setReason(currentLoss.reason || '');
-      setObservations(currentLoss.observations || '');
+      setReason(currentLoss.reason || "");
+      setObservations(currentLoss.observations || "");
       setQuantity(currentLoss.quantity || 1);
     }
   }, [currentLoss, products, sales]);
@@ -105,7 +103,7 @@ const ModalEditLoss: React.FC<ModalEditLossProps> = ({
     e.preventDefault();
 
     if (!productId || !salesId || !reason || !observations || quantity <= 0) {
-      setLocalError('Por favor, completa todos los campos correctamente.');
+      setLocalError("Por favor, completa todos los campos correctamente.");
       return;
     }
 
@@ -130,7 +128,9 @@ const ModalEditLoss: React.FC<ModalEditLossProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5 text-left">
-          {localError && <p className="text-sm text-red-600 font-medium">{localError}</p>}
+          {localError && (
+            <p className="text-sm text-red-600 font-medium">{localError}</p>
+          )}
 
           <div className="space-y-4">
             {/* Producto */}
@@ -143,7 +143,7 @@ const ModalEditLoss: React.FC<ModalEditLossProps> = ({
                 value={productSearch}
                 onChange={(e) => {
                   setProductSearch(e.target.value);
-                  setProductId('');
+                  setProductId("");
                   setShowProductsDropdown(true);
                 }}
                 onFocus={() => setShowProductsDropdown(true)}
@@ -179,7 +179,7 @@ const ModalEditLoss: React.FC<ModalEditLossProps> = ({
                 value={salesSearch}
                 onChange={(e) => {
                   setSalesSearch(e.target.value);
-                  setSalesId('');
+                  setSalesId("");
                   setShowSalesDropdown(true);
                 }}
                 onFocus={() => setShowSalesDropdown(true)}
@@ -191,18 +191,24 @@ const ModalEditLoss: React.FC<ModalEditLossProps> = ({
                   {(salesSearch
                     ? filteredSales
                     : [...filteredSales]
-                        .sort((a, b) =>
-                          new Date(b.income_date).getTime() - new Date(a.income_date).getTime()
+                        .sort(
+                          (a, b) =>
+                            new Date(b.income_date).getTime() -
+                            new Date(a.income_date).getTime()
                         )
                         .slice(0, 3)
                   ).map((sale) => {
-                    const formatted = new Date(sale.income_date).toLocaleString('es-PE');
+                    const formatted = new Date(sale.income_date).toLocaleString(
+                      "es-PE"
+                    );
                     return (
                       <li
                         key={sale.id}
                         className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
                         onClick={() => {
-                          setSalesSearch(`${formatted} - S/ ${sale.total_income}`);
+                          setSalesSearch(
+                            `${formatted} - S/ ${sale.total_income}`
+                          );
                           setSalesId(sale.id!);
                           setShowSalesDropdown(false);
                         }}
