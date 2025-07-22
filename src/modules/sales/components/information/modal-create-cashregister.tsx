@@ -99,19 +99,18 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-gray-800">Registro Completo de Cierre de Caja</h3>
-            <button 
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 transition-colors"
-              aria-label="Cerrar modal"
-            >
-              <FiX size={24} />
-            </button>
-          </div>
-
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl relative mx-2">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-red-700 to-red-900 text-white p-5 rounded-t-2xl flex items-center justify-center relative">
+          <h3 className="text-xl font-semibold text-center">Registro Completo de Cierre de Caja</h3>
+          <button 
+            onClick={onClose}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
+            aria-label="Cerrar modal"
+          >
+            <FiX size={22} />
+          </button>
+        </div>
           <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Usuario */}
@@ -232,23 +231,101 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
               </div>
             </div>
 
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
-              >
-                Registrar Cierre
-              </button>
+            {/* Tienda */}
+            <div>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Tienda <span className="text-red-600">*</span>
+              </label>
+              <input
+                type="text"
+                value={selectedStore?.store_name || ''}
+                disabled
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 focus:outline-none"
+                placeholder="Nombre de la tienda"
+              />
+              <input type="hidden" {...register('store_id')} value={selectedStore?.id || ''} />
+              {errors.store_id && <p className="text-sm text-red-600 mt-1">{errors.store_id.message}</p>}
             </div>
-          </form>
-        </div>
+
+            {/* Dinero Inicial */}
+            <div>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Dinero Inicial (S/) <span className="text-red-600">*</span>
+              </label>
+              <input
+                type="text"
+                inputMode="decimal"
+                pattern="^[0-9]+(\.[0-9]{1,2})?$"
+                {...register('start_amount')}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
+                placeholder="200.00"
+              />
+              {errors.start_amount && <p className="text-sm text-red-600 mt-1">{errors.start_amount.message}</p>}
+            </div>
+
+            {/* Dinero Final */}
+            <div>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Dinero Final (S/) <span className="text-red-600">*</span>
+              </label>
+              <input
+                type="text"
+                inputMode="decimal"
+                pattern="^[0-9]+(\.[0-9]{1,2})?$"
+                {...register('end_amount')}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
+                placeholder="500.00"
+              />
+              {errors.end_amount && <p className="text-sm text-red-600 mt-1">{errors.end_amount.message}</p>}
+            </div>
+
+            {/* Total Pérdidas */}
+            <div>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Total Pérdidas (S/) <span className="text-red-600">*</span>
+              </label>
+              <input
+                type="text"
+                inputMode="decimal"
+                pattern="^[0-9]+(\.[0-9]{1,2})?$"
+                {...register('total_returns')}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
+                placeholder="20.00"
+              />
+              {errors.total_returns && <p className="text-sm text-red-600 mt-1">{errors.total_returns.message}</p>}
+            </div>
+
+            {/* Fecha de Término */}
+            <div>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Fecha de Término <span className="text-red-600">*</span>
+              </label>
+              <input
+                type="date"
+                {...register('ended_at')}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
+              />
+              {errors.ended_at && <p className="text-sm text-red-600 mt-1">{errors.ended_at.message}</p>}
+            </div>
+          </div>
+
+          {/* Botones */}
+          <div className="flex justify-end space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-600 transition"
+            >
+              Registrar Cierre
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

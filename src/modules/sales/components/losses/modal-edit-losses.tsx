@@ -4,11 +4,21 @@ import { FiAlertOctagon } from 'react-icons/fi';
 import { useFetchProducts } from '@/modules/inventory/hook/useProducts';
 import { useFetchSales } from '@/modules/sales/hooks/useSales';
 
+interface Loss {
+  id: string;
+  productId: string;
+  salesId: string;
+  reason: string;
+  observations: string;
+  quantity: number;
+  createdAt?: string;
+}
+
 interface ModalEditLossProps {
   isOpen: boolean;
   onClose: () => void;
-  currentLoss: any;
-  onSave: (updatedLoss: any) => void;
+  currentLoss: Loss | null;
+  onSave: (updatedLoss: Omit<Loss, 'id' | 'createdAt'>) => void;
   selectedStoreId?: string;
 }
 
@@ -25,7 +35,7 @@ const ModalEditLoss: React.FC<ModalEditLossProps> = ({
   const [salesId, setSalesId] = useState('');
   const [reason, setReason] = useState('');
   const [observations, setObservations] = useState('');
-  const [date, setDate] = useState('');
+  const [quantity, setQuantity] = useState<number>(1);
   const [localError, setLocalError] = useState('');
 
   const { data: products = [] } = useFetchProducts();
@@ -55,11 +65,7 @@ const ModalEditLoss: React.FC<ModalEditLossProps> = ({
   });
 
   useEffect(() => {
-    if (
-      currentLoss &&
-      products.length > 0 &&
-      sales.length > 0
-    ) {
+    if (currentLoss && products.length > 0 && sales.length > 0) {
       const product = products.find(p => p.id === currentLoss.productId);
       const sale = sales.find(s => s.id === currentLoss.salesId);
       const formattedDate = sale ? new Date(sale.income_date).toLocaleString('es-PE') : '';
@@ -72,7 +78,7 @@ const ModalEditLoss: React.FC<ModalEditLossProps> = ({
 
       setReason(currentLoss.reason || '');
       setObservations(currentLoss.observations || '');
-      setDate(currentLoss.createdAt?.split('T')[0] || '');
+      setQuantity(currentLoss.quantity || 1);
     }
   }, [currentLoss, products, sales]);
 
@@ -98,16 +104,16 @@ const ModalEditLoss: React.FC<ModalEditLossProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!productId || !salesId || !reason || !observations || !date) {
-      setLocalError('Por favor, completa todos los campos.');
+    if (!productId || !salesId || !reason || !observations || quantity <= 0) {
+      setLocalError('Por favor, completa todos los campos correctamente.');
       return;
     }
 
-    onSave({ productId, salesId, reason, observations, date });
+    onSave({ productId, salesId, reason, observations, quantity });
     onClose();
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !currentLoss) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -186,26 +192,42 @@ const ModalEditLoss: React.FC<ModalEditLossProps> = ({
                     ? filteredSales
                     : [...filteredSales]
                         .sort((a, b) =>
-                          new Date(b.income_date).getTime() -
-                          new Date(a.income_date).getTime()
+                          new Date(b.income_date).getTime() - new Date(a.income_date).getTime()
                         )
                         .slice(0, 3)
-                  ).map((sale) => (
-                    <li
-                      key={sale.id}
-                      className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
-                      onClick={() => {
-                        const formatted = new Date(sale.income_date).toLocaleString('es-PE');
-                        setSalesSearch(`${formatted} - S/ ${sale.total_income}`);
-                        setSalesId(sale.id!);
-                        setShowSalesDropdown(false);
-                      }}
-                    >
-                      📅 {new Date(sale.income_date).toLocaleString('es-PE')} — 💵 S/ {sale.total_income}
-                    </li>
-                  ))}
+                  ).map((sale) => {
+                    const formatted = new Date(sale.income_date).toLocaleString('es-PE');
+                    return (
+                      <li
+                        key={sale.id}
+                        className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
+                        onClick={() => {
+                          setSalesSearch(`${formatted} - S/ ${sale.total_income}`);
+                          setSalesId(sale.id!);
+                          setShowSalesDropdown(false);
+                        }}
+                      >
+                        📅 {formatted} — 💵 S/ {sale.total_income}
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
+            </div>
+
+            {/* Cantidad */}
+            <div>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Cantidad <span className="text-red-600">*</span>
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={quantity}
+                onChange={(e) => setQuantity(Number(e.target.value))}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                placeholder="Cantidad de productos perdidos"
+              />
             </div>
 
             {/* Razón */}
@@ -235,21 +257,8 @@ const ModalEditLoss: React.FC<ModalEditLossProps> = ({
                 rows={3}
               />
             </div>
-
-            {/* Fecha */}
-            {/*
-            <div>
-              <label className="block text-gray-700 mb-1 font-medium">
-                Fecha <span className="text-red-600">*</span>
-              </label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-              />
-            </div>*/}
           </div>
+
           <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"

@@ -28,7 +28,11 @@ export const useFetchReturn = (id: string) => {
 // Crear una devolución
 export const useCreateReturn = () => {
   const queryClient = useQueryClient()
-  return useMutation<returnsAttributes, Error, Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt'>>({
+  return useMutation<
+    returnsAttributes,
+    Error,
+    Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt'>
+  >({
     mutationFn: createReturn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['returns'] })
@@ -39,7 +43,14 @@ export const useCreateReturn = () => {
 // Actualizar una devolución
 export const useUpdateReturn = () => {
   const queryClient = useQueryClient()
-  return useMutation<returnsAttributes, Error, { id: string; payload: Partial<Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt'>> }>({
+  return useMutation<
+    returnsAttributes,
+    Error,
+    {
+      id: string
+      payload: Partial<Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt'>>
+    }
+  >({
     mutationFn: ({ id, payload }) => updateReturn(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['returns'] })

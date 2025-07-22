@@ -1,40 +1,28 @@
+import api from '@/core/config/client';
 import { SalesChannel } from '../types/salesChannel';
 
 const BASE_URL = '/sales_channel';
 
 export const getSalesChannels = async (): Promise<SalesChannel[]> => {
-  const res = await fetch(BASE_URL);
-  if (!res.ok) throw new Error('Error al obtener canales de venta');
-  return res.json();
+  const res = await api.get<SalesChannel[]>(BASE_URL);
+  return res.data;
 };
 
 export const getSalesChannel = async (id: string): Promise<SalesChannel> => {
-  const res = await fetch(`${BASE_URL}/${id}`);
-  if (!res.ok) throw new Error('Error al obtener canal de venta');
-  return res.json();
+  const res = await api.get<SalesChannel>(`${BASE_URL}/${id}`);
+  return res.data;
 };
 
 export const createSalesChannel = async (data: Omit<SalesChannel, 'id'>): Promise<SalesChannel> => {
-  const res = await fetch(BASE_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Error al crear canal de venta');
-  return res.json();
+  const res = await api.post<SalesChannel>(BASE_URL, data);
+  return res.data;
 };
 
 export const updateSalesChannel = async (id: string, data: Partial<SalesChannel>): Promise<SalesChannel> => {
-  const res = await fetch(`${BASE_URL}/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Error al actualizar canal de venta');
-  return res.json();
+  const res = await api.patch<SalesChannel>(`${BASE_URL}/${id}`, data);
+  return res.data;
 };
 
 export const deleteSalesChannel = async (id: string): Promise<void> => {
-  const res = await fetch(`${BASE_URL}/${id}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error('Error al eliminar canal de venta');
+  await api.delete(`${BASE_URL}/${id}`);
 }; 

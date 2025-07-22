@@ -46,9 +46,7 @@ const Dashboard = () => {
         ]} />
 
         <DepartmentSection title="Departamento de Alquileres" items={[
-          { name: "Santa Catalina", icon: "church.svg" },
-          { name: "Goyeneche", icon: "church.svg" },
-          { name: "Santa Marta", icon: "church.svg" },
+          { name: "Alquileres", icon: "alquilar.png" },
         ]} />
       </main>
     </div>

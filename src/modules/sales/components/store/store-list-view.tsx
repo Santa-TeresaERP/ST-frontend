@@ -89,7 +89,7 @@ const StoreListView: React.FC<StoreListViewProps> = ({
         <h2 className="text-xl font-semibold text-gray-900">Seleccionar Tienda</h2>
         <Button 
           onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+          className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
         >
           <FiPlus size={16} /> Nueva Tienda
         </Button>
