@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { X, Save } from "lucide-react";
 import { FiAlertOctagon } from "react-icons/fi";
 import { useCreateReturn } from "@/modules/sales/hooks/useReturns";
-import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
 import { useFetchSales } from "@/modules/sales/hooks/useSales";
 import { useFetchWarehouseStoreItems } from "@/modules/sales/hooks/useInventoryQueries";
 import { returnsAttributes } from "../../types/returns";
+import { returnSchema } from "@/modules/sales/schemas/returnsSchema";
 
 interface ModalCreateLossProps {
   isOpen: boolean;
@@ -25,18 +25,18 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
   const [salesId, setSalesId] = useState("");
   const [reason, setReason] = useState("");
   const [observations, setObservations] = useState("");
+  const [quantity, setQuantity] = useState(1);
   const [localError, setLocalError] = useState("");
 
   const { data: storeInventory = [] } = useFetchWarehouseStoreItems();
   const { data: sales = [] } = useFetchSales();
-  const createReturnMutation = useCreateReturn();
+  const { mutateAsync, isLoading } = useCreateReturn();
 
   const productDropdownRef = useRef<HTMLDivElement>(null);
   const salesDropdownRef = useRef<HTMLDivElement>(null);
   const [showSalesDropdown, setShowSalesDropdown] = useState(false);
   const [showProductsDropdown, setShowProductsDropdown] = useState(false);
 
-  // Productos disponibles filtrados por tienda y con cantidad > 0
   const filteredInventory = storeInventory.filter(
     (item) => item.storeId === selectedStoreId && item.quantity > 0
   );
@@ -81,19 +81,24 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLocalError("");
 
-    if (!productId || !salesId || !reason || !observations) {
-      setLocalError("Por favor, completa todos los campos.");
+    const validation = returnSchema.safeParse({
+      productId,
+      salesId,
+      reason,
+      observations,
+      quantity,
+    });
+
+    if (!validation.success) {
+      console.error("Errores de validación:", validation.error.format());
+      setLocalError("Por favor, completa todos los campos requeridos.");
       return;
     }
 
     try {
-      await createReturnMutation.mutateAsync({
-        productId,
-        salesId,
-        reason,
-        observations,
-      });
+      await mutateAsync(validation.data);
       onClose();
       setProductSearch("");
       setProductId("");
@@ -101,7 +106,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
       setSalesId("");
       setReason("");
       setObservations("");
-      setLocalError("");
+      setQuantity(1);
     } catch (error) {
       console.error("Error al guardar la pérdida:", error);
       setLocalError("Hubo un error al guardar la pérdida.");
@@ -115,9 +120,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl relative mx-2">
         <div className="bg-gradient-to-r from-red-700 to-red-900 text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
           <FiAlertOctagon size={24} />
-          <h2 className="text-xl font-semibold text-center">
-            Registrar Pérdida
-          </h2>
+          <h2 className="text-xl font-semibold text-center">Registrar Pérdida</h2>
           <button
             onClick={onClose}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
@@ -131,133 +134,131 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
             <p className="text-sm text-red-600 font-medium">{localError}</p>
           )}
 
-          <div className="space-y-4">
-            {/* Selector de producto */}
-            <div className="relative" ref={productDropdownRef}>
-              <label className="block text-gray-700 mb-1 font-medium">
-                Producto <span className="text-red-600">*</span>
-              </label>
-              <input
-                type="text"
-                value={productSearch}
-                onChange={(e) => {
-                  setProductSearch(e.target.value);
-                  setProductId("");
-                  setShowProductsDropdown(true);
-                }}
-                onFocus={() => setShowProductsDropdown(true)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="Buscar producto por nombre"
-              />
-
-              {showProductsDropdown && (
-                <ul className="absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {filteredProducts.length > 0 ? (
-                    filteredProducts.map((item) => (
-                      <li
-                        key={item.product.id}
-                        className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
-                        onClick={() => {
-                          setProductSearch(item.product.name);
-                          setProductId(item.product.id);
-                          setShowProductsDropdown(false);
-                        }}
-                      >
-                        {item.product.name} ({item.quantity} disponibles)
-                      </li>
-                    ))
-                  ) : (
-                    <li className="px-4 py-2 text-gray-500 text-sm text-center cursor-default">
-                      No hay productos disponibles para la tienda en este
-                      momento.
-                    </li>
-                  )}
-                </ul>
-              )}
-            </div>
-
-            {/* Selector de venta */}
-            <div className="relative" ref={salesDropdownRef}>
-              <label className="block text-gray-700 mb-1 font-medium">
-                Venta <span className="text-red-600">*</span>
-              </label>
-              <input
-                type="text"
-                value={salesSearch}
-                onChange={(e) => {
-                  setSalesSearch(e.target.value);
-                  setSalesId("");
-                  setShowSalesDropdown(true);
-                }}
-                onFocus={() => setShowSalesDropdown(true)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="Buscar por fecha o monto"
-              />
-              {showSalesDropdown && (
-                <ul className="absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {(salesSearch
-                    ? filteredSales
-                    : [...filteredSales]
-                        .sort(
-                          (a, b) =>
-                            new Date(b.income_date).getTime() -
-                            new Date(a.income_date).getTime()
-                        )
-                        .slice(0, 3)
-                  ).map((sale) => (
+          {/* Producto */}
+          <div className="relative" ref={productDropdownRef}>
+            <label className="block text-gray-700 mb-1 font-medium">
+              Producto <span className="text-red-600">*</span>
+            </label>
+            <input
+              type="text"
+              value={productSearch}
+              onChange={(e) => {
+                setProductSearch(e.target.value);
+                setProductId("");
+                setShowProductsDropdown(true);
+              }}
+              onFocus={() => setShowProductsDropdown(true)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+              placeholder="Buscar producto por nombre"
+            />
+            {showProductsDropdown && (
+              <ul className="absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {filteredProducts.length > 0 ? (
+                  filteredProducts.map((item) => (
                     <li
-                      key={sale.id}
+                      key={item.product.id}
                       className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
                       onClick={() => {
-                        const formatted = new Date(
-                          sale.income_date
-                        ).toLocaleString("es-PE");
-                        setSalesSearch(
-                          `${formatted} - S/ ${sale.total_income}`
-                        );
-                        setSalesId(sale.id!);
-                        setShowSalesDropdown(false);
+                        setProductSearch(item.product.name);
+                        setProductId(item.product.id);
+                        setShowProductsDropdown(false);
                       }}
                     >
-                      📅 {new Date(sale.income_date).toLocaleString("es-PE")} —
-                      💵 S/ {sale.total_income}
+                      {item.product.name} ({item.quantity} disponibles)
                     </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+                  ))
+                ) : (
+                  <li className="px-4 py-2 text-gray-500 text-sm text-center cursor-default">
+                    No hay productos disponibles para la tienda en este momento.
+                  </li>
+                )}
+              </ul>
+            )}
+          </div>
 
-            {/* Razón */}
-            <div>
-              <label className="block text-gray-700 mb-1 font-medium">
-                Razón <span className="text-red-600">*</span>
-              </label>
-              <select
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-              >
-                <option value="">Seleccionar razón</option>
-                <option value="Gasto">Gasto</option>
-                <option value="Vencimiento">Vencimiento</option>
-                <option value="Transporte">Transporte</option>
-              </select>
-            </div>
+          {/* Venta */}
+          <div className="relative" ref={salesDropdownRef}>
+            <label className="block text-gray-700 mb-1 font-medium">
+              Venta <span className="text-red-600">*</span>
+            </label>
+            <input
+              type="text"
+              value={salesSearch}
+              onChange={(e) => {
+                setSalesSearch(e.target.value);
+                setSalesId("");
+                setShowSalesDropdown(true);
+              }}
+              onFocus={() => setShowSalesDropdown(true)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+              placeholder="Buscar por fecha o monto"
+            />
+            {showSalesDropdown && (
+              <ul className="absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {(salesSearch
+                  ? filteredSales
+                  : [...filteredSales]
+                      .sort((a, b) => new Date(b.income_date).getTime() - new Date(a.income_date).getTime())
+                      .slice(0, 3)
+                ).map((sale) => (
+                  <li
+                    key={sale.id}
+                    className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
+                    onClick={() => {
+                      const formatted = new Date(sale.income_date).toLocaleString("es-PE");
+                      setSalesSearch(`${formatted} - S/ ${sale.total_income}`);
+                      setSalesId(sale.id!);
+                      setShowSalesDropdown(false);
+                    }}
+                  >
+                    🗕️ {new Date(sale.income_date).toLocaleString("es-PE")} — 💵 S/ {sale.total_income}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
+          {/* Cantidad */}
+          <div>
+            <label className="block text-gray-700 mb-1 font-medium">
+              Cantidad <span className="text-red-600">*</span>
+            </label>
+            <input
+              type="number"
+              value={quantity}
+              min={1}
+              onChange={(e) => setQuantity(Number(e.target.value))}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+              placeholder="Cantidad de productos devueltos"
+            />
+          </div>
 
-            {/* Observaciones */}
-            <div>
-              <label className="block text-gray-700 mb-1 font-medium">
-                Observación <span className="text-red-600">*</span>
-              </label>
-              <textarea
-                value={observations}
-                onChange={(e) => setObservations(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="Detalle u observaciones"
-                rows={3}
-              />
-            </div>
+          {/* Razón */}
+          <div>
+            <label className="block text-gray-700 mb-1 font-medium">
+              Razón <span className="text-red-600">*</span>
+            </label>
+            <input
+              type="text"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+              placeholder="Razón de la pérdida"
+            />
+          </div>
+
+          {/* Observaciones */}
+          <div>
+            <label className="block text-gray-700 mb-1 font-medium">
+              Observación <span className="text-red-600">*</span>
+            </label>
+            <textarea
+              value={observations}
+              onChange={(e) => setObservations(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+              placeholder="Detalle u observaciones"
+              rows={3}
+            />
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
@@ -270,7 +271,10 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-600 transition flex items-center gap-2"
+              disabled={isLoading}
+              className={`px-4 py-2 rounded-lg text-white flex items-center gap-2 transition ${
+                isLoading ? "bg-red-400" : "bg-red-800 hover:bg-red-600"
+              }`}
             >
               <Save size={18} /> Guardar
             </button>
