@@ -168,29 +168,30 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
                 placeholder="Buscar producto por nombre"
               />
-              {showProductsDropdown && filteredProducts.length > 0 && (
+              {showProductsDropdown && (
                 <ul className="absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {filteredProducts.map((product) => (
-                    <li
-                      key={item.product.id}
-                      className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
-                      onClick={() => {
-                        setProductSearch(item.product.name);
-                        setProductId(item.product.id);
-                        setShowProductsDropdown(false);
-                      }}
-                    >
-                      {item.product.name} ({item.quantity} disponibles)
+                  {filteredProducts.length > 0 ? (
+                    filteredProducts.map((item) => (
+                      <li
+                        key={item.product.id}
+                        className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
+                        onClick={() => {
+                          setProductSearch(item.product.name);
+                          setProductId(item.product.id);
+                          setShowProductsDropdown(false);
+                        }}
+                      >
+                        {item.product.name} ({item.quantity} disponibles)
+                      </li>
+                    ))
+                  ) : (
+                    <li className="px-4 py-2 text-gray-500 text-sm text-center cursor-default">
+                      No hay productos disponibles para la tienda en este momento.
                     </li>
-                  ))
-                ) : (
-                  <li className="px-4 py-2 text-gray-500 text-sm text-center cursor-default">
-                    No hay productos disponibles para la tienda en este momento.
-                  </li>
-                )}
-              </ul>
-            )}
-          </div>
+                  )}
+                </ul>
+              )}
+            </div>
 
           {/* Venta */}
           <div className="relative" ref={salesDropdownRef}>
@@ -283,8 +284,9 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
               rows={3}
             />
           </div>
+        </div>
 
-          <div className="flex justify-end space-x-3 pt-4">
+        <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"
               onClick={onClose}
@@ -294,15 +296,15 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
             </button>
             <button
               type="submit"
-              disabled={!selectedStoreId}
+              disabled={!selectedStoreId || isPending}
               className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
-                selectedStoreId 
+                selectedStoreId && !isPending
                   ? 'bg-red-800 text-white hover:bg-red-600' 
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >
               <Save size={18} /> 
-              {selectedStoreId ? 'Guardar' : 'Selecciona Tienda'}
+              {isPending ? 'Guardando...' : selectedStoreId ? 'Guardar' : 'Selecciona Tienda'}
             </button>
           </div>
         </form>

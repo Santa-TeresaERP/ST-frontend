@@ -107,9 +107,17 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
           }
         >
           <FiPlus className="mr-2 h-5 w-5" />
-          Nueva Pérdida
+          {selectedStoreId && isStoreOperational(storeSessionData) ? 'Nueva Pérdida' : 'Selecciona Tienda'}
         </button>
       </div>
+
+      {!selectedStoreId && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <p className="text-yellow-800">
+            ⚠️ <strong>Tienda requerida:</strong> Selecciona una tienda en el panel principal para gestionar las pérdidas.
+          </p>
+        </div>
+      )}
 
       <h2 className="text-2xl font-bold text-red-600 flex items-center space-x-2">
         <FiAlertOctagon className="text-red-600" size={24} />

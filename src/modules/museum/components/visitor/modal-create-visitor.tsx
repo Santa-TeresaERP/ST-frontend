@@ -21,7 +21,7 @@ export interface VisitorData {
   gratis: string;
 }
 
-const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose, onSave }) => {
+const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose }) => {
   const user = useAuthStore((state) => state.user);
   
   const [pagoOptions, setPagoOptions] = useState<string[]>([
@@ -41,7 +41,7 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
   const [fecha, setFecha] = useState(() => new Date().toISOString().split('T')[0]);
   const [monto, setMonto] = useState('');
   const [gratis, setGratis] = useState('');
-  const [error, setError] = useState('');
+  const [error] = useState('');
 
   // Estados para mini-modal
   const [miniOpen, setMiniOpen] = useState<'none' | 'pago' | 'canal'>('none');

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { FiPackage, FiPlus, FiEdit, FiTrash2 } from 'react-icons/fi';
 import { useFetchWarehouseStoreItems, useDeleteWarehouseStoreItem } from '../../hooks/useInventoryQueries';
 import { WarehouseStoreItem } from '../../types/inventory.types';
-import { StoreAttributes } from '@/modules/stores/types/store';
+import { StoreAttributes } from '@/modules/sales/types/store';
 import { useCheckStoreActiveSession } from '../../hooks/useCashSession';
 import { isStoreOperational, getStoreOperationalMessage } from '../../utils/store-status';
 import ModalCreateInventory from './modal-create-inventory';
@@ -55,27 +55,42 @@ const InventoryComponentsView: React.FC<InventoryComponentsViewProps> = ({ selec
     setSelectedItem(null);
   };
 
+  // Filtrar inventario por tienda seleccionada
+  const filteredInventory = selectedStore
+    ? inventory.filter((item) => item.storeId === selectedStore.id)
+    : inventory;
+
   return (
     <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 space-y-6 text-gray-700">
       <div className="flex justify-end items-center">
         <button
           onClick={() => setCreateModalOpen(true)}
-          disabled={!!(selectedStore && !isStoreOperational(storeSessionData))}
+          disabled={!selectedStore || !isStoreOperational(storeSessionData)}
           className={`flex items-center px-4 py-2 rounded-lg transition-all ${
-            !selectedStore || isStoreOperational(storeSessionData)
+            selectedStore && isStoreOperational(storeSessionData)
               ? "bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white"
               : "bg-gray-300 text-gray-500 cursor-not-allowed"
           }`}
           title={
-            selectedStore && !isStoreOperational(storeSessionData)
-              ? getStoreOperationalMessage(storeSessionData)
-              : "Crear nuevo producto"
+            !selectedStore 
+              ? "Seleccione una tienda primero" 
+              : !isStoreOperational(storeSessionData)
+                ? getStoreOperationalMessage(storeSessionData)
+                : "Crear nuevo producto"
           }
         >
           <FiPlus className="mr-2 h-5 w-5" />
-          Nuevo Producto
+          {selectedStore && isStoreOperational(storeSessionData) ? 'Nuevo Producto' : 'Selecciona Tienda'}
         </button>
       </div>
+
+      {!selectedStore && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <p className="text-yellow-800">
+            ⚠️ <strong>Tienda requerida:</strong> Selecciona una tienda en el panel principal para gestionar el inventario.
+          </p>
+        </div>
+      )}
 
       {selectedStore && !isStoreOperational(storeSessionData) && (
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
@@ -108,21 +123,29 @@ const InventoryComponentsView: React.FC<InventoryComponentsViewProps> = ({ selec
                 </tr>
               </thead>
               <tbody>
-                {inventory.map((item) => (
-                  <tr key={item.id} className="border-t hover:bg-gray-50">
-                    <td className="px-4 py-2 text-center">{item.product.name}</td>
-                    <td className="px-4 py-2 text-center">{item.quantity}</td>
-                    <td className="px-4 py-2 text-center">{new Date(item.updatedAt).toLocaleDateString()}</td>
-                    <td className="px-4 py-2 text-center flex justify-center space-x-3">
-                      <button onClick={() => handleOpenEditModal(item)} className="text-blue-500 hover:text-yellow-600">
-                        <FiEdit size={18} />
-                      </button>
-                      <button onClick={() => handleOpenDeleteModal(item)} className="text-red-500 hover:text-red-600">
-                        <FiTrash2 size={18} />
-                      </button>
+                {filteredInventory.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
+                      {selectedStore ? 'No hay productos en inventario para esta tienda' : 'Selecciona una tienda para ver el inventario'}
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredInventory.map((item) => (
+                    <tr key={item.id} className="border-t hover:bg-gray-50">
+                      <td className="px-4 py-2 text-center">{item.product.name}</td>
+                      <td className="px-4 py-2 text-center">{item.quantity}</td>
+                      <td className="px-4 py-2 text-center">{new Date(item.updatedAt).toLocaleDateString()}</td>
+                      <td className="px-4 py-2 text-center flex justify-center space-x-3">
+                        <button onClick={() => handleOpenEditModal(item)} className="text-blue-500 hover:text-yellow-600">
+                          <FiEdit size={18} />
+                        </button>
+                        <button onClick={() => handleOpenDeleteModal(item)} className="text-red-500 hover:text-red-600">
+                          <FiTrash2 size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
