@@ -1,42 +1,28 @@
-import  { PaymentMethod } from '@/modules/museum/types/paymentMethod';
+import api from '@/core/config/client';
+import { PaymentMethod } from '../types/paymentMethod';
 
-const BASE_URL = '/payment_method';
+const BASE_URL = '/paymentMethod';
 
 export const getPaymentMethods = async (): Promise<PaymentMethod[]> => {
-  const res = await fetch(BASE_URL);
-  if (!res.ok) throw new Error('Error al obtener métodos de pago');
-  return res.json();
+  const res = await api.get<PaymentMethod[]>(BASE_URL);
+  return res.data;
 };
 
 export const getPaymentMethod = async (id: string): Promise<PaymentMethod> => {
-  const res = await fetch(`${BASE_URL}/${id}`);
-  if (!res.ok) throw new Error('Error al obtener el método de pago');
-  return res.json();
+  const res = await api.get<PaymentMethod>(`${BASE_URL}/${id}`);
+  return res.data;
 };
 
 export const createPaymentMethod = async (data: Omit<PaymentMethod, 'id'>): Promise<PaymentMethod> => {
-  const res = await fetch(BASE_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Error al crear método de pago');
-  return res.json();
+  const res = await api.post<PaymentMethod>(BASE_URL, data);
+  return res.data;
 };
 
 export const updatePaymentMethod = async (id: string, data: Partial<PaymentMethod>): Promise<PaymentMethod> => {
-  const res = await fetch(`${BASE_URL}/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Error al actualizar método de pago');
-  return res.json();
+  const res = await api.patch<PaymentMethod>(`${BASE_URL}/${id}`, data);
+  return res.data;
 };
 
 export const deletePaymentMethod = async (id: string): Promise<void> => {
-  const res = await fetch(`${BASE_URL}/${id}`, {
-    method: 'DELETE',
-  });
-  if (!res.ok) throw new Error('Error al eliminar método de pago');
+  await api.delete(`${BASE_URL}/${id}`);
 };
