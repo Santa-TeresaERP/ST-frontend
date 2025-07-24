@@ -1,7 +1,7 @@
 import React, {  } from 'react';
 import { FiX } from 'react-icons/fi';
 import { CashSessionAttributes, CreateCashSessionPayload, CloseCashSessionPayload } from '../../types/cash-session';
-import { StoreAttributes } from '@/modules/stores/types/store';
+import { StoreAttributes } from '@/modules/sales/types/store';
 
 interface ModalCreateCashRegisterProps {
   isOpen: boolean;

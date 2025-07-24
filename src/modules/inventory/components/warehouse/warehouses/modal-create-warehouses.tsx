@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import { X } from "lucide-react";
 import { useCreateWarehouse } from "../../../hook/useWarehouses";
@@ -101,7 +102,7 @@ const ModalCreateWarehousesView: React.FC<ModalCreateWarehousesViewProps> = ({ s
         {/* Formulario */}
         <form className="p-6 space-y-6" onSubmit={handleSubmit}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-rigth">
+            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-right">
               Nombre <span className="ml-2 text-red-500">*</span>
             </label>
             <input
@@ -116,7 +117,7 @@ const ModalCreateWarehousesView: React.FC<ModalCreateWarehousesViewProps> = ({ s
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-rigth">
+            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-right">
               Locación <span className="ml-2 text-red-500">*</span>
             </label>
             <input
@@ -131,7 +132,7 @@ const ModalCreateWarehousesView: React.FC<ModalCreateWarehousesViewProps> = ({ s
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-rigth">
+            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-right">
               Capacidad <span className="ml-2 text-red-500">*</span>
             </label>
             <input
@@ -147,7 +148,7 @@ const ModalCreateWarehousesView: React.FC<ModalCreateWarehousesViewProps> = ({ s
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-rigth">
+            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-right">
               Observaciones
             </label>
             <textarea
@@ -194,4 +195,3 @@ const ModalCreateWarehousesView: React.FC<ModalCreateWarehousesViewProps> = ({ s
 };
 
 export default ModalCreateWarehousesView;
-// ...resto del código...

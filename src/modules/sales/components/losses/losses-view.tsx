@@ -37,7 +37,9 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [currentLoss, setCurrentLoss] = useState<returnsAttributes | null>(null);
+  const [currentLoss, setCurrentLoss] = useState<returnsAttributes | null>(
+    null
+  );
 
   const filteredLosses =
     selectedStoreId && !isLoadingSales
@@ -55,7 +57,9 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
   };
 
   const handleEditLoss = async (
-    updatedLoss: Partial<Omit<returnsAttributes, "id" | "createdAt" | "updatedAt">>
+    updatedLoss: Partial<
+      Omit<returnsAttributes, "id" | "createdAt" | "updatedAt">
+    >
   ) => {
     if (!currentLoss) return;
     await updateReturnMutation.mutateAsync({
@@ -236,24 +240,7 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
       <ModalEditLoss
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        currentLoss={
-          currentLoss && currentLoss.id
-            ? {
-                ...currentLoss,
-                id: String(currentLoss.id),
-                createdAt: currentLoss.createdAt
-                  ? typeof currentLoss.createdAt === "string"
-                    ? currentLoss.createdAt
-                    : currentLoss.createdAt.toISOString()
-                  : undefined,
-                updatedAt: currentLoss.updatedAt
-                  ? typeof currentLoss.updatedAt === "string"
-                    ? currentLoss.updatedAt
-                    : currentLoss.updatedAt.toISOString()
-                  : undefined,
-              }
-            : null
-        }
+        currentLoss={currentLoss}
         onSave={handleEditLoss}
         selectedStoreId={selectedStoreId}
       />
