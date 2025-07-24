@@ -1,5 +1,5 @@
 // Utilidades para validar el estado de las tiendas
-import { StoreAttributes } from '@/modules/stores/types/store';
+import { StoreAttributes } from '@/modules/sales/types/store.d';
 
 export interface StoreValidationResult {
   isEnabled: boolean;

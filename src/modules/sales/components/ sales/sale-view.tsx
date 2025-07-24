@@ -7,7 +7,7 @@ import ModalDetailSales from './modal-details-sales';
 import { useFetchSales } from '../../hooks/useSales';
 import { useFetchStores } from '@/modules/sales/hooks/useStore';
 import { salesAttributes } from '../../types/sales';
-import { StoreAttributes } from '@/modules/stores/types/store';
+import { StoreAttributes } from '@/modules/sales/types/store';
 import { useCheckStoreActiveSession } from '../../hooks/useCashSession';
 import { isStoreOperational, getStoreOperationalMessage } from '../../utils/store-status';
 
@@ -19,7 +19,10 @@ interface SalesComponentsViewProps {
 const SalesComponentsView: React.FC<SalesComponentsViewProps> = ({ selectedStore }) => {
   // Obtengo las ventas y las tiendas usando los hooks correspondientes
   const { data: sales = [], isLoading, error } = useFetchSales();
-  const { data: stores = [] } = useFetchStores();
+  const { data: storeResponse } = useFetchStores();
+  
+  // Extraer el arreglo de tiendas de la respuesta
+  const stores = storeResponse?.stores || [];
   
   // Hook para verificar si la tienda tiene una sesión de caja activa
   const { data: storeSessionData } = useCheckStoreActiveSession(selectedStore?.id);
@@ -137,12 +140,6 @@ const SalesComponentsView: React.FC<SalesComponentsViewProps> = ({ selectedStore
           <small className="text-orange-600">Para realizar ventas, la tienda debe tener una sesión de caja activa.</small>
         </div>
       )}
-
-      {/* Título de la sección */}
-      <h2 className="text-2xl font-bold text-red-700 flex items-center space-x-2">
-        <FiShoppingCart className="text-red-600" size={24} />
-        <span>Información de Ventas</span>
-      </h2>
 
       {/* Tabla de ventas */}
       <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm bg-white">

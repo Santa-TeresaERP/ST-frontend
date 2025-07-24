@@ -14,6 +14,7 @@ import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
 import { useFetchSales } from "@/modules/sales/hooks/useSales";
 import { useCheckStoreActiveSession } from "@/modules/sales/hooks/useCashSession";
 import { isStoreOperational, getStoreOperationalMessage } from "@/modules/sales/utils/store-status";
+import { returnsAttributes } from "@/modules/sales/types/returns";
 
 interface LossesComponentViewProps {
   selectedStoreId?: string;
