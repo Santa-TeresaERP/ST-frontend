@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from 'react';
 import { FiInfo, FiMapPin, FiHome, FiClipboard, FiDollarSign, FiPlus } from 'react-icons/fi';
-import { StoreAttributes } from '@/modules/stores/types/store';
+import { StoreAttributes } from '@/modules/sales/types/store.d';
 import ModalCreateCashRegister from './modal-create-cashregister';
 import { CreateCashSessionPayload, CloseCashSessionPayload } from '../../types/cash-session';
 import { useCreateCashSession, useCloseCashSession, useFetchActiveCashSession, useFetchCashSessionHistory, useFetchCashSessionDetails } from '../../hooks/useCashSession';
@@ -14,7 +14,10 @@ interface InformationComponentViewProps {
   onStoreUpdate: (storeId: string) => Promise<void>;
 }
 
-const InformationComponentView: React.FC<InformationComponentViewProps> = ({ selectedStore }) => {
+const InformationComponentView: React.FC<InformationComponentViewProps> = ({
+  selectedStore,
+  onStoreUpdate,    // 📌 asegúrate de desestructurar
+}) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInitialSetup, setIsInitialSetup] = useState(true);
   const [, setIsEditStoreModalOpen] = useState(false);
@@ -334,7 +337,7 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({ sel
         {selectedStore && (
           <button
             onClick={() => setIsEditStoreModalOpen(true)}
-            className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors ml-auto"
+            className="flex items-center space-x-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors ml-auto"
             style={{ minWidth: 0 }}
           >
             <FiPlus size={18} />

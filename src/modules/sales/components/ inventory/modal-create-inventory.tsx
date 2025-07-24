@@ -8,7 +8,7 @@ import { FiPackage } from 'react-icons/fi';
 
 // 1. IMPORTAR HOOKS DE OTROS MÓDULOS
 import { useFetchProducts } from '@/modules/production/hook/useProducts'; // Asegúrate que esta ruta es correcta
-import { useFetchStores } from '@/modules/stores/hook/useStores';         // Asegúrate que esta ruta es correcta
+import { useFetchStores } from '@/modules/sales/hooks/useStore';         // Hook corregido para obtener tiendas
 
 // Importaciones del módulo actual
 import { useCreateWarehouseStoreItem } from '../../hooks/useInventoryQueries';

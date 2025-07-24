@@ -5,7 +5,7 @@ import ModalCreateSales from './modal-create-sales';
 import ModalEditSales from './modal-edit-sales';
 import ModalDetailSales from './modal-details-sales';
 import { useFetchSales } from '../../hooks/useSales';
-import { useFetchStores } from '@/modules/stores/hook/useStores';
+import { useFetchStores } from '@/modules/sales/hooks/useStore';
 import { salesAttributes } from '../../types/sales';
 import { StoreAttributes } from '@/modules/stores/types/store';
 import { useCheckStoreActiveSession } from '../../hooks/useCashSession';
@@ -76,8 +76,30 @@ const SalesComponentsView: React.FC<SalesComponentsViewProps> = ({ selectedStore
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 space-y-6 text-gray-700">
-      {/* Botón para abrir el modal de creación de ventas */}
-      <div className="flex justify-end items-center">
+
+      {/* Título de la sección */}
+      <h2 className="text-2xl font-bold text-red-700 flex items-center space-x-2">
+        <FiShoppingCart className="text-red-600" size={24} />
+        <span>Información de Ventas</span>
+      </h2>
+
+      {/* Estadísticas y botón */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-grow">
+          <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+            <h3 className="text-sm font-medium text-green-800">Costo Total del Mes</h3>
+            <p className="text-2xl font-bold text-green-600">
+              S/ {
+                filteredSales
+                  .filter((sale) => new Date(sale.income_date).getMonth() === new Date().getMonth() &&
+                                  new Date(sale.income_date).getFullYear() === new Date().getFullYear())
+                  .reduce((sum, sale) => sum + (sale.total_income || 0), 0)
+                  .toFixed(2)
+              }
+            </p>
+          </div>
+        </div>
+
         <button
           onClick={() => setIsModalOpen(true)}
           disabled={!selectedStore || !isStoreOperational(storeSessionData)}

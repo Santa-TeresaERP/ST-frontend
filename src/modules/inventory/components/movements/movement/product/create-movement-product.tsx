@@ -5,10 +5,12 @@ import { movementProductSchema } from '@/modules/inventory/schemas/movementProdu
 import { createMovement, CreateMovementProductPayload } from '@/modules/inventory/action/movementProduct';
 import { useFetchWarehouses } from '@/modules/inventory/hook/useWarehouses';
 import { useFetchProducts } from '@/modules/inventory/hook/useProducts';
+import { useFetchStores } from '@/modules/sales/hooks/useStore';
+import { StoreAttributes } from '@/modules/sales/types/store';
 import { WarehouseAttributes } from '@/modules/inventory/types/warehouse';
 import { ProductAttributes } from '@/modules/inventory/types/ListProduct';
-import { fetchStores } from '@/modules/stores/action/store-actions';
-import { useQuery } from '@tanstack/react-query';
+import ModalError from '../../../ModalError';
+
 
 interface Props {
   onCreated: () => void;
@@ -28,10 +30,13 @@ interface Props {
 const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
   const [form, setForm] = useState(initialForm);
   const { data: warehouses, isLoading: isLoadingWarehouses, error: errorWarehouses } = useFetchWarehouses();
+  const { data: stores, isLoading: isLoadingStores, error: errorStores } = useFetchStores();
   const { data: products, isLoading: isLoadingProducts, error: errorProducts } = useFetchProducts();
-  const { data: stores = [], isLoading: isLoadingStores, error: errorStores } = useQuery({ queryKey: ['stores'], queryFn: fetchStores });
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -44,23 +49,31 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setModalError(null);
     
     console.log('Datos del formulario antes de validar:', form);
     
     // Validar campos antes de enviar
     if (!form.warehouse_id || form.warehouse_id.trim() === '' || form.warehouse_id === 'Seleccione un almacén') {
-      setError('Debe seleccionar un almacén');
+      setModalError('Debe seleccionar un almacén');
       return;
     }
+
+    // Validar si el almacén está inactivo
+    const selectedWarehouse = warehouses?.find(w => w.id === form.warehouse_id);
+    if (selectedWarehouse && selectedWarehouse.status === false) {
+      setModalError('El almacén seleccionado está inactivo. Actívelo para poder utilizarlo.');
+      return;
+    }
+
     
     if (!form.product_id || form.product_id.trim() === '' || form.product_id === 'Seleccione un producto') {
-      setError('Debe seleccionar un producto');
+      setModalError('Debe seleccionar un producto');
       return;
     }
     
     if (form.quantity < 0) {
-      setError('La cantidad debe ser mayor o igual a 0');
+      setModalError('La cantidad debe ser mayor o igual a 0');
       return;
     }
 
@@ -81,7 +94,7 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
     
     if (!parsed.success) {
       console.error('Error de validación:', parsed.error.errors);
-      setError(parsed.error.errors[0].message);
+      setModalError(parsed.error.errors[0].message);
       return;
     }
     
@@ -111,13 +124,13 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
       console.error('Headers:', err.response?.headers);
       
       if (err.response?.data?.message) {
-        setError(err.response.data.message);
+        setModalError(err.response.data.message);
       } else if (err.response?.data?.error) {
-        setError(err.response.data.error);
+        setModalError(err.response.data.error);
       } else if (err.response?.status === 400) {
-        setError('Datos inválidos. Verifique que todos los campos estén correctos.');
+        setModalError('Datos inválidos. Verifique que todos los campos estén correctos.');
       } else {
-        setError(err.message || 'Error al crear el movimiento');
+        setModalError(err.message || 'Error al crear el movimiento');
       }
     } finally {
       setLoading(false);
@@ -127,7 +140,7 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md relative">
-        <div className="bg-slate-700 text-white p-5 rounded-t-2xl flex items-center justify-center relative">
+        <div className="bg-gradient-to-r from-red-600 to-red-700 text-white p-5 rounded-t-2xl flex items-center justify-center relative">
           <h2 className="text-lg font-semibold text-center">Nuevo Movimiento de Producto</h2>
           {onClose && (
             <button
@@ -140,10 +153,15 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5 text-left">
-          {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
+          {modalError && (
+            <ModalError
+              message={modalError}
+              onClose={() => setModalError(null)}
+            />
+          )}
 
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Almacén*</label>
+            <label className="block text-gray-700 mb-1 font-medium">Almacén<span className="text-red-500">*</span></label>
             <select
               name="warehouse_id"
               value={form.warehouse_id}
@@ -169,19 +187,19 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
               value={form.store_id}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-slate-600 focus:outline-none"
-              disabled={isLoadingStores}
             >
-              <option value="">Sin tienda asignada</option>
-              {errorStores && <option value="" disabled>Error al cargar tiendas</option>}
-              {stores.length === 0 && !isLoadingStores && <option value="" disabled>No hay tiendas registradas</option>}
-              {stores.map((store: any) => (
-                <option key={store.id} value={store.id}>{store.store_name}</option>
+              <option key="select-store" value="">{isLoadingStores ? 'Cargando tiendas...' : 'Seleccione una tienda'}</option>
+              {errorStores && <option key="error-store" value="" disabled>Error al cargar tiendas</option>}
+              {Array.isArray(stores) && stores.map((store: StoreAttributes) => (
+                <option key={store.id} value={store.id}>
+                  {store.store_name}
+                </option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Producto*</label>
+            <label className="block text-gray-700 mb-1 font-medium">Producto<span className="text-red-500">*</span></label>
             <select
               name="product_id"
               value={form.product_id}
@@ -202,7 +220,7 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-gray-700 mb-1 font-medium">Tipo de Movimiento*</label>
+              <label className="block text-gray-700 mb-1 font-medium">Tipo de Movimiento<span className="text-red-500">*</span></label>
               <select
                 name="movement_type"
                 value={form.movement_type}
@@ -214,7 +232,7 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
               </select>
             </div>
             <div>
-              <label className="block text-gray-700 mb-1 font-medium">Cantidad*</label>
+              <label className="block text-gray-700 mb-1 font-medium">Cantidad<span className="text-red-500">*</span></label>
               <input
                 type="number"
                 name="quantity"
@@ -229,7 +247,7 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
           </div>
 
           <div>
-            <label className="block text-gray-700 mb-1 font-medium">Fecha de Movimiento*</label>
+            <label className="block text-gray-700 mb-1 font-medium">Fecha de Movimiento<span className="text-red-500">*</span></label>
             <input
               type="date"
               name="movement_date"
@@ -264,7 +282,7 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
             )}
             <button
               type="submit"
-              className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition flex items-center gap-2"
+              className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-6700 text-white transition flex items-center justify-center space-x-2"
               disabled={loading}
             >
               <Save size={18} /> {loading ? 'Guardando...' : 'Aceptar'}
