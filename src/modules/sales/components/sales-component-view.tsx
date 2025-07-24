@@ -23,6 +23,7 @@ const SalesView: React.FC = () => {
     <div className="min-h-screen bg-gray-50 p-6 space-y-6">
       {/* Cabecera */}
       <div className="text-center">
+        <h1 className="text-5xl font-bold text-center text-red-700 pb-4">Panel de Alquileres</h1>
         <p className="text-gray-600 text-sm">Gestión completa de información, ventas, inventario y pérdidas.</p>
       </div>
 
