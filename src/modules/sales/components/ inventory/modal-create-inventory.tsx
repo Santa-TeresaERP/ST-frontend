@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 import React, { useEffect } from 'react'; // Eliminado useEffect ya que reset se maneja en onSuccess
 import { useForm } from 'react-hook-form';
@@ -13,6 +14,9 @@ import { useFetchStores } from '@/modules/sales/hooks/useStore';         // Hook
 import { useCreateWarehouseStoreItem } from '../../hooks/useInventoryQueries';
 import { createWarehouseStoreSchema, CreateWarehouseStoreFormData } from '../../schemas/inventory.schema';
 import { useStoreState } from '@/core/store/store';
+
+// Importar validaciones de tienda
+import { getEnabledStores } from '../../utils/store-validation';
 
 interface Props { isOpen: boolean; onClose: () => void; }
 

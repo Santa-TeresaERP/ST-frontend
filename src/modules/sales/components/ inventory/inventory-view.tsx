@@ -3,14 +3,24 @@ import React, { useState } from 'react';
 import { FiPackage, FiPlus, FiEdit, FiTrash2 } from 'react-icons/fi';
 import { useFetchWarehouseStoreItems, useDeleteWarehouseStoreItem } from '../../hooks/useInventoryQueries';
 import { WarehouseStoreItem } from '../../types/inventory.types';
+import { StoreAttributes } from '@/modules/stores/types/store';
+import { useCheckStoreActiveSession } from '../../hooks/useCashSession';
+import { isStoreOperational, getStoreOperationalMessage } from '../../utils/store-status';
 import ModalCreateInventory from './modal-create-inventory';
 import ModalEditInventory from './modal-edit-inventory';
-import ModalDeleteInventory from './modal-delete-inventory'; 
+import ModalDeleteInventory from './modal-delete-inventory';
 
-const InventoryComponentsView: React.FC = () => {
+interface InventoryComponentsViewProps {
+  selectedStore?: StoreAttributes | null;
+}
+
+const InventoryComponentsView: React.FC<InventoryComponentsViewProps> = ({ selectedStore }) => {
   // HOOKS DE DATOS
   const { data: inventory = [], isLoading, error } = useFetchWarehouseStoreItems();
   const { mutate: deleteItem, isPending: isDeleting } = useDeleteWarehouseStoreItem();
+  
+  // Hook para verificar si la tienda tiene una sesión de caja activa
+  const { data: storeSessionData, isLoading: isLoadingSessionData } = useCheckStoreActiveSession(selectedStore?.id);
 
   // ESTADO LOCAL PARA GESTIONAR MODALES
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
@@ -50,12 +60,31 @@ const InventoryComponentsView: React.FC = () => {
       <div className="flex justify-end items-center">
         <button
           onClick={() => setCreateModalOpen(true)}
-          className="flex items-center bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white px-4 py-2 rounded-lg"
+          disabled={!!(selectedStore && !isStoreOperational(storeSessionData))}
+          className={`flex items-center px-4 py-2 rounded-lg transition-all ${
+            !selectedStore || isStoreOperational(storeSessionData)
+              ? "bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          }`}
+          title={
+            selectedStore && !isStoreOperational(storeSessionData)
+              ? getStoreOperationalMessage(storeSessionData)
+              : "Crear nuevo producto"
+          }
         >
           <FiPlus className="mr-2 h-5 w-5" />
           Nuevo Producto
         </button>
       </div>
+
+      {selectedStore && !isStoreOperational(storeSessionData) && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <p className="text-orange-800">
+            ⚠️ <strong>Sesión de caja requerida:</strong> {getStoreOperationalMessage(storeSessionData)}
+          </p>
+          <small className="text-orange-600">Para gestionar inventario, la tienda debe tener una sesión de caja activa.</small>
+        </div>
+      )}
 
       <h2 className="text-2xl font-bold text-red-600 flex items-center space-x-2">
         <FiPackage className="text-red-600" size={24} />
@@ -63,7 +92,7 @@ const InventoryComponentsView: React.FC = () => {
       </h2>
 
       <div className="min-h-[200px]">
-        {isLoading ? (
+        {isLoading || isLoadingSessionData ? (
           <p className="text-center text-gray-500 py-10">Cargando inventario...</p>
         ) : error ? (
           <p className="text-center text-red-500 py-10">Error: {error.message}</p>
