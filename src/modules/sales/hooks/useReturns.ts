@@ -31,7 +31,7 @@ export const useCreateReturn = () => {
   return useMutation<
     returnsAttributes,
     Error,
-    Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt'>
+    Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt' | 'price'>
   >({
     mutationFn: createReturn,
     onSuccess: () => {
@@ -48,7 +48,7 @@ export const useUpdateReturn = () => {
     Error,
     {
       id: string
-      payload: Partial<Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt'>>
+      payload: Partial<Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt' | 'price'>>
     }
   >({
     mutationFn: ({ id, payload }) => updateReturn(id, payload),
