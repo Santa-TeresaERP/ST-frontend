@@ -21,7 +21,6 @@ import { useFetchProducts } from '@/modules/inventory/hook/useProducts';
 import { useFetchStores } from '@/modules/sales/hooks/useStore';
 import FilterMovement from './movement/filter-movement';
 
-
 const MovementComponentView: React.FC = () => {
   const [filters, setFilters] = useState<any>({});
   // Productos
@@ -36,8 +35,16 @@ const MovementComponentView: React.FC = () => {
   const { data: warehouses = [] } = useFetchWarehouses();
   const { data: resources = [] } = useFetchResources();
   const { data: products = [] } = useFetchProducts();
-  const { data: storesData } = useFetchStores();
-  const stores = Array.isArray(storesData) ? storesData : [];
+  
+  // --- INICIO DE LA MODIFICACIÓN ---
+
+  // 1. OBTENER DATOS DE TIENDAS
+  // Se piden hasta 100 tiendas para tener una lista completa para la traducción de IDs.
+  const { data: storesData } = useFetchStores(1, 100);
+  
+  // 2. EXTRAER CORRECTAMENTE EL ARRAY DE TIENDAS
+  // La respuesta del hook es un objeto { stores: [...], total: ... }, por lo que accedemos a la propiedad .stores
+  const stores = storesData?.stores || [];
 
   // General
   const [searchTerm, setSearchTerm] = useState('');
@@ -47,7 +54,6 @@ const MovementComponentView: React.FC = () => {
   const handleFilter = (newFilters: any) => {
     setFilters(newFilters);
   };
- 
   const getWarehouseName = (id: string) => warehouses.find((w: any) => w.id === id)?.name || id;
   const getResourceName = (id: string) => resources.find((r: any) => r.id === id)?.name || id;
   const getProductName = (id: string) => products.find((p: any) => p.id === id)?.name || id;
