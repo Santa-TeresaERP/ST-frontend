@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useFetchModules, useUpdateModule } from '@/modules/modules/hook/useModules';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../app/components/ui/card';
-import { Cuboid, LayoutDashboard } from 'lucide-react';
+import { Cuboid } from 'lucide-react';
 import ModuleModal from './modal-update-module';
 import { Module } from '@/modules/modules/types/modules';
 
