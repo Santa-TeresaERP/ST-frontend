@@ -25,9 +25,15 @@ export const getReturn = async (id: string): Promise<returnsAttributes> => {
 
 // Crear una devolución
 export const createReturn = async (
-  payload: Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt'>
+  payload: Omit<
+    returnsAttributes,
+    'id' | 'createdAt' | 'updatedAt' | 'price'
+  >,
 ): Promise<returnsAttributes> => {
-  const response = await api.post<{ success: boolean; data: returnsAttributes }>('/returns', payload)
+  const response = await api.post<{ success: boolean; data: returnsAttributes }>(
+    '/returns',
+    payload,
+  )
 
   if (!response.data.success) {
     throw new Error('No se pudo crear la devolución')
@@ -39,9 +45,14 @@ export const createReturn = async (
 // Actualizar una devolución
 export const updateReturn = async (
   id: string,
-  payload: Partial<Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt'>>
+  payload: Partial<
+    Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt' | 'price'>
+  >,
 ): Promise<returnsAttributes> => {
-  const response = await api.patch<{ success: boolean; data: returnsAttributes }>(`/returns/${id}`, payload)
+  const response = await api.patch<{ success: boolean; data: returnsAttributes }>(
+    `/returns/${id}`,
+    payload,
+  )
 
   if (!response.data.success) {
     throw new Error('No se pudo actualizar la devolución')
@@ -52,7 +63,9 @@ export const updateReturn = async (
 
 // Eliminar una devolución
 export const deleteReturn = async (id: string): Promise<void> => {
-  const response = await api.delete<{ success: boolean; message: string }>(`/returns/${id}`)
+  const response = await api.delete<{ success: boolean; message: string }>(
+    `/returns/${id}`,
+  )
 
   if (!response.data.success) {
     throw new Error('No se pudo eliminar la devolución')

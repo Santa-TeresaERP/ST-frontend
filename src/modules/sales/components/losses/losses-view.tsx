@@ -37,9 +37,7 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [currentLoss, setCurrentLoss] = useState<returnsAttributes | null>(
-    null
-  );
+  const [currentLoss, setCurrentLoss] = useState<returnsAttributes | null>(null);
 
   const filteredLosses =
     selectedStoreId && !isLoadingSales
@@ -50,16 +48,14 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
       : [];
 
   const handleCreateLoss = async (
-    newLoss: Omit<returnsAttributes, "id" | "createdAt" | "updatedAt">
+    newLoss: Omit<returnsAttributes, "id" | "createdAt" | "updatedAt" | "price">
   ) => {
     await createReturnMutation.mutateAsync(newLoss);
     setIsCreateModalOpen(false);
   };
 
   const handleEditLoss = async (
-    updatedLoss: Partial<
-      Omit<returnsAttributes, "id" | "createdAt" | "updatedAt">
-    >
+    updatedLoss: Partial<Omit<returnsAttributes, "id" | "createdAt" | "updatedAt" | "price">>
   ) => {
     if (!currentLoss) return;
     await updateReturnMutation.mutateAsync({
@@ -75,12 +71,14 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
     setIsDeleteModalOpen(false);
   };
 
-  const getProductName = (productId: string) => {
+  const getProductName = (productId?: string) => {
+    if (!productId) return "-";
     const product = products.find((p) => p.id === productId);
-    return product ? product.name : productId;
+    return product ? product.name : `Producto ${productId.slice(0, 6)}...`;
   };
 
-  const getStoreName = (salesId: string) => {
+  const getStoreName = (salesId?: string) => {
+    if (!salesId) return "-";
     const rawSale = sales.find((s) => s.id === salesId);
     const store_name = (rawSale as { store?: { store_name?: string } })?.store
       ?.store_name;
@@ -202,10 +200,14 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
                   </td>
                   <td className="px-4 py-2 text-center">{item.quantity}</td>
                   <td className="px-4 py-2 text-center">
-                    {Number(item.price).toFixed(2)}
+                    {item.price !== undefined
+                      ? Number(item.price).toFixed(2)
+                      : "-"}
                   </td>
                   <td className="px-4 py-2 text-center">{item.reason}</td>
-                  <td className="px-4 py-2 text-center">{item.observations}</td>
+                  <td className="px-4 py-2 text-center">
+                    {item.observations || "-"}
+                  </td>
                   <td className="px-4 py-2 text-center">
                     {item.createdAt
                       ? new Date(item.createdAt).toLocaleDateString()
