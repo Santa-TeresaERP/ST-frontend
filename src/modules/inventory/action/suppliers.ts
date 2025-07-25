@@ -16,7 +16,7 @@ export const updateSupplier = async (id: string, payload: UpdateSupplierPayload)
   return res.data;
 };
 
-export const deleteSupplier = async (id: string): Promise<Supplier> => {
-  const res = await api.put(`/supplier/${id}`, { status: false });
+export const deleteSupplier = async (id: string, status: boolean): Promise<Supplier> => {
+  const res = await api.patch(`/supplier/${id}`, { status });
   return res.data;
 };

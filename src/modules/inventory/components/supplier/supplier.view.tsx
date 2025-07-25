@@ -106,13 +106,7 @@ const SupplierView: React.FC = () => {
   };
 
   const toggleStatus = (id: string, newStatus: boolean) => {
-    updateSupplier.mutate({ id, payload: { status: newStatus } });
-  };
-
-  const confirmDelete = () => {
-    if (!supplierToDelete) return;
-    deleteSupplier.mutate(supplierToDelete.id!);
-    setSupplierToDelete(null);
+    deleteSupplier.mutate({ id, status: newStatus });
   };
 
   return (
@@ -256,13 +250,6 @@ const SupplierView: React.FC = () => {
           onUpdate={handleUpdateSupplier}
         />
       )}
-
-      <ModalDeleteSupplier
-        isOpen={!!supplierToDelete}
-        onClose={() => setSupplierToDelete(null)}
-        onConfirm={confirmDelete}
-        supplierName={supplierToDelete?.suplier_name}
-      />
     </>
   );
 };

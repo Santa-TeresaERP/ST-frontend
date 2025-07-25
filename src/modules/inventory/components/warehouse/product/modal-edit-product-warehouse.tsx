@@ -49,7 +49,7 @@ const ModalEditProductWarehouse: React.FC<ModalEditProductWarehouseProps> = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md relative">
-        <div className="bg-red-800 text-white p-5 rounded-t-2xl flex justify-center items-center relative">
+        <div className="bg-gradient-to-r from-red-600 to-red-700 text-white p-5 rounded-t-2xl flex items-center justify-center relative">
           <h2 className="text-lg font-semibold">Editar Producto del Almacén</h2>
           <button
             onClick={onClose}
@@ -62,7 +62,7 @@ const ModalEditProductWarehouse: React.FC<ModalEditProductWarehouseProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
           <div>
-            <label className="block text-gray-700 mb-1 font-medium text-left">Cantidad*</label>
+            <label className="block text-gray-700 mb-1 font-medium text-left">Cantidad<span className="text-red-500">*</span></label>
             <input
               type="number"
               min={0}
@@ -73,7 +73,7 @@ const ModalEditProductWarehouse: React.FC<ModalEditProductWarehouseProps> = ({
             />
           </div>
           <div>
-            <label className="block text-gray-700 mb-1 font-medium text-left">Fecha de Entrada*</label>
+            <label className="block text-gray-700 mb-1 font-medium text-left">Fecha de Entrada<span className="text-red-500">*</span></label>
             <input
               type="date"
               value={entry_date}
@@ -92,7 +92,7 @@ const ModalEditProductWarehouse: React.FC<ModalEditProductWarehouseProps> = ({
             <button
               type="submit"
               disabled={status === 'pending'}
-              className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2"
+              className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-6700 text-white transition flex items-center justify-center space-x-2"
             >
               <Save size={18} /> Guardar
             </button>

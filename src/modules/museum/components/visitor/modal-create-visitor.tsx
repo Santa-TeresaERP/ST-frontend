@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import { X, Save, Users } from 'lucide-react';
+import { X, Save, Users, ShoppingCart, CreditCard } from 'lucide-react';
+import { useSalesChannel } from '../../hook/useSalesChannel';
+import { useTypePerson } from '../../hook/useTypePerson';
+import { EntrancePayload } from '../../types/entrance';
+import { createEntrance} from '../../action/entrance'; 
+import { useAuthStore } from '@/core/store/auth';
 
 interface ModalCreateVisitorProps {
   isOpen: boolean;
@@ -10,36 +15,76 @@ interface ModalCreateVisitorProps {
 export interface VisitorData {
   tipoVisitante: string;
   canalVenta: string;
+  tipoPago: string;
   fecha: string;
   monto: string;
   gratis: string;
 }
 
 const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose, onSave }) => {
+  const user = useAuthStore((state) => state.user);
+  
+  const [pagoOptions, setPagoOptions] = useState<string[]>([
+    'Efectivo',
+    'Tarjeta',
+    'Transferencia',
+  ]);
+  const [canalOptions, setCanalOptions] = useState<string[]>([
+    'Taquilla',
+    'Web',
+    'Agencia',
+  ]);
+
   const [tipoVisitante, setTipoVisitante] = useState('');
   const [canalVenta, setCanalVenta] = useState('');
-  const [fecha, setFecha] = useState('');
+  const [tipoPago, setTipoPago] = useState('');
+  const [fecha, setFecha] = useState(() => new Date().toISOString().split('T')[0]);
   const [monto, setMonto] = useState('');
   const [gratis, setGratis] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Estados para mini-modal
+  const [miniOpen, setMiniOpen] = useState<'none' | 'pago' | 'canal'>('none');
+  const [newOption, setNewOption] = useState('');
+
+  // Hook para obtener los canales de venta
+  const { data: canalesVenta, loading: loadingCanales, error: errorCanales } = useSalesChannel();
+  // Hook para obtener los tipos de persona
+  const { data: tiposPersona, loading: loadingTipos, error: errorTipos } = useTypePerson();
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!tipoVisitante || !canalVenta || !fecha || !monto || !gratis) {
-      setError('Por favor, completa todos los campos.');
-      return;
-    }
+    const visitorData: VisitorData = {
+      tipoVisitante,
+      canalVenta,
+      tipoPago,
+      fecha,
+      monto,
+      gratis,
+    };
 
-    onSave({ tipoVisitante, canalVenta, fecha, monto, gratis });
-    onClose();
+    const payload: EntrancePayload = {
+      user_id: user.id,
+      type_person_id: String(visitorData.tipoVisitante),
+      sale_date: visitorData.fecha,
+      sale_number: 'V-' + Date.now(),
+      sale_channel: visitorData.canalVenta,
+      total_sale: parseFloat(visitorData.monto),
+      payment_method: visitorData.tipoPago,
+      free: visitorData.gratis === 'Si',
+    };
+
+    createEntrance(payload);
+    onClose(); // opcional
   };
+
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg relative mx-2">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl relative mx-2">
         <div className="bg-gradient-to-r from-red-700 to-red-900 text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
           <Users size={24} />
           <h2 className="text-lg md:text-xl font-semibold text-center">Nuevo Visitante</h2>
@@ -55,6 +100,7 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
           {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Tipo de Visitante */}
             <div>
               <label className="block text-gray-700 mb-1 font-medium">
                 Tipo de Visitante <span className="text-red-600">*</span>
@@ -63,71 +109,134 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
                 value={tipoVisitante}
                 onChange={(e) => setTipoVisitante(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                disabled={loadingTipos}
               >
                 <option value="">Seleccione un tipo</option>
-                <option value="Nacional">Nacional</option>
-                <option value="Extranjero">Extranjero</option>
-                <option value="Estudiante">Estudiante</option>
+                {tiposPersona && tiposPersona.map((tipo) => (
+                  <option key={tipo.id} value={tipo.id}>
+                    {tipo.name}
+                  </option>
+                ))}
               </select>
+              {loadingTipos && (
+                <p className="text-xs text-gray-500 mt-1">Cargando tipos de persona...</p>
+              )}
+              {errorTipos && (
+                <p className="text-xs text-red-600 mt-1">{errorTipos}</p>
+              )}
             </div>
 
+            {/* Canal de Venta */}
             <div>
               <label className="block text-gray-700 mb-1 font-medium">
                 Canal de Venta <span className="text-red-600">*</span>
               </label>
+              <div className="flex gap-2">
+                <select
+                  value={canalVenta}
+                  onChange={e => setCanalVenta(e.target.value)}
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                  disabled={loadingCanales}
+                >
+                  <option value="">Seleccione un canal</option>
+                  {canalesVenta && canalesVenta.map((canal) => (
+                    <option key={canal.id} value={canal.name}>
+                      {canal.name}
+                    </option>
+                  ))}
+                  {canalOptions.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setMiniOpen('canal')}
+                  className="px-3 py-2 bg-gray-100 rounded-lg border border-gray-300 hover:bg-gray-200 transition"
+                  title="Agregar canal"
+                >
+                  <ShoppingCart size={18} />
+                </button>
+              </div>
+              {loadingCanales && (
+                <p className="text-xs text-gray-500 mt-1">Cargando canales...</p>
+              )}
+              {errorCanales && (
+                <p className="text-xs text-red-600 mt-1">{errorCanales}</p>
+              )}
+            </div>
+
+            {/* Tipo de Pago */}
+            <div>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Tipo de Pago <span className="text-red-600">*</span>
+              </label>
+              <div className="flex gap-2">
+                <select
+                  value={tipoPago}
+                  onChange={e => setTipoPago(e.target.value)}
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                >
+                  <option value="">Seleccione un pago</option>
+                  {pagoOptions.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setMiniOpen('pago')}
+                  className="px-3 py-2 bg-gray-100 rounded-lg border border-gray-300 hover:bg-gray-200 transition"
+                  title="Agregar pago"
+                >
+                  <CreditCard size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Fecha */}
+            <div>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Fecha <span className="text-red-600">*</span>
+              </label>
+              <input
+                type="date"
+                value={fecha}
+                onChange={(e) => setFecha(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+              />
+            </div>
+
+            {/* Monto */}
+            <div>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Monto Total <span className="text-red-600">*</span>
+              </label>
+              <input
+                type="number"
+                value={monto}
+                onChange={(e) => setMonto(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                placeholder="S/ 0.00"
+              />
+            </div>
+
+            {/* ¿Gratis? */}
+            <div>
+              <label className="block text-gray-700 mb-1 font-medium">
+                ¿Gratis? <span className="text-red-600">*</span>
+              </label>
               <select
-                value={canalVenta}
-                onChange={(e) => setCanalVenta(e.target.value)}
+                value={gratis}
+                onChange={(e) => setGratis(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
               >
-                <option value="">Seleccione un canal</option>
-                <option value="Taquilla">Taquilla</option>
-                <option value="Web">Web</option>
-                <option value="Agencia">Agencia</option>
+                <option value="">Seleccione</option>
+                <option value="Si">Sí</option>
+                <option value="No">No</option>
               </select>
             </div>
           </div>
 
-          <div>
-            <label className="block text-gray-700 mb-1 font-medium">
-              Fecha <span className="text-red-600">*</span>
-            </label>
-            <input
-              type="date"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-700 mb-1 font-medium">
-              Monto Total <span className="text-red-600">*</span>
-            </label>
-            <input
-              type="number"
-              value={monto}
-              onChange={(e) => setMonto(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-              placeholder="S/ 0.00"
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-700 mb-1 font-medium">
-              ¿Gratis? <span className="text-red-600">*</span>
-            </label>
-            <select
-              value={gratis}
-              onChange={(e) => setGratis(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-            >
-              <option value="">Seleccione</option>
-              <option value="Si">Sí</option>
-              <option value="No">No</option>
-            </select>
-          </div>
-
+          {/* Botones */}
           <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"
@@ -145,8 +254,53 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
           </div>
         </form>
       </div>
+
+      {/* Mini‑Modal creación rápida */}
+      {miniOpen !== 'none' && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={(e) => e.target === e.currentTarget && setMiniOpen('none')}
+        >
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">
+                {miniOpen === 'pago' ? 'Nuevo Tipo de Pago' : 'Nuevo Canal de Venta'}
+              </h3>
+              <button onClick={() => setMiniOpen('none')} className="text-gray-500 hover:text-gray-700">
+                <X size={20} />
+              </button>
+            </div>
+            <input
+              type="text"
+              value={newOption}
+              onChange={(e) => setNewOption(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+              placeholder={miniOpen === 'pago' ? 'Nombre del tipo de pago' : 'Nombre del canal'}
+            />
+            <div className="flex justify-end">
+              <button
+                onClick={() => {
+                  if (!newOption.trim()) return;
+                  if (miniOpen === 'pago') {
+                    setPagoOptions(prev => [...prev, newOption.trim()]);
+                    setTipoPago(newOption.trim());
+                  } else {
+                    setCanalOptions(prev => [...prev, newOption.trim()]);
+                    setCanalVenta(newOption.trim());
+                  }
+                  setNewOption('');
+                  setMiniOpen('none');
+                }}
+                className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-600 transition"
+                disabled={!newOption.trim()}
+              >
+                Agregar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
 export default ModalCreateVisitor;
