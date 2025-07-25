@@ -45,7 +45,7 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
   // Hook para obtener los canales de venta
   const { data: canalesVenta, loading: loadingCanales, error: errorCanales, create: createCanalVenta } = useSalesChannel();
   // Hook para obtener los tipos de persona
-  const { data: tiposPersona, loading: loadingTipos, error: errorTipos } = useTypePerson();
+  const { data: tiposPersona, loading: loadingTipos, error: errorTipos, refetch } = useTypePerson();
   // Hook para obtener los métodos de pago
   const { data: metodosPago, loading: loadingPagos, error: errorPagos, create: createMetodoPago } = usePaymentMethod();
 
@@ -495,6 +495,7 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
       <ModalTicketTypes 
         isOpen={miniOpen === 'ticket'} 
         onClose={() => setMiniOpen('none')} 
+        onCreated={refetch}
       />
     </div>
   );
