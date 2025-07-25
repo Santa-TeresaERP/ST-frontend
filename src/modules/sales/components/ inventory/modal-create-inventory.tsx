@@ -23,6 +23,13 @@ interface Props { isOpen: boolean; onClose: () => void; }
 const ModalCreateInventory: React.FC<Props> = ({ isOpen, onClose }) => {
   // 2. OBTENER DATOS PARA LOS DESPLEGABLES
   const { data: products = [], isLoading: isLoadingProducts } = useFetchProducts();
+  // Obtener tiendas (paginación si es necesario)
+  const { data: storesResponse, isLoading: isLoadingStores } = useFetchStores(1, 100);
+  const stores = storesResponse?.stores || [];
+  
+  // 3. FILTRAR SOLO TIENDAS HABILITADAS
+  const enabledStores = getEnabledStores(stores);
+  const hasValidStores = enabledStores.length > 0;
   const { data: storesResponse, isLoading: isLoadingStores } = useFetchStores(1, 100);
   const stores = storesResponse?.stores || [];
   const { selectedStore } = useStoreState();

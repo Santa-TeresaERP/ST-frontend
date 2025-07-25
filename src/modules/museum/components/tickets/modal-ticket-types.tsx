@@ -1,8 +1,8 @@
 // components/ticket/modal-ticket-types.tsx
-import React, { useState, useEffect } from 'react'
-import { X, Plus, Trash2, Pencil } from 'lucide-react'
-import { createTypePerson } from '../../action/typePerson'
+import React, { useState } from 'react'
+import { X, Plus, Trash2, Pencil, Check } from 'lucide-react'
 import { useTypePerson } from '../../hook/useTypePerson'
+import { useEntrance } from '../../hook/useEntrance'
 import type { TypePerson } from '../../types/typePerson'
 
 interface ModalTicketTypesProps {
@@ -11,24 +11,53 @@ interface ModalTicketTypesProps {
 }
 
 const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose }) => {
-  const { data: tiposPersona = [], loading, error, remove } = useTypePerson()
+  const { data: tiposPersona = [], loading, error, create, update, remove } = useTypePerson()
+  const { data: entrances = [] } = useEntrance()
+  
   const [newType, setNewType] = useState('')
   const [newPrice, setNewPrice] = useState('')
-  // Lista local para UI
-  const [localList, setLocalList] = useState<TypePerson[]>([])
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editType, setEditType] = useState('')
+  const [editPrice, setEditPrice] = useState('')
 
-  useEffect(() => {
-    setLocalList(tiposPersona)
-  }, [tiposPersona])
+  const handleRequestEdit = (tipo: TypePerson) => {
+    setEditingId(tipo.id || null)
+    setEditType(tipo.name)
+    setEditPrice(tipo.base_price.toString())
+  }
 
-  const handleRequestEdit = (index: number) => {
-    const tipo = localList[index]
-    setNewType(tipo.name)
-    setNewPrice(tipo.base_price.toString())
-    // Si quieres editar directamente, guarda un estado de edición aquí
+  const handleCancelEdit = () => {
+    setEditingId(null)
+    setEditType('')
+    setEditPrice('')
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingId || !editType.trim() || !editPrice.trim()) return
+    
+    try {
+      await update(editingId, {
+        name: editType.trim(),
+        base_price: parseFloat(editPrice)
+      })
+      setEditingId(null)
+      setEditType('')
+      setEditPrice('')
+    } catch (err) {
+      console.error('Error al actualizar:', err)
+    }
+  }
+
+  const isTypePersonUsed = (typePersonId: string) => {
+    return entrances.some(entrance => entrance.type_person_id === typePersonId)
   }
 
   const handleRemove = async (id: string) => {
+    if (isTypePersonUsed(id)) {
+      alert('No se puede eliminar este tipo de ticket porque está asociado a entradas existentes.')
+      return
+    }
+    
     try {
       await remove(id)
     } catch (err) {
@@ -38,10 +67,10 @@ const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose }) 
 
   const handleAddTicket = async () => {
     if (!newType.trim() || !newPrice.trim()) return
+    
     const payload = { name: newType.trim(), base_price: parseFloat(newPrice) }
     try {
-      const created = await createTypePerson(payload)
-      setLocalList(prev => [...prev, created])
+      await create(payload)
       setNewType('')
       setNewPrice('')
     } catch (err) {
@@ -91,20 +120,54 @@ const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose }) 
         {loading && <p>Cargando...</p>}
         {error && <p className="text-red-600">Error al cargar</p>}
         <div className="space-y-2">
-          {localList.map((tp, idx) => (
-            <div key={tp.id || idx} className="flex justify-between items-center border p-3 rounded-xl">
-              <div>
-                <p className="font-semibold">{tp.name}</p>
-                <p className="text-red-700">S/. {tp.base_price ? tp.base_price.toFixed(2) : '0.00'}</p>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => handleRequestEdit(idx)} className="text-blue-600">
-                  <Pencil size={18} />
-                </button>
-                <button onClick={() => tp.id && handleRemove(tp.id)} className="text-red-600">
-                  <Trash2 size={18} />
-                </button>
-              </div>
+          {tiposPersona.map((tp) => (
+            <div key={tp.id} className="flex justify-between items-center border p-3 rounded-xl">
+              {editingId === tp.id ? (
+                // Modo edición
+                <div className="flex-1 flex items-center gap-3">
+                  <input
+                    type="text"
+                    value={editType}
+                    onChange={e => setEditType(e.target.value)}
+                    className="flex-1 border rounded px-3 py-1"
+                  />
+                  <input
+                    type="number"
+                    value={editPrice}
+                    onChange={e => setEditPrice(e.target.value)}
+                    className="w-24 border rounded px-3 py-1"
+                  />
+                  <div className="flex gap-2">
+                    <button onClick={handleSaveEdit} className="text-green-600">
+                      <Check size={18} />
+                    </button>
+                    <button onClick={handleCancelEdit} className="text-gray-600">
+                      <X size={18} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                // Modo vista
+                <>
+                  <div>
+                    <p className="font-semibold">{tp.name}</p>
+                    <p className="text-red-700">S/. {tp.base_price ? tp.base_price.toFixed(2) : '0.00'}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleRequestEdit(tp)} className="text-blue-600">
+                      <Pencil size={18} />
+                    </button>
+                    <button 
+                      onClick={() => tp.id && handleRemove(tp.id)} 
+                      className={`${isTypePersonUsed(tp.id || '') ? 'text-gray-400 cursor-not-allowed' : 'text-red-600'}`}
+                      disabled={isTypePersonUsed(tp.id || '')}
+                      title={isTypePersonUsed(tp.id || '') ? 'No se puede eliminar porque está en uso' : 'Eliminar tipo de ticket'}
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>

@@ -19,10 +19,7 @@ interface SalesComponentsViewProps {
 const SalesComponentsView: React.FC<SalesComponentsViewProps> = ({ selectedStore }) => {
   // Obtengo las ventas y las tiendas usando los hooks correspondientes
   const { data: sales = [], isLoading, error } = useFetchSales();
-  const { data: storeResponse } = useFetchStores();
-  
-  // Extraer el arreglo de tiendas de la respuesta
-  const stores = storeResponse?.stores || [];
+  const { data: stores = [] } = useFetchStores();
   
   // Hook para verificar si la tienda tiene una sesión de caja activa
   const { data: storeSessionData } = useCheckStoreActiveSession(selectedStore?.id);
@@ -47,7 +44,8 @@ const SalesComponentsView: React.FC<SalesComponentsViewProps> = ({ selectedStore
 
   // Función para obtener el nombre de la tienda por su ID
   const getStoreName = (storeId: string) => {
-    const store = stores.find((store) => store.id === storeId);
+    const storeArray = Array.isArray(stores) ? stores : [];
+    const store = storeArray.find((store: StoreAttributes) => store.id === storeId) as StoreAttributes | undefined;
     return store?.store_name || 'Tienda no encontrada';
   };
 
@@ -75,7 +73,7 @@ const SalesComponentsView: React.FC<SalesComponentsViewProps> = ({ selectedStore
   // Filtré las ventas según la tienda seleccionada
   const filteredSales = selectedStore
     ? sales.filter((sale) => sale.store_id === selectedStore.id) // Solo mostrar ventas de la tienda seleccionada
-    : sales; // Si no hay tienda seleccionada, mostrar todas las ventas
+    : []; // Si no hay tienda seleccionada, no mostrar ninguna venta
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 space-y-6 text-gray-700">
@@ -140,6 +138,12 @@ const SalesComponentsView: React.FC<SalesComponentsViewProps> = ({ selectedStore
           <small className="text-orange-600">Para realizar ventas, la tienda debe tener una sesión de caja activa.</small>
         </div>
       )}
+
+      {/* Título de la sección */}
+      <h2 className="text-2xl font-bold text-red-700 flex items-center space-x-2">
+        <FiShoppingCart className="text-red-600" size={24} />
+        <span>Información de Ventas</span>
+      </h2>
 
       {/* Tabla de ventas */}
       <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm bg-white">

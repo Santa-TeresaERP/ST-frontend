@@ -30,7 +30,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
 
   const { data: storeInventory = [] } = useFetchWarehouseStoreItems();
   const { data: sales = [] } = useFetchSales();
-  const { mutateAsync, isPending } = useCreateReturn();
+  const { mutateAsync } = useCreateReturn();
 
   const productDropdownRef = useRef<HTMLDivElement>(null);
   const salesDropdownRef = useRef<HTMLDivElement>(null);
@@ -81,19 +81,9 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLocalError("");
 
-    const validation = returnSchema.safeParse({
-      productId,
-      salesId,
-      reason,
-      observations,
-      quantity,
-    });
-
-    if (!validation.success) {
-      console.error("Errores de validación:", validation.error.format());
-      setLocalError("Por favor, completa todos los campos requeridos.");
+    if (!productId || !salesId || !reason || !observations) {
+      setLocalError("Por favor, completa todos los campos.");
       return;
     }
 
@@ -104,6 +94,22 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
     }
 
     try {
+      const data = {
+        product_id: productId,
+        sale_id: salesId,
+        reason,
+        observations,
+        quantity,
+        store_id: selectedStoreId,
+      };
+
+      // Validate data with returnSchema
+      const validation = returnSchema.safeParse(data);
+      if (!validation.success) {
+        setLocalError("Datos inválidos: " + validation.error.errors.map(e => e.message).join(", "));
+        return;
+      }
+
       await mutateAsync(validation.data);
       onClose();
       setProductSearch("");
@@ -186,103 +192,98 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
                     ))
                   ) : (
                     <li className="px-4 py-2 text-gray-500 text-sm text-center cursor-default">
-                      No hay productos disponibles para la tienda en este momento.
+                      No hay productos disponibles para la tienda en este
+                      momento.
                     </li>
                   )}
                 </ul>
               )}
             </div>
 
-          {/* Venta */}
-          <div className="relative" ref={salesDropdownRef}>
-            <label className="block text-gray-700 mb-1 font-medium">
-              Venta <span className="text-red-600">*</span>
-            </label>
-            <input
-              type="text"
-              value={salesSearch}
-              onChange={(e) => {
-                setSalesSearch(e.target.value);
-                setSalesId("");
-                setShowSalesDropdown(true);
-              }}
-              onFocus={() => setShowSalesDropdown(true)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-              placeholder="Buscar por fecha o monto"
-            />
-            {showSalesDropdown && (
-              <ul className="absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                {(salesSearch
-                  ? filteredSales
-                  : [...filteredSales]
-                      .sort(
-                        (a, b) =>
-                          new Date(b.income_date).getTime() -
-                          new Date(a.income_date).getTime()
-                      )
-                      .slice(0, 3)
-                ).map((sale) => (
-                  <li
-                    key={sale.id}
-                    className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
-                    onClick={() => {
-                      const formatted = new Date(
-                        sale.income_date
-                      ).toLocaleString("es-PE");
-                      setSalesSearch(`${formatted} - S/ ${sale.total_income}`);
-                      setSalesId(sale.id!);
-                      setShowSalesDropdown(false);
-                    }}
-                  >
-                    🗕️ {new Date(sale.income_date).toLocaleString("es-PE")} — 💵
-                    S/ {sale.total_income}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+            {/* Venta */}
+            <div className="relative" ref={salesDropdownRef}>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Venta <span className="text-red-600">*</span>
+              </label>
+              <input
+                type="text"
+                value={salesSearch}
+                onChange={(e) => {
+                  setSalesSearch(e.target.value);
+                  setSalesId("");
+                  setShowSalesDropdown(true);
+                }}
+                onFocus={() => setShowSalesDropdown(true)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                placeholder="Buscar por fecha o monto"
+              />
+              {showSalesDropdown && (
+                <ul className="absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {(salesSearch
+                    ? filteredSales
+                    : [...filteredSales]
+                        .sort((a, b) => new Date(b.income_date).getTime() - new Date(a.income_date).getTime())
+                        .slice(0, 3)
+                  ).map((sale) => (
+                    <li
+                      key={sale.id}
+                      className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
+                      onClick={() => {
+                        const formatted = new Date(sale.income_date).toLocaleString("es-PE");
+                        setSalesSearch(`${formatted} - S/ ${sale.total_income}`);
+                        setSalesId(sale.id!);
+                        setShowSalesDropdown(false);
+                      }}
+                    >
+                      🗕️ {new Date(sale.income_date).toLocaleString("es-PE")} — 💵 S/ {sale.total_income}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
-          {/* Cantidad */}
-          <div>
-            <label className="block text-gray-700 mb-1 font-medium">
-              Cantidad <span className="text-red-600">*</span>
-            </label>
-            <input
-              type="number"
-              value={quantity}
-              min={1}
-              onChange={(e) => setQuantity(Number(e.target.value))}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-              placeholder="Cantidad de productos devueltos"
-            />
-          </div>
+            {/* Cantidad */}
+            <div>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Cantidad <span className="text-red-600">*</span>
+              </label>
+              <input
+                type="number"
+                value={quantity}
+                min={1}
+                onChange={(e) => setQuantity(Number(e.target.value))}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                placeholder="Cantidad de productos devueltos"
+              />
+            </div>
 
-          {/* Razón */}
-          <div>
-            <label className="block text-gray-700 mb-1 font-medium">
-              Razón <span className="text-red-600">*</span>
-            </label>
-            <input
-              type="text"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-              placeholder="Razón de la pérdida"
-            />
-          </div>
+            {/* Razón */}
+            <div>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Razón <span className="text-red-600">*</span>
+              </label>
+              <input
+                type="text"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                placeholder="Razón de la pérdida"
+              />
+            </div>
 
-          {/* Observaciones */}
-          <div>
-            <label className="block text-gray-700 mb-1 font-medium">
-              Observación <span className="text-red-600">*</span>
-            </label>
-            <textarea
-              value={observations}
-              onChange={(e) => setObservations(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-              placeholder="Detalle u observaciones"
-              rows={3}
-            />
+            {/* Observaciones */}
+            <div>
+              <label className="block text-gray-700 mb-1 font-medium">
+                Observación <span className="text-red-600">*</span>
+              </label>
+              <textarea
+                value={observations}
+                onChange={(e) => setObservations(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                placeholder="Detalle u observaciones"
+                rows={3}
+              />
+            </div>
           </div>
         </div>
 

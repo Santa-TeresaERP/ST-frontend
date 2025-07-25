@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect, useCallback } from 'react';
 import { getEntrances, createEntrance, updateEntrance, deleteEntrance } from '../action/entrance';
 import { Entrance, EntrancePayload } from '../types/entrance';
 
@@ -7,7 +8,7 @@ export function useEntrance() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -18,11 +19,11 @@ export function useEntrance() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchAll();
-  }, []);
+  }, [fetchAll]);
 
   const create = async (item: EntrancePayload) => {
     setLoading(true);

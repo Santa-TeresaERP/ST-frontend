@@ -33,18 +33,20 @@ export function usePaymentMethod() {
     fetchAll();
   }, []);
 
-  const create = async (item: Omit<PaymentMethod, 'id'>): Promise<void> => {
+  const create = async (item: Omit<PaymentMethod, 'id'>): Promise<PaymentMethod> => {
     setLoading(true);
     setError(null);
     try {
-      await createPaymentMethod(item);
+      const newItem = await createPaymentMethod(item);
       await fetchAll();
+      return newItem;
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
       } else {
         setError('Error desconocido al crear método de pago');
       }
+      throw error;
     } finally {
       setLoading(false);
     }

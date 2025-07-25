@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
-import { X, Save } from "lucide-react";
-import { FiAlertOctagon } from "react-icons/fi";
-import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
-import { useFetchSales } from "@/modules/sales/hooks/useSales";
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Save } from 'lucide-react';
+import { FiAlertOctagon } from 'react-icons/fi';
+import { useFetchProducts } from '@/modules/inventory/hook/useProducts';
+import { useFetchSales } from '@/modules/sales/hooks/useSales';
+import { returnsAttributes } from '../../types/returns';
 
-import { returnsAttributes } from "@/modules/sales/types/returns";
+
 
 interface ModalEditLossProps {
   isOpen: boolean;
