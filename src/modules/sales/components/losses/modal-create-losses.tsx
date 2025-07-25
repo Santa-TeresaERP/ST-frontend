@@ -30,7 +30,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
 
   const { data: storeInventory = [] } = useFetchWarehouseStoreItems();
   const { data: sales = [] } = useFetchSales();
-  const { mutateAsync } = useCreateReturn();
+  const { mutateAsync, isPending } = useCreateReturn();
 
   const productDropdownRef = useRef<HTMLDivElement>(null);
   const salesDropdownRef = useRef<HTMLDivElement>(null);
@@ -285,9 +285,8 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
               />
             </div>
           </div>
-        </div>
 
-        <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"
               onClick={onClose}
