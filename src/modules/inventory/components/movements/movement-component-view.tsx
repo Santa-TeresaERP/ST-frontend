@@ -39,6 +39,7 @@ const MovementComponentView: React.FC = () => {
   const { data: storesData } = useFetchStores();
   const stores = Array.isArray(storesData) ? storesData : [];
 
+
   // General
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreate, setShowCreate] = useState(false);
