@@ -5,15 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { X, Save } from 'lucide-react';
 import { FiPackage } from 'react-icons/fi';
 
-<<<<<<< Updated upstream
-// 1. IMPORTAR HOOKS DE OTROS MÓDULOS
-import { useFetchProducts } from '@/modules/production/hook/useProducts';
-import { useFetchStores } from '@/modules/sales/hooks/useStore';
-
-// Importaciones del módulo actual
-=======
-// Ya no necesitamos los hooks para fetch Products y Stores aquí
->>>>>>> Stashed changes
+// Solo se necesitan las importaciones para la lógica de actualización
 import { useUpdateWarehouseStoreItem } from '../../hooks/useInventoryQueries';
 import { updateWarehouseStoreSchema, UpdateWarehouseStoreFormData } from '../../schemas/inventory.schema';
 import { WarehouseStoreItem } from '../../types/inventory.types';
@@ -25,14 +17,6 @@ interface ModalEditProps {
 }
 
 const ModalEditInventory: React.FC<ModalEditProps> = ({ isOpen, onClose, item }) => {
-<<<<<<< Updated upstream
-  // 2. OBTENER DATOS PARA LOS DESPLEGABLES
-  const { data: products = [], isLoading: isLoadingProducts } = useFetchProducts();
-  const { data: storesResponse, isLoading: isLoadingStores } = useFetchStores(1, 100);
-  const stores = storesResponse?.stores || [];
-  
-=======
->>>>>>> Stashed changes
   const { mutate: updateItem, isPending, error: mutationError } = useUpdateWarehouseStoreItem();
   
   const { register, handleSubmit, formState: { errors }, reset } = useForm<UpdateWarehouseStoreFormData>({
@@ -64,7 +48,6 @@ const ModalEditInventory: React.FC<ModalEditProps> = ({ isOpen, onClose, item })
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl mx-2">
         <div className="bg-gradient-to-r from-red-700 to-red-900 text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
           <FiPackage size={24} />
-          {/* El título sigue mostrando el nombre del producto */}
           <h2 className="text-xl font-semibold text-center">Editar Stock: {item.product.name}</h2>
           <button onClick={onClose} className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300">
             <X size={22} />
@@ -83,7 +66,8 @@ const ModalEditInventory: React.FC<ModalEditProps> = ({ isOpen, onClose, item })
             
             <div>
               <label className="block text-gray-700 mb-1 font-medium">Tienda</label>
-              <p className="w-full bg-gray-100 rounded-lg px-4 py-2 text-gray-600">{item.store.name}</p>
+              {/* Asegurándonos de que use la propiedad correcta 'store_name' */}
+              <p className="w-full bg-gray-100 rounded-lg px-4 py-2 text-gray-600">{item.store.store_name}</p>
             </div>
 
             {/* Campo editable de Cantidad */}

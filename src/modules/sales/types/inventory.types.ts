@@ -6,7 +6,7 @@ interface Product {
 
 interface Store {
   id: string;
-  name: string;
+  store_name: string;
 }
 
 // Interfaz principal que representa un registro de WarehouseStore
