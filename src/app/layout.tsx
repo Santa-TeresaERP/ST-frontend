@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import ReactQueryProvider from "../core/provider/react-query-provider";
 import HeaderClient from "./components/components-header/HeaderClient";
+import { AuthInitializer } from "../core/components/AuthInitializer";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -25,7 +26,10 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
       <HeaderClient />
-      <ReactQueryProvider>{children}</ReactQueryProvider>
+      <ReactQueryProvider>
+        <AuthInitializer />
+        {children}
+      </ReactQueryProvider>
       </body>
     </html>
   );

@@ -6,12 +6,25 @@ import type { User } from '@/modules/user-creations/types/user';
 import { LoginCredentials, LoginResponse } from '../types/loginactionside';
 
 export const useAdminLogin = () => {
-  const setUser = useAuthStore((state) => state.setUser);
+  const { setUser, setUserWithPermissions } = useAuthStore();
 
   const mutation = useMutation<LoginResponse, Error, LoginCredentials>({
     mutationFn: login,
     onSuccess: (data) => {
+      console.log('🔥 RESPUESTA COMPLETA DEL LOGIN:', data);
+      
+      // Guardar usuario básico (para compatibilidad)
       setUser(data.user as User);
+      
+      // 🔥 GUARDAR USUARIO CON PERMISOS COMPLETOS (estructura del backend)
+      setUserWithPermissions(data.user);
+      
+      console.log('✅ Usuario logueado con permisos:', {
+        name: data.user.name,
+        role: data.user.Role?.name,
+        totalPermissions: data.user.Role?.Permissions?.length || 0,
+        permissions: data.user.Role?.Permissions
+      });
     },
   });
 

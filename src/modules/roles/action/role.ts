@@ -2,6 +2,13 @@ import api from '@/core/config/client';
 import {Role, CreateRolePayload, UpdateRolePayload} from '../types/roles';
 import { UpdatePermissionPayload } from '../types/permission';
 
+// Tipo para la respuesta de actualización de permisos
+export interface UpdatePermissionResponse {
+  message?: string;
+  permissions?: unknown[];
+  [key: string]: unknown;
+}
+
 export const fetchRoles = async (): Promise<Role[]> =>{
     const response = await api.get<Role[]>('/roles');
     return response.data;
@@ -26,21 +33,29 @@ export const deleteRole = async (id: string): Promise<void> =>{
     await api.delete(`/roles/${id}`);
 }
 
-export const updateRolePermissions = async (roleId: string, payload: UpdatePermissionPayload): Promise<Role> => {
-    console.log('🚀 Enviando permisos de rol a API:', {
-        url: `/roles/${roleId}/permissions`,
-        method: 'PATCH',
-        payload
+export const updateRolePermissions = async (roleId: string, payload: UpdatePermissionPayload): Promise<UpdatePermissionResponse> => {
+    console.log('🚀 Actualizando permisos del rol:', {
+        roleId,
+        totalPermissions: payload.permissions?.length || 0
     });
     
-    try {
-        // Intentar el endpoint específico de rol primero
-        const response = await api.patch<Role>(`/roles/${roleId}/permissions`, payload);
-        return response.data;
-    } catch (error) {
-        console.log('⚠️ Endpoint /roles/{id}/permissions falló, intentando /permissions/{id}...', error);
-        // Si falla, intentar el endpoint de permisos original
-        const response = await api.patch<Role>(`/permissions/${roleId}`, payload);
-        return response.data;
-    }
+    // 🔄 Convertir canUpdate (del form) -> canEdit (para el backend)
+    const convertedPayload = {
+        ...payload,
+        permissions: payload.permissions?.map(p => ({
+            moduleId: p.moduleId,
+            canRead: p.canRead,
+            canWrite: p.canWrite,
+            canEdit: p.canUpdate, // Form usa canUpdate, backend usa canEdit
+            canDelete: p.canDelete
+        }))
+    };
+
+    console.log('🔄 Payload enviado al backend:', convertedPayload);
+    
+    // Usar el endpoint correcto según tu backend
+    const response = await api.patch<UpdatePermissionResponse>(`/permissions/role/${roleId}`, convertedPayload);
+    
+    console.log('✅ Permisos actualizados exitosamente:', response.data);
+    return response.data;
 }
