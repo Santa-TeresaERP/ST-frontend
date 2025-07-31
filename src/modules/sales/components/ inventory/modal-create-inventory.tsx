@@ -30,8 +30,6 @@ const ModalCreateInventory: React.FC<Props> = ({ isOpen, onClose }) => {
   // 3. FILTRAR SOLO TIENDAS HABILITADAS
   const enabledStores = getEnabledStores(stores);
   const hasValidStores = enabledStores.length > 0;
-  const { data: storesResponse, isLoading: isLoadingStores } = useFetchStores(1, 100);
-  const stores = storesResponse?.stores || [];
   const { selectedStore } = useStoreState();
   
   const { mutate: createItem, isPending, error: mutationError } = useCreateWarehouseStoreItem();

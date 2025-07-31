@@ -1,6 +1,7 @@
 import { CreatePermissionPayload, UpdatePermissionPayload, Permission } from "../types/permission";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { deletePermission, getPermission, createPermission, updatePermission, fetchPermissions, getPermissionsByRole } from "../action/permissions";
+import { deletePermission, getPermission, createPermission, fetchPermissions, getPermissionsByRole } from "../action/permissions";
+import { updateRolePermissions, UpdatePermissionResponse } from "../action/role"; // ← Importar la función y tipo correctos
 
 export const useFetchPermissions = () => {
   return useQuery<Permission[], Error>({
@@ -40,7 +41,7 @@ export const useCreatePermission = () => {
 
 export const useUpdatePermission = () => {
   const queryClient = useQueryClient();
-  return useMutation<Permission, Error, {
+  return useMutation<UpdatePermissionResponse, Error, {
     id: string;
     payload: UpdatePermissionPayload;
   }>({
@@ -53,7 +54,7 @@ export const useUpdatePermission = () => {
         payload,
         totalPermissions: payload.permissions?.length || 0
       });
-      return updatePermission(id, payload);
+      return updateRolePermissions(id, payload); // ← Usar la función correcta
     },
     onSuccess: (data, variables) => {
       console.log('✅ useUpdatePermission - Mutation exitosa:', {
