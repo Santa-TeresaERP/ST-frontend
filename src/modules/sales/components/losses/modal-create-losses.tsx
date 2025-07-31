@@ -79,6 +79,8 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
     };
   }, []);
 
+  // ... imports se mantienen igual ...
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -87,31 +89,37 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
       return;
     }
 
-    // Validar que hay tienda seleccionada
     if (!selectedStoreId) {
-      setLocalError("Debes seleccionar una tienda antes de registrar pérdidas.");
+      setLocalError(
+        "Debes seleccionar una tienda antes de registrar pérdidas."
+      );
       return;
     }
 
     try {
-      const data = {
-        product_id: productId,
-        sale_id: salesId,
+      const payload = {
+        productId,
+        salesId,
         reason,
         observations,
         quantity,
-        store_id: selectedStoreId,
       };
 
-      // Validate data with returnSchema
-      const validation = returnSchema.safeParse(data);
+      const validation = returnSchema.safeParse(payload);
       if (!validation.success) {
-        setLocalError("Datos inválidos: " + validation.error.errors.map(e => e.message).join(", "));
+        setLocalError(
+          "Datos inválidos: " +
+            validation.error.errors.map((e) => e.message).join(", ")
+        );
         return;
       }
 
+      console.log("✅ Payload que se enviará:", validation.data);
+
       await mutateAsync(validation.data);
       onClose();
+
+      // Reset campos
       setProductSearch("");
       setProductId("");
       setSalesSearch("");
@@ -151,7 +159,8 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
           {!selectedStoreId && (
             <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-yellow-800 text-sm">
-                ⚠️ <strong>Tienda requerida:</strong> Debes seleccionar una tienda en el panel principal antes de registrar pérdidas.
+                ⚠️ <strong>Tienda requerida:</strong> Debes seleccionar una
+                tienda en el panel principal antes de registrar pérdidas.
               </p>
             </div>
           )}
@@ -222,20 +231,29 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
                   {(salesSearch
                     ? filteredSales
                     : [...filteredSales]
-                        .sort((a, b) => new Date(b.income_date).getTime() - new Date(a.income_date).getTime())
+                        .sort(
+                          (a, b) =>
+                            new Date(b.income_date).getTime() -
+                            new Date(a.income_date).getTime()
+                        )
                         .slice(0, 3)
                   ).map((sale) => (
                     <li
                       key={sale.id}
                       className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
                       onClick={() => {
-                        const formatted = new Date(sale.income_date).toLocaleString("es-PE");
-                        setSalesSearch(`${formatted} - S/ ${sale.total_income}`);
+                        const formatted = new Date(
+                          sale.income_date
+                        ).toLocaleString("es-PE");
+                        setSalesSearch(
+                          `${formatted} - S/ ${sale.total_income}`
+                        );
                         setSalesId(sale.id!);
                         setShowSalesDropdown(false);
                       }}
                     >
-                      🗕️ {new Date(sale.income_date).toLocaleString("es-PE")} — 💵 S/ {sale.total_income}
+                      🗕️ {new Date(sale.income_date).toLocaleString("es-PE")} —
+                      💵 S/ {sale.total_income}
                     </li>
                   ))}
                 </ul>
@@ -299,12 +317,16 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
               disabled={!selectedStoreId || isPending}
               className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
                 selectedStoreId && !isPending
-                  ? 'bg-red-800 text-white hover:bg-red-600' 
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  ? "bg-red-800 text-white hover:bg-red-600"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
             >
-              <Save size={18} /> 
-              {isPending ? 'Guardando...' : selectedStoreId ? 'Guardar' : 'Selecciona Tienda'}
+              <Save size={18} />
+              {isPending
+                ? "Guardando..."
+                : selectedStoreId
+                  ? "Guardar"
+                  : "Selecciona Tienda"}
             </button>
           </div>
         </form>
