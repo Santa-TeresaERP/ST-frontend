@@ -1,11 +1,9 @@
-'use client';
 import React, { useState, useMemo } from 'react';
 import { FiPackage, FiPlus, FiEdit, FiTrash2 } from 'react-icons/fi';
 import { useFetchWarehouseStoreItems, useDeleteWarehouseStoreItem } from '../../hooks/useInventoryQueries';
 import { WarehouseStoreItem } from '../../types/inventory.types';
-import { StoreAttributes } from '@/modules/sales/types/store';
 import { useCheckStoreActiveSession } from '../../hooks/useCashSession';
-import { isStoreOperational, getStoreOperationalMessage } from '../../utils/store-status';
+import { isStoreOperational } from '../../utils/store-status';
 import ModalCreateInventory from './modal-create-inventory';
 import ModalEditInventory from './modal-edit-inventory';
 import ModalDeleteInventory from './modal-delete-inventory';
@@ -15,27 +13,25 @@ interface InventoryViewProps {
 }
 
 const InventoryComponentsView: React.FC<InventoryViewProps> = ({ selectedStoreId }) => {
-  const { data: inventory = [], isLoading, error } = useFetchWarehouseStoreItems();
+  const { data: inventory = [], isLoading, error } = useFetchWarehouseStoreItems(); 
   const { mutate: deleteItem, isPending: isDeleting } = useDeleteWarehouseStoreItem();
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<WarehouseStoreItem | null>(null);
 
+  // Get store session data for the selected store
+  const { data: storeSessionData } = useCheckStoreActiveSession(selectedStoreId);
+
   const filteredInventory = useMemo(() => {
     if (!selectedStoreId) return [];
-    return inventory.filter(item => item.store.id === selectedStoreId);
+    return inventory.filter(item => item.storeId === selectedStoreId);
   }, [inventory, selectedStoreId]);
 
   const handleOpenEditModal = (item: WarehouseStoreItem) => { setSelectedItem(item); setEditModalOpen(true); };
   const handleOpenDeleteModal = (item: WarehouseStoreItem) => { setSelectedItem(item); setDeleteModalOpen(true); };
   const handleDeleteConfirm = () => { if (selectedItem) deleteItem(selectedItem.id, { onSuccess: closeModal }); };
   const closeModal = () => { setEditModalOpen(false); setDeleteModalOpen(false); setSelectedItem(null); };
-
-  // Filtrar inventario por tienda seleccionada
-  const filteredInventory = selectedStore
-    ? inventory.filter((item) => item.storeId === selectedStore.id)
-    : inventory;
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 space-y-6 text-gray-700">
@@ -50,7 +46,7 @@ const InventoryComponentsView: React.FC<InventoryViewProps> = ({ selectedStoreId
           }`}
         >
           <FiPlus className="mr-2 h-5 w-5" />
-          {selectedStore && isStoreOperational(storeSessionData) ? 'Nuevo Producto' : 'Selecciona Tienda'}
+          {selectedStoreId && isStoreOperational(storeSessionData) ? 'Nuevo Producto' : 'Selecciona Tienda'}
         </button>
       </div>
       <h2 className="text-2xl font-bold text-red-600 flex items-center space-x-2">
@@ -87,23 +83,7 @@ const InventoryComponentsView: React.FC<InventoryViewProps> = ({ selectedStoreId
                       <button onClick={() => handleOpenDeleteModal(item)} className="text-red-500 hover:text-red-600"><FiTrash2 size={18} /></button>
                     </td>
                   </tr>
-                ) : (
-                  filteredInventory.map((item) => (
-                    <tr key={item.id} className="border-t hover:bg-gray-50">
-                      <td className="px-4 py-2 text-center">{item.product.name}</td>
-                      <td className="px-4 py-2 text-center">{item.quantity}</td>
-                      <td className="px-4 py-2 text-center">{new Date(item.updatedAt).toLocaleDateString()}</td>
-                      <td className="px-4 py-2 text-center flex justify-center space-x-3">
-                        <button onClick={() => handleOpenEditModal(item)} className="text-blue-500 hover:text-yellow-600">
-                          <FiEdit size={18} />
-                        </button>
-                        <button onClick={() => handleOpenDeleteModal(item)} className="text-red-500 hover:text-red-600">
-                          <FiTrash2 size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
           </div>

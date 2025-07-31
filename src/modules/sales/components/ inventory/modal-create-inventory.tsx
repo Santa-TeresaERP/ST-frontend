@@ -34,31 +34,26 @@ const ModalCreateInventory: React.FC<Props> = ({ isOpen, onClose, selectedStoreI
   // 3. FILTRAR SOLO TIENDAS HABILITADAS
   const enabledStores = getEnabledStores(stores);
   const hasValidStores = enabledStores.length > 0;
-  const { data: storesResponse, isLoading: isLoadingStores } = useFetchStores(1, 100);
-  const stores = storesResponse?.stores || [];
   const { selectedStore } = useStoreState();
   
   const { mutate: createItem, isPending, error: mutationError } = useCreateWarehouseStoreItem();
 
-  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<CreateWarehouseStoreFormData>({
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<CreateWarehouseStoreFormData>({
     resolver: zodResolver(createWarehouseStoreSchema),
     defaultValues: {
       productId: '',
-      storeId: selectedStore?.id || '',
       quantity: 0,
     },
   });
 
-  // Sincronizar el storeId cuando cambia la tienda seleccionada o se abre el modal
-  useEffect(() => {
-    if (isOpen && selectedStore?.id) {
-      setValue('storeId', selectedStore.id);
-    }
-  }, [selectedStore, isOpen, setValue]);
-
   const onSubmit = (data: CreateWarehouseStoreFormData) => {
-    if (!selectedStoreId) return; // Seguridad extra
-    const payload = { ...data, storeId: selectedStoreId };
+    // Use selectedStore.id or selectedStoreId as fallback
+    const storeId = selectedStore?.id || selectedStoreId;
+    if (!storeId) {
+      console.error('No store selected');
+      return;
+    }
+    const payload = { ...data, storeId };
     createItem(payload, { onSuccess: () => { reset(); onClose(); } });
   };
 
@@ -98,26 +93,18 @@ const ModalCreateInventory: React.FC<Props> = ({ isOpen, onClose, selectedStoreI
                   className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-100 text-gray-700 cursor-not-allowed"
                 />
               ) : (
-                <select
-                  {...register('storeId')}
-                  className={`w-full border ${errors.storeId ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none`}
-                  disabled={areDependenciesLoading}
-                >
-                  <option value="">{isLoadingStores ? 'Cargando tiendas...' : 'Seleccione una tienda'}</option>
-                  {stores.map(s => <option key={s.id} value={s.id}>{s.store_name}</option>)}
-                </select>
-              )}
-              {/* Campo oculto para enviar el ID de la tienda */}
-              <input 
-                type="hidden" 
-                {...register('storeId')} 
-                value={selectedStore?.id || ''} 
-              />
-              {errors.storeId && <p className="text-sm text-red-600 mt-1">{errors.storeId.message}</p>}
-              {!selectedStore && (
-                <p className="text-amber-600 text-xs mt-1">
-                  💡 Selecciona una tienda desde la vista principal para facilitar el llenado
-                </p>
+                <div>
+                  <select
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                    disabled={areDependenciesLoading}
+                    value=""
+                  >
+                    <option value="">{isLoadingStores ? 'Cargando tiendas...' : 'Seleccione una tienda desde el panel principal'}</option>
+                  </select>
+                  <p className="text-amber-600 text-xs mt-1">
+                    💡 Selecciona una tienda desde la vista principal para poder añadir inventario
+                  </p>
+                </div>
               )}
             </div>
 
@@ -131,7 +118,15 @@ const ModalCreateInventory: React.FC<Props> = ({ isOpen, onClose, selectedStoreI
             <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition">
               Cancelar
             </button>
-            <button type="submit" disabled={isPending || areDependenciesLoading} className="px-4 py-2 bg-red-800 text-white rounded-lg gap-2 flex items-center disabled:bg-gray-400">
+            <button 
+              type="submit" 
+              disabled={isPending || areDependenciesLoading || (!selectedStore && !selectedStoreId)} 
+              className={`px-4 py-2 rounded-lg gap-2 flex items-center transition ${
+                isPending || areDependenciesLoading || (!selectedStore && !selectedStoreId)
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-red-800 hover:bg-red-700 text-white'
+              }`}
+            >
               {isPending ? 'Guardando...' : <><Save size={18} /> Guardar</>}
             </button>
           </div>
