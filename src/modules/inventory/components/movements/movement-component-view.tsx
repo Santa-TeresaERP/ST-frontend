@@ -52,7 +52,7 @@ const MovementComponentView: React.FC = () => {
   const getStoreName = (id: string | null | undefined) => {
   if (!id) return '';
   const store = stores.find((s: any) => String(s.id) === String(id));
-  return store ? (store.store_name || store.name || store.id) : id;
+  return store ? (store.store_name || store.store_name || store.id) : id;
 };
 
   // Filtrar movimientos por producto, almacén o tienda
