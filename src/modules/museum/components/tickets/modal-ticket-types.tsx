@@ -8,9 +8,10 @@ import type { TypePerson } from '../../types/typePerson'
 interface ModalTicketTypesProps {
   isOpen: boolean
   onClose: () => void
+  onCreated?: () => void
 }
 
-const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose }) => {
+const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose, onCreated }) => {
   const { data: tiposPersona = [], loading, error, create, update, remove } = useTypePerson()
   const { data: entrances = [] } = useEntrance()
   
@@ -43,6 +44,7 @@ const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose }) 
       setEditingId(null)
       setEditType('')
       setEditPrice('')
+      if (onCreated) onCreated();
     } catch (err) {
       console.error('Error al actualizar:', err)
     }
@@ -63,6 +65,7 @@ const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose }) 
     } catch (err) {
       console.error('Error al eliminar:', err)
     }
+    if (onCreated) onCreated();
   }
 
   const handleAddTicket = async () => {
@@ -73,6 +76,7 @@ const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose }) 
       await create(payload)
       setNewType('')
       setNewPrice('')
+      if (onCreated) onCreated();
     } catch (err) {
       console.error('Error creando tipo:', err)
     }
@@ -89,7 +93,7 @@ const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose }) 
             <h2 className="text-2xl font-bold">Tipos de Ticket</h2>
             <p className="text-red-100">Administra los tipos de ticket disponibles</p>
           </div>
-          <button onClick={onClose}><X size={24} /></button>
+          <button onClick={() => { onClose(); window.location.reload(); }}><X size={24} /></button>
         </div>
 
         {/* Nuevo */}

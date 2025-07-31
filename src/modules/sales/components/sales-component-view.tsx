@@ -19,6 +19,12 @@ const SalesView: React.FC = () => {
     setSelectedStore(store);
   };
 
+  const handleStoreUpdate = async (storeId: string) => {
+    // Find the updated store from the stores list or refetch
+    // For now, we'll keep the current store selection
+    console.log('Store updated:', storeId);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6 space-y-6">
       {/* Cabecera */}
@@ -130,9 +136,14 @@ const SalesView: React.FC = () => {
 
       {/* Render de componentes según tab */}
       <div className="mt-6">
-        {activeTab === 'informacion' && <InformationComponentView selectedStore={selectedStore} />}
+        {activeTab === 'informacion' && (
+          <InformationComponentView 
+            selectedStore={selectedStore} 
+            onStoreUpdate={handleStoreUpdate}
+          />
+        )}
         {activeTab === 'ventas' && <SalesComponentsView selectedStore={selectedStore} />}
-        {activeTab === 'inventario' && <InventoryComponentsView selectedStore={selectedStore} />}
+        {activeTab === 'inventario' && <InventoryComponentsView selectedStoreId={selectedStore?.id} />}
         {activeTab === 'perdidas' && <LossesComponentView selectedStoreId={selectedStore?.id} />}
 
       </div>

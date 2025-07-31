@@ -6,11 +6,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { X, Save } from 'lucide-react';
 import { FiPackage } from 'react-icons/fi';
 
-// 1. IMPORTAR HOOKS DE OTROS MÓDULOS
-import { useFetchProducts } from '@/modules/production/hook/useProducts'; // Asegúrate que esta ruta es correcta
-import { useFetchStores } from '@/modules/sales/hooks/useStore';         // Hook corregido para obtener tiendas
+// 1. IMPORTAR HOOKS DE OTROS MÓDULOS (versión limpia)
+import { useFetchProducts } from '@/modules/production/hook/useProducts';
+import { useFetchStores } from '@/modules/sales/hooks/useStore';
 
-// Importaciones del módulo actual
+// Importaciones del módulo actual (versión limpia)
 import { useCreateWarehouseStoreItem } from '../../hooks/useInventoryQueries';
 import { createWarehouseStoreSchema, CreateWarehouseStoreFormData } from '../../schemas/inventory.schema';
 import { useStoreState } from '@/core/store/store';
@@ -18,10 +18,14 @@ import { useStoreState } from '@/core/store/store';
 // Importar validaciones de tienda
 import { getEnabledStores } from '../../utils/store-validation';
 
-interface Props { isOpen: boolean; onClose: () => void; }
+interface Props { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  selectedStoreId?: string; // Mantenemos la prop opcional por si se reutiliza
+}
 
-const ModalCreateInventory: React.FC<Props> = ({ isOpen, onClose }) => {
-  // 2. OBTENER DATOS PARA LOS DESPLEGABLES
+const ModalCreateInventory: React.FC<Props> = ({ isOpen, onClose, selectedStoreId }) => {
+  // 2. OBTENER DATOS PARA LOS DESPLEGABLES (versión resuelta)
   const { data: products = [], isLoading: isLoadingProducts } = useFetchProducts();
   // Obtener tiendas (paginación si es necesario)
   const { data: storesResponse, isLoading: isLoadingStores } = useFetchStores(1, 100);
@@ -34,29 +38,23 @@ const ModalCreateInventory: React.FC<Props> = ({ isOpen, onClose }) => {
   
   const { mutate: createItem, isPending, error: mutationError } = useCreateWarehouseStoreItem();
 
-  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<CreateWarehouseStoreFormData>({
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<CreateWarehouseStoreFormData>({
     resolver: zodResolver(createWarehouseStoreSchema),
     defaultValues: {
       productId: '',
-      storeId: selectedStore?.id || '',
       quantity: 0,
     },
   });
 
-  // Sincronizar el storeId cuando cambia la tienda seleccionada o se abre el modal
-  useEffect(() => {
-    if (isOpen && selectedStore?.id) {
-      setValue('storeId', selectedStore.id);
-    }
-  }, [selectedStore, isOpen, setValue]);
-
   const onSubmit = (data: CreateWarehouseStoreFormData) => {
-    createItem(data, {
-      onSuccess: () => {
-        reset(); // Limpia el formulario
-        onClose(); // Cierra el modal
-      },
-    });
+    // Use selectedStore.id or selectedStoreId as fallback
+    const storeId = selectedStore?.id || selectedStoreId;
+    if (!storeId) {
+      console.error('No store selected');
+      return;
+    }
+    const payload = { ...data, storeId };
+    createItem(payload, { onSuccess: () => { reset(); onClose(); } });
   };
 
   if (!isOpen) return null;
@@ -73,19 +71,13 @@ const ModalCreateInventory: React.FC<Props> = ({ isOpen, onClose }) => {
             <X size={22} />
           </button>
         </div>
-
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5 text-left">
           {mutationError && <p className="text-sm text-red-600 font-medium">Error al crear: {mutationError.message}</p>}
-
           <div className="space-y-4">
             <div>
               <label className="block text-gray-700 mb-1 font-medium">Producto <span className="text-red-600">*</span></label>
-              <select
-                {...register('productId')}
-                className={`w-full border ${errors.productId ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none`}
-                disabled={areDependenciesLoading}
-              >
-                <option value="">{isLoadingProducts ? 'Cargando productos...' : 'Seleccione un producto'}</option>
+              <select {...register('productId')} className={`w-full border rounded-lg px-4 py-2`} disabled={isLoadingProducts}>
+                <option value="">{isLoadingProducts ? 'Cargando...' : 'Seleccione un producto'}</option>
                 {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
               {errors.productId && <p className="text-sm text-red-600 mt-1">{errors.productId.message}</p>}
@@ -101,49 +93,39 @@ const ModalCreateInventory: React.FC<Props> = ({ isOpen, onClose }) => {
                   className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-100 text-gray-700 cursor-not-allowed"
                 />
               ) : (
-                <select
-                  {...register('storeId')}
-                  className={`w-full border ${errors.storeId ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none`}
-                  disabled={areDependenciesLoading}
-                >
-                  <option value="">{isLoadingStores ? 'Cargando tiendas...' : 'Seleccione una tienda'}</option>
-                  {stores.map(s => <option key={s.id} value={s.id}>{s.store_name}</option>)}
-                </select>
-              )}
-              {/* Campo oculto para enviar el ID de la tienda */}
-              <input 
-                type="hidden" 
-                {...register('storeId')} 
-                value={selectedStore?.id || ''} 
-              />
-              {errors.storeId && <p className="text-sm text-red-600 mt-1">{errors.storeId.message}</p>}
-              {!selectedStore && (
-                <p className="text-amber-600 text-xs mt-1">
-                  💡 Selecciona una tienda desde la vista principal para facilitar el llenado
-                </p>
+                <div>
+                  <select
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+                    disabled={areDependenciesLoading}
+                    value=""
+                  >
+                    <option value="">{isLoadingStores ? 'Cargando tiendas...' : 'Seleccione una tienda desde el panel principal'}</option>
+                  </select>
+                  <p className="text-amber-600 text-xs mt-1">
+                    💡 Selecciona una tienda desde la vista principal para poder añadir inventario
+                  </p>
+                </div>
               )}
             </div>
 
             <div>
               <label className="block text-gray-700 mb-1 font-medium">Cantidad <span className="text-red-600">*</span></label>
-              <input
-                type="number"
-                {...register('quantity')}
-                className={`w-full border ${errors.quantity ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none`}
-                placeholder="Cantidad en stock"
-              />
+              <input type="number" {...register('quantity')} className={`w-full border rounded-lg px-4 py-2`} placeholder="Cantidad en stock" />
               {errors.quantity && <p className="text-sm text-red-600 mt-1">{errors.quantity.message}</p>}
             </div>
           </div>
-
           <div className="flex justify-end space-x-3 pt-4">
             <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition">
               Cancelar
             </button>
-            <button
-              type="submit"
-              disabled={isPending || areDependenciesLoading}
-              className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-600 transition flex items-center gap-2 disabled:bg-gray-400"
+            <button 
+              type="submit" 
+              disabled={isPending || areDependenciesLoading || (!selectedStore && !selectedStoreId)} 
+              className={`px-4 py-2 rounded-lg gap-2 flex items-center transition ${
+                isPending || areDependenciesLoading || (!selectedStore && !selectedStoreId)
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-red-800 hover:bg-red-700 text-white'
+              }`}
             >
               {isPending ? 'Guardando...' : <><Save size={18} /> Guardar</>}
             </button>

@@ -21,7 +21,6 @@ import { useFetchProducts } from '@/modules/inventory/hook/useProducts';
 import { useFetchStores } from '@/modules/sales/hooks/useStore';
 import FilterMovement from './movement/filter-movement';
 
-
 const MovementComponentView: React.FC = () => {
   const [filters, setFilters] = useState<any>({});
   // Productos
@@ -37,7 +36,7 @@ const MovementComponentView: React.FC = () => {
   const { data: resources = [] } = useFetchResources();
   const { data: products = [] } = useFetchProducts();
   const { data: storesData } = useFetchStores();
-  const stores = Array.isArray(storesData) ? storesData : [];
+  const stores = Array.isArray(storesData?.stores) ? storesData.stores : [];
 
   // General
   const [searchTerm, setSearchTerm] = useState('');
@@ -47,11 +46,14 @@ const MovementComponentView: React.FC = () => {
   const handleFilter = (newFilters: any) => {
     setFilters(newFilters);
   };
- 
   const getWarehouseName = (id: string) => warehouses.find((w: any) => w.id === id)?.name || id;
   const getResourceName = (id: string) => resources.find((r: any) => r.id === id)?.name || id;
   const getProductName = (id: string) => products.find((p: any) => p.id === id)?.name || id;
-  const getStoreName = (id: string | null | undefined) => stores.find((s: any) => s.id === (id || ''))?.store_name || (id || '');
+  const getStoreName = (id: string | null | undefined) => {
+  if (!id) return '';
+  const store = stores.find((s: any) => String(s.id) === String(id));
+  return store ? (store.store_name || store.store_name || store.id) : id;
+};
 
   // Filtrar movimientos por producto, almacén o tienda
   const filteredMovements = movements.filter(
@@ -64,7 +66,7 @@ const MovementComponentView: React.FC = () => {
       (searchTerm ? (
         getProductName(mov.product_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
         getWarehouseName(mov.warehouse_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
-        mov.store_id?.toLowerCase().includes(searchTerm.toLowerCase())
+        getStoreName(mov.store_id).toLowerCase().includes(searchTerm.toLowerCase())
       ) : true)
   );
 
@@ -130,7 +132,7 @@ const MovementComponentView: React.FC = () => {
         onSearchChange={setSearchTerm}
         searchTerm={searchTerm}
         products={products}
-        stores={warehouses}
+        stores={stores}
       />
 
       {/* Display active filters */}
