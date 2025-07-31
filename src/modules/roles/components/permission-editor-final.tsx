@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "../../../app/components/ui/button";
 import { Card } from "../../../app/components/ui/card";
 import { Dialog, DialogContent, DialogTitle, DialogFooter } from "../../../app/components/ui/dialog";
-import { ShieldCheck, Eye, Edit, Trash2, Plus, X, AlertCircle, Save } from "lucide-react";
+import { ShieldCheck, Eye, Edit, Trash2, Plus, X, AlertCircle, Save, Menu } from "lucide-react"; // Importar el icono Menu
 import { useFetchPermissionsByRole } from "../hook/usePermissions";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -48,6 +48,7 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
   const [modifiedModules, setModifiedModules] = useState<Set<string>>(new Set());
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(false);
   const [permissionsError, setPermissionsError] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Nuevo estado para la barra lateral desplegable
 
   // Obtener permisos existentes del backend usando el hook existente
   const { data: existingPermissions, isLoading: hookIsLoading, error: hookError } = useFetchPermissionsByRole(role?.id || null);
@@ -66,11 +67,10 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
         dataLength: existingPermissions?.length || 0
       });
 
-      // Log detallado de cada permiso
       if (existingPermissions && Array.isArray(existingPermissions) && existingPermissions.length > 0) {
         console.log('🔍 DEBUG - Permisos individuales:');
         existingPermissions.forEach((perm, index) => {
-          console.log(`  [${index}] Permiso:`, {
+          console.log(`  [${index}] Permiso:`, {
             moduleId: perm.moduleId,
             canRead: perm.canRead,
             canWrite: perm.canWrite,
@@ -85,7 +85,6 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
     }
   }, [role?.id, role?.name, existingPermissions, hookIsLoading, hookError]);
 
-  // 🚀 NUEVA FUNCIÓN: Cargar permisos existentes del rol completo
   const loadRolePermissions = useCallback(async () => {
     if (!role?.id || !isOpen || modules.length === 0) return;
 
@@ -93,7 +92,7 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
       roleId: role.id,
       roleName: role.name,
       totalModules: modules.length,
-      existingPermissions: existingPermissions,
+      existingPermissions,
       existingPermissionsType: typeof existingPermissions,
       isArray: Array.isArray(existingPermissions)
     });
@@ -102,9 +101,8 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
     setPermissionsError(null);
 
     try {
-      // Inicializar TODOS los módulos con false por defecto
       const initialPermissions: { [moduleId: string]: PermissionData } = {};
-      
+
       modules.forEach((module) => {
         initialPermissions[module.id] = {
           canRead: false,
@@ -114,10 +112,9 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
         };
       });
 
-      // Sobrescribir con los permisos existentes (usando el hook data)
       if (existingPermissions && Array.isArray(existingPermissions)) {
         console.log('📋 APLICANDO permisos existentes:', existingPermissions);
-        
+
         existingPermissions.forEach((permission: ExistingPermission) => {
           console.log('🔄 Procesando permiso existente:', {
             moduleId: permission.moduleId,
@@ -126,17 +123,17 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
             canUpdate: permission.canUpdate,
             canDelete: permission.canDelete
           });
-          
+
           if (initialPermissions[permission.moduleId]) {
             const before = JSON.parse(JSON.stringify(initialPermissions[permission.moduleId]));
             initialPermissions[permission.moduleId] = {
               canRead: permission.canRead || false,
               canWrite: permission.canWrite || false,
-              canUpdate: permission.canUpdate || false, // Ya convertido desde canEdit
+              canUpdate: permission.canUpdate || false,
               canDelete: permission.canDelete || false,
             };
             const after = initialPermissions[permission.moduleId];
-            
+
             console.log('✅ Permiso aplicado:', {
               moduleId: permission.moduleId,
               before,
@@ -160,7 +157,7 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
       }
 
       console.log('✅ Permisos inicializados completos:', initialPermissions);
-      
+
       setAllPermissions(initialPermissions);
       setOriginalPermissions(JSON.parse(JSON.stringify(initialPermissions))); // Deep copy
       setModifiedModules(new Set());
@@ -173,14 +170,12 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
     }
   }, [role?.id, role?.name, isOpen, modules, existingPermissions]);
 
-  // 🎯 Función separada para seleccionar módulo inicial
   const selectInitialModule = useCallback(() => {
     if (modules.length > 0 && !selectedModule) {
       setSelectedModule(modules[0].id);
     }
   }, [modules, selectedModule]);
 
-  // Cargar permisos cuando se abre el modal o cuando cambien los datos
   useEffect(() => {
     console.log('🎯 useEffect - Evaluando si cargar permisos:', {
       isOpen,
@@ -190,7 +185,7 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
       hasExistingPermissions: !!existingPermissions,
       existingPermissionsLength: existingPermissions?.length || 0
     });
-    
+
     if (isOpen && role && modules.length > 0 && !hookIsLoading) {
       console.log('✅ Ejecutando loadRolePermissions...');
       loadRolePermissions();
@@ -199,12 +194,10 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
     }
   }, [isOpen, role, modules, existingPermissions, hookIsLoading, loadRolePermissions]);
 
-  // Seleccionar módulo inicial (separado del loadRolePermissions)
   useEffect(() => {
     selectInitialModule();
   }, [selectInitialModule]);
 
-  // Manejar errores del hook
   useEffect(() => {
     if (hookError) {
       setPermissionsError(hookError.message);
@@ -212,7 +205,6 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
     }
   }, [hookError]);
 
-  // 🔄 Función para actualizar permisos (solo estado local + debounced save)
   const updatePermission = (moduleId: string, permissionType: keyof PermissionData, value: boolean) => {
     console.log('🔄 Actualizando permiso localmente:', {
       module: modules.find(m => m.id === moduleId)?.name,
@@ -221,7 +213,6 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
       moduleId
     });
 
-    // Actualizar estado local inmediatamente
     const updatedPermissions = {
       ...allPermissions,
       [moduleId]: {
@@ -232,10 +223,9 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
 
     setAllPermissions(updatedPermissions);
 
-    // Marcar módulo como modificado para indicadores visuales
     const original = originalPermissions[moduleId] || { canRead: false, canWrite: false, canUpdate: false, canDelete: false };
     const current = updatedPermissions[moduleId];
-    
+
     const hasChanged = (
       original.canRead !== current.canRead ||
       original.canWrite !== current.canWrite ||
@@ -260,7 +250,6 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
     });
   };
 
-  // 🚀 Función para guardar TODOS los cambios al backend (manual)
   const saveChangesToBackend = async () => {
     if (!role?.id || modifiedModules.size === 0) {
       console.log('⚠️ No hay cambios para guardar');
@@ -268,7 +257,6 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
     }
 
     try {
-      // Convertir TODOS los módulos a array de permisos
       const allPermissionsArray = modules.map(module => ({
         moduleId: module.id,
         canRead: allPermissions[module.id]?.canRead || false,
@@ -290,21 +278,18 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
       });
 
       console.log('✅ Permisos guardados exitosamente (manual)');
-      
-      // 🔄 INVALIDAR LA QUERY para recargar los permisos actualizados
+
       await queryClient.invalidateQueries({
         queryKey: ["permissions", "role", role.id]
       });
-      
+
       console.log('🔄 Query invalidada, los permisos se recargaran automáticamente');
-      
-      // ⏰ Pequeño delay para permitir que la query se actualice
+
       await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Actualizar permisos originales con los nuevos valores
+
       setOriginalPermissions(JSON.parse(JSON.stringify(allPermissions)));
       setModifiedModules(new Set());
-      
+
       return true;
 
     } catch (error) {
@@ -313,20 +298,16 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
     }
   };
 
-  // Función para resetear cambios a su estado original
   const handleReset = () => {
     setAllPermissions(JSON.parse(JSON.stringify(originalPermissions)));
     setModifiedModules(new Set());
   };
 
-  //  Función para guardar manualmente
   const handleSaveChanges = async () => {
     await saveChangesToBackend();
   };
 
-  // 🔄 Función para manejar el cierre del modal
   const handleCloseModal = () => {
-    // Invalidar la query antes de cerrar para garantizar datos frescos al reabrir
     if (role?.id) {
       queryClient.invalidateQueries({
         queryKey: ["permissions", "role", role.id]
@@ -343,17 +324,25 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleCloseModal()}>
       <DialogContent className="w-full max-w-[95%] sm:max-w-[1000px] h-[90vh] rounded-xl shadow-lg px-0 pb-0 pt-0 flex flex-col">
-        
-        {/* Header */}
-        <div className="w-full bg-gradient-to-r from-green-600 to-green-500 rounded-t-xl px-6 py-4 flex items-center justify-between">
+
+        <div className="w-full bg-gradient-to-r from-green-600 to-green-500 rounded-t-xl px-6 py-4 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center space-x-3">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsSidebarOpen(true)}
+              className="md:hidden text-white hover:bg-white/10"
+              title="Abrir módulos"
+            >
+              <Menu className="h-6 w-6" />
+            </Button>
             <ShieldCheck className="h-6 w-6 text-white" />
             <DialogTitle className="text-xl font-semibold text-white">
               Gestionar Permisos - {role.name}
             </DialogTitle>
           </div>
-          
-          {/* Indicador de cambios */}
+
           {modifiedModules.size > 0 && (
             <div className="bg-white/20 rounded-full px-3 py-1">
               <span className="text-sm text-white font-medium">
@@ -363,16 +352,26 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
           )}
         </div>
 
-        {/* Contenido principal */}
         <div className="flex flex-1 overflow-hidden">
-          
-          {/* Panel lateral izquierdo - Lista de módulos */}
-          <div className="w-80 border-r bg-gray-50 flex flex-col">
-            <div className="px-4 py-3 border-b bg-white">
+          <div className={`
+              ${isSidebarOpen ? 'fixed inset-0 z-50 bg-white flex' : 'hidden md:flex'}
+              w-full md:w-80 border-r bg-gray-50 flex-shrink-0 flex-col
+              ${isSidebarOpen ? 'py-4 px-2' : ''} /* Añadir padding cuando está abierta en móvil */
+          `}>
+            <div className="px-4 py-3 border-b bg-white flex-shrink-0 flex items-center justify-between">
               <h3 className="font-semibold text-gray-800">Módulos del Sistema</h3>
-              <p className="text-sm text-gray-600">Selecciona un módulo para editar sus permisos</p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsSidebarOpen(false)}
+                className="md:hidden text-gray-700 hover:bg-gray-100"
+                title="Cerrar módulos"
+              >
+                <X className="h-6 w-6" />
+              </Button>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-2">
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
@@ -391,21 +390,24 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
                   const isModified = modifiedModules.has(module.id);
                   const modulePermissions = allPermissions[module.id];
                   const hasPermissions = modulePermissions && (
-                    modulePermissions.canRead || 
-                    modulePermissions.canWrite || 
-                    modulePermissions.canUpdate || 
+                    modulePermissions.canRead ||
+                    modulePermissions.canWrite ||
+                    modulePermissions.canUpdate ||
                     modulePermissions.canDelete
                   );
 
                   return (
-                    <Card 
+                    <Card
                       key={module.id}
                       className={`mb-2 p-3 cursor-pointer transition-all hover:shadow-md ${
-                        isSelected 
-                          ? 'border-green-500 bg-green-50 ring-2 ring-green-200' 
+                        isSelected
+                          ? 'border-green-500 bg-green-50 ring-2 ring-green-200'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
-                      onClick={() => setSelectedModule(module.id)}
+                      onClick={() => {
+                        setSelectedModule(module.id);
+                        setIsSidebarOpen(false);
+                      }}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
@@ -416,14 +418,11 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
                             <p className="text-xs text-gray-500 mt-1">{module.description}</p>
                           )}
                         </div>
-                        
+
                         <div className="flex items-center space-x-1">
-                          {/* Indicador de permisos activos */}
                           {hasPermissions && (
                             <div className="w-2 h-2 rounded-full bg-green-500" title="Tiene permisos activos"></div>
                           )}
-                          
-                          {/* Indicador de cambios */}
                           {isModified && (
                             <div className="w-2 h-2 rounded-full bg-blue-500" title="Modificado"></div>
                           )}
@@ -436,12 +435,10 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
             </div>
           </div>
 
-          {/* Panel derecho - Editor de permisos */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col overflow-hidden">
             {selectedModule && allPermissions[selectedModule] !== undefined ? (
               <>
-                {/* Header del módulo seleccionado */}
-                <div className="px-6 py-4 border-b bg-white">
+                <div className="px-6 py-4 border-b bg-white flex-shrink-0">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-lg font-semibold text-gray-800">
@@ -451,7 +448,7 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
                         Haz múltiples cambios, luego guarda con el botón inferior
                       </p>
                     </div>
-                    
+
                     {modifiedModules.has(selectedModule) && (
                       <div className="text-blue-600 text-sm font-medium">
                         ● Modificado
@@ -460,10 +457,10 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
                   </div>
                 </div>
 
-                {/* Switches de permisos */}
+                {/* Div con scroll para los switches de permisos */}
                 <div className="flex-1 p-6 overflow-y-auto">
                   <div className="grid gap-6 max-w-2xl">
-                    
+
                     {/* Leer */}
                     <div className="flex items-center justify-between p-4 border rounded-lg bg-white shadow-sm">
                       <div className="flex items-center space-x-3">
@@ -552,8 +549,8 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
                 <div className="text-center text-gray-500">
                   <ShieldCheck className="h-12 w-12 mx-auto mb-3 opacity-50" />
                   <p>
-                    {isLoading 
-                      ? "Cargando permisos..." 
+                    {isLoading
+                      ? "Cargando permisos..."
                       : "Selecciona un módulo para editar sus permisos"
                     }
                   </p>
@@ -563,36 +560,35 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, ro
           </div>
         </div>
 
-        {/* Footer con botones */}
-        <DialogFooter className="border-t px-6 py-4 bg-gray-50 rounded-b-xl flex flex-row gap-4">
-          <Button 
-            type="button" 
-            variant="outline" 
+        <DialogFooter className="border-t px-6 py-4 bg-gray-50 rounded-b-xl flex flex-row gap-4 flex-shrink-0">
+          <Button
+            type="button"
+            variant="outline"
             onClick={handleCloseModal}
             className="border-gray-400 text-gray-700 hover:bg-gray-200"
           >
             <X className="h-4 w-4 mr-2" />
             Cerrar
           </Button>
-          
+
           {modifiedModules.size > 0 && (
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={handleReset}
               className="border-gray-400 text-gray-700 hover:bg-gray-200"
             >
               Deshacer {modifiedModules.size} cambio{modifiedModules.size !== 1 ? 's' : ''}
             </Button>
           )}
-          
-          <Button 
-            type="button" 
+
+          <Button
+            type="button"
             onClick={handleSaveChanges}
             disabled={modifiedModules.size === 0}
             className={`${
-              modifiedModules.size > 0 
-                ? 'bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white' 
+              modifiedModules.size > 0
+                ? 'bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white'
                 : 'bg-gray-300 text-gray-600 cursor-not-allowed'
             }`}
           >
