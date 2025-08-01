@@ -102,8 +102,8 @@ const ModuleModal: React.FC<ModuleModalProps> = ({
                 name="name"
                 type="text"
                 value={formData.name || ""}
-                onChange={handleInputChange}
-                className={`w-full ${errors.name ? "border-red-500" : ""}`}
+                readOnly
+                className="w-full bg-gray-100 cursor-not-allowed"
               />
               {errors.name && (
                 <p className="text-red-500 text-sm">{errors.name}</p>
