@@ -52,6 +52,11 @@ const Dashboard = () => {
               { name: "Alquileres", icon: "alquilar.png" },
             ]} />
           </div>
+          <div className="flex-1 flex justify-center">
+            <DepartmentSection title="Departamento de Finanzas" items={[
+              { name: "Finanzas", icon: "finanzas.png" },
+            ]} />
+          </div>
         </div>
       </main>
     </div>
