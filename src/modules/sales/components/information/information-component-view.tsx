@@ -422,7 +422,7 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
                 ? 'Selecciona Tienda'
                 : isInitialSetup
                   ? 'Configurar Caja' 
-                  : 'Cerrar Mes'
+                  : 'Finalizar Caja'
               }
             </span>
           </button>
