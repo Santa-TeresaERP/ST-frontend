@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "../../../app/components/ui/button";
 import { Card } from "../../../app/components/ui/card";
 import { Dialog, DialogContent, DialogTitle, DialogFooter } from "../../../app/components/ui/dialog";
-import { ShieldCheck, Eye, Edit, Trash2, Plus, X, AlertCircle, Save, Menu } from "lucide-react"; // Importar el icono Menu
+import { ShieldCheck, Eye, Edit, Trash2, Plus, X, AlertCircle, Save, Menu } from "lucide-react";
 import { useFetchPermissionsByRole } from "../hook/usePermissions";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -37,566 +37,284 @@ interface PermissionEditorProps {
   onClose: () => void;
   role: Role | null;
   modules: Module[];
-  onSubmit: (data: { id: string; permissions: { moduleId: string; canRead: boolean; canWrite: boolean; canUpdate: boolean; canDelete: boolean }[] }) => Promise<void>;
+  onSubmit: (data: {
+    id: string;
+    permissions: { moduleId: string; canRead: boolean; canWrite: boolean; canUpdate: boolean; canDelete: boolean }[];
+  }) => Promise<void>;
 }
 
-const PermissionEditor: React.FC<PermissionEditorProps> = ({ isOpen, onClose, role, modules, onSubmit }) => {
+const PermissionEditor: React.FC<PermissionEditorProps> = ({
+  isOpen,
+  onClose,
+  role,
+  modules,
+  onSubmit,
+}) => {
   const queryClient = useQueryClient();
-  const [allPermissions, setAllPermissions] = useState<{ [moduleId: string]: PermissionData }>({});
-  const [originalPermissions, setOriginalPermissions] = useState<{ [moduleId: string]: PermissionData }>({});
+  const [allPermissions, setAllPermissions] = useState<{ [m: string]: PermissionData }>({});
+  const [originalPermissions, setOriginalPermissions] = useState<{ [m: string]: PermissionData }>({});
   const [selectedModule, setSelectedModule] = useState<string>("");
   const [modifiedModules, setModifiedModules] = useState<Set<string>>(new Set());
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(false);
   const [permissionsError, setPermissionsError] = useState<string | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Nuevo estado para la barra lateral desplegable
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Obtener permisos existentes del backend usando el hook existente
-  const { data: existingPermissions, isLoading: hookIsLoading, error: hookError } = useFetchPermissionsByRole(role?.id || null);
+  const { data: existingPermissions, isLoading: hookIsLoading, error: hookError } =
+    useFetchPermissionsByRole(role?.id || null);
 
-  // 🔍 DEBUG: Log de los permisos existentes
-  useEffect(() => {
-    if (role?.id) {
-      console.log('🔍 DEBUG - Hook de permisos:', {
-        roleId: role.id,
-        roleName: role.name,
-        existingPermissions,
-        existingPermissionsStringified: JSON.stringify(existingPermissions, null, 2),
-        isLoading: hookIsLoading,
-        error: hookError,
-        dataIsArray: Array.isArray(existingPermissions),
-        dataLength: existingPermissions?.length || 0
-      });
+  const loadRolePermissions = useCallback(async () => {
+    if (!role?.id || !isOpen || modules.length === 0) return;
+    setIsLoadingPermissions(true);
+    setPermissionsError(null);
 
-      if (existingPermissions && Array.isArray(existingPermissions) && existingPermissions.length > 0) {
-        console.log('🔍 DEBUG - Permisos individuales:');
-        existingPermissions.forEach((perm, index) => {
-          console.log(`  [${index}] Permiso:`, {
-            moduleId: perm.moduleId,
+    const init: { [m: string]: PermissionData } = {};
+    modules.forEach((mod) => {
+      init[mod.id] = { canRead: false, canWrite: false, canUpdate: false, canDelete: false };
+    });
+    if (existingPermissions && Array.isArray(existingPermissions)) {
+      existingPermissions.forEach((perm: ExistingPermission) => {
+        if (init[perm.moduleId]) {
+          init[perm.moduleId] = {
             canRead: perm.canRead,
             canWrite: perm.canWrite,
             canUpdate: perm.canUpdate,
             canDelete: perm.canDelete,
-            hasCanUpdate: 'canUpdate' in perm,
-            hasCanEdit: 'canEdit' in (perm as Record<string, unknown>),
-            fullObject: perm
-          });
-        });
-      }
-    }
-  }, [role?.id, role?.name, existingPermissions, hookIsLoading, hookError]);
-
-  const loadRolePermissions = useCallback(async () => {
-    if (!role?.id || !isOpen || modules.length === 0) return;
-
-    console.log('🔍 Cargando permisos completos del rol...', {
-      roleId: role.id,
-      roleName: role.name,
-      totalModules: modules.length,
-      existingPermissions,
-      existingPermissionsType: typeof existingPermissions,
-      isArray: Array.isArray(existingPermissions)
-    });
-
-    setIsLoadingPermissions(true);
-    setPermissionsError(null);
-
-    try {
-      const initialPermissions: { [moduleId: string]: PermissionData } = {};
-
-      modules.forEach((module) => {
-        initialPermissions[module.id] = {
-          canRead: false,
-          canWrite: false,
-          canUpdate: false,
-          canDelete: false,
-        };
+          };
+        }
       });
-
-      if (existingPermissions && Array.isArray(existingPermissions)) {
-        console.log('📋 APLICANDO permisos existentes:', existingPermissions);
-
-        existingPermissions.forEach((permission: ExistingPermission) => {
-          console.log('🔄 Procesando permiso existente:', {
-            moduleId: permission.moduleId,
-            canRead: permission.canRead,
-            canWrite: permission.canWrite,
-            canUpdate: permission.canUpdate,
-            canDelete: permission.canDelete
-          });
-
-          if (initialPermissions[permission.moduleId]) {
-            const before = JSON.parse(JSON.stringify(initialPermissions[permission.moduleId]));
-            initialPermissions[permission.moduleId] = {
-              canRead: permission.canRead || false,
-              canWrite: permission.canWrite || false,
-              canUpdate: permission.canUpdate || false,
-              canDelete: permission.canDelete || false,
-            };
-            const after = initialPermissions[permission.moduleId];
-
-            console.log('✅ Permiso aplicado:', {
-              moduleId: permission.moduleId,
-              before,
-              after
-            });
-          } else {
-            console.log('⚠️ Módulo no encontrado para permiso:', permission.moduleId);
-          }
-        });
-
-        console.log('🔄 Permisos existentes aplicados:', {
-          existingCount: existingPermissions.length,
-          appliedPermissions: existingPermissions
-        });
-      } else {
-        console.log('⚠️ No hay permisos existentes o no es un array:', {
-          existingPermissions,
-          type: typeof existingPermissions,
-          isArray: Array.isArray(existingPermissions)
-        });
-      }
-
-      console.log('✅ Permisos inicializados completos:', initialPermissions);
-
-      setAllPermissions(initialPermissions);
-      setOriginalPermissions(JSON.parse(JSON.stringify(initialPermissions))); // Deep copy
-      setModifiedModules(new Set());
-
-    } catch (error) {
-      console.error('❌ Error cargando permisos del rol:', error);
-      setPermissionsError('Error al cargar permisos del rol');
-    } finally {
-      setIsLoadingPermissions(false);
     }
-  }, [role?.id, role?.name, isOpen, modules, existingPermissions]);
-
-  const selectInitialModule = useCallback(() => {
-    if (modules.length > 0 && !selectedModule) {
-      setSelectedModule(modules[0].id);
-    }
-  }, [modules, selectedModule]);
+    setAllPermissions(init);
+    setOriginalPermissions(JSON.parse(JSON.stringify(init)));
+    setModifiedModules(new Set());
+    setIsLoadingPermissions(false);
+  }, [role?.id, isOpen, modules, existingPermissions]);
 
   useEffect(() => {
-    console.log('🎯 useEffect - Evaluando si cargar permisos:', {
-      isOpen,
-      hasRole: !!role,
-      modulesLength: modules.length,
-      hookIsLoading,
-      hasExistingPermissions: !!existingPermissions,
-      existingPermissionsLength: existingPermissions?.length || 0
-    });
+    if (isOpen && role && !hookIsLoading) loadRolePermissions();
+  }, [isOpen, role, hookIsLoading, loadRolePermissions]);
 
-    if (isOpen && role && modules.length > 0 && !hookIsLoading) {
-      console.log('✅ Ejecutando loadRolePermissions...');
-      loadRolePermissions();
-    } else {
-      console.log('❌ NO se ejecuta loadRolePermissions por condiciones no cumplidas');
-    }
-  }, [isOpen, role, modules, existingPermissions, hookIsLoading, loadRolePermissions]);
-
-  useEffect(() => {
-    selectInitialModule();
-  }, [selectInitialModule]);
-
-  useEffect(() => {
-    if (hookError) {
-      setPermissionsError(hookError.message);
-      setIsLoadingPermissions(false);
-    }
-  }, [hookError]);
-
-  const updatePermission = (moduleId: string, permissionType: keyof PermissionData, value: boolean) => {
-    console.log('🔄 Actualizando permiso localmente:', {
-      module: modules.find(m => m.id === moduleId)?.name,
-      permission: permissionType,
-      value,
-      moduleId
-    });
-
-    const updatedPermissions = {
+  const updatePermission = (moduleId: string, type: keyof PermissionData, value: boolean) => {
+    const updated = {
       ...allPermissions,
-      [moduleId]: {
-        ...allPermissions[moduleId],
-        [permissionType]: value
-      }
+      [moduleId]: { ...allPermissions[moduleId], [type]: value },
     };
+    setAllPermissions(updated);
 
-    setAllPermissions(updatedPermissions);
+    const orig = originalPermissions[moduleId];
+    const curr = updated[moduleId];
+    const changed =
+      orig.canRead !== curr.canRead ||
+      orig.canWrite !== curr.canWrite ||
+      orig.canUpdate !== curr.canUpdate ||
+      orig.canDelete !== curr.canDelete;
 
-    const original = originalPermissions[moduleId] || { canRead: false, canWrite: false, canUpdate: false, canDelete: false };
-    const current = updatedPermissions[moduleId];
-
-    const hasChanged = (
-      original.canRead !== current.canRead ||
-      original.canWrite !== current.canWrite ||
-      original.canUpdate !== current.canUpdate ||
-      original.canDelete !== current.canDelete
-    );
-
-    setModifiedModules(prev => {
-      const newModified = new Set(prev);
-      if (hasChanged) {
-        newModified.add(moduleId);
-      } else {
-        newModified.delete(moduleId);
-      }
-      return newModified;
-    });
-
-    console.log('✅ Permiso actualizado localmente. Solo se guardará al presionar "Guardar Cambios"', {
-      totalModifiedModules: hasChanged ? modifiedModules.size + 1 : modifiedModules.size,
-      currentModule: modules.find(m => m.id === moduleId)?.name,
-      permissions: updatedPermissions[moduleId]
+    setModifiedModules((s) => {
+      const copy = new Set(s);
+      changed ? copy.add(moduleId) : copy.delete(moduleId);
+      return copy;
     });
   };
 
-  const saveChangesToBackend = async () => {
-    if (!role?.id || modifiedModules.size === 0) {
-      console.log('⚠️ No hay cambios para guardar');
-      return false;
-    }
-
-    try {
-      const allPermissionsArray = modules.map(module => ({
-        moduleId: module.id,
-        canRead: allPermissions[module.id]?.canRead || false,
-        canWrite: allPermissions[module.id]?.canWrite || false,
-        canUpdate: allPermissions[module.id]?.canUpdate || false,
-        canDelete: allPermissions[module.id]?.canDelete || false
-      }));
-
-      console.log('🚀 Guardando TODOS los permisos manualmente...', {
-        roleId: role.id,
-        totalModules: allPermissionsArray.length,
-        modifiedModules: Array.from(modifiedModules),
-        permissions: allPermissionsArray
-      });
-
-      await onSubmit({
-        id: role.id,
-        permissions: allPermissionsArray
-      });
-
-      console.log('✅ Permisos guardados exitosamente (manual)');
-
-      await queryClient.invalidateQueries({
-        queryKey: ["permissions", "role", role.id]
-      });
-
-      console.log('🔄 Query invalidada, los permisos se recargaran automáticamente');
-
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      setOriginalPermissions(JSON.parse(JSON.stringify(allPermissions)));
-      setModifiedModules(new Set());
-
-      return true;
-
-    } catch (error) {
-      console.error('❌ Error guardando permisos (manual):', error);
-      return false;
-    }
-  };
-
-  const handleReset = () => {
-    setAllPermissions(JSON.parse(JSON.stringify(originalPermissions)));
+  const saveChanges = async () => {
+    if (!role?.id || modifiedModules.size === 0) return;
+    const payload = modules.map((mod) => ({
+      moduleId: mod.id,
+      ...allPermissions[mod.id],
+    }));
+    await onSubmit({ id: role.id, permissions: payload });
+    queryClient.invalidateQueries({ queryKey: ["permissions", "role", role.id] });
+    setOriginalPermissions(JSON.parse(JSON.stringify(allPermissions)));
     setModifiedModules(new Set());
   };
 
-  const handleSaveChanges = async () => {
-    await saveChangesToBackend();
-  };
-
-  const handleCloseModal = () => {
-    if (role?.id) {
-      queryClient.invalidateQueries({
-        queryKey: ["permissions", "role", role.id]
-      });
-    }
+  const handleClose = () => {
+    if (role?.id) queryClient.invalidateQueries({ queryKey: ["permissions", "role", role.id] });
     onClose();
   };
 
   if (!isOpen || !role) return null;
-
   const isLoading = isLoadingPermissions || hookIsLoading;
   const hasError = permissionsError || hookError;
 
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleCloseModal()}>
-      <DialogContent className="w-full max-w-[95%] sm:max-w-[1000px] h-[90vh] rounded-xl shadow-lg px-0 pb-0 pt-0 flex flex-col">
+  const toggleAll = (moduleId: string, value: boolean) => {
+    // actualiza allPermissions
+    setAllPermissions(prev => {
+      const updated = {
+        ...prev,
+        [moduleId]: {
+          canRead: value,
+          canWrite: value,
+          canUpdate: value,
+          canDelete: value,
+        },
+      };
+      return updated;
+    });
+    // marca como modificado
+    setModifiedModules(m =>
+      new Set(m).add(moduleId)
+    );
+  };
 
-        <div className="w-full bg-gradient-to-r from-green-600 to-green-500 rounded-t-xl px-6 py-4 flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center space-x-3">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsSidebarOpen(true)}
-              className="md:hidden text-white hover:bg-white/10"
-              title="Abrir módulos"
-            >
-              <Menu className="h-6 w-6" />
+  return (
+    <Dialog open={isOpen} onOpenChange={(o) => !o && handleClose()}>
+      <DialogContent className="w-full max-w-[95%] sm:max-w-[1000px] h-[90vh] flex flex-col p-0">
+        <div className="bg-gradient-to-r from-green-600 to-green-500 p-4 flex justify-between items-center rounded-t-xl">
+          <div className="flex items-center space-x-2">
+            <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)}>
+              <Menu className="h-6 w-6 text-white" />
             </Button>
             <ShieldCheck className="h-6 w-6 text-white" />
-            <DialogTitle className="text-xl font-semibold text-white">
-              Gestionar Permisos - {role.name}
-            </DialogTitle>
+            <DialogTitle className="text-white text-xl">Permisos - {role.name}</DialogTitle>
           </div>
-
           {modifiedModules.size > 0 && (
-            <div className="bg-white/20 rounded-full px-3 py-1">
-              <span className="text-sm text-white font-medium">
-                {modifiedModules.size} cambio{modifiedModules.size !== 1 ? 's' : ''} pendiente{modifiedModules.size !== 1 ? 's' : ''}
-              </span>
+            <div className="bg-white/20 px-3 py-1 rounded-full text-white text-sm">
+              {modifiedModules.size} cambio{modifiedModules.size > 1 ? "s" : ""} pendiente
             </div>
           )}
         </div>
 
         <div className="flex flex-1 overflow-hidden">
-          <div className={`
-              ${isSidebarOpen ? 'fixed inset-0 z-50 bg-white flex' : 'hidden md:flex'}
-              w-full md:w-80 border-r bg-gray-50 flex-shrink-0 flex-col
-              ${isSidebarOpen ? 'py-4 px-2' : ''} /* Añadir padding cuando está abierta en móvil */
-          `}>
-            <div className="px-4 py-3 border-b bg-white flex-shrink-0 flex items-center justify-between">
-              <h3 className="font-semibold text-gray-800">Módulos del Sistema</h3>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsSidebarOpen(false)}
-                className="md:hidden text-gray-700 hover:bg-gray-100"
-                title="Cerrar módulos"
-              >
-                <X className="h-6 w-6" />
+          {/* Sidebar */}
+          <div
+            className={`${
+              isSidebarOpen ? "fixed inset-0 z-50 bg-white flex" : "hidden md:flex"
+            } w-full md:w-80 border-r flex-col p-2 bg-gray-50`}
+          >
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-semibold px-2">Módulos</h3>
+              <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(false)}>
+                <X />
               </Button>
             </div>
-
-            <div className="flex-1 overflow-y-auto p-2">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
-                  <span className="ml-2 text-sm text-gray-600">Cargando permisos...</span>
-                </div>
-              ) : hasError ? (
-                <div className="p-4 text-center text-red-600">
-                  <AlertCircle className="h-6 w-6 mx-auto mb-2" />
-                  <p className="text-sm">Error cargando permisos</p>
-                  <p className="text-xs text-gray-500 mt-1">{typeof hasError === 'string' ? hasError : hasError?.message}</p>
-                </div>
-              ) : (
-                modules.map((module) => {
-                  const isSelected = selectedModule === module.id;
-                  const isModified = modifiedModules.has(module.id);
-                  const modulePermissions = allPermissions[module.id];
-                  const hasPermissions = modulePermissions && (
-                    modulePermissions.canRead ||
-                    modulePermissions.canWrite ||
-                    modulePermissions.canUpdate ||
-                    modulePermissions.canDelete
-                  );
-
-                  return (
-                    <Card
-                      key={module.id}
-                      className={`mb-2 p-3 cursor-pointer transition-all hover:shadow-md ${
-                        isSelected
-                          ? 'border-green-500 bg-green-50 ring-2 ring-green-200'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                      onClick={() => {
-                        setSelectedModule(module.id);
-                        setIsSidebarOpen(false);
-                      }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h4 className={`font-medium ${isSelected ? 'text-green-800' : 'text-gray-800'}`}>
-                            {module.name}
-                          </h4>
-                          {module.description && (
-                            <p className="text-xs text-gray-500 mt-1">{module.description}</p>
-                          )}
-                        </div>
-
-                        <div className="flex items-center space-x-1">
-                          {hasPermissions && (
-                            <div className="w-2 h-2 rounded-full bg-green-500" title="Tiene permisos activos"></div>
-                          )}
-                          {isModified && (
-                            <div className="w-2 h-2 rounded-full bg-blue-500" title="Modificado"></div>
-                          )}
-                        </div>
+            {isLoading ? (
+              <div className="flex justify-center items-center flex-1">
+                <div className="animate-spin h-6 w-6 border-b-2 border-green-600 rounded-full" />
+              </div>
+            ) : hasError ? (
+              <div className="text-red-600 p-4 text-center">Error cargando permisos</div>
+            ) : (
+              modules.map((mod) => {
+                const isSel = mod.id === selectedModule;
+                const hasPerm = Object.values(allPermissions[mod.id] || {}).some((v) => v);
+                return (
+                  <Card
+                    key={mod.id}
+                    className={`mb-2 p-3 cursor-pointer ${
+                      isSel ? "border-green-500 bg-green-50" : "border-gray-200"
+                    }`}
+                    onClick={() => {
+                      setSelectedModule(mod.id);
+                      setIsSidebarOpen(false);
+                    }}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h4 className={isSel ? "text-green-800" : "text-gray-800"}>{mod.name}</h4>
                       </div>
-                    </Card>
-                  );
-                })
-              )}
-            </div>
+                      <div className="flex space-x-1">
+                        {hasPerm && <div className="w-2 h-2 bg-green-500 rounded-full" />}
+                        {modifiedModules.has(mod.id) && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })
+            )}
           </div>
 
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {selectedModule && allPermissions[selectedModule] !== undefined ? (
+          {/* Main */}
+          <div className="flex-1 flex flex-col">
+            {selectedModule && allPermissions[selectedModule] && (
               <>
-                <div className="px-6 py-4 border-b bg-white flex-shrink-0">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800">
-                        {modules.find(m => m.id === selectedModule)?.name}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        Haz múltiples cambios, luego guarda con el botón inferior
-                      </p>
-                    </div>
-
-                    {modifiedModules.has(selectedModule) && (
-                      <div className="text-blue-600 text-sm font-medium">
-                        ● Modificado
-                      </div>
-                    )}
+                <div className="p-4 border-b flex justify-between items-center">
+                  <div>
+                    <h3 className="font-semibold">{modules.find((m) => m.id === selectedModule)?.name}</h3>
+                    <p className="text-sm text-gray-600">Ajusta permisos y guarda</p>
                   </div>
+                  {modifiedModules.has(selectedModule) && <span className="text-blue-600">● Modificado</span>}
                 </div>
 
-                {/* Div con scroll para los switches de permisos */}
-                <div className="flex-1 p-6 overflow-y-auto">
+                {/* Global switch */}
+                <div className="p-4 border-b bg-gray-100 flex justify-between items-center">
+                  <div>
+                    <h4 className="font-medium">Activar/Desactivar todos</h4>
+                    <p className="text-sm text-gray-600">Todos los permisos módulo</p>
+                  </div>
+                 {/* Switch global */}
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={
+                        Object.values(allPermissions[selectedModule]).every(v => v)
+                      }
+                      onChange={(e) => {
+                        toggleAll(selectedModule, e.target.checked);
+                      }}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer-checked:bg-blue-600 peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:bg-white after:rounded-full after:transition-all" />
+                  </label>
+                </div>
+
+                {/* Individual switches */}
+                <div className="p-6 overflow-y-auto flex-1">
                   <div className="grid gap-6 max-w-2xl">
-
-                    {/* Leer */}
-                    <div className="flex items-center justify-between p-4 border rounded-lg bg-white shadow-sm">
-                      <div className="flex items-center space-x-3">
-                        <Eye className="h-6 w-6 text-blue-500" />
-                        <div>
-                          <h4 className="font-medium text-gray-800">Leer / Consultar</h4>
-                          <p className="text-sm text-gray-600">Ver información del módulo</p>
+                    {[
+                      { label: "Leer / Consultar", key: "canRead", icon: <Eye className="h-6 w-6 text-blue-500" /> },
+                      { label: "Crear / Escribir", key: "canWrite", icon: <Plus className="h-6 w-6 text-green-500" /> },
+                      { label: "Actualizar / Editar", key: "canUpdate", icon: <Edit className="h-6 w-6 text-purple-500" /> },
+                      { label: "Eliminar", key: "canDelete", icon: <Trash2 className="h-6 w-6 text-red-500" /> },
+                    ].map(({ label, key, icon }) => (
+                      <div key={key} className="flex justify-between items-center p-4 border rounded-lg bg-white">
+                        <div className="flex items-center space-x-3">
+                          {icon}
+                          <div>
+                            <h4 className="font-medium">{label}</h4>
+                          </div>
                         </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={allPermissions[selectedModule][key as keyof PermissionData]}
+                            onChange={(e) => updatePermission(selectedModule, key as keyof PermissionData, e.target.checked)}
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-checked:bg-blue-600 rounded-full peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:bg-white after:rounded-full after:transition-all" />
+                        </label>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
-                          checked={allPermissions[selectedModule]?.canRead || false}
-                          onChange={(e) => updatePermission(selectedModule, 'canRead', e.target.checked)}
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                    </div>
-
-                    {/* Escribir */}
-                    <div className="flex items-center justify-between p-4 border rounded-lg bg-white shadow-sm">
-                      <div className="flex items-center space-x-3">
-                        <Plus className="h-6 w-6 text-green-500" />
-                        <div>
-                          <h4 className="font-medium text-gray-800">Crear / Escribir</h4>
-                          <p className="text-sm text-gray-600">Crear nuevos registros</p>
-                        </div>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
-                          checked={allPermissions[selectedModule]?.canWrite || false}
-                          onChange={(e) => updatePermission(selectedModule, 'canWrite', e.target.checked)}
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                      </label>
-                    </div>
-
-                    {/* Actualizar */}
-                    <div className="flex items-center justify-between p-4 border rounded-lg bg-white shadow-sm">
-                      <div className="flex items-center space-x-3">
-                        <Edit className="h-6 w-6 text-purple-500" />
-                        <div>
-                          <h4 className="font-medium text-gray-800">Actualizar / Editar</h4>
-                          <p className="text-sm text-gray-600">Modificar registros existentes</p>
-                        </div>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
-                          checked={allPermissions[selectedModule]?.canUpdate || false}
-                          onChange={(e) => updatePermission(selectedModule, 'canUpdate', e.target.checked)}
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                      </label>
-                    </div>
-
-                    {/* Eliminar */}
-                    <div className="flex items-center justify-between p-4 border rounded-lg bg-white shadow-sm">
-                      <div className="flex items-center space-x-3">
-                        <Trash2 className="h-6 w-6 text-red-500" />
-                        <div>
-                          <h4 className="font-medium text-gray-800">Eliminar</h4>
-                          <p className="text-sm text-gray-600">Eliminar registros permanentemente</p>
-                        </div>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
-                          checked={allPermissions[selectedModule]?.canDelete || false}
-                          onChange={(e) => updatePermission(selectedModule, 'canDelete', e.target.checked)}
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                      </label>
-                    </div>
-
+                    ))}
                   </div>
                 </div>
               </>
-            ) : (
+            )}
+
+            {/* no selection */}
+            {!selectedModule && (
               <div className="flex-1 flex items-center justify-center">
-                <div className="text-center text-gray-500">
-                  <ShieldCheck className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>
-                    {isLoading
-                      ? "Cargando permisos..."
-                      : "Selecciona un módulo para editar sus permisos"
-                    }
-                  </p>
-                </div>
+                <ShieldCheck className="h-12 w-12 text-gray-300" />
+                <p className="ml-2 text-gray-500">
+                  {isLoading ? "Cargando permisos..." : "Selecciona un módulo"}
+                </p>
               </div>
             )}
           </div>
         </div>
 
-        <DialogFooter className="border-t px-6 py-4 bg-gray-50 rounded-b-xl flex flex-row gap-4 flex-shrink-0">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleCloseModal}
-            className="border-gray-400 text-gray-700 hover:bg-gray-200"
-          >
-            <X className="h-4 w-4 mr-2" />
-            Cerrar
+        <DialogFooter className="flex justify-end space-x-2 border-t p-4 bg-gray-50">
+          <Button variant="outline" onClick={handleClose}>
+            <X className="mr-1 h-4 w-4" /> Cerrar
           </Button>
-
           {modifiedModules.size > 0 && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleReset}
-              className="border-gray-400 text-gray-700 hover:bg-gray-200"
-            >
-              Deshacer {modifiedModules.size} cambio{modifiedModules.size !== 1 ? 's' : ''}
+            <Button variant="outline" onClick={() => loadRolePermissions()}>
+              Deshacer {modifiedModules.size} cambio{modifiedModules.size > 1 ? "s" : ""}
             </Button>
           )}
-
-          <Button
-            type="button"
-            onClick={handleSaveChanges}
-            disabled={modifiedModules.size === 0}
-            className={`${
-              modifiedModules.size > 0
-                ? 'bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white'
-                : 'bg-gray-300 text-gray-600 cursor-not-allowed'
-            }`}
-          >
-            <Save className="h-4 w-4 mr-2" />
-            {modifiedModules.size > 0 ? `Guardar ${modifiedModules.size} cambio${modifiedModules.size !== 1 ? 's' : ''}` : 'Sin cambios'}
+          <Button onClick={saveChanges} disabled={modifiedModules.size === 0}>
+            <Save className="mr-1 h-4 w-4" /> Guardar {modifiedModules.size} cambio
+            {modifiedModules.size > 1 ? "s" : ""}
           </Button>
         </DialogFooter>
-
       </DialogContent>
     </Dialog>
   );
