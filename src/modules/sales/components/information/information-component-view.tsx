@@ -3,11 +3,18 @@ import React, { useState } from 'react';
 import { FiInfo, FiMapPin, FiHome, FiClipboard, FiDollarSign, FiPlus } from 'react-icons/fi';
 import { StoreAttributes } from '@/modules/sales/types/store.d';
 import ModalCreateCashRegister from './modal-create-cashregister';
-import { CreateCashSessionPayload, CloseCashSessionPayload } from '../../types/cash-session';
-import { useCreateCashSession, useCloseCashSession, useFetchActiveCashSession, useFetchCashSessionHistory, useFetchCashSessionDetails } from '../../hooks/useCashSession';
-import { useFetchSales } from '../../hooks/useSales';
-import { useFetchReturns } from '../../hooks/useReturns';
 import { useQueryClient } from '@tanstack/react-query';
+import { 
+  useFetchActiveCashSession, 
+  useFetchCashSessionHistory, 
+  useFetchCashSessionDetails,
+  useCreateCashSession, 
+  useCloseCashSession 
+} from '@/modules/sales/hooks/useCashSession';
+import { useFetchSales } from '@/modules/sales/hooks/useSales';
+import { useFetchReturns } from '@/modules/sales/hooks/useReturns';
+import { CreateCashSessionPayload, CloseCashSessionPayload } from '@/modules/sales/types/cash-session';
+
 
 interface InformationComponentViewProps {
   selectedStore?: StoreAttributes | null;
@@ -16,7 +23,6 @@ interface InformationComponentViewProps {
 
 const InformationComponentView: React.FC<InformationComponentViewProps> = ({
   selectedStore,
-  onStoreUpdate,    // 📌 asegúrate de desestructurar
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInitialSetup, setIsInitialSetup] = useState(true);
@@ -38,10 +44,11 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
   const { data: activeCashSession, isLoading: loadingActive, error: errorActive } = useFetchActiveCashSession(selectedStore?.id);
   const { data: cashSessionHistory = [], isLoading: loadingHistory, error: errorHistory } = useFetchCashSessionHistory(selectedStore?.id);
   
-  // Filtrar los datos específicamente para la tienda seleccionada
+  // Simplificar: usar directamente la sesión activa del hook
   const filteredActiveCashSession = React.useMemo(() => {
-    // Verificar que la sesión sea activa (status: 'open') además de pertenecer a la tienda seleccionada
-    return selectedStore && activeCashSession?.store_id === selectedStore.id && activeCashSession?.status === 'open'
+    // Solo verificar que pertenezca a la tienda seleccionada
+    // El hook ya filtra por status === 'open'
+    return selectedStore && activeCashSession?.store_id === selectedStore.id
       ? activeCashSession 
       : null;
   }, [selectedStore, activeCashSession]);
@@ -52,10 +59,10 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
   );
   
   // Obtener todas las ventas para calcular los totales por tienda (mantenemos para historial)
-  const { data: allSales = [], isLoading: loadingSales } = useFetchSales();
+  const { data: allSales = [], } = useFetchSales();
   
   // Obtener todas las devoluciones para calcular las pérdidas por tienda (mantenemos para historial)
-  const { data: allReturns = [], isLoading: loadingReturns } = useFetchReturns();
+  const { data: allReturns = [] } = useFetchReturns();
     
   const filteredCashSessionHistory = React.useMemo(() => {
     return selectedStore 
@@ -168,27 +175,25 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
     return totalReturnsValue;
   }, [sessionDetails, loadingDetails, filteredActiveCashSession, allReturns, allSales, selectedStore]);
 
-  // Debug logs - solo en entorno de desarrollo y menos verboso
+  // Debug logs - solo información esencial
   React.useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 Debug info básica:', {
-        selectedStoreId: selectedStore?.id,
-        hasActiveSession: !!filteredActiveCashSession,
-        historyCount: filteredCashSessionHistory.length,
-        currentSales: currentSessionSales ? `S/ ${toMoney(currentSessionSales)}` : '0.00',
-        currentReturns: currentSessionReturns ? `S/ ${toMoney(currentSessionReturns)}` : '0.00',
-        usingBackendData: !!sessionDetails && !loadingDetails,
-        sessionDetails: sessionDetails || 'No data',
+      console.log('🔍 Estado de sesión:', {
+        tienda: selectedStore?.store_name || 'No seleccionada',
+        sesionActiva: !!filteredActiveCashSession,
+        sesionId: filteredActiveCashSession?.id || 'Ninguna',
+        loading: loadingActive,
         isInitialSetup
       });
     }
-  }, [selectedStore?.id, filteredActiveCashSession, filteredCashSessionHistory.length, currentSessionSales, currentSessionReturns, sessionDetails, loadingDetails, isInitialSetup, toMoney]);
+  }, [selectedStore?.store_name, filteredActiveCashSession, loadingActive, isInitialSetup]);
 
-  // Determinar si necesitamos configuración inicial de forma más eficiente
+  // Determinar si necesitamos configuración inicial de forma más clara
   React.useEffect(() => {
-    // Solo actualizar cuando cambien valores relevantes
-    setIsInitialSetup(!filteredActiveCashSession);
-  }, [filteredActiveCashSession]);
+    // Si hay tienda seleccionada y no hay sesión activa = necesita configuración inicial
+    const needsSetup = selectedStore && !filteredActiveCashSession && !loadingActive;
+    setIsInitialSetup(!!needsSetup);
+  }, [selectedStore, filteredActiveCashSession, loadingActive]);
 
   // Verificar automáticamente si necesita cerrarse - optimizado
   const shouldCloseSession = React.useMemo(() => {
@@ -439,7 +444,7 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
         </div>
       </div>
 
-      {/* Información de la sesión activa */}
+      {/* Información de la sesión activa - SIMPLIFICADO */}
       {selectedStore && loadingActive && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <h3 className="text-lg font-semibold text-blue-800 mb-2">Cargando información de {selectedStore.store_name}...</h3>
@@ -448,9 +453,11 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
           </div>
         </div>
       )}
-      {filteredActiveCashSession && !loadingActive && (
+      
+      {/* Mostrar sesión activa si existe */}
+      {selectedStore && !loadingActive && filteredActiveCashSession && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-green-800 mb-2">Sesión Activa - {selectedStore?.store_name}</h3>
+          <h3 className="text-lg font-semibold text-green-800 mb-2">Sesión Activa - {selectedStore.store_name}</h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
             <div>
               <span className="font-medium text-green-700">Dinero Inicial:</span>
@@ -507,9 +514,11 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
           )}
         </div>
       )}
-      {!filteredActiveCashSession && !loadingActive && selectedStore && (
+      
+      {/* Mostrar mensaje de no hay sesión SOLO cuando no hay loading y no hay sesión */}
+      {selectedStore && !loadingActive && !filteredActiveCashSession && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-yellow-800 mb-2">No hay sesión activa - {selectedStore?.store_name}</h3>
+          <h3 className="text-lg font-semibold text-yellow-800 mb-2">No hay sesión activa - {selectedStore.store_name}</h3>
           <p className="text-yellow-700">Puedes configurar una nueva sesión de caja utilizando el botón &quot;Configurar Caja&quot;.</p>
         </div>
       )}
@@ -548,19 +557,6 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
               </tr>
             ) : filteredCashSessionHistory.length > 0 ? (
               filteredCashSessionHistory.map((session, index) => {
-                // Log para debug - mostrar datos de la sesión
-                if (process.env.NODE_ENV === 'development') {
-                  console.log(`📋 Session ${index + 1} (${session.status}):`, {
-                    id: session.id,
-                    total_sales_stored: session.total_sales,
-                    total_returns_stored: session.total_returns,
-                    calculated_sales_frontend: salesBySession[session.id || ''],
-                    will_show_sales: session.status === 'closed' 
-                      ? (session.total_sales ? session.total_sales : salesBySession[session.id || ''] || 0)
-                      : 'current session'
-                  });
-                }
-                
                 return (
                 <tr key={session.id || index} className={index % 2 === 0 ? "border-t" : "border-t bg-gray-50"}>
                   <td className="px-4 py-2 text-center">
