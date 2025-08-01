@@ -280,13 +280,16 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
               <label className="block text-gray-700 mb-1 font-medium">
                 Razón <span className="text-red-600">*</span>
               </label>
-              <input
-                type="text"
+              <select
                 value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="Razón de la pérdida"
-              />
+                onChange={e => setReason(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none bg-white"
+              >
+                <option value="">Selecciona una razón</option>
+                <option value="transporte">Transporte</option>
+                <option value="caducado">Caducado</option>
+                <option value="devuelto">Devuelto</option>
+              </select>
             </div>
 
             {/* Observaciones */}
