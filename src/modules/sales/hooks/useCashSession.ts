@@ -45,25 +45,12 @@ export const useFetchActiveCashSession = (storeId?: string) => {
     queryKey: ['activeCashSession', storeId],
     queryFn: () => fetchActiveCashSession(storeId!),
     enabled: !!storeId, // Solo ejecutar si storeId está definido
-    // ✅ CORREGIDO: Filtro adicional para asegurar que la sesión pertenece a la tienda correcta
+    // ✅ Filtro para asegurar que la sesión pertenece a la tienda correcta
     select: (data) => {
-      console.log('🔍 [DEBUG] Hook select - Filtrando sesión por tienda:', {
-        storeId,
-        sessionData: data ? {
-          id: data.id,
-          store_id: data.store_id,
-          status: data.status
-        } : null,
-        match: data?.store_id === storeId
-      });
-      
       // Si no hay datos o la sesión no pertenece a la tienda, retornar null
       if (!data || data.store_id !== storeId) {
-        console.log('❌ [DEBUG] Sesión filtrada - no pertenece a la tienda seleccionada');
         return null;
       }
-      
-      console.log('✅ [DEBUG] Sesión válida para la tienda');
       return data;
     }
   });

@@ -16,24 +16,15 @@ export const invalidateStoreQueries = (
   storeId: string, 
   sessionId?: string
 ) => {
-  console.log(`🔄 [DEBUG] Invalidando cache para tienda: ${storeId}${sessionId ? `, sesión: ${sessionId}` : ''}`);
-  
-  // Debug: mostrar el estado actual del cache antes de invalidar
-  const currentCache = queryClient.getQueryData(['activeCashSession', storeId]);
-  console.log(`🔍 [DEBUG] Cache actual antes de invalidar:`, currentCache);
-  
   // Invalidar queries específicas de la tienda
   queryClient.invalidateQueries({ queryKey: ['activeCashSession', storeId] });
   queryClient.invalidateQueries({ queryKey: ['cashSessionHistory', storeId] });
   queryClient.invalidateQueries({ queryKey: ['checkStoreActiveSession', storeId] });
   
-  console.log(`✅ [DEBUG] Queries invalidadas para tienda ${storeId}`);
-  
   // Si hay una sesión específica, invalidar sus detalles
   if (sessionId) {
     queryClient.invalidateQueries({ queryKey: ['cashSession', sessionId] });
     queryClient.invalidateQueries({ queryKey: ['cashSessionDetails', sessionId] });
-    console.log(`✅ [DEBUG] Detalles de sesión ${sessionId} invalidados`);
   }
 };
 
