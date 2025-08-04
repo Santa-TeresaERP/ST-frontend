@@ -105,11 +105,36 @@ export const deleteCashSession = async (id: string): Promise<void> => {
 // Función auxiliar para obtener la sesión activa de una tienda
 export const fetchActiveCashSession = async (storeId: string): Promise<CashSessionAttributes | null> => {
   try {
+    console.log('🔍 [DEBUG] Fetching active cash session for store:', storeId);
     const response = await api.get<CashSessionResponse>(`/cash_session?store_id=${storeId}&status=open`);
     const sessions = response.data.cashSessions || [];
-    return sessions.length > 0 ? sessions[0] : null;
+    
+    console.log('🔍 [DEBUG] Response from backend:', {
+      storeId,
+      sessionsCount: sessions.length,
+      sessions: sessions.map(s => ({
+        id: s.id,
+        store_id: s.store_id,
+        status: s.status
+      }))
+    });
+    
+    // ✅ CORREGIDO: Filtro adicional para asegurar que la sesión pertenece a la tienda
+    const validSession = sessions.find(session => session.store_id === storeId);
+    
+    if (validSession) {
+      console.log('✅ [DEBUG] Valid session found:', {
+        id: validSession.id,
+        store_id: validSession.store_id,
+        status: validSession.status
+      });
+      return validSession;
+    } else {
+      console.log('❌ [DEBUG] No valid session found for store:', storeId);
+      return null;
+    }
   } catch (error) {
-    console.error('Error fetching active cash session:', error);
+    console.error('❌ [DEBUG] Error fetching active cash session:', error);
     return null;
   }
 };

@@ -44,14 +44,16 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
 
   // Efecto para establecer valores iniciales cuando hay una sesión activa
   React.useEffect(() => {
-    console.log('📊 Actualizando datos del modal:', {
+    console.log('📊 Actualizando datos del modal para tienda:', selectedStore?.store_name, {
       currentSessionSales,
       currentSessionReturns,
       activeCashSession: activeCashSession?.id,
-      isInitialSetup
+      isInitialSetup,
+      selectedStoreId
     });
 
-    if (activeCashSession && !isInitialSetup) {
+    // ✅ CORREGIDO: Validar que la sesión pertenece a la tienda seleccionada
+    if (activeCashSession && !isInitialSetup && selectedStoreId && activeCashSession.store_id === selectedStoreId) {
       setFormData(prev => ({
         ...prev,
         store_id: activeCashSession.store_id,
@@ -60,6 +62,7 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
         total_returns: currentSessionReturns
       }));
     } else if (selectedStoreId) {
+      // Solo actualizar datos de la tienda si coincide
       setFormData(prev => ({
         ...prev,
         store_id: selectedStoreId,
@@ -67,7 +70,7 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
         total_returns: currentSessionReturns
       }));
     }
-  }, [activeCashSession, isInitialSetup, selectedStoreId, currentSessionSales, currentSessionReturns]);
+  }, [activeCashSession, isInitialSetup, selectedStoreId, selectedStore?.store_name, currentSessionSales, currentSessionReturns]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
