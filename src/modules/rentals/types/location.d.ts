@@ -1,14 +1,15 @@
-import { z } from 'zod';
+// locationSchema.d.ts
+import { z } from "zod";
 
-export const LocationSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  address: z.string(),
-  capacity: z.number(),
-  status: z.string(),
-  createdAt: z.string().optional(),
-  updatedAt: z.string().optional(),
-});
+export declare const LocationSchema: z.ZodObject<{
+  id: z.ZodString;
+  name: z.ZodString;
+  address: z.ZodString;
+  capacity: z.ZodNumber;
+  status: z.ZodString;
+  createdAt: z.ZodOptional<z.ZodString>;
+  updatedAt: z.ZodOptional<z.ZodString>;
+}>;
 
 export type Location = z.infer<typeof LocationSchema>;
 
