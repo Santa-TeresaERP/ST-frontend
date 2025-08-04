@@ -1,6 +1,6 @@
 import { Production, CreateProductionPayload, UpdateProductionPayload } from '../types/productions';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchProductions, createProduction, updateProduction, deleteProduction } from '../action/productions';
+import { fetchProductions, createProduction, updateProduction, toggleProduction } from '../action/productions';
 
 export const useFetchProductions = () => {
   return useQuery<Production[], Error>({
@@ -28,7 +28,9 @@ export const useUpdateProduction = () => {
 export const useDeleteProduction = () => {
   const queryClient = useQueryClient();
   return useMutation<void, Error, string>({
-    mutationFn: deleteProduction,
+    mutationFn: async (id: string) => {
+      await toggleProduction({ id, isActive: false });
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['productions'] }),
   });
 };
