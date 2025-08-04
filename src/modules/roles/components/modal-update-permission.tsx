@@ -8,6 +8,7 @@ import { Role } from "@/modules/roles/types/roles";
 import { Module } from "@/modules/modules/types/modules";
 import { Check, ChevronDown, Lock, Shield, ShieldCheck, ShieldHalf, Trash2 } from 'lucide-react';
 import { Card } from "../../../app/components/ui/card";
+import { useFetchPermissionsByRole } from "../hook/usePermissions";
 
 type PermissionModalProps = {
   isOpen: boolean;
@@ -19,42 +20,127 @@ type PermissionModalProps = {
 
 const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role, modules, onSubmit }) => {
   const [formData, setFormData] = useState<{ [moduleId: string]: { canRead: boolean; canWrite: boolean; canUpdate: boolean; canDelete: boolean } }>({});
+  const [originalPermissions, setOriginalPermissions] = useState<{ [moduleId: string]: { canRead: boolean; canWrite: boolean; canUpdate: boolean; canDelete: boolean } }>({});
+  const [modifiedModules, setModifiedModules] = useState<Set<string>>(new Set());
   const [selectedModule, setSelectedModule] = useState<string>("");
   const [showConfirmation, setShowConfirmation] = useState(false);
 
+  // 🆕 NUEVO: Obtener permisos existentes del backend
+  const { data: existingPermissions, isLoading: isLoadingPermissions, error: permissionsError } = useFetchPermissionsByRole(role?.id || null);
+
+  // Reset del modal cuando se abra
   useEffect(() => {
-    if (role && role.permissions) {
-      const initialFormData: { [moduleId: string]: { canRead: boolean; canWrite: boolean; canUpdate: boolean; canDelete: boolean } } = {};
-      modules.forEach((module) => {
-        initialFormData[module.id] = {
-          canRead: role.permissions[module.id]?.canRead || false,
-          canWrite: role.permissions[module.id]?.canWrite || false,
-          canUpdate: role.permissions[module.id]?.canUpdate || false,
-          canDelete: role.permissions[module.id]?.canDelete || false,
-        };
+    if (isOpen && role) {
+      console.log('🔄 Modal abierto, reseteando estado...', {
+        roleId: role.id,
+        roleName: role.name
       });
-      setFormData(initialFormData);
-    } else {
-      const initialFormData: { [moduleId: string]: { canRead: boolean; canWrite: boolean; canUpdate: boolean; canDelete: boolean } } = {};
-      modules.forEach((module) => {
-        initialFormData[module.id] = {
-          canRead: false,
-          canWrite: false,
-          canUpdate: false,
-          canDelete: false,
-        };
-      });
-      setFormData(initialFormData);
+      setSelectedModule('');
+      setShowConfirmation(false);
     }
-  }, [role, modules]);
+  }, [isOpen, role]);
+
+  useEffect(() => {
+    console.log('🔄 Inicializando permisos del modal...', {
+      role: role?.name,
+      roleId: role?.id,
+      modules: modules.length,
+      existingPermissions: existingPermissions?.length || 0,
+      isLoadingPermissions,
+      permissionsError: permissionsError?.message,
+      existingPermissionsData: existingPermissions
+    });
+
+    // Reset del selectedModule cuando cambia el rol
+    if (role?.id && !selectedModule && modules.length > 0) {
+      console.log('🔄 Auto-seleccionando primer módulo:', modules[0].name);
+      setSelectedModule(modules[0].id);
+    }
+
+    if (isLoadingPermissions) {
+      console.log('⏳ Cargando permisos desde el backend...');
+      return;
+    }
+
+    if (permissionsError) {
+      console.error('❌ Error cargando permisos:', permissionsError);
+      return;
+    }
+
+    // Inicializar formData con todos los módulos
+    const initialFormData: { [moduleId: string]: { canRead: boolean; canWrite: boolean; canUpdate: boolean; canDelete: boolean } } = {};
+    
+    modules.forEach((module) => {
+      // Buscar permisos existentes para este módulo
+      const existingPermission = existingPermissions?.find(p => p.moduleId === module.id);
+      
+      initialFormData[module.id] = {
+        canRead: existingPermission?.canRead || false,
+        canWrite: existingPermission?.canWrite || false,
+        canUpdate: existingPermission?.canUpdate || false, // Ya convertido desde canEdit
+        canDelete: existingPermission?.canDelete || false,
+      };
+      
+      if (existingPermission) {
+        console.log(`📋 Módulo ${module.name} (${module.id}):`, {
+          canRead: existingPermission.canRead,
+          canWrite: existingPermission.canWrite,
+          canUpdate: existingPermission.canUpdate,
+          canDelete: existingPermission.canDelete
+        });
+      }
+    });
+
+    console.log('✅ FormData inicializado:', initialFormData);
+    setFormData(initialFormData);
+    setOriginalPermissions(initialFormData); // Guardar estado original para comparar cambios
+    setModifiedModules(new Set()); // Resetear módulos modificados
+
+    // Auto-seleccionar el primer módulo si no hay ninguno seleccionado
+    if (!selectedModule && modules.length > 0) {
+      setSelectedModule(modules[0].id);
+    }
+  }, [role, modules, existingPermissions, isLoadingPermissions, selectedModule, permissionsError]);
 
   const handleInputChange = (permissionType: string, value: boolean) => {
-    setFormData({
+    console.log('🔄 Cambiando permiso:', {
+      module: selectedModule,
+      permission: permissionType,
+      value,
+      moduleName: modules.find(m => m.id === selectedModule)?.name
+    });
+
+    const updatedData = {
       ...formData,
       [selectedModule]: {
         ...formData[selectedModule],
         [permissionType]: value,
       },
+    };
+
+    setFormData(updatedData);
+
+    // Verificar si el módulo ha sido modificado comparando con el estado original
+    const original = originalPermissions[selectedModule];
+    const current = updatedData[selectedModule];
+    const hasChanged = original && (
+      original.canRead !== current.canRead ||
+      original.canWrite !== current.canWrite ||
+      original.canUpdate !== current.canUpdate ||
+      original.canDelete !== current.canDelete
+    );
+
+    setModifiedModules(prev => {
+      const newSet = new Set(prev);
+      if (hasChanged) {
+        newSet.add(selectedModule);
+        console.log('✅ Módulo marcado como modificado:', selectedModule);
+      } else {
+        newSet.delete(selectedModule);
+        console.log('🔄 Módulo restablecido al estado original:', selectedModule);
+      }
+      console.log('📊 Total de módulos modificados:', newSet.size);
+      return newSet;
     });
   };
 
@@ -66,13 +152,34 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role
   const handleConfirmSubmit = async () => {
     if (role?.id) {
       try {
+        // 🔥 CRITICAL FIX: Solo enviar módulos que han sido modificados
+        console.log('📊 Estado completo antes de enviar:', {
+          formData,
+          originalPermissions,
+          modifiedModules: Array.from(modifiedModules)
+        });
+
+        // Solo incluir módulos que han sido modificados
+        const changedPermissions = Array.from(modifiedModules).map(moduleId => ({
+          moduleId,
+          ...formData[moduleId]
+        }));
+
+        if (changedPermissions.length === 0) {
+          console.log('⚠️ No hay cambios para enviar');
+          setShowConfirmation(false);
+          onClose();
+          return;
+        }
+        
         const payload = {
           id: role.id,
-          permissions: Object.keys(formData).map(moduleId => ({
-            moduleId,
-            ...formData[moduleId]
-          }))
+          permissions: changedPermissions
         };
+
+        console.log('🚀 Payload enviado al backend (solo módulos modificados):', payload);
+        console.log('📋 Total de módulos modificados:', payload.permissions.length);
+        
         await onSubmit(payload);
         setShowConfirmation(false);
         onClose();
@@ -94,31 +201,108 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role
               {role ? `Editar Permisos - ${role.name}` : "Asignar Nuevos Permisos"}
             </DialogTitle>
           </div>
+
+          {/* 🆕 Indicador de módulos modificados */}
+          {modifiedModules.size > 0 && (
+            <div className="mx-4 mt-2 mb-0 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center space-x-2 text-blue-700">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                <span className="text-sm font-medium">
+                  {modifiedModules.size} módulo{modifiedModules.size !== 1 ? 's' : ''} modificado{modifiedModules.size !== 1 ? 's' : ''}:
+                </span>
+                <span className="text-sm">
+                  {Array.from(modifiedModules).map(moduleId => 
+                    modules.find(m => m.id === moduleId)?.name || moduleId
+                  ).join(', ')}
+                </span>
+              </div>
+            </div>
+          )}
           
           <form onSubmit={handleSubmit} className="space-y-6 py-4 px-4 sm:px-6">
-            <Card className="p-4 border border-gray-400 shadow-sm">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="flex items-center text-sm font-medium text-gray-700">
-                    <ChevronDown className="h-4 w-4 mr-2" />
-                    Seleccionar Módulo
-                  </Label>
-                  <select
-                    id="module"
-                    name="module"
-                    value={selectedModule}
-                    onChange={(e) => setSelectedModule(e.target.value)}
-                    required
-                    className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-black"
-                  >
-                    <option value="">Seleccione un módulo</option>
-                    {modules.map((module) => (
-                      <option key={module.id} value={module.id}>
-                        {module.name}
-                      </option>
-                    ))}
-                  </select>
+            {/* 🆕 Indicador de carga */}
+            {isLoadingPermissions && (
+              <div className="flex items-center justify-center py-8">
+                <div className="flex items-center space-x-2 text-green-600">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600"></div>
+                  <span>Cargando permisos existentes...</span>
                 </div>
+              </div>
+            )}
+
+            {/* 🆕 Indicador de error */}
+            {permissionsError && (
+              <div className="flex items-center justify-center py-4">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+                  <span className="text-red-600">Error cargando permisos: {permissionsError.message}</span>
+                </div>
+              </div>
+            )}
+
+            {!isLoadingPermissions && !permissionsError && (
+              <Card className="p-4 border border-gray-400 shadow-sm">
+                <div className="space-y-4">
+                  {/* 🆕 Resumen de permisos modificados */}
+                  {Object.keys(formData).some(moduleId => 
+                    Object.values(formData[moduleId]).some(permission => permission)
+                  ) && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <div className="flex items-center mb-2">
+                        <ShieldCheck className="h-4 w-4 text-green-600 mr-2" />
+                        <span className="text-sm font-medium text-green-800">
+                          Módulos con permisos asignados:
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {Object.keys(formData)
+                          .filter(moduleId => 
+                            Object.values(formData[moduleId]).some(permission => permission)
+                          )
+                          .map(moduleId => {
+                            const moduleName = modules.find(m => m.id === moduleId)?.name;
+                            const permissions = formData[moduleId];
+                            const activePermissions = Object.entries(permissions)
+                              .filter(([, value]) => value)
+                              .map(([key]) => key.replace('can', ''))
+                              .join(', ');
+                            
+                            return (
+                              <div key={moduleId} className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                {moduleName}: {activePermissions}
+                              </div>
+                            );
+                          })
+                        }
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label className="flex items-center text-sm font-medium text-gray-700">
+                      <ChevronDown className="h-4 w-4 mr-2" />
+                      Seleccionar Módulo
+                    </Label>
+                    <select
+                      id="module"
+                      name="module"
+                      value={selectedModule}
+                      onChange={(e) => {
+                        console.log('📋 Cambiando a módulo:', e.target.value);
+                        setSelectedModule(e.target.value);
+                      }}
+                      required
+                      className="w-full p-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-black"
+                    >
+                      <option value="">Seleccione un módulo</option>
+                      {modules.map((module) => (
+                        <option key={module.id} value={module.id}>
+                          {module.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
                 {selectedModule && (
                   <div className="space-y-4 pt-4">
@@ -156,7 +340,8 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role
                   </div>
                 )}
               </div>
-            </Card>
+              </Card>
+            )}
 
             <DialogFooter className="border-t flex flex-row  gap-4 pt-4">
               <Button 
@@ -164,15 +349,21 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role
                 variant="outline" 
                 onClick={onClose}
                 className="w-full border-gray-400 text-gray-700 hover:bg-gray-200"
+                disabled={isLoadingPermissions}
               >
                 Cancelar
               </Button>
               <Button 
                 type="submit" 
-                className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-lg"
+                className={`w-full shadow-lg ${
+                  modifiedModules.size > 0 
+                    ? 'bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white' 
+                    : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                }`}
+                disabled={isLoadingPermissions || modifiedModules.size === 0}
               >
                 <Check className="h-4 w-4 mr-2" />
-                Guardar
+                {modifiedModules.size > 0 ? `Guardar ${modifiedModules.size} cambio${modifiedModules.size !== 1 ? 's' : ''}` : 'Sin cambios'}
               </Button>
             </DialogFooter>
           </form>
@@ -195,8 +386,33 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role
 
             <div className="space-y-4  px-4 sm:px-6">
               <p className="text-gray-600">
-                ¿Estás seguro de que deseas {role ? "actualizar" : "asignar"} estos permisos?
+                ¿Estás seguro de que deseas actualizar los permisos para estos módulos?
               </p>
+              
+              {/* Lista de módulos modificados */}
+              <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-blue-800">
+                      Se actualizarán {modifiedModules.size} módulo{modifiedModules.size !== 1 ? 's' : ''}:
+                    </p>
+                    <ul className="mt-1 text-sm text-blue-700">
+                      {Array.from(modifiedModules).map(moduleId => (
+                        <li key={moduleId} className="flex items-center space-x-2">
+                          <span>•</span>
+                          <span>{modules.find(m => m.id === moduleId)?.name || moduleId}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
               <div className="bg-gray-100 border-l-4 border-gray-400 p-4">
                 <div className="flex">
                   <div className="flex-shrink-0">
@@ -206,7 +422,7 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role
                   </div>
                   <div className="ml-3">
                     <p className="text-sm text-gray-700">
-                      Esta acción afectará los permisos de todos los usuarios con este rol.
+                      Los permisos de otros módulos no se verán afectados y se mantendrán tal como están.
                     </p>
                   </div>
                 </div>

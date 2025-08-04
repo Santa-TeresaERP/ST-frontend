@@ -83,9 +83,11 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
           roleId: formData.roleId || "",
         };
         await updateUser({ id: user.id.toString(), payload });
-        onClose();
+        setShowWarning(false); // Cierra el modal de confirmación
+        onClose(); // Cierra el modal principal
       } catch (error) {
         console.error("Error updating user:", error);
+        // Aquí podrías agregar un estado para mostrar un mensaje de error al usuario
       }
     }
   };
@@ -178,6 +180,8 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
               {errors.roleId && <p className="text-red-600 text-sm">{errors.roleId}</p>}
             </div>
           </div>
+          {/* Aquí podrías añadir más campos si los tienes y necesitan scroll */}
+        </form>
 
           <DialogFooter className="flex justify-end gap-4 pt-6">
             <Button type="button" variant="outline" onClick={onClose} className="border border-gray-400 hover:bg-gray-100 text-gray-700">

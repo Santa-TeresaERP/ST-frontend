@@ -11,6 +11,22 @@ export const RoleSchema = zod.object({
 
 export type Role = zod.infer<typeof RoleSchema>;
 
+// 🆕 NUEVO: Tipo extendido que incluye permisos del backend
+export interface RoleWithPermissions extends Role {
+    Permissions?: {
+        id: string;
+        moduleId: string;
+        canRead: boolean;
+        canWrite: boolean;
+        canEdit: boolean; // Campo del backend
+        canDelete: boolean;
+        Module?: {
+            id: string;
+            name: string;
+        };
+    }[];
+}
+
 export interface CreateRolePayload {
     name: string;
     description: string;

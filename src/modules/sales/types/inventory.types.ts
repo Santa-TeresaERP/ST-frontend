@@ -6,7 +6,7 @@ interface Product {
 
 interface Store {
   id: string;
-  name: string;
+  store_name: string;
 }
 
 // Interfaz principal que representa un registro de WarehouseStore
@@ -35,7 +35,5 @@ export type CreateWarehouseStorePayload = {
 
 // El payload para actualizar necesita los 3 campos del formulario.
 export type UpdateWarehouseStorePayload = {
-  productId: string;
-  storeId: string;
   quantity: number;
 };

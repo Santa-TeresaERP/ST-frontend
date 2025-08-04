@@ -6,32 +6,23 @@ import StoreListView from '@/modules/sales/components/store/store-list-view';
 import SalesComponentsView from './\ sales/sale-view';
 import InventoryComponentsView from './\ inventory/inventory-view';
 import LossesComponentView from './losses/losses-view';
+import SelectedStoreIndicator from './store/selected-store-indicator';
 import { StoreAttributes } from '@/modules/sales/types/store.d';
-import { useFetchStores } from '@/modules/sales/hooks/useStore';
+import { useStoreState } from '@/core/store/store';
 
 const SalesView: React.FC = () => {
   const [activeTab, setActiveTab] = useState('informacion');
-  const [selectedStore, setSelectedStore] = useState<StoreAttributes | null>(null);
-  const { data: storesData, refetch } = useFetchStores();
-
-  // Refresca la tienda seleccionada tras editar
-  const handleStoreUpdate = async (storeId: string) => {
-    try {
-      // Refresca la lista de tiendas
-      const { data: updatedStores } = await refetch();
-      // Busca la tienda seleccionada en la lista actualizada
-      const updatedStore = updatedStores?.stores?.find((store: StoreAttributes) => store.id === storeId);
-      if (updatedStore) {
-        setSelectedStore(updatedStore);
-      }
-    } catch (error) {
-      console.error('Error al refrescar la tienda:', error);
-    }
-  };
+  const { selectedStore, setSelectedStore } = useStoreState();
 
   const handleStoreSelect = (store: StoreAttributes | null) => {
     console.log('🏪 Store selected in sales view:', store);
     setSelectedStore(store);
+  };
+
+  const handleStoreUpdate = async (storeId: string) => {
+    // Find the updated store from the stores list or refetch
+    // For now, we'll keep the current store selection
+    console.log('Store updated:', storeId);
   };
 
   return (
@@ -47,6 +38,9 @@ const SalesView: React.FC = () => {
         onStoreSelect={handleStoreSelect}
         selectedStore={selectedStore}
       />
+
+      {/* Indicador de Tienda Seleccionada */}
+      <SelectedStoreIndicator />
 
       {/* Botones de navegación */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 px-4 md:px-9">
@@ -142,9 +136,14 @@ const SalesView: React.FC = () => {
 
       {/* Render de componentes según tab */}
       <div className="mt-6">
-        {activeTab === 'informacion' && <InformationComponentView selectedStore={selectedStore} onStoreUpdate={handleStoreUpdate} />}
+        {activeTab === 'informacion' && (
+          <InformationComponentView 
+            selectedStore={selectedStore} 
+            onStoreUpdate={handleStoreUpdate}
+          />
+        )}
         {activeTab === 'ventas' && <SalesComponentsView selectedStore={selectedStore} />}
-        {activeTab === 'inventario' && <InventoryComponentsView />}
+        {activeTab === 'inventario' && <InventoryComponentsView selectedStoreId={selectedStore?.id} />}
         {activeTab === 'perdidas' && <LossesComponentView selectedStoreId={selectedStore?.id} />}
 
       </div>

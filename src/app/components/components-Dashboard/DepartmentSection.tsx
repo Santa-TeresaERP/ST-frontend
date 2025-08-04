@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from 'next/navigation'; 
+import { useRouter } from 'next/navigation';
 import Image from "next/image";
 import { ArrowRight } from 'lucide-react';
 
@@ -15,13 +15,13 @@ type DepartmentSectionProps = {
 };
 
 const DepartmentSection = ({ title, items }: DepartmentSectionProps) => {
-  const router = useRouter(); 
+  const router = useRouter();
 
   const handleItemClick = (name: string) => {
     switch (name) {
       case "Usuarios": router.push('/pages/dashboard/users'); break;
       case "Modules": router.push('/pages/dashboard/modules'); break;
-      case "Roles": router.push('/pages/dashboard/roles'); break;  
+      case "Roles": router.push('/pages/dashboard/roles'); break;
       case "Ventas": router.push('/pages/dashboard/ventas'); break;
       case "Produccion": router.push('/pages/dashboard/produccion'); break;
       case "Inventario": router.push('/pages/dashboard/inventario'); break;
@@ -29,12 +29,13 @@ const DepartmentSection = ({ title, items }: DepartmentSectionProps) => {
       case "Goyeneche": router.push('/pages/dashboard/goyoneche'); break;
       case "Santa Marta": router.push('/pages/dashboard/santa-marta'); break;
       case "Museo": router.push('/pages/dashboard/museo'); break;
-      case "Alquileres": router.push('/pages/dashboard/alquileres'); break; // 👈 agregado
+      case "Alquileres": router.push('/pages/dashboard/alquileres'); break;
+      case "Finanzas": router.push('/pages/dashboard/finanzas'); break;
       default: console.warn(`No route defined for ${name}`);
     }
   };
 
-  const isMuseoSection = title === "Departamento de Museo";
+  // const isMuseoSection = title === "Departamento de Museo";
 
   return (
     <section className="my-12 max-w-7xl mx-auto px-4">
@@ -44,12 +45,12 @@ const DepartmentSection = ({ title, items }: DepartmentSectionProps) => {
           <span className="absolute -bottom-2 left-0 right-0 mx-auto w-16 h-2 bg-red-800 rounded-full"></span>
         </h3>
       </div>
-  
+
       <div className={`w-full flex justify-center`}>
         <div
           className={`
-            ${isMuseoSection 
-              ? 'flex justify-center' 
+            ${items.length === 1 
+              ? 'flex justify-center'
               : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-20 gap-y-8'}
           `}
         >
@@ -57,7 +58,7 @@ const DepartmentSection = ({ title, items }: DepartmentSectionProps) => {
             <div
               key={index}
               className={`
-                ${isMuseoSection ? 'w-80 h-48' : 'w-64 h-48'}
+                ${items.length === 1 ? 'w-80 h-48' : 'w-64 h-48'}
                 relative overflow-hidden
                 group
                 flex flex-col items-center justify-between
@@ -75,21 +76,21 @@ const DepartmentSection = ({ title, items }: DepartmentSectionProps) => {
               onClick={() => handleItemClick(item.name)}
             >
               <div className="absolute -top-10 -right-10 w-28 h-28 bg-red-800 rounded-full transition-all duration-500 group-hover:scale-150"></div>
-  
+
               <div className="relative z-10 mb-6 p-4 bg-red-300/30 rounded-full group-hover:bg-red-300/80 transition-colors">
-                <Image 
+                <Image
                   src={`/${item.icon}`}
                   alt={item.name}
                   width={48}
                   height={48}
                 />
               </div>
-              
+
               <h4 className="relative z-10 text-2xl font-bold text-[#393939] text-center mb-2">
                 {item.name}
               </h4>
-  
-              {!isMuseoSection && (
+
+              {items.length !== 1 && ( // Muestra "Acceder" solo si hay más de un ítem
                 <div className="relative z-10 mt-4 flex items-center text-red-800 font-medium">
                   <span>Acceder</span>
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />

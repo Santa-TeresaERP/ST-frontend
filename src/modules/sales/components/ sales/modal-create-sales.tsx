@@ -1,16 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useEffect } from 'react';
-import { X, Save, Pencil, Trash2 } from 'lucide-react';
-import { FiShoppingCart, FiPackage } from 'react-icons/fi';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { createSaleSchema } from '../../schemas/saleValidation';
-import { CreateSalePayload } from '../../types/sales';
-import { useCreateSale } from '../../hooks/useSales';
-import { useCreateSalesDetail } from '../../hooks/useSalesDetails';
-import { useFetchProducts } from '@/modules/production/hook/useProducts';
-import { useFetchStores } from '@/modules/sales/hooks/useStore'; // Importar el hook para obtener las tiendas
-import { Product as ProductType } from '@/modules/production/types/products';
+import React, { useState, useEffect } from "react";
+import { X, Save, Pencil, Trash2 } from "lucide-react";
+import { FiShoppingCart, FiPackage } from "react-icons/fi";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { createSaleSchema } from "../../schemas/saleValidation";
+import { CreateSalePayload } from "../../types/sales";
+import { useCreateSale } from "../../hooks/useSales";
+import { useCreateSalesDetail } from "../../hooks/useSalesDetails";
+import { useFetchProducts } from "@/modules/production/hook/useProducts";
+import { useFetchStores } from "@/modules/sales/hooks/useStore"; // Importar el hook para obtener las tiendas
+import { Product as ProductType } from "@/modules/production/types/products";
+import { useStoreState } from "@/core/store/store";
+import { useFetchWarehouseStoreItems } from "@/modules/sales/hooks/useInventoryQueries";
 
 interface CartProduct {
   id: string;
@@ -25,15 +27,20 @@ interface ModalCreateSalesProps {
   onClose: () => void;
 }
 
-const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) => {
+const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({
+  isOpen,
+  onClose,
+}) => {
   const createSale = useCreateSale();
   const createSalesDetail = useCreateSalesDetail();
-  const { data: allProducts = [], isLoading: loadingProducts } = useFetchProducts();
+  const { data: allProducts = [], isLoading: loadingProducts } =
+    useFetchProducts();
   const { data: storesData, isLoading: loadingStores } = useFetchStores(); // Obtener las tiendas
   const stores = storesData?.stores || [];
-
-  const [selectedProductId, setSelectedProductId] = useState('');
-  const [cantidad, setCantidad] = useState('');
+  const { selectedStore } = useStoreState();
+  const { data: warehouseStoreItems = [] } = useFetchWarehouseStoreItems();
+  const [selectedProductId, setSelectedProductId] = useState("");
+  const [cantidad, setCantidad] = useState("");
   const [productos, setProductos] = useState<CartProduct[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -47,28 +54,39 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
   } = useForm<CreateSalePayload>({
     resolver: zodResolver(createSaleSchema),
     defaultValues: {
-      income_date: '',
-      store_id: '',
+      income_date: new Date().toISOString().slice(0, 10),
+      store_id: selectedStore?.id || "",
       total_income: 0,
-      observations: '',
+      observations: "",
     },
   });
 
+  // Sincronizar el store_id cuando cambia la tienda seleccionada o se abre el modal
+  useEffect(() => {
+    if (isOpen && selectedStore?.id) {
+      setValue("store_id", selectedStore.id);
+    }
+  }, [selectedStore, isOpen, setValue]);
+
   useEffect(() => {
     const nuevoTotal = productos.reduce((sum, prod) => sum + prod.total, 0);
-    setValue('total_income', nuevoTotal);
+    setValue("total_income", nuevoTotal);
   }, [productos, setValue]);
 
-  const selectedProduct = allProducts.find(p => p.id === selectedProductId);
+  const selectedProduct = allProducts.find((p) => p.id === selectedProductId);
 
   const getProductPrice = (product: ProductType): number => {
-    const price = typeof product.price === 'string' ? parseFloat(product.price) : product.price;
+    const price =
+      typeof product.price === "string"
+        ? parseFloat(product.price)
+        : product.price;
     return isNaN(price) ? 0 : price;
   };
 
-  const totalProductoActual = selectedProduct && cantidad 
-    ? getProductPrice(selectedProduct) * parseInt(cantidad || '0') 
-    : 0;
+  const totalProductoActual =
+    selectedProduct && cantidad
+      ? getProductPrice(selectedProduct) * parseInt(cantidad || "0")
+      : 0;
 
   const handleAddOrUpdateProducto = () => {
     if (!selectedProductId || !cantidad || !selectedProduct) return;
@@ -80,7 +98,7 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
 
     const nuevoProducto: CartProduct = {
       id: selectedProduct.id,
-      nombre: selectedProduct.name || 'Producto sin nombre',
+      nombre: selectedProduct.name || "Producto sin nombre",
       precio: precio,
       cantidad: cantidadNum,
       total: precio * cantidadNum,
@@ -92,22 +110,25 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
       nuevosProductos[editingIndex] = nuevoProducto;
       setEditingIndex(null);
     } else {
-      const existingIndex = productos.findIndex(p => p.id === selectedProductId);
+      const existingIndex = productos.findIndex(
+        (p) => p.id === selectedProductId
+      );
       if (existingIndex !== -1) {
         nuevosProductos = [...productos];
         nuevosProductos[existingIndex] = {
           ...nuevosProductos[existingIndex],
           cantidad: nuevosProductos[existingIndex].cantidad + cantidadNum,
-          total: (nuevosProductos[existingIndex].cantidad + cantidadNum) * precio,
+          total:
+            (nuevosProductos[existingIndex].cantidad + cantidadNum) * precio,
         };
       } else {
         nuevosProductos = [...productos, nuevoProducto];
       }
     }
-    
+
     setProductos(nuevosProductos);
-    setSelectedProductId('');
-    setCantidad('');
+    setSelectedProductId("");
+    setCantidad("");
   };
 
   const handleEditProducto = (index: number) => {
@@ -124,7 +145,7 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
 
   const onSubmit = async (data: CreateSalePayload) => {
     if (productos.length === 0) {
-      alert('Debe agregar al menos un producto');
+      alert("Debe agregar al menos un producto");
       return;
     }
 
@@ -132,7 +153,7 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
     try {
       const createdSale = await createSale.mutateAsync(data);
       if (!createdSale?.id) {
-        throw new Error('La venta se creó pero no tiene ID');
+        throw new Error("La venta se creó pero no tiene ID");
       }
 
       for (let i = 0; i < productos.length; i++) {
@@ -149,13 +170,13 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
 
       reset();
       setProductos([]);
-      setSelectedProductId('');
-      setCantidad('');
+      setSelectedProductId("");
+      setCantidad("");
       setEditingIndex(null);
       onClose();
     } catch (error) {
-      console.error('Error al crear la venta:', error);
-      alert('Error al crear la venta');
+      console.error("Error al crear la venta:", error);
+      alert("Error al crear la venta");
     } finally {
       setIsCreating(false);
     }
@@ -165,8 +186,8 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
     if (!isCreating) {
       reset();
       setProductos([]);
-      setSelectedProductId('');
-      setCantidad('');
+      setSelectedProductId("");
+      setCantidad("");
       setEditingIndex(null);
       onClose();
     }
@@ -179,7 +200,9 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl relative mx-2 animate-fadeIn">
         <div className="bg-gradient-to-r from-red-700 to-red-900 text-white p-4 rounded-t-2xl flex items-center justify-center relative gap-2">
           <FiShoppingCart size={24} />
-          <h2 className="text-lg font-semibold text-center">Registrar Nueva Venta</h2>
+          <h2 className="text-lg font-semibold text-center">
+            Registrar Nueva Venta
+          </h2>
           <button
             onClick={handleClose}
             disabled={isCreating}
@@ -190,27 +213,55 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
         </div>
 
         <div className="p-6 flex flex-col lg:flex-row gap-6">
-          <form onSubmit={handleSubmit(onSubmit)} className="lg:w-1/2 space-y-4 text-left">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="lg:w-1/2 space-y-4 text-left"
+          >
             <div>
               <label className="block text-gray-700 font-medium mb-1">
                 Tienda <span className="text-red-600">*</span>
               </label>
-              <select
-                {...register('store_id')}
-                disabled={loadingStores || isCreating}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-600 focus:outline-none shadow-sm disabled:bg-gray-100"
-              >
-                <option value="">
-                  {loadingStores ? 'Cargando tiendas...' : 'Seleccionar tienda'}
-                </option>
-                {stores.map((store) => (
-                  <option key={store.id} value={store.id}>
-                    {store.store_name}
+              {selectedStore ? (
+                <input
+                  type="text"
+                  value={selectedStore.store_name}
+                  disabled
+                  className="w-full border rounded-lg px-3 py-2 text-sm bg-gray-100 text-gray-700 cursor-not-allowed"
+                />
+              ) : (
+                <select
+                  {...register("store_id")}
+                  disabled={loadingStores || isCreating}
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-600 focus:outline-none shadow-sm disabled:bg-gray-100"
+                >
+                  <option value="">
+                    {loadingStores
+                      ? "Cargando tiendas..."
+                      : "Seleccionar tienda"}
                   </option>
-                ))}
-              </select>
+                  {stores.map((store) => (
+                    <option key={store.id} value={store.id}>
+                      {store.store_name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {/* Campo oculto para enviar el ID de la tienda */}
+              <input
+                type="hidden"
+                {...register("store_id")}
+                value={selectedStore?.id || ""}
+              />
               {errors.store_id && (
-                <p className="text-red-600 text-xs mt-1">{errors.store_id.message}</p>
+                <p className="text-red-600 text-xs mt-1">
+                  {errors.store_id.message}
+                </p>
+              )}
+              {!selectedStore && (
+                <p className="text-amber-600 text-xs mt-1">
+                  💡 Selecciona una tienda desde la vista principal para
+                  facilitar el llenado
+                </p>
               )}
             </div>
 
@@ -221,7 +272,7 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
               <input
                 type="number"
                 step="0.01"
-                {...register('total_income', { valueAsNumber: true })}
+                {...register("total_income", { valueAsNumber: true })}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-600 focus:outline-none shadow-sm bg-gray-300"
                 placeholder="0.00"
                 readOnly
@@ -230,7 +281,9 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
                 Se calcula automáticamente según los productos agregados
               </p>
               {errors.total_income && (
-                <p className="text-red-600 text-xs mt-1">{errors.total_income.message}</p>
+                <p className="text-red-600 text-xs mt-1">
+                  {errors.total_income.message}
+                </p>
               )}
             </div>
 
@@ -240,26 +293,33 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
               </label>
               <input
                 type="date"
-                {...register('income_date')}
+                {...register("income_date")}
                 disabled={isCreating}
+                defaultValue={new Date().toISOString().substr(0, 10)}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-600 focus:outline-none shadow-sm disabled:bg-gray-100"
               />
               {errors.income_date && (
-                <p className="text-red-600 text-xs mt-1">{errors.income_date.message}</p>
+                <p className="text-red-600 text-xs mt-1">
+                  {errors.income_date.message}
+                </p>
               )}
             </div>
 
             <div>
-              <label className="block text-gray-700 font-medium mb-1">Observaciones</label>
+              <label className="block text-gray-700 font-medium mb-1">
+                Observaciones
+              </label>
               <textarea
-                {...register('observations')}
+                {...register("observations")}
                 disabled={isCreating}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-600 focus:outline-none shadow-sm disabled:bg-gray-100"
                 rows={3}
                 placeholder="Observaciones adicionales..."
               />
               {errors.observations && (
-                <p className="text-red-600 text-xs mt-1">{errors.observations.message}</p>
+                <p className="text-red-600 text-xs mt-1">
+                  {errors.observations.message}
+                </p>
               )}
             </div>
 
@@ -301,7 +361,9 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
 
             <div className="space-y-3 mb-4">
               <div>
-                <label className="block text-xs text-gray-700 mb-1">Producto *</label>
+                <label className="block text-xs text-gray-700 mb-1">
+                  Producto *
+                </label>
                 <select
                   value={selectedProductId}
                   onChange={(e) => setSelectedProductId(e.target.value)}
@@ -309,19 +371,33 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-600 focus:outline-none disabled:bg-gray-100"
                 >
                   <option value="">
-                    {loadingProducts ? 'Cargando productos...' : 'Seleccionar producto'}
+                    {loadingProducts
+                      ? "Cargando productos..."
+                      : "Seleccionar producto"}
                   </option>
-                  {allProducts.map((product) => (
-                    <option key={product.id} value={product.id}>
-                      {product.name || 'Sin nombre'} - S/ {getProductPrice(product).toFixed(2)}
-                    </option>
-                  ))}
+                  {warehouseStoreItems
+                    .filter((item) => item.storeId === selectedStore?.id)
+                    .map((item) => {
+                      const product = allProducts.find(
+                        (p) => p.id === item.productId
+                      );
+                      return (
+                        <option key={item.productId} value={item.productId}>
+                          {product?.name || "Sin nombre"} - S/{" "}
+                          {getProductPrice(
+                            product || ({ id: "", name: "", price: 0 } as any)
+                          ).toFixed(2)}
+                        </option>
+                      );
+                    })}
                 </select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-gray-700 mb-1">Cantidad *</label>
+                  <label className="block text-xs text-gray-700 mb-1">
+                    Cantidad *
+                  </label>
                   <input
                     type="number"
                     min="1"
@@ -333,7 +409,9 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-700 mb-1">Total S/</label>
+                  <label className="block text-xs text-gray-700 mb-1">
+                    Total S/
+                  </label>
                   <input
                     type="text"
                     value={totalProductoActual.toFixed(2)}
@@ -345,7 +423,9 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
 
               {selectedProduct && (
                 <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded">
-                  <strong>{selectedProduct.name || 'Sin nombre'}</strong> - Precio unitario: S/ {getProductPrice(selectedProduct).toFixed(2)}
+                  <strong>{selectedProduct.name || "Sin nombre"}</strong> -
+                  Precio unitario: S/{" "}
+                  {getProductPrice(selectedProduct).toFixed(2)}
                 </div>
               )}
             </div>
@@ -353,14 +433,21 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
             <button
               type="button"
               onClick={handleAddOrUpdateProducto}
-              disabled={!selectedProductId || !cantidad || parseInt(cantidad || '0') <= 0 || isCreating}
+              disabled={
+                !selectedProductId ||
+                !cantidad ||
+                parseInt(cantidad || "0") <= 0 ||
+                isCreating
+              }
               className={`mb-4 text-white px-4 py-2 rounded-lg text-sm w-full disabled:opacity-50 disabled:cursor-not-allowed ${
                 editingIndex !== null
-                  ? 'bg-green-700 hover:bg-green-600'
-                  : 'bg-red-700 hover:bg-red-600'
+                  ? "bg-green-700 hover:bg-green-600"
+                  : "bg-red-700 hover:bg-red-600"
               }`}
             >
-              {editingIndex !== null ? 'Actualizar Producto' : 'Agregar Producto'}
+              {editingIndex !== null
+                ? "Actualizar Producto"
+                : "Agregar Producto"}
             </button>
 
             <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -381,7 +468,9 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
                         <span className="mx-2">•</span>
                         <span>Precio: S/ {prod.precio.toFixed(2)}</span>
                         <span className="mx-2">•</span>
-                        <span className="font-bold text-black">Total: S/ {prod.total.toFixed(2)}</span>
+                        <span className="font-bold text-black">
+                          Total: S/ {prod.total.toFixed(2)}
+                        </span>
                       </div>
                     </div>
                     <div className="flex gap-2 ml-2">
@@ -410,14 +499,20 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({ isOpen, onClose }) 
             {productos.length > 0 && (
               <div className="mt-4 p-3 bg-red-50 rounded-lg border">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-700">Total productos: {productos.length}</span>
                   <span className="text-gray-700">
-                    Cantidad total: {productos.reduce((sum, p) => sum + p.cantidad, 0)}
+                    Total productos: {productos.length}
+                  </span>
+                  <span className="text-gray-700">
+                    Cantidad total:{" "}
+                    {productos.reduce((sum, p) => sum + p.cantidad, 0)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-lg font-bold text-red-700 mt-2">
                   <span>Total de la venta:</span>
-                  <span>S/ {productos.reduce((sum, p) => sum + p.total, 0).toFixed(2)}</span>
+                  <span>
+                    S/{" "}
+                    {productos.reduce((sum, p) => sum + p.total, 0).toFixed(2)}
+                  </span>
                 </div>
               </div>
             )}

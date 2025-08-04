@@ -1,4 +1,6 @@
 
+import { UserWithPermissions } from '@/core/utils/permission-types';
+
 export interface LoginCredentials {
   email: string;
   password: string;
@@ -6,9 +8,5 @@ export interface LoginCredentials {
 
 export interface LoginResponse {
   token: string;
-  user: {
-    id: string;
-    name: string;
-    roleId: string;
-  };
+  user: UserWithPermissions;
 }

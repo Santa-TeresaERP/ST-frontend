@@ -13,6 +13,9 @@ export const useFetchReturns = () => {
   return useQuery<returnsAttributes[], Error>({
     queryKey: ['returns'],
     queryFn: fetchReturns,
+    refetchInterval: 3000, // Refrescar cada 3 segundos
+    refetchOnWindowFocus: true,
+    staleTime: 1000, // Considerar datos obsoletos después de 1 segundo
   })
 }
 
@@ -28,7 +31,11 @@ export const useFetchReturn = (id: string) => {
 // Crear una devolución
 export const useCreateReturn = () => {
   const queryClient = useQueryClient()
-  return useMutation<returnsAttributes, Error, Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt'>>({
+  return useMutation<
+    returnsAttributes,
+    Error,
+    Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt' | 'price'>
+  >({
     mutationFn: createReturn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['returns'] })
@@ -39,7 +46,14 @@ export const useCreateReturn = () => {
 // Actualizar una devolución
 export const useUpdateReturn = () => {
   const queryClient = useQueryClient()
-  return useMutation<returnsAttributes, Error, { id: string; payload: Partial<Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt'>> }>({
+  return useMutation<
+    returnsAttributes,
+    Error,
+    {
+      id: string
+      payload: Partial<Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt' | 'price'>>
+    }
+  >({
     mutationFn: ({ id, payload }) => updateReturn(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['returns'] })

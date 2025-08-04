@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { getSalesChannels, createSalesChannel, updateSalesChannel, deleteSalesChannel } from '../action/salesChannel';
 import { SalesChannel } from '../types/salesChannel';
@@ -24,14 +25,16 @@ export function useSalesChannel() {
     fetchAll();
   }, []);
 
-  const create = async (item: Omit<SalesChannel, 'id'>) => {
+  const create = async (item: Omit<SalesChannel, 'id'>): Promise<SalesChannel> => {
     setLoading(true);
     setError(null);
     try {
-      await createSalesChannel(item);
+      const newItem = await createSalesChannel(item);
       await fetchAll();
+      return newItem;
     } catch (e: any) {
       setError(e.message);
+      throw e;
     } finally {
       setLoading(false);
     }

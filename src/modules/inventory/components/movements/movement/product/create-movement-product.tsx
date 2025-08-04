@@ -34,7 +34,6 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
   const { data: products, isLoading: isLoadingProducts, error: errorProducts } = useFetchProducts();
   const [loading, setLoading] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
 
 
@@ -190,7 +189,7 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
             >
               <option key="select-store" value="">{isLoadingStores ? 'Cargando tiendas...' : 'Seleccione una tienda'}</option>
               {errorStores && <option key="error-store" value="" disabled>Error al cargar tiendas</option>}
-              {Array.isArray(stores) && stores.map((store: StoreAttributes) => (
+              {stores?.stores?.map((store: StoreAttributes) => (
                 <option key={store.id} value={store.id}>
                   {store.store_name}
                 </option>

@@ -32,12 +32,38 @@ const ModalCreateProduction: React.FC<ModalCreateProductionProps> = ({ isOpen, o
     const nuevaProduccion = {
       productId: producto,
       quantityProduced: Number(cantidad),
-      productionDate: fecha,
+      productionDate: fecha, // Keep as date string in YYYY-MM-DD format
       observation: descripcion,
       plant_id: planta,
     };
 
+    // Validate the data before sending
+    if (!cantidad || isNaN(Number(cantidad)) || Number(cantidad) <= 0) {
+      alert('La cantidad debe ser un número positivo válido.');
+      return;
+    }
+
+    if (new Date(fecha).toString() === 'Invalid Date') {
+      alert('La fecha de producción no es válida.');
+      return;
+    }
+
+    // Basic UUID format validation
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(producto)) {
+      alert('El ID del producto no tiene un formato válido.');
+      return;
+    }
+
+    if (!uuidRegex.test(planta)) {
+      alert('El ID de la planta no tiene un formato válido.');
+      return;
+    }
+
     try {
+      // Debug: Log the data being sent
+      console.log('Datos enviados para producción:', nuevaProduccion);
+      
       await createProductionMutation.mutateAsync(nuevaProduccion);
       setProducto('');
       setCantidad('');
@@ -45,8 +71,19 @@ const ModalCreateProduction: React.FC<ModalCreateProductionProps> = ({ isOpen, o
       setPlanta('');
       setFecha(new Date().toISOString().split('T')[0]);
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al crear la producción:', error);
+      
+      // More detailed error logging
+      if (error?.response?.data) {
+        console.error('Detalles del error del servidor:', error.response.data);
+        alert(`Error del servidor: ${JSON.stringify(error.response.data)}`);
+      } else if (error?.message) {
+        console.error('Mensaje de error:', error.message);
+        alert(`Error: ${error.message}`);
+      } else {
+        alert('Error desconocido al crear la producción');
+      }
     }
   };
 
@@ -156,9 +193,11 @@ const ModalCreateProduction: React.FC<ModalCreateProductionProps> = ({ isOpen, o
             </button>
             <button
               type="submit"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white shadow-md hover:shadow-lg transition"
+              disabled={createProductionMutation.isPending}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white shadow-md hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Save size={18} /> Guardar
+              <Save size={18} /> 
+              {createProductionMutation.isPending ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
         </form>
