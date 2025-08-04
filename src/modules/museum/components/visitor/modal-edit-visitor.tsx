@@ -37,7 +37,7 @@ const ModalEditVisitor: React.FC<ModalEditVisitorProps> = ({ isOpen, onClose, on
   // Hook para obtener los canales de venta
   const { data: canalesVenta, loading: loadingCanales, error: errorCanales, create: createCanalVenta } = useSalesChannel();
   // Hook para obtener los tipos de persona
-  const { data: tiposPersona, loading: loadingTipos, error: errorTipos } = useTypePerson();
+  const { data: tiposPersona, loading: loadingTipos, error: errorTipos, refetch } = useTypePerson();
   // Hook para obtener los métodos de pago
   const { data: metodosPago, loading: loadingPagos, error: errorPagos, create: createMetodoPago } = usePaymentMethod();
 
@@ -124,10 +124,11 @@ const ModalEditVisitor: React.FC<ModalEditVisitorProps> = ({ isOpen, onClose, on
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl relative mx-2">
+      {/* Contenedor del modal: Se ajusta para ser responsive */}
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg lg:max-w-3xl relative mx-auto my-auto overflow-y-auto max-h-[90vh]">
         <div className="bg-gradient-to-r from-red-700 to-red-900 text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
           <Pencil size={24} />
-          <h2 className="text-xl font-semibold text-center">Editar Visitante</h2>
+          <h2 className="text-lg md:text-xl font-semibold text-center">Editar Visitante</h2>
           <button
             onClick={onClose}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
@@ -136,6 +137,7 @@ const ModalEditVisitor: React.FC<ModalEditVisitorProps> = ({ isOpen, onClose, on
           </button>
         </div>
 
+        {/* Formulario con campos responsive */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5 text-left">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Tipo de Visitante */}
@@ -282,7 +284,7 @@ const ModalEditVisitor: React.FC<ModalEditVisitorProps> = ({ isOpen, onClose, on
                 )}
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                {gratis === 'Si' 
+                {gratis === 'Si'
                   ? 'Entrada gratuita'
                   : 'El monto se calcula automáticamente según el tipo de ticket'
                 }
@@ -307,17 +309,17 @@ const ModalEditVisitor: React.FC<ModalEditVisitorProps> = ({ isOpen, onClose, on
           </div>
 
           {/* Botones */}
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex justify-end flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition"
+              className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition w-full sm:w-auto"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-600 transition flex items-center gap-2"
+              className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-600 transition flex items-center justify-center gap-2 w-full sm:w-auto"
             >
               <Save size={18} /> Guardar
             </button>
@@ -325,7 +327,7 @@ const ModalEditVisitor: React.FC<ModalEditVisitorProps> = ({ isOpen, onClose, on
         </form>
       </div>
 
-      {/* Mini‑Modal creación rápida */}
+      {/* Mini‑Modal creación rápida (pago) */}
       {miniOpen === 'pago' && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"

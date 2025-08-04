@@ -27,12 +27,12 @@ const MuseumComponentView: React.FC = () => {
       console.error('Error al actualizar entrada:', error)
       alert('Error al actualizar la entrada. Por favor, intente nuevamente.')
     }
-  }
+  };
   const handleDelete = async () => {
-    if (!selected?.id) return
-    await remove(selected.id)
-    setIsDeleteOpen(false)
-  }
+    if (!selected?.id) return;
+    await remove(selected.id);
+    setIsDeleteOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
@@ -51,18 +51,18 @@ const MuseumComponentView: React.FC = () => {
         />
       </div>
 
-      <div className="flex justify-between mb-4">
-        <h2 className="text-3xl font-semibold text-red-700">Lista de Visitantes</h2>
-        <div className='justify-end flex gap-2'>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+        <h2 className="text-3xl font-semibold text-red-700 mb-2 sm:mb-0">Lista de Visitantes</h2>
+        <div className="flex flex-col sm:flex-row justify-end gap-2 w-full sm:w-auto">
           <button
             onClick={() => setIsCreateOpen(true)}
-            className="flex items-center bg-red-700 text-white px-4 py-2 rounded-3xl"
+            className="flex items-center justify-center bg-red-700 text-white px-4 py-2 rounded-3xl whitespace-nowrap"
           >
             <PlusCircle className="mr-2" /> Nuevo Visitante
           </button>
           <button
             onClick={() => setIsTicketOpen(true)}
-            className="flex items-center bg-red-700 text-white px-4 py-2 rounded-3xl"
+            className="flex items-center justify-center bg-red-700 text-white px-4 py-2 rounded-3xl whitespace-nowrap"
           >
             <PlusCircle className="mr-2" /> Tipos de Tickets
           </button>
@@ -70,7 +70,7 @@ const MuseumComponentView: React.FC = () => {
       </div>
 
       {loading && <p>Cargando visitantes…</p>}
-      {error   && <p className="text-red-600">Error: {error}</p>}
+      {error && <p className="text-red-600">Error: {error}</p>}
 
       <div className="overflow-x-auto bg-white rounded shadow">
         <table className="min-w-full text-gray-700">
@@ -106,15 +106,15 @@ const MuseumComponentView: React.FC = () => {
                 <td className="px-4 py-2">{e.payment_method_obj?.name || e.payment_method}</td>
                 <td className="px-4 py-2 text-center">
                   {e.free
-                    ? <CheckCircle className="inline text-green-500"/>
-                    : <XCircle     className="inline text-red-500"/>}
+                    ? <CheckCircle className="inline text-green-500" />
+                    : <XCircle className="inline text-red-500" />}
                 </td>
                 <td className="px-4 py-2 space-x-2">
-                  <button onClick={() => { setSelected(e); setIsEditOpen(true) }}>
-                    <Pencil className="text-blue-600"/>
+                  <button onClick={() => { setSelected(e); setIsEditOpen(true); }}>
+                    <Pencil className="text-blue-600" />
                   </button>
-                  <button onClick={() => { setSelected(e); setIsDeleteOpen(true) }}>
-                    <Trash2 className="text-red-600"/>
+                  <button onClick={() => { setSelected(e); setIsDeleteOpen(true); }}>
+                    <Trash2 className="text-red-600" />
                   </button>
                 </td>
               </tr>
@@ -132,7 +132,7 @@ const MuseumComponentView: React.FC = () => {
           refetch(); // Refrescar la tabla después de crear
         }}
       />
-      
+
       <ModalEditEntrance
         isOpen={isEditOpen}
         initialData={selected}
@@ -151,7 +151,7 @@ const MuseumComponentView: React.FC = () => {
         onClose={() => setIsTicketOpen(false)}
       />
     </div>
-  )
-}
+  );
+};
 
-export default MuseumComponentView
+export default MuseumComponentView;
