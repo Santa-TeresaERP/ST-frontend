@@ -1,22 +1,34 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../../app/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "../../../app/components/ui/dialog";
 import { Button } from "../../../app/components/ui/button";
 import { Input } from "../../../app/components/ui/input";
 import { Label } from "../../../app/components/ui/label";
-import { User } from '@/modules/user-creations/types/user';
-import { useUpdateUser } from '@/modules/user-creations/hook/useUsers';
-import { useFetchRoles } from '@/modules/roles/hook/useRoles';
+import { User } from "@/modules/user-creations/types/user";
+import { useUpdateUser } from "@/modules/user-creations/hook/useUsers";
+import { useFetchRoles } from "@/modules/roles/hook/useRoles";
 import { z } from "zod";
 import { Save, UserCog } from "lucide-react";
 
 const userSchema = z.object({
-  name: z.string().max(45, "El nombre completo no debe exceder los 45 caracteres")
+  name: z
+    .string()
+    .max(45, "El nombre completo no debe exceder los 45 caracteres")
     .regex(/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/, "El nombre solo debe contener letras y espacios"),
-  dni: z.string().length(8, "El DNI debe tener 8 dígitos")
+  dni: z
+    .string()
+    .length(8, "El DNI debe tener 8 dígitos")
     .regex(/^[0-9]+$/, "El DNI solo debe contener números"),
-  phonenumber: z.string().length(9, "El número telefónico debe tener 9 dígitos")
+  phonenumber: z
+    .string()
+    .length(9, "El número telefónico debe tener 9 dígitos")
     .regex(/^[0-9]+$/, "El número telefónico solo debe contener números"),
   email: z.string().email("El email debe tener un formato válido"),
   roleId: z.string().min(1, "Debe seleccionar un rol"),
@@ -33,8 +45,7 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showWarning, setShowWarning] = useState(false);
   const { mutateAsync: updateUser } = useUpdateUser();
-
-  const { data: roles, isLoading: loadingRoles } = useFetchRoles();
+  const { data: roles } = useFetchRoles();
 
   useEffect(() => {
     if (user) {
@@ -42,7 +53,9 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
     }
   }, [user]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
   };
@@ -83,11 +96,10 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
           roleId: formData.roleId || "",
         };
         await updateUser({ id: user.id.toString(), payload });
-        setShowWarning(false); // Cierra el modal de confirmación
-        onClose(); // Cierra el modal principal
+        setShowWarning(false);
+        onClose();
       } catch (error) {
         console.error("Error updating user:", error);
-        // Aquí podrías agregar un estado para mostrar un mensaje de error al usuario
       }
     }
   };
@@ -107,60 +119,79 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
         <form onSubmit={handleSubmit} className="space-y-6 p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="space-y-1">
-              <Label htmlFor="name" className="uppercase font-semibold text-sm text-gray-700">Nombre</Label>
+              <Label htmlFor="name" className="uppercase font-semibold text-sm text-gray-700">
+                Nombre
+              </Label>
               <Input
                 id="name"
                 name="name"
                 type="text"
                 value={formData.name || ""}
                 onChange={handleInputChange}
-                className={`border border-black rounded-md px-4 py-2 ${errors.name ? "border-red-600" : ""}`}
+                className={`border border-black rounded-md px-4 py-2 ${
+                  errors.name ? "border-red-600" : ""
+                }`}
               />
               {errors.name && <p className="text-red-600 text-sm">{errors.name}</p>}
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="email" className="uppercase font-semibold text-sm text-gray-700">Correo Electrónico</Label>
+              <Label htmlFor="email" className="uppercase font-semibold text-sm text-gray-700">
+                Correo Electrónico
+              </Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
                 value={formData.email || ""}
                 onChange={handleInputChange}
-                className={`border border-black rounded-md px-4 py-2 ${errors.email ? "border-red-600" : ""}`}
+                className={`border border-black rounded-md px-4 py-2 ${
+                  errors.email ? "border-red-600" : ""
+                }`}
               />
               {errors.email && <p className="text-red-600 text-sm">{errors.email}</p>}
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="phonenumber" className="uppercase font-semibold text-sm text-gray-700">Teléfono</Label>
+              <Label htmlFor="phonenumber" className="uppercase font-semibold text-sm text-gray-700">
+                Teléfono
+              </Label>
               <Input
                 id="phonenumber"
                 name="phonenumber"
                 type="text"
                 value={formData.phonenumber || ""}
                 onChange={handleInputChange}
-                className={`border border-black rounded-md px-4 py-2 ${errors.phonenumber ? "border-red-600" : ""}`}
+                className={`border border-black rounded-md px-4 py-2 ${
+                  errors.phonenumber ? "border-red-600" : ""
+                }`}
               />
-              {errors.phonenumber && <p className="text-red-600 text-sm">{errors.phonenumber}</p>}
+              {errors.phonenumber && (
+                <p className="text-red-600 text-sm">{errors.phonenumber}</p>
+              )}
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="dni" className="uppercase font-semibold text-sm text-gray-700">DNI</Label>
+              <Label htmlFor="dni" className="uppercase font-semibold text-sm text-gray-700">
+                DNI
+              </Label>
               <Input
                 id="dni"
                 name="dni"
                 type="text"
                 value={formData.dni || ""}
                 onChange={handleInputChange}
-                className={`border border-black rounded-md px-4 py-2 ${errors.dni ? "border-red-600" : ""}`}
+                className={`border border-black rounded-md px-4 py-2 ${
+                  errors.dni ? "border-red-600" : ""
+                }`}
               />
               {errors.dni && <p className="text-red-600 text-sm">{errors.dni}</p>}
             </div>
 
-            {/* Campo de Rol */}
             <div className="space-y-1 sm:col-span-2">
-              <Label htmlFor="roleId" className="uppercase font-semibold text-sm text-gray-700">Rol</Label>
+              <Label htmlFor="roleId" className="uppercase font-semibold text-sm text-gray-700">
+                Rol
+              </Label>
               <select
                 id="roleId"
                 name="roleId"
@@ -180,36 +211,52 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
               {errors.roleId && <p className="text-red-600 text-sm">{errors.roleId}</p>}
             </div>
           </div>
-          {/* Aquí podrías añadir más campos si los tienes y necesitan scroll */}
-        </form>
 
           <DialogFooter className="flex justify-end gap-4 pt-6">
-            <Button type="button" variant="outline" onClick={onClose} className="border border-gray-400 hover:bg-gray-100 text-gray-700">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="border border-gray-400 hover:bg-gray-100 text-gray-700"
+            >
               Cancelar
             </Button>
-            <Button type="submit" className="bg-green-600 hover:bg-green-500 text-white w-full sm:w-auto flex items-center gap-2">
+            <Button
+              type="submit"
+              className="bg-green-600 hover:bg-green-500 text-white w-full sm:w-auto flex items-center gap-2"
+            >
               <Save size={18} />
               Guardar
             </Button>
           </DialogFooter>
         </form>
 
-        {/* Confirmación */}
         {showWarning && (
           <Dialog open={showWarning} onOpenChange={() => setShowWarning(false)}>
             <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[600px] p-0 overflow-hidden rounded-2xl shadow-xl">
               <div className="w-full bg-gradient-to-r from-red-600 to-red-700 py-4 px-6">
                 <DialogHeader>
-                  <DialogTitle className="text-lg font-bold text-white text-center">Confirmar Cambios</DialogTitle>
+                  <DialogTitle className="text-lg font-bold text-white text-center">
+                    Confirmar Cambios
+                  </DialogTitle>
                 </DialogHeader>
               </div>
               <div className="text-center py-6 px-6">
                 <p className="text-gray-700 mb-4">¿Estás seguro de que quieres guardar los cambios?</p>
                 <div className="flex justify-center gap-4">
-                  <Button type="button" variant="outline" onClick={() => setShowWarning(false)} className="text-gray-700 border-gray-400 hover:bg-gray-100">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowWarning(false)}
+                    className="text-gray-700 border-gray-400 hover:bg-gray-100"
+                  >
                     Cancelar
                   </Button>
-                  <Button type="button" onClick={handleConfirmSubmit} className="bg-red-600 hover:bg-red-700 text-white">
+                  <Button
+                    type="button"
+                    onClick={handleConfirmSubmit}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
                     Confirmar
                   </Button>
                 </div>
