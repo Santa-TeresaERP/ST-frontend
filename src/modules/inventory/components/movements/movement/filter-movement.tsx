@@ -9,6 +9,7 @@ interface FilterMovementProps {
   searchTerm: string;
   products: any[];
   stores: any[];
+  resources: any[];
 }
 
 const FilterMovement: React.FC<FilterMovementProps> = ({
@@ -125,7 +126,7 @@ const FilterMovement: React.FC<FilterMovementProps> = ({
           <option value="">Todas Tiendas</option>
           {stores.map((s) => (
             <option key={s.id} value={s.id}>
-              {s.name}
+              {s.store_name ?? s.name ?? `Tienda ${s.id}`}
             </option>
           ))}
         </select>
