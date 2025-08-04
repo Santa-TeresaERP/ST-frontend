@@ -54,7 +54,7 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({
   } = useForm<CreateSalePayload>({
     resolver: zodResolver(createSaleSchema),
     defaultValues: {
-      income_date: "",
+      income_date: new Date().toISOString().slice(0, 10),
       store_id: selectedStore?.id || "",
       total_income: 0,
       observations: "",
@@ -295,6 +295,7 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({
                 type="date"
                 {...register("income_date")}
                 disabled={isCreating}
+                defaultValue={new Date().toISOString().substr(0, 10)}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-600 focus:outline-none shadow-sm disabled:bg-gray-100"
               />
               {errors.income_date && (

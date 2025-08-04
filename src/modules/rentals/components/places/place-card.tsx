@@ -6,8 +6,8 @@ import { Place } from '../../types';
 
 interface PlaceCardProps {
   place: Place;
-  onEdit: (placeId: number, updatedPlace: Partial<Place>) => void;
-  onDelete: (placeId: number) => void;
+  onEdit: (placeId: string, updatedPlace: Partial<Place>) => void;
+  onDelete: (placeId: string) => void;
   onViewRentals: (place: Place) => void;
 }
 
@@ -28,7 +28,9 @@ const PlaceCard: React.FC<PlaceCardProps> = ({ place, onEdit, onDelete, onViewRe
   };
 
   const handleEditSubmit = (updatedPlace: Partial<Place>) => {
-    onEdit(place.id, updatedPlace);
+    if (place._id) {
+      onEdit(place._id, updatedPlace);
+    }
     setIsEditModalOpen(false);
   };
 
@@ -57,10 +59,9 @@ const PlaceCard: React.FC<PlaceCardProps> = ({ place, onEdit, onDelete, onViewRe
         {/* Información del lugar */}
         <div className="flex-1 space-y-2">
           <div>
-            <h3 className="font-semibold text-gray-900">Nombre del lugar</h3>
-            <p className="text-sm text-gray-600">{place.tipo}</p>
+            <h3 className="font-semibold text-gray-900">{place.name}</h3>
+            <p className="text-sm text-gray-600">Tipo: {place.tipo}</p>
           </div>
-          
           <div>
             <h4 className="font-semibold text-gray-900">Área</h4>
             <p className="text-sm text-gray-600">{place.area}</p>
@@ -80,6 +81,12 @@ const PlaceCard: React.FC<PlaceCardProps> = ({ place, onEdit, onDelete, onViewRe
             onClick={handleEdit}
           >
             Editar
+          </button>
+          <button 
+            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
+            onClick={() => place._id && onDelete(place._id)}
+          >
+            Eliminar
           </button>
           <button 
             className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
