@@ -133,6 +133,7 @@ const MovementComponentView: React.FC = () => {
         searchTerm={searchTerm}
         products={products}
         stores={stores}
+        resources={resources} 
       />
 
       {/* Display active filters */}
