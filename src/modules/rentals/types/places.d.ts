@@ -1,6 +1,9 @@
 export interface Place {
   _id?: string;
+  location_id: string;
   name: string;
-  description?: string;
-  // Agrega aquí los campos necesarios según tu modelo backend
+  area: string;
 }
+
+export type CreatePlacePayload = Omit<Place, '_id'>;
+export type UpdatePlacePayload = Partial<Omit<Place, '_id'>>;

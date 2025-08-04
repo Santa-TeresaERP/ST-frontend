@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchPlaces, fetchPlace, createPlace, updatePlace, deletePlace } from '../action/places';
-import { Place } from '../types/places';
+import { Place, CreatePlacePayload, UpdatePlacePayload } from '../types/places';
 
 export const useFetchPlaces = () => {
   return useQuery<Place[], Error>({
@@ -19,7 +19,7 @@ export const useFetchPlace = (id: string) => {
 
 export const useCreatePlace = () => {
   const queryClient = useQueryClient();
-  return useMutation<Place, Error, Omit<Place, '_id'>>({
+  return useMutation<Place, Error, CreatePlacePayload>({
     mutationFn: createPlace,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['places'] }),
   });
@@ -27,7 +27,7 @@ export const useCreatePlace = () => {
 
 export const useUpdatePlace = () => {
   const queryClient = useQueryClient();
-  return useMutation<Place, Error, { id: string; payload: Partial<Place> }>({
+  return useMutation<Place, Error, { id: string; payload: UpdatePlacePayload }>({
     mutationFn: ({ id, payload }) => updatePlace(id, payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['places'] }),
   });

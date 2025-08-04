@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FaUser } from 'react-icons/fa';
 import ModalEditPlace from './modal-edit-place';
 import NewRentalModal from '../modals/new-rental-modal';
-import { Place } from '../../types';
+import { Place } from '../../types/places';
 
 interface PlaceCardProps {
   place: Place;
@@ -11,7 +11,7 @@ interface PlaceCardProps {
   onViewRentals: (place: Place) => void;
 }
 
-const PlaceCard: React.FC<PlaceCardProps> = ({ place, onEdit, onDelete, onViewRentals }) => {
+const PlaceCard: React.FC<PlaceCardProps> = ({ place, onEdit, onViewRentals }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isNewRentalModalOpen, setIsNewRentalModalOpen] = useState(false);
 
@@ -41,7 +41,7 @@ const PlaceCard: React.FC<PlaceCardProps> = ({ place, onEdit, onDelete, onViewRe
     fechaFin: string;
     monto: number;
   }) => {
-    console.log('Nuevo alquiler para lugar:', place.nombre, 'Datos:', rentalData);
+    console.log('Nuevo alquiler para lugar:', place.name, 'Datos:', rentalData);
     setIsNewRentalModalOpen(false);
     // Aquí puedes agregar lógica para guardar el alquiler
   };
@@ -60,7 +60,6 @@ const PlaceCard: React.FC<PlaceCardProps> = ({ place, onEdit, onDelete, onViewRe
         <div className="flex-1 space-y-2">
           <div>
             <h3 className="font-semibold text-gray-900">{place.name}</h3>
-            <p className="text-sm text-gray-600">Tipo: {place.tipo}</p>
           </div>
           <div>
             <h4 className="font-semibold text-gray-900">Área</h4>
@@ -81,12 +80,6 @@ const PlaceCard: React.FC<PlaceCardProps> = ({ place, onEdit, onDelete, onViewRe
             onClick={handleEdit}
           >
             Editar
-          </button>
-          <button 
-            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
-            onClick={() => place._id && onDelete(place._id)}
-          >
-            Eliminar
           </button>
           <button 
             className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
