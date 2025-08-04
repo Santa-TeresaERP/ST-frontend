@@ -7,26 +7,19 @@ import { Input } from "../../../app/components/ui/input";
 import { Label } from "../../../app/components/ui/label";
 import { User } from '@/modules/user-creations/types/user';
 import { useUpdateUser } from '@/modules/user-creations/hook/useUsers';
+import { useFetchRoles } from '@/modules/roles/hook/useRoles';
 import { z } from "zod";
 import { Save, UserCog } from "lucide-react";
 
 const userSchema = z.object({
-  name: z
-    .string()
-    .max(45, "El nombre completo no debe exceder los 45 caracteres")
-    .regex(
-      /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/,
-      "El nombre solo debe contener letras y espacios"
-    ),
-  dni: z
-    .string()
-    .length(8, "El DNI debe tener 8 dígitos")
+  name: z.string().max(45, "El nombre completo no debe exceder los 45 caracteres")
+    .regex(/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/, "El nombre solo debe contener letras y espacios"),
+  dni: z.string().length(8, "El DNI debe tener 8 dígitos")
     .regex(/^[0-9]+$/, "El DNI solo debe contener números"),
-  phonenumber: z
-    .string()
-    .length(9, "El número telefónico debe tener 9 dígitos")
+  phonenumber: z.string().length(9, "El número telefónico debe tener 9 dígitos")
     .regex(/^[0-9]+$/, "El número telefónico solo debe contener números"),
   email: z.string().email("El email debe tener un formato válido"),
+  roleId: z.string().min(1, "Debe seleccionar un rol"),
 });
 
 type UserModalProps = {
@@ -38,8 +31,10 @@ type UserModalProps = {
 const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
   const [formData, setFormData] = useState<Partial<User>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const { mutateAsync: updateUser } = useUpdateUser();
   const [showWarning, setShowWarning] = useState(false);
+  const { mutateAsync: updateUser } = useUpdateUser();
+
+  const { data: roles, isLoading: loadingRoles } = useFetchRoles();
 
   useEffect(() => {
     if (user) {
@@ -47,9 +42,9 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
     }
   }, [user]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    setErrors((prev) => ({ ...prev, [e.target.name]: "" })); // Limpiar errores al modificar campos
+    setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
   };
 
   const validateForm = () => {
@@ -85,6 +80,7 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
           dni: formData.dni || "",
           phonenumber: formData.phonenumber?.toString() || "",
           email: formData.email || "",
+          roleId: formData.roleId || "",
         };
         await updateUser({ id: user.id.toString(), payload });
         onClose();
@@ -96,8 +92,7 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[600px] p-0 overflow-hidden rounded-2xl shadow-xl [&>button]:text-white [&>button]:hover:text-white">
-        {/* Header */}
+      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[600px] p-0 overflow-hidden rounded-2xl shadow-xl">
         <div className="w-full bg-gradient-to-r from-green-600 to-green-700 py-6 px-6">
           <DialogHeader>
             <DialogTitle className="text-3xl font-bold text-white flex items-center justify-center gap-3">
@@ -107,14 +102,10 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
           </DialogHeader>
         </div>
 
-        {/* Formulario */}
         <form onSubmit={handleSubmit} className="space-y-6 p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {/* Nombre */}
             <div className="space-y-1">
-              <Label htmlFor="name" className="uppercase font-semibold text-sm text-gray-700">
-                Nombre
-              </Label>
+              <Label htmlFor="name" className="uppercase font-semibold text-sm text-gray-700">Nombre</Label>
               <Input
                 id="name"
                 name="name"
@@ -126,11 +117,8 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
               {errors.name && <p className="text-red-600 text-sm">{errors.name}</p>}
             </div>
 
-            {/* Email */}
             <div className="space-y-1">
-              <Label htmlFor="email" className="uppercase font-semibold text-sm text-gray-700">
-                Correo Electrónico
-              </Label>
+              <Label htmlFor="email" className="uppercase font-semibold text-sm text-gray-700">Correo Electrónico</Label>
               <Input
                 id="email"
                 name="email"
@@ -142,11 +130,8 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
               {errors.email && <p className="text-red-600 text-sm">{errors.email}</p>}
             </div>
 
-            {/* Teléfono */}
             <div className="space-y-1">
-              <Label htmlFor="phonenumber" className="uppercase font-semibold text-sm text-gray-700">
-                Teléfono
-              </Label>
+              <Label htmlFor="phonenumber" className="uppercase font-semibold text-sm text-gray-700">Teléfono</Label>
               <Input
                 id="phonenumber"
                 name="phonenumber"
@@ -158,11 +143,8 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
               {errors.phonenumber && <p className="text-red-600 text-sm">{errors.phonenumber}</p>}
             </div>
 
-            {/* DNI */}
             <div className="space-y-1">
-              <Label htmlFor="dni" className="uppercase font-semibold text-sm text-gray-700">
-                DNI
-              </Label>
+              <Label htmlFor="dni" className="uppercase font-semibold text-sm text-gray-700">DNI</Label>
               <Input
                 id="dni"
                 name="dni"
@@ -173,22 +155,35 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
               />
               {errors.dni && <p className="text-red-600 text-sm">{errors.dni}</p>}
             </div>
+
+            {/* Campo de Rol */}
+            <div className="space-y-1 sm:col-span-2">
+              <Label htmlFor="roleId" className="uppercase font-semibold text-sm text-gray-700">Rol</Label>
+              <select
+                id="roleId"
+                name="roleId"
+                value={formData.roleId || ""}
+                onChange={handleInputChange}
+                className={`w-full px-4 py-2 border rounded-md text-sm bg-white focus:outline-none ${
+                  errors.roleId ? "border-red-600" : "border-black"
+                }`}
+              >
+                <option value="">Seleccione un rol</option>
+                {roles?.map((role) => (
+                  <option key={role.id} value={role.id}>
+                    {role.name}
+                  </option>
+                ))}
+              </select>
+              {errors.roleId && <p className="text-red-600 text-sm">{errors.roleId}</p>}
+            </div>
           </div>
 
-          {/* Botones */}
           <DialogFooter className="flex justify-end gap-4 pt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="border border-gray-400 hover:bg-gray-100 text-gray-700"
-            >
+            <Button type="button" variant="outline" onClick={onClose} className="border border-gray-400 hover:bg-gray-100 text-gray-700">
               Cancelar
             </Button>
-            <Button
-              type="submit"
-              className="bg-green-600 hover:bg-green-500 text-white w-full sm:w-auto flex items-center gap-2"
-            >
+            <Button type="submit" className="bg-green-600 hover:bg-green-500 text-white w-full sm:w-auto flex items-center gap-2">
               <Save size={18} />
               Guardar
             </Button>
@@ -198,35 +193,19 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
         {/* Confirmación */}
         {showWarning && (
           <Dialog open={showWarning} onOpenChange={() => setShowWarning(false)}>
-            <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[600px] p-0 overflow-hidden rounded-2xl shadow-xl [&>button]:text-white [&>button]:hover:text-white">
-              {/* Header rojo */}
+            <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[600px] p-0 overflow-hidden rounded-2xl shadow-xl">
               <div className="w-full bg-gradient-to-r from-red-600 to-red-700 py-4 px-6">
                 <DialogHeader>
-                  <DialogTitle className="text-lg font-bold text-white text-center">
-                    Confirmar Cambios
-                  </DialogTitle>
+                  <DialogTitle className="text-lg font-bold text-white text-center">Confirmar Cambios</DialogTitle>
                 </DialogHeader>
               </div>
-
-              {/* Contenido */}
               <div className="text-center py-6 px-6">
-                <p className="text-gray-700 mb-4">
-                  ¿Estás seguro de que quieres guardar los cambios?
-                </p>
+                <p className="text-gray-700 mb-4">¿Estás seguro de que quieres guardar los cambios?</p>
                 <div className="flex justify-center gap-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowWarning(false)}
-                    className="text-gray-700 border-gray-400 hover:bg-gray-100"
-                  >
+                  <Button type="button" variant="outline" onClick={() => setShowWarning(false)} className="text-gray-700 border-gray-400 hover:bg-gray-100">
                     Cancelar
                   </Button>
-                  <Button
-                    type="button"
-                    onClick={handleConfirmSubmit}
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                  >
+                  <Button type="button" onClick={handleConfirmSubmit} className="bg-red-600 hover:bg-red-700 text-white">
                     Confirmar
                   </Button>
                 </div>
@@ -237,7 +216,6 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
       </DialogContent>
     </Dialog>
   );
-  
 };
 
 export default UserModal;

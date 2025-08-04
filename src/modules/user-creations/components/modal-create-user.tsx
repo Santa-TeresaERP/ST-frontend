@@ -103,9 +103,15 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
               name="phonenumber"
               type="text"
               required
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={9}
+              onInput={(e) => {
+                e.currentTarget.value = e.currentTarget.value.replace(/\D/g, '').slice(0, 9);
+              }}
               className={`border border-black rounded-md px-4 py-2 ${errors.phonenumber ? "border-red-600" : ""}`}
             />
-            {errors.phonenumber && <p className="text-red-600 text-sm">{errors.phonenumber}</p>}
+          {errors.phonenumber && <p className="text-red-600 text-sm">{errors.phonenumber}</p>}
           </div>
 
           {/* DNI */}
@@ -116,6 +122,12 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
               name="dni"
               type="text"
               required
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={8}
+              onInput={(e) => {
+                e.currentTarget.value = e.currentTarget.value.replace(/\D/g, '').slice(0, 8);
+              }}
               className={`border border-black rounded-md px-4 py-2 ${errors.dni ? "border-red-600" : ""}`}
             />
             {errors.dni && <p className="text-red-600 text-sm">{errors.dni}</p>}
