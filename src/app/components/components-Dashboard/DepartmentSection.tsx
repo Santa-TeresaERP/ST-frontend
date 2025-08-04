@@ -30,6 +30,7 @@ const DepartmentSection = ({ title, items }: DepartmentSectionProps) => {
       case "Santa Marta": router.push('/pages/dashboard/santa-marta'); break;
       case "Museo": router.push('/pages/dashboard/museo'); break;
       case "Alquileres": router.push('/pages/dashboard/alquileres'); break;
+      case "Finanzas": router.push('/pages/dashboard/finanzas'); break;
       default: console.warn(`No route defined for ${name}`);
     }
   };

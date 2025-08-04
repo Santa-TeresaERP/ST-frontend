@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { FiMapPin } from 'react-icons/fi';
 import { Save, X } from 'lucide-react';
+import { useUpdateLocation } from '../../hook/useLocations';
+import { Location } from '../../types/location'; // asegúrate que esta ruta sea correcta
 
-const ModalEditLocation = ({ handleClose, handleSubmit, locationData }: {
+interface ModalEditLocationProps {
   handleClose: () => void;
-  handleSubmit: (data: any) => void;
-  locationData: any;
+  locationData: Location;
+}
+
+const ModalEditLocation: React.FC<ModalEditLocationProps> = ({
+  handleClose,
+  locationData,
 }) => {
   const [nombre, setNombre] = useState('');
   const [direccion, setDireccion] = useState('');
@@ -13,12 +19,14 @@ const ModalEditLocation = ({ handleClose, handleSubmit, locationData }: {
   const [estado, setEstado] = useState('');
   const [localError, setLocalError] = useState('');
 
+  const { mutate, status, error } = useUpdateLocation();
+
   useEffect(() => {
     if (locationData) {
-      setNombre(locationData.nombre || '');
-      setDireccion(locationData.direccion || '');
-      setCapacidad(locationData.capacidad || '');
-      setEstado(locationData.estado || '');
+      setNombre(locationData.name || '');
+      setDireccion(locationData.address || '');
+      setCapacidad(locationData.capacity?.toString() || '');
+      setEstado(locationData.status || '');
     }
   }, [locationData]);
 
@@ -30,7 +38,21 @@ const ModalEditLocation = ({ handleClose, handleSubmit, locationData }: {
       return;
     }
 
-    handleSubmit({ nombre, direccion, capacidad, estado });
+    mutate(
+      {
+        id: locationData.id,
+        payload: {
+          name: nombre,
+          address: direccion,
+          capacity: Number(capacidad),
+          status: estado,
+        },
+      },
+      {
+        onSuccess: () => handleClose(),
+        onError: () => setLocalError('Error al actualizar la locación.'),
+      }
+    );
   };
 
   return (
@@ -48,7 +70,14 @@ const ModalEditLocation = ({ handleClose, handleSubmit, locationData }: {
         </div>
 
         <form onSubmit={onSubmit} className="p-6 space-y-5 text-left">
-          {localError && <p className="text-sm text-red-600 font-medium">{localError}</p>}
+          {localError && (
+            <p className="text-sm text-red-600 font-medium">{localError}</p>
+          )}
+          {status === 'error' && (
+            <p className="text-sm text-red-600 font-medium">
+              {(error as Error)?.message || 'Error desconocido.'}
+            </p>
+          )}
 
           <div className="space-y-4">
             <div>
@@ -116,9 +145,10 @@ const ModalEditLocation = ({ handleClose, handleSubmit, locationData }: {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-600 transition flex items-center gap-2"
+              disabled={status === 'pending'}
+              className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-600 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Save size={18} /> Guardar Cambios
+              <Save size={18} /> {status === 'pending' ? 'Guardando...' : 'Guardar Cambios'}
             </button>
           </div>
         </form>

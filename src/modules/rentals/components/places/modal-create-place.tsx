@@ -1,24 +1,24 @@
 import React, { useState } from 'react';
 import { FiX } from 'react-icons/fi';
-import { Place } from '../../types';
+import { Place } from '../../types/places';
 
 interface ModalCreatePlaceProps {
   onClose: () => void;
-  onSubmit: (placeData: Omit<Place, 'id'>) => void;
+  onSubmit: (placeData: Omit<Place, '_id'>) => void;
 }
 
 const ModalCreatePlace: React.FC<ModalCreatePlaceProps> = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
-    nombre: '',
+    name: '',
     area: '',
     tipo: ''
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.nombre && formData.area && formData.tipo) {
+    if (formData.name && formData.area && formData.tipo) {
       onSubmit(formData);
-      setFormData({ nombre: '', area: '', tipo: '' });
+      setFormData({ name: '', area: '', tipo: '' });
     }
   };
 
@@ -44,14 +44,14 @@ const ModalCreatePlace: React.FC<ModalCreatePlaceProps> = ({ onClose, onSubmit }
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
               Nombre del lugar
             </label>
             <input
               type="text"
-              id="nombre"
-              name="nombre"
-              value={formData.nombre}
+              id="name"
+              name="name"
+              value={formData.name}
               onChange={handleChange}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
               placeholder="Ej. Zona de piscina"
