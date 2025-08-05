@@ -1,13 +1,20 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from 'react';
 import { FiInfo, FiMapPin, FiHome, FiClipboard, FiDollarSign, FiPlus } from 'react-icons/fi';
 import { StoreAttributes } from '@/modules/sales/types/store.d';
 import ModalCreateCashRegister from './modal-create-cashregister';
-import { CreateCashSessionPayload, CloseCashSessionPayload } from '../../types/cash-session';
-import { useCreateCashSession, useCloseCashSession, useFetchActiveCashSession, useFetchCashSessionHistory, useFetchCashSessionDetails } from '../../hooks/useCashSession';
-import { useFetchSales } from '../../hooks/useSales';
-import { useFetchReturns } from '../../hooks/useReturns';
 import { useQueryClient } from '@tanstack/react-query';
+import { 
+  useFetchActiveCashSession, 
+  useFetchCashSessionHistory, 
+  useFetchCashSessionDetails,
+  useCreateCashSession, 
+  useCloseCashSession 
+} from '@/modules/sales/hooks/useCashSession';
+import { useFetchSales } from '@/modules/sales/hooks/useSales';
+import { useFetchReturns } from '@/modules/sales/hooks/useReturns';
+import { CreateCashSessionPayload, CloseCashSessionPayload } from '@/modules/sales/types/cash-session';
+import { invalidateStoreQueries } from '@/modules/sales/utils/cache-helpers';
+
 
 interface InformationComponentViewProps {
   selectedStore?: StoreAttributes | null;
@@ -16,12 +23,39 @@ interface InformationComponentViewProps {
 
 const InformationComponentView: React.FC<InformationComponentViewProps> = ({
   selectedStore,
-  onStoreUpdate,    // 📌 asegúrate de desestructurar
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInitialSetup, setIsInitialSetup] = useState(true);
   const [, setIsEditStoreModalOpen] = useState(false);
+  const [previousStoreId, setPreviousStoreId] = useState<string | undefined>(selectedStore?.id);
   const queryClient = useQueryClient();
+
+  // Efecto para manejar el cambio de tienda
+  React.useEffect(() => {
+    const newStoreId = selectedStore?.id;
+    
+    // Si cambió la tienda seleccionada
+    if (previousStoreId !== newStoreId) {
+      console.log('🏪 Cambio de tienda:', { 
+        anterior: previousStoreId, 
+        nueva: newStoreId,
+        nombreNueva: selectedStore?.store_name 
+      });
+      
+      // Resetear estado del modal cuando cambia la tienda
+      setIsModalOpen(false);
+      
+      // Actualizar el estado de la tienda anterior
+      setPreviousStoreId(newStoreId);
+      
+      // Si hay una nueva tienda, invalidar sus queries para cargar datos frescos
+      if (newStoreId) {
+        setTimeout(() => {
+          invalidateStoreQueries(queryClient, newStoreId);
+        }, 100);
+      }
+    }
+  }, [selectedStore?.id, selectedStore?.store_name, previousStoreId, queryClient]);
 
   // Helper para convertir valores monetarios a número - convertido a useCallback para evitar recreación en cada render
   const toMoney = React.useCallback((value: number | string | undefined | null): string => {
@@ -34,16 +68,13 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
   const closeCashSessionMutation = useCloseCashSession();
   
   // Obtener sesión activa y historial si hay una tienda seleccionada
-  // Los hooks ya tienen { enabled: !!storeId } incorporado
-  const { data: activeCashSession, isLoading: loadingActive, error: errorActive } = useFetchActiveCashSession(selectedStore?.id);
+  const { data: activeCashSession, isLoading: loadingActive } = useFetchActiveCashSession(selectedStore?.id);
   const { data: cashSessionHistory = [], isLoading: loadingHistory, error: errorHistory } = useFetchCashSessionHistory(selectedStore?.id);
   
-  // Filtrar los datos específicamente para la tienda seleccionada
+  // Usar directamente la sesión del hook (ya filtrada)
   const filteredActiveCashSession = React.useMemo(() => {
-    // Verificar que la sesión sea activa (status: 'open') además de pertenecer a la tienda seleccionada
-    return selectedStore && activeCashSession?.store_id === selectedStore.id && activeCashSession?.status === 'open'
-      ? activeCashSession 
-      : null;
+    // El hook ya filtra por tienda, solo verificar que exista tienda seleccionada
+    return selectedStore && activeCashSession ? activeCashSession : null;
   }, [selectedStore, activeCashSession]);
   
   // Obtener detalles de la sesión activa con totales calculados desde el backend
@@ -52,10 +83,10 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
   );
   
   // Obtener todas las ventas para calcular los totales por tienda (mantenemos para historial)
-  const { data: allSales = [], isLoading: loadingSales } = useFetchSales();
+  const { data: allSales = [], } = useFetchSales();
   
   // Obtener todas las devoluciones para calcular las pérdidas por tienda (mantenemos para historial)
-  const { data: allReturns = [], isLoading: loadingReturns } = useFetchReturns();
+  const { data: allReturns = [] } = useFetchReturns();
     
   const filteredCashSessionHistory = React.useMemo(() => {
     return selectedStore 
@@ -63,19 +94,14 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
       : [];
   }, [selectedStore, cashSessionHistory]);
 
-  // Efecto para actualizar los datos cuando cambian las ventas
+  // Efecto para actualizar los datos cuando cambian las ventas - SOLO para la tienda seleccionada
   React.useEffect(() => {
-    if (allSales && allSales.length > 0) {
-      console.log('🔄 Ventas actualizadas, refrescando datos...');
-      // Re-invalidar consultas para asegurar datos frescos
-      queryClient.invalidateQueries({ queryKey: ['sales'] });
-      
-      if (selectedStore?.id) {
-        queryClient.invalidateQueries({ queryKey: ['activeCashSession', selectedStore.id] });
-        queryClient.invalidateQueries({ queryKey: ['cashSessionHistory', selectedStore.id] });
-      }
+    if (allSales && allSales.length > 0 && selectedStore?.id) {
+      console.log('🔄 Ventas actualizadas para tienda:', selectedStore.store_name);
+      // ✅ CORREGIDO: Usar helper para invalidación específica por tienda
+      invalidateStoreQueries(queryClient, selectedStore.id, filteredActiveCashSession?.id);
     }
-  }, [allSales, queryClient, selectedStore?.id]);
+  }, [allSales, queryClient, selectedStore?.id, selectedStore?.store_name, filteredActiveCashSession?.id]);
 
   // Calcular ventas totales por tienda y por sesión
   const salesBySession = React.useMemo(() => {
@@ -168,27 +194,22 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
     return totalReturnsValue;
   }, [sessionDetails, loadingDetails, filteredActiveCashSession, allReturns, allSales, selectedStore]);
 
-  // Debug logs - solo en entorno de desarrollo y menos verboso
-  React.useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 Debug info básica:', {
-        selectedStoreId: selectedStore?.id,
-        hasActiveSession: !!filteredActiveCashSession,
-        historyCount: filteredCashSessionHistory.length,
-        currentSales: currentSessionSales ? `S/ ${toMoney(currentSessionSales)}` : '0.00',
-        currentReturns: currentSessionReturns ? `S/ ${toMoney(currentSessionReturns)}` : '0.00',
-        usingBackendData: !!sessionDetails && !loadingDetails,
-        sessionDetails: sessionDetails || 'No data',
-        isInitialSetup
-      });
-    }
-  }, [selectedStore?.id, filteredActiveCashSession, filteredCashSessionHistory.length, currentSessionSales, currentSessionReturns, sessionDetails, loadingDetails, isInitialSetup, toMoney]);
 
-  // Determinar si necesitamos configuración inicial de forma más eficiente
+
+  // Determinar si necesitamos configuración inicial
   React.useEffect(() => {
-    // Solo actualizar cuando cambien valores relevantes
-    setIsInitialSetup(!filteredActiveCashSession);
-  }, [filteredActiveCashSession]);
+    // Si hay tienda seleccionada y no hay sesión activa = necesita configuración inicial
+    const needsSetup = selectedStore && !filteredActiveCashSession && !loadingActive;
+    const newSetupState = !!needsSetup;
+    
+    // Solo actualizar si realmente cambió para evitar re-renders innecesarios
+    setIsInitialSetup(prev => {
+      if (prev !== newSetupState) {
+        return newSetupState;
+      }
+      return prev;
+    });
+  }, [selectedStore, filteredActiveCashSession, loadingActive, isInitialSetup]);
 
   // Verificar automáticamente si necesita cerrarse - optimizado
   const shouldCloseSession = React.useMemo(() => {
@@ -209,10 +230,7 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
   // Notificar sobre cierre necesario
   React.useEffect(() => {
     if (shouldCloseSession && !isModalOpen) {
-      // Solo log en desarrollo
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Se debe cerrar la sesión del mes anterior');
-      }
+      // Auto-cerrar sesiones del mes anterior
     }
   }, [shouldCloseSession, isModalOpen]);
 
@@ -267,11 +285,11 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
             console.log('✅ Sesión de caja cerrada exitosamente:', response);
             setIsModalOpen(false);
             
-            // Forzar actualización del caché
-            queryClient.removeQueries({ queryKey: ['activeCashSession', selectedStore?.id] });
-            queryClient.invalidateQueries({ queryKey: ['activeCashSession', selectedStore?.id] });
-            queryClient.invalidateQueries({ queryKey: ['cashSessionHistory', selectedStore?.id] });
-            queryClient.invalidateQueries({ queryKey: ['cashSessionDetails'] }); // Invalidar también los detalles
+            // ✅ CORREGIDO: Usar helper para invalidación específica por tienda
+            const currentStoreId = selectedStore?.id;
+            if (currentStoreId) {
+              invalidateStoreQueries(queryClient, currentStoreId, filteredActiveCashSession?.id);
+            }
             
             // Crear nueva sesión automáticamente con el monto final como monto inicial
             const endAmount = response.end_amount;
@@ -288,13 +306,14 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
                 onSuccess: (newSession) => {
                   console.log('✅ Nueva sesión creada automáticamente:', newSession);
                   
-                  // Actualizar las consultas nuevamente
-                  queryClient.invalidateQueries({ queryKey: ['activeCashSession', selectedStore.id] });
-                  queryClient.invalidateQueries({ queryKey: ['cashSessionHistory', selectedStore.id] });
+                  // ✅ CORREGIDO: Usar helper para actualización específica por tienda
+                  if (currentStoreId) {
+                    invalidateStoreQueries(queryClient, currentStoreId, newSession.id);
+                  }
                   
                   // Actualizar UI para reflejar la nueva sesión activa
                   setTimeout(() => {
-                    console.log('Actualizando UI para mostrar nueva sesión');
+                    console.log('Actualizando UI para mostrar nueva sesión en', selectedStore?.store_name);
                     setIsInitialSetup(false);
                   }, 100);
                 },
@@ -324,6 +343,34 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
       );
     }
   };
+
+  // 🔍 DEBUG: Estado final antes del render
+  console.log('🎯 [DEBUG] === ESTADO FINAL PARA RENDER ===', {
+    selectedStore: selectedStore ? {
+      id: selectedStore.id,
+      name: selectedStore.store_name
+    } : null,
+    activeCashSession: activeCashSession ? {
+      id: activeCashSession.id,
+      store_id: activeCashSession.store_id,
+      status: activeCashSession.status
+    } : null,
+    filteredActiveCashSession: filteredActiveCashSession ? {
+      id: filteredActiveCashSession.id,
+      store_id: filteredActiveCashSession.store_id,
+      status: filteredActiveCashSession.status
+    } : null,
+    isInitialSetup,
+    loadingActive,
+    buttonText: !selectedStore?.id
+      ? 'Selecciona Tienda'
+      : isInitialSetup
+        ? 'Configurar Caja' 
+        : 'Finalizar Caja',
+    willShowActiveSession: selectedStore && !loadingActive && filteredActiveCashSession,
+    willShowNoSession: selectedStore && !loadingActive && !filteredActiveCashSession,
+    willShowLoading: selectedStore && loadingActive
+  });
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 space-y-6">
@@ -390,18 +437,38 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
         <div className="flex flex-col items-end">
           <button
             onClick={() => {
-              console.log('🔘 Botón clickeado:', {
-                activeCashSession: filteredActiveCashSession,
+              console.log('🔘 [DEBUG] Botón clickeado - Estado completo:', {
+                selectedStore: selectedStore ? {
+                  id: selectedStore.id,
+                  name: selectedStore.store_name
+                } : null,
+                activeCashSession: activeCashSession ? {
+                  id: activeCashSession.id,
+                  store_id: activeCashSession.store_id,
+                  status: activeCashSession.status
+                } : null,
+                filteredActiveCashSession: filteredActiveCashSession ? {
+                  id: filteredActiveCashSession.id,
+                  store_id: filteredActiveCashSession.store_id,
+                  status: filteredActiveCashSession.status
+                } : null,
                 isInitialSetup,
-                selectedStore: selectedStore?.id,
-                sessionStoreId: filteredActiveCashSession?.store_id
+                loadingActive,
+                sessionMatch: selectedStore?.id === filteredActiveCashSession?.store_id,
+                buttonText: !selectedStore?.id
+                  ? 'Selecciona Tienda'
+                  : isInitialSetup
+                    ? 'Configurar Caja' 
+                    : 'Finalizar Caja'
               });
               
               if (!selectedStore?.id) {
+                console.log('❌ [DEBUG] No hay tienda seleccionada');
                 alert('Por favor selecciona una tienda antes de configurar la caja.');
                 return;
               }
               
+              console.log('✅ [DEBUG] Abriendo modal con isInitialSetup:', isInitialSetup);
               setIsModalOpen(true);
             }}
             disabled={!selectedStore?.id}
@@ -417,7 +484,7 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
                 ? 'Selecciona Tienda'
                 : isInitialSetup
                   ? 'Configurar Caja' 
-                  : 'Cerrar Mes'
+                  : 'Finalizar Caja'
               }
             </span>
           </button>
@@ -439,7 +506,7 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
         </div>
       </div>
 
-      {/* Información de la sesión activa */}
+      {/* Información de la sesión activa - SIMPLIFICADO */}
       {selectedStore && loadingActive && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <h3 className="text-lg font-semibold text-blue-800 mb-2">Cargando información de {selectedStore.store_name}...</h3>
@@ -448,9 +515,11 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
           </div>
         </div>
       )}
-      {filteredActiveCashSession && !loadingActive && (
+      
+      {/* Mostrar sesión activa si existe */}
+      {selectedStore && !loadingActive && filteredActiveCashSession && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-green-800 mb-2">Sesión Activa - {selectedStore?.store_name}</h3>
+          <h3 className="text-lg font-semibold text-green-800 mb-2">Sesión Activa - {selectedStore.store_name}</h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
             <div>
               <span className="font-medium text-green-700">Dinero Inicial:</span>
@@ -507,9 +576,11 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
           )}
         </div>
       )}
-      {!filteredActiveCashSession && !loadingActive && selectedStore && (
+      
+      {/* Mostrar mensaje de no hay sesión SOLO cuando no hay loading y no hay sesión */}
+      {selectedStore && !loadingActive && !filteredActiveCashSession && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-yellow-800 mb-2">No hay sesión activa - {selectedStore?.store_name}</h3>
+          <h3 className="text-lg font-semibold text-yellow-800 mb-2">No hay sesión activa - {selectedStore.store_name}</h3>
           <p className="text-yellow-700">Puedes configurar una nueva sesión de caja utilizando el botón &quot;Configurar Caja&quot;.</p>
         </div>
       )}
@@ -548,19 +619,6 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
               </tr>
             ) : filteredCashSessionHistory.length > 0 ? (
               filteredCashSessionHistory.map((session, index) => {
-                // Log para debug - mostrar datos de la sesión
-                if (process.env.NODE_ENV === 'development') {
-                  console.log(`📋 Session ${index + 1} (${session.status}):`, {
-                    id: session.id,
-                    total_sales_stored: session.total_sales,
-                    total_returns_stored: session.total_returns,
-                    calculated_sales_frontend: salesBySession[session.id || ''],
-                    will_show_sales: session.status === 'closed' 
-                      ? (session.total_sales ? session.total_sales : salesBySession[session.id || ''] || 0)
-                      : 'current session'
-                  });
-                }
-                
                 return (
                 <tr key={session.id || index} className={index % 2 === 0 ? "border-t" : "border-t bg-gray-50"}>
                   <td className="px-4 py-2 text-center">

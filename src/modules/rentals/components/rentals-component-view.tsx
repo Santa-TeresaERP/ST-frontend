@@ -8,41 +8,57 @@ import PlaceCard from "./places/place-card";
 import RentalHistoryView from "./rental-history/rental-history-view";
 import { Location } from "../types/location";
 import { Place } from "../types/places";
-import { useFetchPlaces } from "../hook/usePlaces"; // 👈 se importa aquí
+import { useFetchLocations } from "../hook/useLocations";
+import { useFetchPlaces } from "../hook/usePlaces";
 
 const RentalsComponentView = () => {
-  const [isCreateLocationModalOpen, setIsCreateLocationModalOpen] =
-    useState(false);
+  const [isCreateLocationModalOpen, setIsCreateLocationModalOpen] = useState(false);
   const [isEditLocationModalOpen, setIsEditLocationModalOpen] = useState(false);
   const [isCreatePlaceModalOpen, setIsCreatePlaceModalOpen] = useState(false);
-  const [currentView, setCurrentView] = useState<"main" | "rental-history">(
-    "main"
-  );
-  const [selectedPlaceForRentals, setSelectedPlaceForRentals] =
-    useState<Place | null>(null);
+  const [currentView, setCurrentView] = useState<"main" | "rental-history">("main");
+  const [selectedPlaceForRentals, setSelectedPlaceForRentals] = useState<Place | null>(null);
+
+  const {
+    data: locationsData,
+    isLoading: isLoadingLocations,
+    isError,
+    refetch,
+  } = useFetchLocations();
+
+  const { data: allPlaces = [], isLoading: isLoadingPlaces } = useFetchPlaces();
+
+  const locations: Location[] = Array.isArray(locationsData)
+    ? locationsData
+    : Array.isArray((locationsData as any)?.data)
+    ? (locationsData as any).data
+    : [];
+
   const [selectedLocation, setSelectedLocation] = useState<Location>({
-    nombre: "Localización ABC",
-    direccion: "Calle Industrial",
-    capacidad: "100",
-    estado: "Desocupado",
+    id: "",
+    name: "",
+    address: "",
+    capacity: 0,
+    status: "",
   });
 
-  const { data: places = [], isLoading } = useFetchPlaces(); // 👈 usar datos reales del backend
-
-  const handleEditPlace = (
-    placeId: number | string,
-    updatedPlace: Partial<Place>
-  ) => {
-    // Lógica para actualizar un lugar, si se implementa
-  };
-
-  const handleDeletePlace = (placeId: number | string) => {
-    // Lógica para eliminar un lugar, si se implementa
+  const handleSelectLocation = (locationId: string) => {
+    const found = locations.find((loc) => loc.id === locationId);
+    if (found) {
+      setSelectedLocation(found);
+    }
   };
 
   const handleCreatePlace = (newPlace: Omit<Place, "id">) => {
-    // Se puede usar un mutation + invalidation con react-query si se implementa
     setIsCreatePlaceModalOpen(false);
+    // Si deseas mostrar en tiempo real, deberías invalidar la query en el hook y confiar en React Query
+  };
+
+  const handleEditPlace = (placeId: string, updates: Partial<Place>) => {
+    // Implementa si tienes lógica de edición de lugares
+  };
+
+  const handleDeletePlace = (placeId: string) => {
+    // Implementa si tienes lógica de eliminación de lugares
   };
 
   const handleViewRentals = (place: Place) => {
@@ -55,10 +71,12 @@ const RentalsComponentView = () => {
     setSelectedPlaceForRentals(null);
   };
 
+  const places = allPlaces.filter((p) => p.location_id === selectedLocation?.id);
+
   if (currentView === "rental-history" && selectedPlaceForRentals) {
     return (
       <RentalHistoryView
-        placeName={selectedPlaceForRentals.nombre}
+        placeName={selectedPlaceForRentals.name}
         onBack={handleBackToMain}
       />
     );
@@ -66,94 +84,82 @@ const RentalsComponentView = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-center text-red-600 pb-4">
-          Alquileres
-        </h1>
-      </div>
+      <h1 className="text-4xl font-bold text-center text-red-600 pb-6">Alquileres</h1>
 
-      {/* Selector */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+      {/* Selector de locaciones */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm">
         <div className="flex justify-between items-center mb-4">
           <div className="flex-1">
-            <input
-              type="text"
-              placeholder="Listado de locaciones"
-              className="w-full p-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white text-gray-900"
-              readOnly
-            />
+            {isLoadingLocations ? (
+              <p className="text-gray-500">Cargando locaciones...</p>
+            ) : isError ? (
+              <p className="text-red-500">Error al cargar las locaciones.</p>
+            ) : (
+              <select
+                className="w-full p-3 border border-gray-300 rounded-full bg-white text-gray-900 focus:ring-2 focus:ring-red-500"
+                value={selectedLocation?.id || ""}
+                onChange={(e) => handleSelectLocation(e.target.value)}
+              >
+                <option value="">Seleccione una locación</option>
+                {locations.map((loc) => (
+                  <option key={loc.id} value={loc.id}>
+                    {loc.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           <button
+            className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm"
             onClick={() => setIsCreateLocationModalOpen(true)}
-            className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
           >
             + Nueva locación
           </button>
         </div>
       </div>
 
-      {/* Información de la Localización */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+      {/* Información de la locación */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center space-x-2">
             <MdLocationOn className="text-red-600" size={24} />
-            <h2 className="text-xl font-bold text-red-600">
-              Información de Localización
-            </h2>
+            <h2 className="text-xl font-bold text-red-600">Información de la Localización</h2>
           </div>
-
           <button
             onClick={() => setIsEditLocationModalOpen(true)}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm"
           >
             + Editar locación
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <FiHome className="text-red-500" size={20} />
-              <span className="font-semibold text-gray-900">
-                Nombre de la Locación
-              </span>
-            </div>
-            <p className="text-gray-700 ml-7">{selectedLocation?.nombre}</p>
+          <div>
+            <FiHome className="text-red-500 inline mr-2" />
+            <span className="font-semibold">Nombre:</span>
+            <p className="ml-7">{selectedLocation?.name}</p>
           </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <FiMapPin className="text-red-500" size={20} />
-              <span className="font-semibold text-gray-900">
-                Dirección de la Localización
-              </span>
-            </div>
-            <p className="text-gray-700 ml-7">{selectedLocation?.direccion}</p>
+          <div>
+            <FiMapPin className="text-red-500 inline mr-2" />
+            <span className="font-semibold">Dirección:</span>
+            <p className="ml-7">{selectedLocation?.address}</p>
           </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <FiBarChart2 className="text-red-500" size={20} />
-              <span className="font-semibold text-gray-900">Capacidad</span>
-            </div>
-            <p className="text-gray-700 ml-7">{selectedLocation?.capacidad}</p>
+          <div>
+            <FiBarChart2 className="text-red-500 inline mr-2" />
+            <span className="font-semibold">Capacidad:</span>
+            <p className="ml-7">{selectedLocation?.capacity}</p>
           </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <FiCheckCircle className="text-red-500" size={20} />
-              <span className="font-semibold text-gray-900">Estado</span>
-            </div>
-            <p className="text-green-600 font-medium ml-7">
-              {selectedLocation?.estado}
-            </p>
+          <div>
+            <FiCheckCircle className="text-red-500 inline mr-2" />
+            <span className="font-semibold">Estado:</span>
+            <p className="ml-7 text-green-600 font-semibold">{selectedLocation?.status}</p>
           </div>
         </div>
       </div>
-      {/* Lugares en la Localización */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+
+      {/* Lugares */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center space-x-2">
             <MdLocationOn className="text-red-600" size={24} />
@@ -161,16 +167,15 @@ const RentalsComponentView = () => {
               Lugares en la Localización
             </h2>
           </div>
-
           <button
             onClick={() => setIsCreatePlaceModalOpen(true)}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm"
           >
             + Nuevo Lugar
           </button>
         </div>
 
-        {isLoading ? (
+        {isLoadingPlaces ? (
           <p className="text-gray-600">Cargando lugares...</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -191,9 +196,9 @@ const RentalsComponentView = () => {
       {isCreateLocationModalOpen && (
         <ModalCreateLocation
           handleClose={() => setIsCreateLocationModalOpen(false)}
-          handleSubmit={(data) => {
-            setIsCreateLocationModalOpen(false);
+          onCreated={(data) => {
             setSelectedLocation(data);
+            refetch();
           }}
         />
       )}
@@ -201,18 +206,11 @@ const RentalsComponentView = () => {
       {isEditLocationModalOpen && (
         <ModalEditLocation
           handleClose={() => setIsEditLocationModalOpen(false)}
-          handleSubmit={(data) => {
-            setIsEditLocationModalOpen(false);
-            setSelectedLocation({ ...selectedLocation, ...data });
+          onUpdated={(data) => {
+            setSelectedLocation((prev) => ({ ...prev, ...data }));
+            refetch();
           }}
-          locationData={
-            selectedLocation || {
-              nombre: "",
-              direccion: "",
-              capacidad: "",
-              estado: "",
-            }
-          }
+          locationData={selectedLocation}
         />
       )}
 
@@ -220,6 +218,7 @@ const RentalsComponentView = () => {
         <ModalCreatePlace
           onClose={() => setIsCreatePlaceModalOpen(false)}
           onSubmit={handleCreatePlace}
+          locationId={selectedLocation?.id}
         />
       )}
     </div>

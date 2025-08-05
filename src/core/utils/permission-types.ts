@@ -48,14 +48,33 @@ export interface UserFromAPI {
   };
 }
 
-// 🔥 MAPEO DE IDs DE MÓDULOS (según tu backend)
+// 🔥 MAPEO DE IDs DE MÓDULOS FIJOS (según tu backend)
 export const MODULE_IDS = {
-  // 🔥 IDs REALES DE TU BASE DE DATOS (basados en Postman)
-  MODULES: '631d7c73-5c82-4a02-bd9a-24751b1ee4f3',    // "modulos"
-  ROLES: 'ec11b23d-be86-49f3-8821-1d4d289698ef',      // "roles"  
-  INVENTORY: '604d4546-3957-4d47-a49b-3248a6e32ab5',  // "inventario"
-  USERS: '47ded0bb-ad86-4cdb-a9d2-bb6b4d95f2a7',      // "user"
-  PRODUCTION: 'e895f3df-2689-44f1-8f6b-67f1c21d7acb', // "Producción"
+  // 🔥 SOLO MÓDULOS PARA TESTING - otros comentados temporalmente
+  MODULES: '631d7c73-5c82-4a02-bd9a-24751b1ee4f3',    // "modulos" ✅ ACTIVO PARA PRUEBAS
+  
+  // 🚧 COMENTADOS TEMPORALMENTE PARA TESTING
+  // ROLES: 'ec11b23d-be86-49f3-8821-1d4d289698ef',      // "roles"  
+  // INVENTORY: '604d4546-3957-4d47-a49b-3248a6e32ab5',  // "inventario"
+  // USERS: '47ded0bb-ad86-4cdb-a9d2-bb6b4d95f2a7',      // "user"
+  // PRODUCTION: 'e895f3df-2689-44f1-8f6b-67f1c21d7acb', // "Producción"
+  // MUSEUM: 'museum-id-here',                            // "museo" - reemplaza con el ID real
+  // RENTALS: 'rentals-id-here',                          // "rentals" - reemplaza con el ID real
+  // SALES: 'sales-id-here',                              // "sales" - reemplaza con el ID real
+} as const;
+
+// 🔥 HELPER para obtener nombres de módulos
+export const MODULE_NAMES = {
+  [MODULE_IDS.MODULES]: 'modulos',
+  
+  // 🚧 COMENTADOS TEMPORALMENTE PARA TESTING
+  // [MODULE_IDS.ROLES]: 'roles',
+  // [MODULE_IDS.INVENTORY]: 'inventario',
+  // [MODULE_IDS.USERS]: 'user',
+  // [MODULE_IDS.PRODUCTION]: 'Producción',
+  // [MODULE_IDS.MUSEUM]: 'museo',
+  // [MODULE_IDS.RENTALS]: 'rentals',
+  // [MODULE_IDS.SALES]: 'sales',
 } as const;
 
 // Resultado de verificación de permisos

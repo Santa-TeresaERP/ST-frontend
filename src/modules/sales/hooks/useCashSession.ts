@@ -45,6 +45,14 @@ export const useFetchActiveCashSession = (storeId?: string) => {
     queryKey: ['activeCashSession', storeId],
     queryFn: () => fetchActiveCashSession(storeId!),
     enabled: !!storeId, // Solo ejecutar si storeId está definido
+    // ✅ Filtro para asegurar que la sesión pertenece a la tienda correcta
+    select: (data) => {
+      // Si no hay datos o la sesión no pertenece a la tienda, retornar null
+      if (!data || data.store_id !== storeId) {
+        return null;
+      }
+      return data;
+    }
   });
 };
 
@@ -72,9 +80,11 @@ export const useCreateCashSession = () => {
   return useMutation<CashSessionAttributes, Error, CreateCashSessionPayload>({
     mutationFn: createCashSession,
     onSuccess: (data) => {
+      // ✅ CORREGIDO: Solo invalidar queries específicas de la tienda afectada
       queryClient.invalidateQueries({ queryKey: ['cashSessions'] });
       queryClient.invalidateQueries({ queryKey: ['activeCashSession', data.store_id] });
       queryClient.invalidateQueries({ queryKey: ['cashSessionHistory', data.store_id] });
+      queryClient.invalidateQueries({ queryKey: ['checkStoreActiveSession', data.store_id] });
     },
   });
 };
@@ -84,10 +94,13 @@ export const useUpdateCashSession = () => {
   return useMutation<CashSessionAttributes, Error, { id: string; payload: UpdateCashSessionPayload }>({
     mutationFn: ({ id, payload }) => updateCashSession(id, payload),
     onSuccess: (data) => {
+      // ✅ CORREGIDO: Solo invalidar queries específicas de la tienda afectada
       queryClient.invalidateQueries({ queryKey: ['cashSessions'] });
       queryClient.invalidateQueries({ queryKey: ['cashSession', data.id] });
       queryClient.invalidateQueries({ queryKey: ['activeCashSession', data.store_id] });
       queryClient.invalidateQueries({ queryKey: ['cashSessionHistory', data.store_id] });
+      queryClient.invalidateQueries({ queryKey: ['cashSessionDetails', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['checkStoreActiveSession', data.store_id] });
     },
   });
 };
@@ -97,10 +110,13 @@ export const useCloseCashSession = () => {
   return useMutation<CashSessionAttributes, Error, { id: string; payload: CloseCashSessionPayload }>({
     mutationFn: ({ id, payload }) => closeCashSession(id, payload),
     onSuccess: (data) => {
+      // ✅ CORREGIDO: Solo invalidar queries específicas de la tienda afectada
       queryClient.invalidateQueries({ queryKey: ['cashSessions'] });
       queryClient.invalidateQueries({ queryKey: ['cashSession', data.id] });
       queryClient.invalidateQueries({ queryKey: ['activeCashSession', data.store_id] });
       queryClient.invalidateQueries({ queryKey: ['cashSessionHistory', data.store_id] });
+      queryClient.invalidateQueries({ queryKey: ['cashSessionDetails', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['checkStoreActiveSession', data.store_id] });
     },
   });
 };

@@ -124,32 +124,44 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
               {errors.email && <p className="text-red-600 text-sm">{errors.email}</p>}
             </div>
 
-            {/* Teléfono */}
-            <div className="space-y-1">
-              <Label htmlFor="phonenumber" className="uppercase font-semibold text-sm text-gray-700">Número de Teléfono</Label>
-              <Input
-                id="phonenumber"
-                name="phonenumber"
-                type="text"
-                required
-                className={`border border-black rounded-md px-4 py-2 ${errors.phonenumber ? "border-red-600" : ""}`}
-              />
-              {errors.phonenumber && <p className="text-red-600 text-sm">{errors.phonenumber}</p>}
-            </div>
-
-            {/* DNI */}
-            <div className="space-y-1">
-              <Label htmlFor="dni" className="uppercase font-semibold text-sm text-gray-700">DNI</Label>
-              <Input
-                id="dni"
-                name="dni"
-                type="text"
-                required
-                className={`border border-black rounded-md px-4 py-2 ${errors.dni ? "border-red-600" : ""}`}
-              />
-              {errors.dni && <p className="text-red-600 text-sm">{errors.dni}</p>}
-            </div>
+          {/* Teléfono */}
+          <div className="space-y-1">
+            <Label htmlFor="phonenumber" className="uppercase font-semibold text-sm text-gray-700">Número de Teléfono</Label>
+            <Input
+              id="phonenumber"
+              name="phonenumber"
+              type="text"
+              required
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={9}
+              onInput={(e) => {
+                e.currentTarget.value = e.currentTarget.value.replace(/\D/g, '').slice(0, 9);
+              }}
+              className={`border border-black rounded-md px-4 py-2 ${errors.phonenumber ? "border-red-600" : ""}`}
+            />
+          {errors.phonenumber && <p className="text-red-600 text-sm">{errors.phonenumber}</p>}
           </div>
+
+          {/* DNI */}
+          <div className="space-y-1">
+            <Label htmlFor="dni" className="uppercase font-semibold text-sm text-gray-700">DNI</Label>
+            <Input
+              id="dni"
+              name="dni"
+              type="text"
+              required
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={8}
+              onInput={(e) => {
+                e.currentTarget.value = e.currentTarget.value.replace(/\D/g, '').slice(0, 8);
+              }}
+              className={`border border-black rounded-md px-4 py-2 ${errors.dni ? "border-red-600" : ""}`}
+            />
+            {errors.dni && <p className="text-red-600 text-sm">{errors.dni}</p>}
+          </div>
+        </div>
 
           {/* Contraseña */}
           <div className="space-y-1">

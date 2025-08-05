@@ -9,6 +9,7 @@ interface FilterMovementProps {
   searchTerm: string;
   products: any[];
   stores: any[];
+  resources: any[];
 }
 
 const FilterMovement: React.FC<FilterMovementProps> = ({
@@ -19,6 +20,7 @@ const FilterMovement: React.FC<FilterMovementProps> = ({
   searchTerm,
   products,
   stores,
+  resources = [],
 }) => {
   const handleFilterChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -88,20 +90,22 @@ const FilterMovement: React.FC<FilterMovementProps> = ({
 
         {/* Recurso */}
         {selectedType === 'recurso' && (
-          <select
-            name="resource_id"
-            value={filters.resource_id || ''}
-            onChange={handleFilterChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-          >
-            <option value="">Todos Recursos</option>
-            {stores.map((r) => (
+        <select
+          name="resource_id"
+          value={filters.resource_id || ''}
+          onChange={handleFilterChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+        >
+          <option value="">Todos Recursos</option>
+          {Array.isArray(resources) &&
+            resources.map((r) => (
               <option key={r.id} value={r.id}>
-                {r.name}
+                {r.name ?? `Recurso ${r.id}`}
               </option>
             ))}
-          </select>
-        )}
+        </select>
+      )}
+
 
         {/* Tipo de movimiento */}
         <select
@@ -125,7 +129,7 @@ const FilterMovement: React.FC<FilterMovementProps> = ({
           <option value="">Todas Tiendas</option>
           {stores.map((s) => (
             <option key={s.id} value={s.id}>
-              {s.name}
+              {s.store_name ?? s.name ?? `Tienda ${s.id}`}
             </option>
           ))}
         </select>

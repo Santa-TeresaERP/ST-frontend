@@ -51,7 +51,15 @@ const ModuleModal: React.FC<ModuleModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      moduleSchema.parse(formData);
+      // Solo validar el nombre si estamos creando un módulo nuevo
+      if (module) {
+        // Para edición, solo validamos la descripción
+        const editSchema = moduleSchema.pick({ description: true });
+        editSchema.parse(formData);
+      } else {
+        // Para creación, validamos todo
+        moduleSchema.parse(formData);
+      }
       setErrors({});
       setShowConfirmation(true);
     } catch (error) {
@@ -102,8 +110,9 @@ const ModuleModal: React.FC<ModuleModalProps> = ({
                 name="name"
                 type="text"
                 value={formData.name || ""}
-                readOnly
-                className="w-full bg-gray-100 cursor-not-allowed"
+                onChange={handleInputChange}
+                disabled={!!module}
+                className={`w-full ${errors.name ? "border-red-500" : ""} ${module ? "bg-gray-100 cursor-not-allowed" : ""}`}
               />
               {errors.name && (
                 <p className="text-red-500 text-sm">{errors.name}</p>

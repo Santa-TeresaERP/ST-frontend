@@ -107,7 +107,11 @@ export const fetchActiveCashSession = async (storeId: string): Promise<CashSessi
   try {
     const response = await api.get<CashSessionResponse>(`/cash_session?store_id=${storeId}&status=open`);
     const sessions = response.data.cashSessions || [];
-    return sessions.length > 0 ? sessions[0] : null;
+    
+    // ✅ Filtro adicional para asegurar que la sesión pertenece a la tienda
+    const validSession = sessions.find(session => session.store_id === storeId);
+    
+    return validSession || null;
   } catch (error) {
     console.error('Error fetching active cash session:', error);
     return null;

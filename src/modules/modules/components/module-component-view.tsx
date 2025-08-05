@@ -5,13 +5,14 @@ import { Cuboid, ShieldAlert, Lock } from 'lucide-react';
 import ModuleModal from './modal-update-module';
 import { Module } from '@/modules/modules/types/modules';
 
-// 🔥 IMPORTAR SISTEMA DE PERMISOS
+// 🔥 IMPORTAR SISTEMA DE PERMISOS Y HOOK DE USUARIOS
 import { 
   MODULE_IDS,
-  useModulePermissions,
   AccessDeniedModal,
-  useSyncUserPermissions
+  Permission,
 } from '@/core/utils';
+import { useFetchUsers } from '@/modules/user-creations/hook/useUsers';
+import { useAuthStore } from '@/core/store/auth';
 
 const ModuleList: React.FC = () => {
   const { data: modules, isLoading, error } = useFetchModules();
@@ -19,20 +20,38 @@ const ModuleList: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
   
-  // 🔥 FORZAR CARGA DE PERMISOS
-  useSyncUserPermissions();
+  // 🔥 OBTENER USUARIO ACTUAL Y LISTA DE USUARIOS CON PERMISOS
+  const { user } = useAuthStore();
+  const { data: users, isLoading: usersLoading } = useFetchUsers();
   
-  // 🔥 AGREGAR HOOK DE PERMISOS - USA EL ID REAL DE TU BASE DE DATOS
-  const { canView, canEdit } = useModulePermissions(MODULE_IDS.MODULES);
+  // 🔥 ENCONTRAR EL USUARIO ACTUAL CON SUS PERMISOS
+  const currentUserWithPermissions = users?.find(u => u.id === user?.id);
+  
+  // 🔥 OBTENER PERMISOS PARA EL MÓDULO DE MODULES
+  const modulePermission = currentUserWithPermissions?.Role?.Permissions?.find(
+    (permission: Permission) => permission.moduleId === MODULE_IDS.MODULES
+  );
+  
+  // 🔥 EXTRAER PERMISOS ESPECÍFICOS
+  const canView = modulePermission?.canRead || false;
+  const canEdit = modulePermission?.canEdit || false;
+  const canCreate = modulePermission?.canWrite || false;
+  const canDelete = modulePermission?.canDelete || false;
+  const isAdmin = currentUserWithPermissions?.Role?.name === 'Admin';
+  
   const [showAccessDenied, setShowAccessDenied] = useState(false);
   const [accessDeniedAction, setAccessDeniedAction] = useState('');
 
   // 🔥 DEBUG: Ver permisos actuales
-  console.log('🔍 ModuleList - Permisos:', {
+  console.log('🔍 ModuleList - Análisis de Permisos:', {
+    userId: user?.id,
+    userFound: !!currentUserWithPermissions,
+    roleName: currentUserWithPermissions?.Role?.name,
     moduleId: MODULE_IDS.MODULES,
-    canView,
-    canEdit,
-    isLoading
+    modulePermission,
+    permisos: { canView, canEdit, canCreate, canDelete, isAdmin },
+    totalUsers: users?.length || 0,
+    usersLoading
   });
 
   // 🔥 FUNCIÓN PARA MANEJAR ACCESO DENEGADO
@@ -42,8 +61,8 @@ const ModuleList: React.FC = () => {
   };
 
   const handleEditClick = (module: Module) => {
-    // 🔥 VERIFICAR PERMISOS ANTES DE EDITAR
-    if (!canEdit) {
+    // 🔥 VERIFICAR PERMISOS ANTES DE EDITAR (Admin siempre puede)
+    if (!canEdit && !isAdmin) {
       handleAccessDenied('editar este módulo');
       return;
     }
@@ -72,11 +91,11 @@ const ModuleList: React.FC = () => {
     }
   };
 
-  if (isLoading) return <div className="text-center text-red-800 font-semibold">Cargando módulos...</div>;
+  if (isLoading || usersLoading) return <div className="text-center text-red-800 font-semibold">Cargando módulos y permisos...</div>;
   if (error) return <div className="text-center text-red-800 font-semibold">{error.message}</div>;
 
   // 🔥 VERIFICAR SI TIENE PERMISO PARA VER EL MÓDULO
-  if (!canView) {
+  if (!canView && !isAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
@@ -105,8 +124,12 @@ const ModuleList: React.FC = () => {
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-800">
             <strong>Debug Permisos:</strong> 
+            Usuario: {currentUserWithPermissions?.name || 'No encontrado'} | 
+            Rol: {currentUserWithPermissions?.Role?.name || 'Sin rol'} | 
             Ver: {canView ? '✅' : '❌'} | 
-            Editar: {canEdit ? '✅' : '❌'}
+            Editar: {canEdit ? '✅' : '❌'} | 
+            Crear: {canCreate ? '✅' : '❌'} | 
+            Eliminar: {canDelete ? '✅' : '❌'}
           </p>
         </div>
       )}
@@ -131,7 +154,7 @@ const ModuleList: React.FC = () => {
 
               <div className="flex justify-end mt-4">
                 {/* 🔥 BOTÓN PROTEGIDO DE EDITAR */}
-                {canEdit ? (
+                {(canEdit || isAdmin) ? (
                   <button
                     className="bg-red-700 hover:bg-red-600 text-white text-sm px-4 py-2 rounded-3xl transition-colors"
                     onClick={(e) => {
@@ -161,7 +184,7 @@ const ModuleList: React.FC = () => {
       </div>
 
       {/* 🔥 MODAL DE EDICIÓN (SOLO SI TIENE PERMISOS) */}
-      {selectedModule && canEdit && (
+      {selectedModule && (canEdit || isAdmin) && (
         <ModuleModal
           isOpen={isModalOpen}
           onClose={handleCloseModal}
