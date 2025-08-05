@@ -1,6 +1,8 @@
 export interface Place {
-  _id?: string;
+  _id: string;
   name: string;
-  description?: string;
-  // Agrega aquí los campos necesarios según tu modelo backend
+  area: string;
+  location_id: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
