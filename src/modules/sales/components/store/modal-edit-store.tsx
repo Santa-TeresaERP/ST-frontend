@@ -1,34 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
-import { Label } from '@/app/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog';
 import { useUpdateStore } from '../../hooks/useStore';
 import { updateStoreSchema, UpdateStoreForm } from '../../schemas/store.schema';
 import { StoreAttributes } from '../../types/store.d';
 import { FiHome } from 'react-icons/fi';
 import { X } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ModalEditStoreProps {
   isOpen: boolean;
   onClose: () => void;
   store: StoreAttributes | null;
-  onStoreUpdate?: (storeId: string) => void
+  onStoreUpdate?: (storeId: string) => void;
 }
 
-const ModalEditStore: React.FC<ModalEditStoreProps> = ({ isOpen, onClose, store, onStoreUpdate }) => {
-
+const ModalEditStore: React.FC<ModalEditStoreProps> = ({
+  isOpen,
+  onClose,
+  store,
+  onStoreUpdate
+}) => {
   const [formData, setFormData] = useState<UpdateStoreForm>({
     id: '',
     store_name: '',
     address: '',
     observations: ''
   });
+
   const [errors, setErrors] = useState<Partial<UpdateStoreForm>>({});
-
   const updateStoreMutation = useUpdateStore();
+  const queryClient = useQueryClient(); // ✅ nuevo
 
-  // Cargar datos cuando se abre el modal
   useEffect(() => {
     if (store && isOpen) {
       setFormData({
@@ -49,30 +52,28 @@ const ModalEditStore: React.FC<ModalEditStoreProps> = ({ isOpen, onClose, store,
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    try {
-      const validatedData = updateStoreSchema.parse(formData);
-      await updateStoreMutation.mutateAsync(validatedData);
-      
-      if (onStoreUpdate) onStoreUpdate(validatedData.id);
+    const validation = updateStoreSchema.safeParse(formData);
 
-      setErrors({});
-      onClose();
+    if (!validation.success) {
+      const fieldErrors: Partial<UpdateStoreForm> = {};
+      validation.error.errors.forEach(err => {
+        const field = err.path[0] as keyof UpdateStoreForm;
+        fieldErrors[field] = err.message;
+      });
+      setErrors(fieldErrors);
+      return;
+    }
+
+    try {
+      await updateStoreMutation.mutateAsync(validation.data);
+
+      // ✅ Refresca los datos en pantalla al instante
+      queryClient.invalidateQueries({ queryKey: ['stores'], exact: false });
+
+      onStoreUpdate?.(validation.data.id);
+      handleClose();
     } catch (error) {
-      if (error instanceof Error) {
-        console.error('Error al actualizar tienda:', error);
-      }
-      // Manejar errores de validación
-      const validationResult = updateStoreSchema.safeParse(formData);
-      if (!validationResult.success) {
-        const fieldErrors: Partial<UpdateStoreForm> = {};
-        validationResult.error.errors.forEach(err => {
-          if (err.path.length > 0) {
-            fieldErrors[err.path[0] as keyof UpdateStoreForm] = err.message;
-          }
-        });
-        setErrors(fieldErrors);
-      }
+      console.error('Error al actualizar tienda:', error);
     }
   };
 
@@ -106,16 +107,13 @@ const ModalEditStore: React.FC<ModalEditStoreProps> = ({ isOpen, onClose, store,
 
         {/* Formulario */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5 text-left">
-          {/* Mensaje genérico de error */}
           {Object.values(errors).some(Boolean) && (
             <p className="text-sm text-red-600 font-medium">
               Revisa los campos marcados.
             </p>
           )}
 
-          {/* Campos */}
           <div className="space-y-4">
-            {/* Nombre */}
             <div>
               <label className="block text-gray-700 mb-1 font-medium">
                 Nombre de la Tienda <span className="text-red-600">*</span>
@@ -125,14 +123,12 @@ const ModalEditStore: React.FC<ModalEditStoreProps> = ({ isOpen, onClose, store,
                 type="text"
                 value={formData.store_name}
                 onChange={(e) => handleInputChange('store_name', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
               />
               {errors.store_name && (
                 <p className="text-sm text-red-600 mt-1">{errors.store_name}</p>
               )}
             </div>
 
-            {/* Dirección */}
             <div>
               <label className="block text-gray-700 mb-1 font-medium">
                 Dirección <span className="text-red-600">*</span>
@@ -142,14 +138,12 @@ const ModalEditStore: React.FC<ModalEditStoreProps> = ({ isOpen, onClose, store,
                 type="text"
                 value={formData.address}
                 onChange={(e) => handleInputChange('address', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
               />
               {errors.address && (
                 <p className="text-sm text-red-600 mt-1">{errors.address}</p>
               )}
             </div>
 
-            {/* Observaciones */}
             <div>
               <label className="block text-gray-700 mb-1 font-medium">
                 Observaciones
@@ -167,19 +161,18 @@ const ModalEditStore: React.FC<ModalEditStoreProps> = ({ isOpen, onClose, store,
             </div>
           </div>
 
-          {/* Botones */}
           <div className="flex justify-end space-x-3 pt-4">
             <Button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition"
+              className="bg-gray-200 hover:bg-gray-300 text-gray-700"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
               disabled={updateStoreMutation.isPending}
-              className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-600 transition flex items-center gap-2 disabled:opacity-50"
+              className="bg-red-800 text-white hover:bg-red-600"
             >
               {updateStoreMutation.isPending ? 'Actualizando...' : 'Actualizar Tienda'}
             </Button>
