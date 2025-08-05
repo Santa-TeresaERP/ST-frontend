@@ -4,6 +4,7 @@ import { MdLocationOn } from "react-icons/md";
 import ModalCreateLocation from "./information location/modal-create-location";
 import ModalEditLocation from "./information location/modal-edit-location";
 import ModalCreatePlace from "./places/modal-create-place";
+import PlaceCard from "./places/place-card";
 import RentalHistoryView from "./rental-history/rental-history-view";
 import { Location } from "../types/location";
 import { Place } from "../types/places";
