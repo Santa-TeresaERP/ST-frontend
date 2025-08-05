@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Location } from '../../types/location';
 import { FiX } from 'react-icons/fi';
 import { Place } from '../../types/places';
 
@@ -7,18 +8,28 @@ interface ModalCreatePlaceProps {
   onSubmit: (placeData: Omit<Place, '_id'>) => void;
 }
 
+import { useFetchLocations } from '../../hook/useLocations';
+
 const ModalCreatePlace: React.FC<ModalCreatePlaceProps> = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     name: '',
     area: '',
-    tipo: ''
+    location_id: ''
   });
+
+  const { data, isLoading, isError } = useFetchLocations();
+  let locations: Location[] = [];
+  if (Array.isArray(data)) {
+    locations = data;
+  } else if (data && typeof data === 'object' && Array.isArray((data as any).locations)) {
+    locations = (data as any).locations;
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.name && formData.area && formData.tipo) {
+    if (formData.name && formData.area && formData.location_id) {
       onSubmit(formData);
-      setFormData({ name: '', area: '', tipo: '' });
+      setFormData({ name: '', area: '', location_id: '' });
     }
   };
 
@@ -76,25 +87,23 @@ const ModalCreatePlace: React.FC<ModalCreatePlaceProps> = ({ onClose, onSubmit }
           </div>
 
           <div>
-            <label htmlFor="tipo" className="block text-sm font-medium text-gray-700 mb-1">
-              Tipo de lugar
+            <label htmlFor="location_id" className="block text-sm font-medium text-gray-700 mb-1">
+              Localización
             </label>
             <select
-              id="tipo"
-              name="tipo"
-              value={formData.tipo}
+              id="location_id"
+              name="location_id"
+              value={formData.location_id}
               onChange={handleChange}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
               required
             >
-              <option value="">Seleccionar tipo</option>
-              <option value="Piscina">Piscina</option>
-              <option value="Parrilla">Parrilla</option>
-              <option value="Catedral">Catedral</option>
-              <option value="Salón">Salón</option>
-              <option value="Jardín">Jardín</option>
-              <option value="Terraza">Terraza</option>
-              <option value="Otro">Otro</option>
+              <option value="">Seleccionar localización</option>
+              {isLoading && <option disabled>Cargando localizaciones...</option>}
+              {isError && <option disabled>Error cargando localizaciones</option>}
+              {!isLoading && !isError && locations.map((loc: Location) => (
+                <option key={loc.id} value={loc.id}>{loc.name}</option>
+              ))}
             </select>
           </div>
 

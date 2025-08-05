@@ -1,5 +1,5 @@
 import api from '@/core/config/client';
-import { Place } from '../types/places';
+import { Place, CreatePlacePayload, UpdatePlacePayload } from '../types/places';
 
 export const fetchPlaces = async (): Promise<Place[]> => {
   const response = await api.get<Place[]>('/places');
@@ -11,12 +11,12 @@ export const fetchPlace = async (id: string): Promise<Place> => {
   return response.data;
 };
 
-export const createPlace = async (payload: Omit<Place, '_id'>): Promise<Place> => {
+export const createPlace = async (payload: CreatePlacePayload): Promise<Place> => {
   const response = await api.post<Place>('/places', payload);
   return response.data;
 };
 
-export const updatePlace = async (id: string, payload: Partial<Place>): Promise<Place> => {
+export const updatePlace = async (id: string, payload: UpdatePlacePayload): Promise<Place> => {
   const response = await api.patch<Place>(`/places/${id}`, payload);
   return response.data;
 };
