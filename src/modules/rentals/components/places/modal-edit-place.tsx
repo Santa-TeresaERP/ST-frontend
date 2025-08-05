@@ -20,32 +20,26 @@ const ModalEditPlace: React.FC<ModalEditPlaceProps> = ({ place, onClose }) => {
 
   const updatePlace = useUpdatePlace();
   const { data, isLoading, isError } = useFetchLocations();
-  
-  // Asegurar que siempre obtenemos un array de ubicaciones, igual que en rentals-component-view
   const locations = React.useMemo(() => {
     if (Array.isArray(data)) {
       return data;
     }
     if (data && typeof data === 'object' && Array.isArray((data as any)?.data)) {
-      return (data as any).data; // Ajuste para manejar la respuesta anidada
+      return (data as any).data;
     }
     return [];
   }, [data]);
-  
-  // Debug: Ver estructura de los datos recibidos
   React.useEffect(() => {
     console.log('Datos de ubicaciones recibidos:', data);
     console.log('Ubicaciones procesadas:', locations);
   }, [data, locations]);
-  
-  // Obtener el nombre de la ubicación actual
+
   const currentLocationName = React.useMemo(() => {
     if (!formData.location_id || !locations.length) return 'Cargando ubicaciones...';
     const location = locations.find((loc: Location) => loc.id === formData.location_id);
     return location ? location.name : 'Ubicación no disponible';
   }, [formData.location_id, locations]);
 
-  // Debug: Verificar valores de location_id y locations
   React.useEffect(() => {
     console.log('Current location_id:', formData.location_id);
     console.log('All locations:', locations);

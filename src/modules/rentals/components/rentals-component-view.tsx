@@ -26,7 +26,6 @@ const RentalsComponentView = () => {
     refetch,
   } = useFetchLocations();
 
-  // Type guard to check if the response is an array of locations
   const isLocationArray = (data: unknown): data is Location[] => {
     return Array.isArray(data) && data.every(item => 
       item && 
@@ -35,8 +34,6 @@ const RentalsComponentView = () => {
       'name' in item
     );
   };
-
-  // Ensure we always get an array of locations
   const locations: Location[] = (() => {
     if (!locationsData) return [];
     
@@ -62,7 +59,6 @@ const RentalsComponentView = () => {
     status: "",
   });
 
-  // Obtener lugares filtrados por location seleccionada
   const { data: places = [], isLoading: isLoadingPlaces } = useFetchPlaces(selectedLocation?.id);
   const [currentView, setCurrentView] = useState<"main" | "rental-history">("main");
   const [selectedPlaceForRentals, setSelectedPlaceForRentals] = useState<Place | null>(null);
@@ -73,13 +69,6 @@ const RentalsComponentView = () => {
       setSelectedLocation(found);
     }
   };
-
-  // Remove unused handleCreatePlace function
-
-  // Edición y borrado de lugares ahora deben ser gestionados por React Query y el backend.
-  // Puedes implementar lógica similar si tienes endpoints de edición/borrado.
-
-
   const handleViewRentals = (place: Place) => {
     setSelectedPlaceForRentals(place);
     setCurrentView("rental-history");
@@ -102,9 +91,6 @@ const RentalsComponentView = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <h1 className="text-4xl font-bold text-center text-red-600 pb-6">Alquileres</h1>
-
-      {/* DEBUG: mostrar JSON temporal */}
-
 
       {/* Selector de locaciones */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm">
@@ -256,7 +242,6 @@ const RentalsComponentView = () => {
           locationId={selectedLocation.id}
           onClose={() => setIsCreatePlaceModalOpen(false)}
           onCreated={() => {
-            // Invalidate the places query to refresh the list
             queryClient.invalidateQueries({ queryKey: ['places', selectedLocation.id] });
           }}
         />
