@@ -8,6 +8,7 @@ export const WarehouseProductSchema = z.object({
   product_id: z.string().uuid(),
   quantity: z.number().min(0, 'Quantity must be greater than or equal to 0'),
   entry_date: z.string().datetime(),
+  status: z.boolean().default(true),
   createdAt: z.string().datetime().optional(),
   updatedAt: z.string().datetime().optional().nullable(),
 });
