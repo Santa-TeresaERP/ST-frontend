@@ -16,6 +16,6 @@ export const UpdateBuysResource = async (id: string, payload: UpdateBuysResource
     return res.data;
 }
 
-export const DeleteBuysResource = async (id: string): Promise<void> => {
-    await api.delete(`/buysResource/${id}`);
-}
+export const DeleteBuysResource = async (id: string, status: boolean): Promise<void> => {
+  await api.put(`/buysResource/${id}`, { status });
+};

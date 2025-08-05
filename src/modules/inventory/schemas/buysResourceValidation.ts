@@ -16,6 +16,7 @@ export const BuysResourceValidationSchema = z.object({
   total_cost: z.number({ invalid_type_error: 'El costo total debe ser un número' }).min(0.01, 'El costo total debe ser mayor a 0'),
   supplier_id: z.string().min(1, 'Debe seleccionar un proveedor'),
   entry_date: z.string().min(1, 'La fecha de entrada es requerida'),
+  status: z.boolean().default(true), // Campo para el estado del recurso
 });
 
 // Esquema para edición con campos inmutables opcionales
