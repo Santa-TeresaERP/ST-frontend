@@ -35,4 +35,5 @@ export const movementProductSchema = z.object({
       if (!val || val.trim() === '') return undefined;
       return val.trim();
     }),
+  status: z.boolean().default(true),
 });
