@@ -31,7 +31,7 @@ export const useUpdateMovement = () => {
 // Eliminar movimiento
 export const useDeleteMovement = () => {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, string>({
+  return useMutation<void, Error, { id: string; status: boolean }>({
     mutationFn: deleteMovement,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['movements'] }),
   });

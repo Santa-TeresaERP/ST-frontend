@@ -8,7 +8,6 @@ import { BuysResourceWithResource, CreateBuysResourcePayload, UpdateBuysResource
 // Verified Modal import paths (assuming they are correct relative to this file)
 import ModalNuevoRecurso from './resource/modal-create-resource-resourcehouse';
 import ModalEditResource from './resource/modal-edit-resource-resourcehouse';
-import ModalDeleteResource from './resource/modal-delete-resource-resourcehouse';
 
 import { Input } from '@/app/components/ui/input';
 // Verified Button component import path
@@ -16,7 +15,6 @@ import { Button } from '@/app/components/ui/button';
 
 const ResourcesView: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [resourceToDelete, setResourceToDelete] = useState<BuysResourceWithResource | null>(null);
   const [resourceToEdit, setResourceToEdit] = useState<BuysResourceWithResource | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -79,25 +77,18 @@ const ResourcesView: React.FC = () => {
     setResourceToEdit(resource);
   };
 
-  const handleDelete = (resource: BuysResourceWithResource) => {
-    setResourceToDelete(resource);
-  };
-
-  const confirmDelete = async () => {
-    if (resourceToDelete && resourceToDelete.id) {
-      try {
-        await deleteResourceMutation.mutateAsync(resourceToDelete.id);
-        setResourceToDelete(null);
-      } catch (err) {
-        console.error('Error deleting resource:', err);
-        // TODO: Implement proper user feedback for errors
-      }
+  const handleToggleStatus = async (r: BuysResourceWithResource) => {
+    if (!r.id) return;
+    try {
+      await deleteResourceMutation.mutateAsync({
+        id: r.id,
+        status: !r.status,
+      });
+    } catch (err) {
+      console.error('Error toggling status:', err);
     }
   };
 
-  const cancelDelete = () => {
-    setResourceToDelete(null);
-  };
 
   const handleCreateResource = async (payload: CreateBuysResourcePayload) => {
     try {
@@ -282,6 +273,7 @@ const ResourcesView: React.FC = () => {
                 <th className="px-4 py-2 text-left">Cantidad</th>
                 <th className="px-4 py-2 text-left">Fecha de Entrada</th>
                 <th className="px-4 py-2 text-left">Observación</th>
+                <th className="px-4 py-2 text-left">Estado</th>
                 <th className="px-4 py-2 text-left">Acciones</th>
               </tr>
             </thead>
@@ -321,6 +313,11 @@ const ResourcesView: React.FC = () => {
                         </span>
                       ) : '-'}
                     </td>
+                    <td className="px-4 py-2 text-left">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${r.status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {r.status ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
                     <td className="px-4 py-2 text-left space-x-2">
                       <Button
                         variant="ghost"
@@ -334,9 +331,9 @@ const ResourcesView: React.FC = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDelete(r)}
-                        className="text-red-600 hover:text-red-800"
-                        title="Eliminar"
+                        onClick={() => handleToggleStatus(r)}
+                        className={r.status ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800'}
+                        title={r.status ? 'Desactivar' : 'Activar'}
                       >
                         <Trash2 className="h-4 w-4"/>
                       </Button>
@@ -366,16 +363,6 @@ const ResourcesView: React.FC = () => {
           onClose={() => setResourceToEdit(null)}
           onUpdate={handleUpdateResource}
           isUpdating={updateResourceMutation.isPending}
-        />
-      )}
-
-      {resourceToDelete && (
-        <ModalDeleteResource
-          isOpen={!!resourceToDelete}
-          onClose={cancelDelete}
-          onConfirm={confirmDelete}
-          resourceName={resourceToDelete.resource?.name || 'Recurso'}
-          isDeleting={deleteResourceMutation.isPending}
         />
       )}
     </div>

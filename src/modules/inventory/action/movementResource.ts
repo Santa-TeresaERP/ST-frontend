@@ -40,5 +40,5 @@ export const updateWarehouseMovementResource = async (
 };
 
 export const deleteWarehouseMovementResource = async (id: string): Promise<void> => {
-  await api.delete(`/warehouseMovementResource/${id}`);
+  await api.put(`/warehouseMovementResource/${id}`, {}); // ← agrega un objeto vacío
 };

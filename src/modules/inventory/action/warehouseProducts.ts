@@ -17,5 +17,5 @@ export const updateWarehouseProduct = async (id: string, payload: UpdateWarehous
 }
 
 export const deleteWarehouseProduct = async (id: string): Promise<void> => {
-    await api.delete(`/warehouseProduct/${id}`);
+    await api.put(`/warehouseProduct/${id}`, { status: false });
 }

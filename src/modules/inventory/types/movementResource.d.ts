@@ -8,6 +8,7 @@ export const WarehouseMovementResourceSchema = z.object({
   quantity: z.number(),
   movement_date: z.union([z.string(), z.date()]),
   observations: z.string().max(150).optional().nullable(),
+  status: z.boolean().default(true),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
 });
@@ -21,6 +22,7 @@ export interface CreateWarehouseMovementResourcePayload {
   quantity: number;
   movement_date: string | Date;
   observations?: string | null;
+  status?: boolean;
 }
 
 export interface UpdateWarehouseMovementResourcePayload {
