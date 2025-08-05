@@ -1,42 +1,40 @@
-import React, { useState } from 'react';
-import { Location } from '../../types/location';
-import { FiX } from 'react-icons/fi';
-import { Place } from '../../types/places';
+import React, { useState } from "react";
+import { FiX } from "react-icons/fi";
+import { Place } from "../../types/places";
 
 interface ModalCreatePlaceProps {
   onClose: () => void;
-  onSubmit: (placeData: Omit<Place, '_id'>) => void;
+  onSubmit: (placeData: Omit<Place, "_id">) => void;
+  locationId: string;
 }
 
-import { useFetchLocations } from '../../hook/useLocations';
-
-const ModalCreatePlace: React.FC<ModalCreatePlaceProps> = ({ onClose, onSubmit }) => {
+const ModalCreatePlace: React.FC<ModalCreatePlaceProps> = ({
+  onClose,
+  onSubmit,
+  locationId,
+}) => {
   const [formData, setFormData] = useState({
-    name: '',
-    area: '',
-    location_id: ''
+    name: "",
+    area: "",
+    tipo: "",
+    location_id: locationId || "",
   });
-
-  const { data, isLoading, isError } = useFetchLocations();
-  let locations: Location[] = [];
-  if (Array.isArray(data)) {
-    locations = data;
-  } else if (data && typeof data === 'object' && Array.isArray((data as any).locations)) {
-    locations = (data as any).locations;
-  }
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.name && formData.area && formData.location_id) {
-      onSubmit(formData);
-      setFormData({ name: '', area: '', location_id: '' });
+    const { name, area, location_id } = formData;
+
+    if (name && area && location_id) {
+      const payload = { location_id, name, area }; // 👈 EXCLUYE tipo
+      console.log("Payload enviado:", payload);
+      onSubmit(payload);
+      setFormData({ name: "", area: "", tipo: "", location_id }); // limpia
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -55,7 +53,10 @@ const ModalCreatePlace: React.FC<ModalCreatePlaceProps> = ({ onClose, onSubmit }
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Nombre del lugar
             </label>
             <input
@@ -71,7 +72,10 @@ const ModalCreatePlace: React.FC<ModalCreatePlaceProps> = ({ onClose, onSubmit }
           </div>
 
           <div>
-            <label htmlFor="area" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="area"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Área
             </label>
             <input
@@ -81,29 +85,33 @@ const ModalCreatePlace: React.FC<ModalCreatePlaceProps> = ({ onClose, onSubmit }
               value={formData.area}
               onChange={handleChange}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-              placeholder="Ej. Area Norte"
+              placeholder="Ej. Área Norte"
               required
             />
           </div>
-
           <div>
-            <label htmlFor="location_id" className="block text-sm font-medium text-gray-700 mb-1">
-              Localización
+            <label
+              htmlFor="tipo"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Tipo de lugar
             </label>
             <select
-              id="location_id"
-              name="location_id"
-              value={formData.location_id}
-              onChange={handleChange}
+              id="tipo"
+              name="tipo"
+              value={formData.tipo} // <-- agregar
+              onChange={handleChange} // <-- agregar
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
               required
             >
-              <option value="">Seleccionar localización</option>
-              {isLoading && <option disabled>Cargando localizaciones...</option>}
-              {isError && <option disabled>Error cargando localizaciones</option>}
-              {!isLoading && !isError && locations.map((loc: Location) => (
-                <option key={loc.id} value={loc.id}>{loc.name}</option>
-              ))}
+              <option value="">Seleccionar tipo</option>
+              <option value="Piscina">Piscina</option>
+              <option value="Parrilla">Parrilla</option>
+              <option value="Catedral">Catedral</option>
+              <option value="Salón">Salón</option>
+              <option value="Jardín">Jardín</option>
+              <option value="Terraza">Terraza</option>
+              <option value="Otro">Otro</option>
             </select>
           </div>
 
