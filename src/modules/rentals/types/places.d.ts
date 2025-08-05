@@ -1,8 +1,10 @@
 export interface Place {
-  _id?: string;
-  location_id: string;
+  _id: string;
   name: string;
   area: string;
+  location_id: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type CreatePlacePayload = Omit<Place, '_id'>;

@@ -1,3 +1,4 @@
+// RentalsComponentView.tsx - fusionado
 import React, { useState } from "react";
 import { FiMapPin, FiHome, FiBarChart2, FiCheckCircle } from "react-icons/fi";
 import { MdLocationOn } from "react-icons/md";
@@ -9,27 +10,30 @@ import RentalHistoryView from "./rental-history/rental-history-view";
 import { Location } from "../types/location";
 import { Place } from "../types/places";
 import { useFetchLocations } from "../hook/useLocations";
+import { useFetchPlaces, useCreatePlace } from "../hook/usePlaces";
 
 const RentalsComponentView = () => {
   const [isCreateLocationModalOpen, setIsCreateLocationModalOpen] = useState(false);
   const [isEditLocationModalOpen, setIsEditLocationModalOpen] = useState(false);
   const [isCreatePlaceModalOpen, setIsCreatePlaceModalOpen] = useState(false);
+  const [currentView, setCurrentView] = useState<"main" | "rental-history">("main");
+  const [selectedPlaceForRentals, setSelectedPlaceForRentals] = useState<Place | null>(null);
 
   const {
     data: locationsData,
-    isLoading,
+    isLoading: isLoadingLocations,
     isError,
     refetch,
   } = useFetchLocations();
 
-  // ✅ Asegura que siempre obtienes un array
+  const { data: allPlaces = [], isLoading: isLoadingPlaces } = useFetchPlaces();
+  const { mutate: createPlace } = useCreatePlace();
+
   const locations: Location[] = Array.isArray(locationsData)
     ? locationsData
     : Array.isArray((locationsData as any)?.data)
-      ? (locationsData as any).data
-      : [];
-
-  console.log("🔍 Locaciones recibidas:", locations);
+    ? (locationsData as any).data
+    : [];
 
   const [selectedLocation, setSelectedLocation] = useState<Location>({
     id: "",
@@ -39,10 +43,6 @@ const RentalsComponentView = () => {
     status: "",
   });
 
-  const [places, setPlaces] = useState<Place[]>([]);
-  const [currentView, setCurrentView] = useState<"main" | "rental-history">("main");
-  const [selectedPlaceForRentals, setSelectedPlaceForRentals] = useState<Place | null>(null);
-
   const handleSelectLocation = (locationId: string) => {
     const found = locations.find((loc) => loc.id === locationId);
     if (found) {
@@ -50,19 +50,24 @@ const RentalsComponentView = () => {
     }
   };
 
-  const handleCreatePlace = (newPlace: Omit<Place, "id">) => {
-    setPlaces([...places, { ...newPlace, id: Date.now().toString() }]);
-    setIsCreatePlaceModalOpen(false);
+  const handleCreatePlace = (newPlace: Omit<Place, "_id">) => {
+    createPlace(newPlace, {
+      onSuccess: () => {
+        console.log("✅ Lugar creado correctamente");
+        setIsCreatePlaceModalOpen(false);
+      },
+      onError: (err) => {
+        console.error("❌ Error al crear lugar:", err);
+      },
+    });
   };
 
   const handleEditPlace = (placeId: string, updates: Partial<Place>) => {
-    setPlaces((prev) =>
-      prev.map((p) => (p.id === placeId ? { ...p, ...updates } : p))
-    );
+    // TODO: Implementar edición de lugar con hook correspondiente
   };
 
   const handleDeletePlace = (placeId: string) => {
-    setPlaces((prev) => prev.filter((p) => p.id !== placeId));
+    // TODO: Implementar eliminación de lugar con hook correspondiente
   };
 
   const handleViewRentals = (place: Place) => {
@@ -74,6 +79,8 @@ const RentalsComponentView = () => {
     setCurrentView("main");
     setSelectedPlaceForRentals(null);
   };
+
+  const places = allPlaces.filter((p) => p.location_id === selectedLocation?.id);
 
   if (currentView === "rental-history" && selectedPlaceForRentals) {
     return (
@@ -88,14 +95,11 @@ const RentalsComponentView = () => {
     <div className="min-h-screen bg-gray-50 p-6">
       <h1 className="text-4xl font-bold text-center text-red-600 pb-6">Alquileres</h1>
 
-      {/* DEBUG: mostrar JSON temporal */}
-
-
       {/* Selector de locaciones */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm">
         <div className="flex justify-between items-center mb-4">
           <div className="flex-1">
-            {isLoading ? (
+            {isLoadingLocations ? (
               <p className="text-gray-500">Cargando locaciones...</p>
             ) : isError ? (
               <p className="text-red-500">Error al cargar las locaciones.</p>
@@ -178,17 +182,21 @@ const RentalsComponentView = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {places.map((place) => (
-            <PlaceCard
-              key={place.id}
-              place={place}
-              onEdit={handleEditPlace}
-              onDelete={handleDeletePlace}
-              onViewRentals={handleViewRentals}
-            />
-          ))}
-        </div>
+        {isLoadingPlaces ? (
+          <p className="text-gray-600">Cargando lugares...</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {places.map((place) => (
+              <PlaceCard
+                key={place.id}
+                place={place}
+                onEdit={handleEditPlace}
+                onDelete={handleDeletePlace}
+                onViewRentals={handleViewRentals}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Modales */}
@@ -217,6 +225,7 @@ const RentalsComponentView = () => {
         <ModalCreatePlace
           onClose={() => setIsCreatePlaceModalOpen(false)}
           onSubmit={handleCreatePlace}
+          locationId={selectedLocation?.id}
         />
       )}
     </div>
