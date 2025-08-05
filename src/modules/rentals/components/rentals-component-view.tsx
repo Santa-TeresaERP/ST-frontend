@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import { FiMapPin, FiHome, FiBarChart2, FiCheckCircle } from 'react-icons/fi';
-import { MdLocationOn } from 'react-icons/md';
-import ModalCreateLocation from './information location/modal-create-location';
-import ModalEditLocation from './information location/modal-edit-location';
-import ModalCreatePlace from './places/modal-create-place';
-import PlaceCard from './places/place-card';
-import RentalHistoryView from './rental-history/rental-history-view';
-import { Location, Place } from '../types';
+import React, { useState } from "react";
+import { FiMapPin, FiHome, FiBarChart2, FiCheckCircle } from "react-icons/fi";
+import { MdLocationOn } from "react-icons/md";
+import ModalCreateLocation from "./information location/modal-create-location";
+import ModalEditLocation from "./information location/modal-edit-location";
+import ModalCreatePlace from "./places/modal-create-place";
+import RentalHistoryView from "./rental-history/rental-history-view";
+import { Location } from "../types/location";
+import { Place } from "../types/places";
+import { useFetchPlaces } from "../hook/usePlaces"; // 👈 se importa aquí
 
 const RentalsComponentView = () => {
   const [isCreateLocationModalOpen, setIsCreateLocationModalOpen] =
