@@ -99,20 +99,20 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
 
     // Verificar si el usuario existe haciendo una llamada de prueba
     console.log('Verificando usuario:', userId);
-    
+
     // TEMPORAL: Si el usuario del token no existe, usar el que sabemos que existe
     // Esto es solo mientras arreglas el problema del token
     const EXISTING_USER_ID = 'd513ad58-19c6-4bf7-82de-28de4351b423';
-    
+
     // Verificar si el usuario existe en la lista de usuarios
     if (!loadingUsuarios && usuarios) {
       const userExists = usuarios.some(u => u.id === userId);
-      
+
       if (!userExists) {
         console.warn(`⚠️ Usuario del token (${userId}) no existe en la BD`);
         console.log(`✅ Usando usuario existente: ${EXISTING_USER_ID}`);
         userId = EXISTING_USER_ID;
-        
+
       }
     } else if (loadingUsuarios) {
       console.log('⚠️ Usuarios aún cargando, usando usuario por defecto');
@@ -161,23 +161,23 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
     try {
       const result = await createEntrance(payload);
       console.log('Entrada creada exitosamente:', result);
-      
+
       // Limpiar formulario
       setTipoVisitante('');
       setCanalVenta('');
       setTipoPago('');
       setMonto('');
       setGratis('');
-    
+
       onClose();
-      
+
       // Llamar onSuccess para refrescar la tabla
       if (onSuccess) {
         onSuccess();
       }
     } catch (error) {
       console.error('Error al crear entrada:', error);
-      
+
       // Si hay más detalles en la respuesta del servidor
       if (
         typeof error === 'object' &&
@@ -201,7 +201,8 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl relative mx-2">
+      {/* Contenedor del modal: Se ajusta para ser responsive */}
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg lg:max-w-3xl relative mx-auto my-auto overflow-y-auto max-h-[90vh]">
         <div className="bg-gradient-to-r from-red-700 to-red-900 text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
           <Users size={24} />
           <h2 className="text-lg md:text-xl font-semibold text-center">Nuevo Visitante</h2>
@@ -213,7 +214,9 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
           </button>
         </div>
 
+        {/* Formulario con campos responsive */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5 text-left">
+          {/* El grid ahora es de 1 columna por defecto y se vuelve 2 en pantallas medianas */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Tipo de Visitante */}
             <div>
@@ -359,7 +362,7 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
                 )}
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                {gratis === 'Si' 
+                {gratis === 'Si'
                   ? 'Entrada gratuita'
                   : 'El monto se calcula automáticamente según el tipo de ticket'
                 }
@@ -384,17 +387,17 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
           </div>
 
           {/* Botones */}
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex justify-end flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition"
+              className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition w-full sm:w-auto"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-600 transition flex items-center gap-2"
+              className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-600 transition flex items-center justify-center gap-2 w-full sm:w-auto"
             >
               <Save size={18} /> Guardar
             </button>
@@ -402,7 +405,7 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
         </form>
       </div>
 
-      {/* Mini‑Modal creación rápida */}
+      {/* Mini-Modal creación rápida (pago) */}
       {miniOpen === 'pago' && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
@@ -431,7 +434,7 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
                     setTipoPago(newPaymentMethod.id); // Usar el ID del objeto creado
                     setNewOption('');
                     setMiniOpen('none');
-                
+
                   } catch (error) {
                     console.error('Error al crear método de pago:', error);
                     alert('Error al crear el método de pago');
@@ -447,6 +450,7 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
         </div>
       )}
 
+      {/* Mini-Modal creación rápida (canal) */}
       {miniOpen === 'canal' && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
@@ -475,7 +479,7 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
                     setCanalVenta(newSalesChannel.id ?? ''); // Usar el ID del objeto creado o string vacío si es undefined
                     setNewOption('');
                     setMiniOpen('none');
-                   
+
                   } catch (error) {
                     console.error('Error al crear canal de venta:', error);
                     alert('Error al crear el canal de venta');
@@ -492,9 +496,9 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
       )}
 
       {/* Modal de administración de tipos de ticket */}
-      <ModalTicketTypes 
-        isOpen={miniOpen === 'ticket'} 
-        onClose={() => setMiniOpen('none')} 
+      <ModalTicketTypes
+        isOpen={miniOpen === 'ticket'}
+        onClose={() => setMiniOpen('none')}
         onCreated={refetch}
       />
     </div>
