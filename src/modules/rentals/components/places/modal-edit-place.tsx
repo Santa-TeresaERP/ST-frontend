@@ -12,7 +12,6 @@ const ModalEditPlace: React.FC<ModalEditPlaceProps> = ({ place, onClose, onSubmi
   const [formData, setFormData] = useState({
     nombre: place.nombre,
     area: place.area,
-    tipo: place.tipo
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -73,27 +72,8 @@ const ModalEditPlace: React.FC<ModalEditPlaceProps> = ({ place, onClose, onSubmi
             />
           </div>
 
-          <div>
-            <label htmlFor="tipo" className="block text-sm font-medium text-gray-700 mb-1">
-              Tipo de lugar
-            </label>
-            <select
-              id="tipo"
-              name="tipo"
-              value={formData.tipo}
-              onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-              required
-            >
-              <option value="">Seleccionar tipo</option>
-              <option value="Piscina">Piscina</option>
-              <option value="Parrilla">Parrilla</option>
-              <option value="Catedral">Catedral</option>
-              <option value="Salón">Salón</option>
-              <option value="Jardín">Jardín</option>
-              <option value="Terraza">Terraza</option>
-              <option value="Otro">Otro</option>
-            </select>
+          <div className="text-sm text-gray-500">
+            <p>Nota: Los lugares se identifican únicamente por nombre y área.</p>
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">

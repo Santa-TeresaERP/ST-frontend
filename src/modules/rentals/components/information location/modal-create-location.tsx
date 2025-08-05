@@ -31,9 +31,17 @@ const ModalCreateLocation = ({ handleClose }: { handleClose: () => void }) => {
       status: estado,
     };
 
+    console.log('🚀 Creating location with payload:', payload);
+
     mutate(payload, {
-      onSuccess: () => handleClose(),
-      onError: () => setLocalError('Hubo un error al crear la locación.'),
+      onSuccess: (data) => {
+        console.log('✅ Location created successfully:', data);
+        handleClose();
+      },
+      onError: (error) => {
+        console.error('❌ Error creating location:', error);
+        setLocalError('Hubo un error al crear la locación.');
+      },
     });
   };
 
