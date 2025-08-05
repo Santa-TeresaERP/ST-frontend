@@ -8,13 +8,17 @@ import PlaceCard from "./places/place-card";
 import RentalHistoryView from "./rental-history/rental-history-view";
 import { Location } from "../types/location";
 import { Place } from "../types/places";
+import { useQueryClient } from '@tanstack/react-query';
 import { useFetchLocations } from "../hook/useLocations";
+import { useFetchPlaces } from "../hook/usePlaces";
 
 const RentalsComponentView = () => {
   const [isCreateLocationModalOpen, setIsCreateLocationModalOpen] = useState(false);
   const [isEditLocationModalOpen, setIsEditLocationModalOpen] = useState(false);
   const [isCreatePlaceModalOpen, setIsCreatePlaceModalOpen] = useState(false);
 
+  const queryClient = useQueryClient();
+  
   const {
     data: locationsData,
     isLoading,
@@ -22,12 +26,31 @@ const RentalsComponentView = () => {
     refetch,
   } = useFetchLocations();
 
-  // ✅ Asegura que siempre obtienes un array
-  const locations: Location[] = Array.isArray(locationsData)
-    ? locationsData
-    : Array.isArray((locationsData as any)?.data)
-      ? (locationsData as any).data
-      : [];
+  // Type guard to check if the response is an array of locations
+  const isLocationArray = (data: unknown): data is Location[] => {
+    return Array.isArray(data) && data.every(item => 
+      item && 
+      typeof item === 'object' && 
+      'id' in item && 
+      'name' in item
+    );
+  };
+
+  // Ensure we always get an array of locations
+  const locations: Location[] = (() => {
+    if (!locationsData) return [];
+    
+    if (isLocationArray(locationsData)) {
+      return locationsData;
+    }
+    
+    const data = locationsData as unknown as { data?: unknown };
+    if (data?.data && isLocationArray(data.data)) {
+      return data.data;
+    }
+    
+    return [];
+  })();
 
   console.log("🔍 Locaciones recibidas:", locations);
 
@@ -39,7 +62,8 @@ const RentalsComponentView = () => {
     status: "",
   });
 
-  const [places, setPlaces] = useState<Place[]>([]);
+  // Obtener lugares filtrados por location seleccionada
+  const { data: places = [], isLoading: isLoadingPlaces } = useFetchPlaces(selectedLocation?.id);
   const [currentView, setCurrentView] = useState<"main" | "rental-history">("main");
   const [selectedPlaceForRentals, setSelectedPlaceForRentals] = useState<Place | null>(null);
 
@@ -50,20 +74,11 @@ const RentalsComponentView = () => {
     }
   };
 
-  const handleCreatePlace = (newPlace: Omit<Place, "id">) => {
-    setPlaces([...places, { ...newPlace, id: Date.now().toString() }]);
-    setIsCreatePlaceModalOpen(false);
-  };
+  // Remove unused handleCreatePlace function
 
-  const handleEditPlace = (placeId: string, updates: Partial<Place>) => {
-    setPlaces((prev) =>
-      prev.map((p) => (p.id === placeId ? { ...p, ...updates } : p))
-    );
-  };
+  // Edición y borrado de lugares ahora deben ser gestionados por React Query y el backend.
+  // Puedes implementar lógica similar si tienes endpoints de edición/borrado.
 
-  const handleDeletePlace = (placeId: string) => {
-    setPlaces((prev) => prev.filter((p) => p.id !== placeId));
-  };
 
   const handleViewRentals = (place: Place) => {
     setSelectedPlaceForRentals(place);
@@ -172,23 +187,43 @@ const RentalsComponentView = () => {
           </div>
           <button
             onClick={() => setIsCreatePlaceModalOpen(true)}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm"
+            disabled={!selectedLocation}
+            className={`px-4 py-2 rounded-lg text-sm ${
+              selectedLocation 
+                ? 'bg-red-600 hover:bg-red-700 text-white' 
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
           >
             + Nuevo Lugar
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {places.map((place) => (
-            <PlaceCard
-              key={place.id}
-              place={place}
-              onEdit={handleEditPlace}
-              onDelete={handleDeletePlace}
-              onViewRentals={handleViewRentals}
-            />
-          ))}
-        </div>
+        {!selectedLocation?.id ? (
+          <div className="text-center py-8 bg-gray-50 rounded-lg">
+            <MdLocationOn className="mx-auto text-gray-400 text-4xl mb-2" />
+            <p className="text-gray-600">Selecciona una ubicación para ver sus lugares</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {isLoadingPlaces ? (
+              <div className="col-span-3 text-center py-4">
+                <p>Cargando lugares...</p>
+              </div>
+            ) : places.length > 0 ? (
+              places.map((place) => (
+                <PlaceCard
+                  key={place.id}
+                  place={place}
+                  onViewRentals={handleViewRentals}
+                />
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-4">
+                <p>No hay lugares registrados para esta ubicación.</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Modales */}
@@ -202,21 +237,28 @@ const RentalsComponentView = () => {
         />
       )}
 
-      {isEditLocationModalOpen && (
+      {isEditLocationModalOpen && selectedLocation && (
         <ModalEditLocation
           handleClose={() => setIsEditLocationModalOpen(false)}
-          onUpdated={(data) => {
-            setSelectedLocation((prev) => ({ ...prev, ...data }));
+          onUpdated={(updatedLocation: Location) => {
+            setSelectedLocation((prev) => ({
+              ...prev,
+              ...updatedLocation,
+            }));
             refetch();
           }}
           locationData={selectedLocation}
         />
       )}
 
-      {isCreatePlaceModalOpen && (
+      {isCreatePlaceModalOpen && selectedLocation && (
         <ModalCreatePlace
+          locationId={selectedLocation.id}
           onClose={() => setIsCreatePlaceModalOpen(false)}
-          onSubmit={handleCreatePlace}
+          onCreated={() => {
+            // Invalidate the places query to refresh the list
+            queryClient.invalidateQueries({ queryKey: ['places', selectedLocation.id] });
+          }}
         />
       )}
     </div>

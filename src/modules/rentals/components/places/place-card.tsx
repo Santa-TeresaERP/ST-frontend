@@ -6,8 +6,8 @@ import { Place } from '../../types/places';
 
 interface PlaceCardProps {
   place: Place;
-  onEdit: (placeId: string, updatedPlace: Partial<Place>) => void;
-  onDelete: (placeId: string) => void;
+  onEdit?: (placeId: string, updatedPlace: Partial<Place>) => void;
+  onDelete?: (placeId: string) => void;
   onViewRentals: (place: Place) => void;
 }
 
@@ -43,7 +43,6 @@ const PlaceCard: React.FC<PlaceCardProps> = ({ place, onEdit, onViewRentals }) =
   }) => {
     console.log('Nuevo alquiler para lugar:', place.name, 'Datos:', rentalData);
     setIsNewRentalModalOpen(false);
-    // Aquí puedes agregar lógica para guardar el alquiler
   };
 
   return (

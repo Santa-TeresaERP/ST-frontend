@@ -6,6 +6,7 @@ import { Location } from '../../types/location'; // asegúrate que esta ruta sea
 
 interface ModalEditLocationProps {
   handleClose: () => void;
+  onUpdated?: (updatedData: Location) => void;
   locationData: Location;
 }
 
