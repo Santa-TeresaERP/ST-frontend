@@ -1,79 +1,78 @@
 import React, { useState, useMemo } from 'react';
-// Verified Icons import path
 import { Edit2, Trash2, FileText, Search, Plus, AlertCircle, Filter, X, Calendar } from 'lucide-react';
-// Corrected Hooks import path (from ../../hooks/ to ../../hook/)
 import { useFetchResourcesWithBuys, useCreateBuysResource, useUpdateBuysResource, useDeleteBuysResource } from '../../hook/usebuysResource';
-// Verified Types/Actions import paths (assuming they are correct relative to this file)
 import { BuysResourceWithResource, CreateBuysResourcePayload, UpdateBuysResourcePayload } from '../../types/buysResource';
-// Verified Modal import paths (assuming they are correct relative to this file)
 import ModalNuevoRecurso from './resource/modal-create-resource-resourcehouse';
 import ModalEditResource from './resource/modal-edit-resource-resourcehouse';
 import ModalDeleteResource from './resource/modal-delete-resource-resourcehouse';
-
 import { Input } from '@/app/components/ui/input';
-// Verified Button component import path
 import { Button } from '@/app/components/ui/button';
 
+// Función para obtener las fechas de los últimos 3 días
+const getInitialDateFilters = () => {
+  const today = new Date();
+  const threeDaysAgo = new Date(today);
+  threeDaysAgo.setDate(today.getDate() - 2);
+
+  return {
+    startDate: threeDaysAgo.toISOString().split('T')[0],
+    endDate: today.toISOString().split('T')[0],
+  };
+};
+
 const ResourcesView: React.FC = () => {
+  const initialDates = getInitialDateFilters();
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [resourceToDelete, setResourceToDelete] = useState<BuysResourceWithResource | null>(null);
   const [resourceToEdit, setResourceToEdit] = useState<BuysResourceWithResource | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Filter states - only date filters
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
-  const [supplierFilter, setSupplierFilter] = useState(''); //filtro de proveedor
-  
+  const [startDate, setStartDate] = useState<string>(initialDates.startDate);
+  const [endDate, setEndDate] = useState<string>(initialDates.endDate);
+  const [supplierFilter, setSupplierFilter] = useState('');
 
-  // Fetch resources using the hook
   const { data: resources = [], isLoading, error } = useFetchResourcesWithBuys();
 
-  // Mutation hooks
   const createResourceMutation = useCreateBuysResource();
   const updateResourceMutation = useUpdateBuysResource();
   const deleteResourceMutation = useDeleteBuysResource();
 
-  //lista de proveedores
   const suppliersList = useMemo(() => {
-  const uniqueSuppliers = new Set(
-        resources.map(r => r.supplier?.suplier_name).filter(Boolean)
-      );
-      return Array.from(uniqueSuppliers);
-    }, [resources]);
+    const uniqueSuppliers = new Set(
+      resources.map(r => r.supplier?.suplier_name).filter(Boolean)
+    );
+    return Array.from(uniqueSuppliers);
+  }, [resources]);
 
+  const filteredResources = useMemo(() => {
+    if (!resources) return [];
+    return resources.filter((resource: BuysResourceWithResource) => {
+      const matchesSearch =
+        resource.resource?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (resource.warehouse?.name && resource.warehouse.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (resource.supplier?.suplier_name && resource.supplier.suplier_name.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  // Filter resources based on search term and date filters only
-    const filteredResources = useMemo(() => {
-      if (!resources) return [];
-
-      return resources.filter((resource: BuysResourceWithResource) => {
-        const matchesSearch = 
-          resource.resource?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (resource.warehouse?.name && resource.warehouse.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (resource.supplier?.suplier_name && resource.supplier.suplier_name.toLowerCase().includes(searchTerm.toLowerCase()));
-
-        let matchesDate = true;
-        if (startDate || endDate) {
-          const entryDate = resource.entry_date ? new Date(resource.entry_date) : null;
-          if (entryDate) {
-            if (startDate && new Date(startDate) > entryDate) matchesDate = false;
-            if (endDate && new Date(endDate) < entryDate) matchesDate = false;
-          } else if (startDate || endDate) {
-            matchesDate = false;
-          }
+      let matchesDate = true;
+      if (startDate || endDate) {
+        const entryDate = resource.entry_date ? new Date(resource.entry_date) : null;
+        if (entryDate) {
+          const start = new Date(startDate);
+          const end = new Date(endDate);
+          const entryDateNoTime = new Date(entryDate.getFullYear(), entryDate.getMonth(), entryDate.getDate());
+          if (startDate && start.getTime() > entryDateNoTime.getTime()) matchesDate = false;
+          if (endDate && end.getTime() < entryDateNoTime.getTime()) matchesDate = false;
+        } else if (startDate || endDate) {
+          matchesDate = false;
         }
+      }
 
-        const matchesSupplier = supplierFilter
-          ? resource.supplier?.suplier_name === supplierFilter
-          : true;
+      const matchesSupplier = supplierFilter
+        ? resource.supplier?.suplier_name === supplierFilter
+        : true;
 
-        return matchesSearch && matchesDate && matchesSupplier;
-      });
-    }, [resources, searchTerm, startDate, endDate, supplierFilter]);
-
-
-  
+      return matchesSearch && matchesDate && matchesSupplier;
+    });
+  }, [resources, searchTerm, startDate, endDate, supplierFilter]);
 
   const handleEdit = (resource: BuysResourceWithResource) => {
     setResourceToEdit(resource);
@@ -90,7 +89,6 @@ const ResourcesView: React.FC = () => {
         setResourceToDelete(null);
       } catch (err) {
         console.error('Error deleting resource:', err);
-        // TODO: Implement proper user feedback for errors
       }
     }
   };
@@ -107,7 +105,6 @@ const ResourcesView: React.FC = () => {
       setIsCreateModalOpen(false);
     } catch (err) {
       console.error('Error creating resource:', err);
-       // TODO: Implement proper user feedback for errors
     }
   };
 
@@ -117,14 +114,14 @@ const ResourcesView: React.FC = () => {
       setResourceToEdit(null);
     } catch (err) {
       console.error('Error updating resource:', err);
-       // TODO: Implement proper user feedback for errors
     }
   };
 
   const clearAllFilters = () => {
     setSearchTerm('');
-    setStartDate('');
-    setEndDate('');
+    const newInitialDates = getInitialDateFilters();
+    setStartDate(newInitialDates.startDate);
+    setEndDate(newInitialDates.endDate);
     setSupplierFilter('');
   };
 
@@ -160,114 +157,103 @@ const ResourcesView: React.FC = () => {
         />
       </div>
 
-      {/* Filters Section */}
-       <div className="bg-white rounded-xl shadow p-4 border border-gray-200">
-          <div className="flex flex-row md:flex-row md:items-center md:justify-between gap-4 mb-4">
-            <div className="flex items-center gap-2">
-              <Filter className="text-gray-600" size={20} />
-              <h3 className="text-lg font-medium text-gray-800">Filtros</h3>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearAllFilters}
-              className="text-gray-600 hover:text-gray-800 self-start md:self-auto"
-            >
-              <X className="mr-1 h-4 w-4 justify-end" />
-            </Button>
+      <div className="bg-white rounded-xl shadow p-4 border border-gray-200">
+        <div className="flex flex-row md:flex-row md:items-center md:justify-between gap-4 mb-4">
+          <div className="flex items-center gap-2">
+            <Filter className="text-gray-600" size={20} />
+            <h3 className="text-lg font-medium text-gray-800">Filtros</h3>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Fecha desde */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
-                <Calendar className="inline mr-1 h-4 w-4" />
-                Fecha desde
-              </label>
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="h-10 bg-white text-gray-900 border-gray-300 w-full"
-              />
-            </div>
-
-            {/* Fecha hasta */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
-                <Calendar className="inline mr-1 h-4 w-4" />
-                Fecha hasta
-              </label>
-              <Input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="h-10 bg-white text-gray-900 border-gray-300 w-full item-end"
-              />
-            </div>
-
-            {/* Proveedor Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
-                <FileText className="inline mr-1 h-4 w-4 text-gray-500" />
-                Proveedor
-              </label>
-              <select
-                value={supplierFilter}
-                onChange={(e) => setSupplierFilter(e.target.value)}
-                className="h-10 bg-white text-gray-900 border border-gray-300 rounded-md w-full px-3"
-              >
-                <option value="">Todos los proveedores</option>
-                {suppliersList.map((supplierName, index) => (
-                  <option key={index} value={supplierName}>
-                    {supplierName}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Filtros activos */}
-          {(startDate || endDate || supplierFilter) && (
-            <div className="mt-4 pt-3 border-t border-gray-200">
-              <div className="flex flex-wrap gap-2">
-                <span className="text-sm text-gray-600">Filtros activos:</span>
-                {startDate && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                    Desde: {new Date(startDate).toLocaleDateString()}
-                  </span>
-                )}
-                {endDate && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                    Hasta: {new Date(endDate).toLocaleDateString()}
-                  </span>
-                )}
-                {supplierFilter && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    Proveedor: {supplierFilter}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearAllFilters}
+            className="text-gray-600 hover:text-gray-800 self-start md:self-auto"
+          >
+            <X className="mr-1 h-4 w-4 justify-end" />
+          </Button>
         </div>
 
-      {/* Loading and Error States */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+              <Calendar className="inline mr-1 h-4 w-4" />
+              Fecha desde
+            </label>
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="h-10 bg-white text-gray-900 border-gray-300 w-full"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+              <Calendar className="inline mr-1 h-4 w-4" />
+              Fecha hasta
+            </label>
+            <Input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="h-10 bg-white text-gray-900 border-gray-300 w-full item-end"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1 text-left">
+              <FileText className="inline mr-1 h-4 w-4 text-gray-500" />
+              Proveedor
+            </label>
+            <select
+              value={supplierFilter}
+              onChange={(e) => setSupplierFilter(e.target.value)}
+              className="h-10 bg-white text-gray-900 border border-gray-300 rounded-md w-full px-3"
+            >
+              <option value="">Todos los proveedores</option>
+              {suppliersList.map((supplierName, index) => (
+                <option key={index} value={supplierName}>
+                  {supplierName}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {(searchTerm || (startDate !== initialDates.startDate) || (endDate !== initialDates.endDate) || supplierFilter) && (
+          <div className="mt-4 pt-3 border-t border-gray-200">
+            <div className="flex flex-wrap gap-2">
+              <span className="text-sm text-gray-600">Filtros activos:</span>
+              {startDate && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                  Desde: {new Date(startDate).toLocaleDateString()}
+                </span>
+              )}
+              {endDate && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                  Hasta: {new Date(endDate).toLocaleDateString()}
+                </span>
+              )}
+              {supplierFilter && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  Proveedor: {supplierFilter}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
       {isLoading && (
         <div className="flex justify-center items-center p-4 text-gray-500">
-          {/* Simple text loading indicator */}
           Cargando recursos...
         </div>
       )}
       {error && (
-         /* Simple div for error message */
         <div className="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50" role="alert">
-          <AlertCircle className="inline w-4 h-4 mr-2"/>
+          <AlertCircle className="inline w-4 h-4 mr-2" />
           <span className="font-medium">Error:</span> No se pudieron cargar los recursos: {error.message}
         </div>
       )}
 
-      {/* Table */} 
       {!isLoading && !error && (
         <div className="bg-white rounded-xl shadow p-4 overflow-x-auto border border-gray-200">
           <table className="min-w-full text-sm text-gray-700">
@@ -289,7 +275,9 @@ const ResourcesView: React.FC = () => {
               {filteredResources.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="text-center py-4 text-gray-500">
-                    {searchTerm ? 'No se encontraron recursos que coincidan con la búsqueda' : 'No hay recursos para mostrar.'}
+                    {searchTerm || (startDate !== initialDates.startDate) || (endDate !== initialDates.endDate) || supplierFilter
+                      ? "No se encontraron recursos que coincidan con los filtros"
+                      : "No hay recursos para mostrar."}
                   </td>
                 </tr>
               ) : (
@@ -329,7 +317,7 @@ const ResourcesView: React.FC = () => {
                         className="text-blue-600 hover:text-blue-800"
                         title="Editar"
                       >
-                        <Edit2 className="h-4 w-4"/>
+                        <Edit2 className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
@@ -338,7 +326,7 @@ const ResourcesView: React.FC = () => {
                         className="text-red-600 hover:text-red-800"
                         title="Eliminar"
                       >
-                        <Trash2 className="h-4 w-4"/>
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </td>
                   </tr>
@@ -349,7 +337,6 @@ const ResourcesView: React.FC = () => {
         </div>
       )}
 
-      {/* Modals - Now using corrected components */}
       {isCreateModalOpen && (
         <ModalNuevoRecurso
           isOpen={isCreateModalOpen}
@@ -383,4 +370,3 @@ const ResourcesView: React.FC = () => {
 };
 
 export default ResourcesView;
-

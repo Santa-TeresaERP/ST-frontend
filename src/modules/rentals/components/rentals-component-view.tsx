@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FiMapPin, FiHome, FiBarChart2, FiCheckCircle } from 'react-icons/fi';
+import React, { useState, useMemo } from 'react';
+import { FiMapPin, FiHome, FiBarChart2, FiCheckCircle, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { MdLocationOn } from 'react-icons/md';
 import ModalCreateLocation from './information location/modal-create-location';
 import ModalEditLocation from './information location/modal-edit-location';
@@ -41,9 +41,48 @@ const RentalsComponentView = () => {
     }
   ]);
 
+  // --- Estado para la paginación ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const placesPerPage = 20;
+
+  // --- Lógica de paginación ---
+  const totalPages = Math.ceil(places.length / placesPerPage);
+  const indexOfLastPlace = currentPage * placesPerPage;
+  const indexOfFirstPlace = indexOfLastPlace - placesPerPage;
+  const currentPlaces = useMemo(() => places.slice(indexOfFirstPlace, indexOfLastPlace), [places, currentPage, placesPerPage]);
+
+  const handlePageChange = (page: number) => {
+    if (page > 0 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+  
+  const renderPageNumbers = () => {
+    const pageNumbers = [];
+    const maxPagesToShow = 5;
+    const startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+    if (startPage > 1) {
+      pageNumbers.push(1, '...');
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+
+    if (endPage < totalPages) {
+      pageNumbers.push('...', totalPages);
+    }
+    
+    return pageNumbers;
+  };
+  // ---
+
   const handleCreatePlace = (newPlace: Omit<Place, 'id'>) => {
     setPlaces([...places, { ...newPlace, id: Date.now() }]);
     setIsCreatePlaceModalOpen(false);
+    setCurrentPage(1); 
   };
 
   const handleEditPlace = (placeId: number, updatedPlace: Partial<Place>) => {
@@ -54,6 +93,7 @@ const RentalsComponentView = () => {
 
   const handleDeletePlace = (placeId: number) => {
     setPlaces(places.filter(place => place.id !== placeId));
+    setCurrentPage(1);
   };
 
   const handleViewRentals = (place: Place) => {
@@ -172,7 +212,7 @@ const RentalsComponentView = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {places.map((place) => (
+          {currentPlaces.map((place) => (
             <PlaceCard
               key={place.id}
               place={place}
@@ -183,6 +223,45 @@ const RentalsComponentView = () => {
           ))}
         </div>
       </div>
+
+      {/* --- Componente de Paginación --- */}
+      {places.length > placesPerPage && (
+        <div className="flex justify-center items-center space-x-2 mt-8">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="p-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <FiChevronLeft size={20} />
+          </button>
+
+          {renderPageNumbers().map((number, index) => (
+            <button
+              key={index}
+              onClick={() => typeof number === 'number' && handlePageChange(number)}
+              className={`w-10 h-10 rounded-full text-sm font-semibold transition-colors duration-200
+                ${
+                  number === currentPage
+                    ? 'bg-red-600 text-white shadow-md'
+                    : typeof number === 'number'
+                    ? 'text-gray-700 bg-gray-200 hover:bg-gray-300'
+                    : 'text-gray-500 cursor-default'
+                }`}
+              disabled={typeof number !== 'number'}
+            >
+              {number}
+            </button>
+          ))}
+
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="p-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <FiChevronRight size={20} />
+          </button>
+        </div>
+      )}
 
       {/* Modales */}
       {isCreateLocationModalOpen && (

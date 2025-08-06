@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useMemo } from "react"; // Importar useMemo
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Filter,
   Home,
@@ -20,8 +20,23 @@ import ModalWarehouses from './warehouses/modal-warehouses';
 import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button';
 
+// Función para obtener las fechas de los últimos 3 días
+const getInitialDateFilters = () => {
+  const today = new Date();
+  const threeDaysAgo = new Date(today);
+  threeDaysAgo.setDate(today.getDate() - 2);
+
+  return {
+    startDate: threeDaysAgo.toISOString().split('T')[0],
+    endDate: today.toISOString().split('T')[0],
+  };
+};
+
 const WarehouseView: React.FC = () => {
-  const { data: warehouseProducts, isLoading, error } = useFetchWarehouseProducts();
+  // Obtener las fechas iniciales
+  const initialDates = getInitialDateFilters();
+
+  const { data: warehouseProducts, isLoading, error, refetch } = useFetchWarehouseProducts();
   const { data: warehouses } = useFetchWarehouses();
   const { data: products } = useFetchProducts();
 
@@ -31,10 +46,10 @@ const WarehouseView: React.FC = () => {
   const [deletingProduct, setDeletingProduct] = useState<React.Key | null>(null);
   const [showWarehouses, setShowWarehouses] = useState(false);
 
-  // **NUEVOS ESTADOS PARA LOS FILTROS**
-  const [productFilter, setProductFilter] = useState(""); // Filtro por nombre de producto
-  const [startDate, setStartDate] = useState<string>(""); // Filtro "Fecha desde"
-  const [endDate, setEndDate] = useState<string>("");     // Filtro "Fecha hasta"
+  // Estados para los filtros, inicializados con las fechas
+  const [productFilter, setProductFilter] = useState("");
+  const [startDate, setStartDate] = useState<string>(initialDates.startDate);
+  const [endDate, setEndDate] = useState<string>(initialDates.endDate);
 
   const selectedWarehouseProduct = editingProduct
     ? warehouseProducts?.find((p: any) => p.id === editingProduct)
@@ -44,7 +59,7 @@ const WarehouseView: React.FC = () => {
     ? warehouseProducts?.find((p: any) => p.id === deletingProduct)
     : null;
 
-  // **LISTA DE PRODUCTOS ÚNICOS PARA EL FILTRO**
+  // Lista de productos únicos para el filtro
   const productsList = useMemo(() => {
     if (!products) return [];
     const uniqueProductNames = new Set(products.map(p => p.name).filter(Boolean));
@@ -52,7 +67,7 @@ const WarehouseView: React.FC = () => {
   }, [products]);
 
 
-  // **LÓGICA DE FILTRADO MEJORADA CON useMemo**
+  // Lógica de filtrado mejorada con useMemo
   const filteredProducts = useMemo(() => {
     if (!warehouseProducts) return [];
 
@@ -70,7 +85,7 @@ const WarehouseView: React.FC = () => {
 
       // Filtro por producto (dropdown)
       const matchesProduct = productFilter
-        ? productName === productFilter.toLowerCase() // Asegúrate de comparar en minúsculas si productFilter viene de lowercase
+        ? productName === productFilter.toLowerCase()
         : true;
 
       // Filtro por rango de fechas
@@ -78,24 +93,27 @@ const WarehouseView: React.FC = () => {
       if (startDate || endDate) {
         const entryDate = product.entry_date ? new Date(product.entry_date) : null;
         if (entryDate) {
-          if (startDate && new Date(startDate) > entryDate) matchesDate = false;
-          if (endDate && new Date(endDate) < entryDate) matchesDate = false;
+          const start = new Date(startDate);
+          const end = new Date(endDate);
+          const entryDateNoTime = new Date(entryDate.getFullYear(), entryDate.getMonth(), entryDate.getDate());
+
+          if (startDate && start.getTime() > entryDateNoTime.getTime()) matchesDate = false;
+          if (endDate && end.getTime() < entryDateNoTime.getTime()) matchesDate = false;
         } else if (startDate || endDate) {
-          matchesDate = false; // Si no hay fecha de entrada pero hay filtro de fecha, no coincide
+          matchesDate = false;
         }
       }
 
       return matchesSearchTerm && matchesProduct && matchesDate;
     });
-  }, [warehouseProducts, searchTerm, productFilter, startDate, endDate, warehouses, products]); // Dependencias de useMemo
+  }, [warehouseProducts, searchTerm, productFilter, startDate, endDate, warehouses, products]);
 
-
-  // **FUNCIÓN PARA LIMPIAR TODOS LOS FILTROS**
+  // Función para limpiar todos los filtros
   const clearAllFilters = () => {
     setSearchTerm("");
     setProductFilter("");
-    setStartDate("");
-    setEndDate("");
+    setStartDate(initialDates.startDate);
+    setEndDate(initialDates.endDate);
   };
 
   if (isLoading) {
@@ -141,7 +159,7 @@ const WarehouseView: React.FC = () => {
         </div>
       </div>
 
-      {/* **SECCIÓN DE FILTROS** */}
+      {/* Sección de Filtros */}
       <div className="bg-white rounded-xl shadow p-4 border border-gray-200">
         <div className="flex flex-row md:flex-row md:items-center md:justify-between gap-4 mb-4">
           <div className="flex items-center gap-2">
@@ -184,7 +202,7 @@ const WarehouseView: React.FC = () => {
               <Calendar className="inline mr-1 h-4 w-4" />
               Fecha desde
             </label>
-            <input // Usamos input HTML si no tienes un componente Input específico
+            <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
@@ -198,7 +216,7 @@ const WarehouseView: React.FC = () => {
               <Calendar className="inline mr-1 h-4 w-4" />
               Fecha hasta
             </label>
-            <input // Usamos input HTML si no tienes un componente Input específico
+            <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
@@ -208,7 +226,7 @@ const WarehouseView: React.FC = () => {
         </div>
 
         {/* Filtros activos */}
-        {(productFilter || startDate || endDate) && (
+        {(productFilter || (startDate !== initialDates.startDate) || (endDate !== initialDates.endDate)) && (
           <div className="mt-4 pt-3 border-t border-gray-200">
             <div className="flex flex-wrap gap-2">
               <span className="text-sm text-gray-600">Filtros activos:</span>
@@ -269,7 +287,7 @@ const WarehouseView: React.FC = () => {
             ) : (
               <tr>
                 <td colSpan={5} className="text-center py-4 text-gray-500">
-                  {searchTerm || productFilter || startDate || endDate ? "No se encontraron productos que coincidan con los filtros" : "No hay productos registrados"}
+                  {searchTerm || (startDate !== initialDates.startDate) || (endDate !== initialDates.endDate) || productFilter ? "No se encontraron productos que coincidan con los filtros" : "No hay productos registrados"}
                 </td>
               </tr>
             )}

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from 'react';
-import { PlusCircle, Package, Users, Edit} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { PlusCircle, Package, Users, Edit } from 'lucide-react';
 import { useFetchMovements } from '@/modules/inventory/hook/useMovementProduct';
 import CreateMovementProduct from './movement/product/create-movement-product';
 import EditMovementProduct from './movement/product/edit-movement-product';
@@ -22,7 +22,20 @@ import { useFetchStores } from '@/modules/sales/hooks/useStore';
 import FilterMovement from './movement/filter-movement';
 
 const MovementComponentView: React.FC = () => {
-  const [filters, setFilters] = useState<any>({});
+  // Se inicializa el estado de los filtros con las fechas de los últimos 3 días
+  const getInitialFilters = () => {
+    const today = new Date();
+    const threeDaysAgo = new Date(today);
+    threeDaysAgo.setDate(today.getDate() - 2);
+
+    return {
+      start_date: threeDaysAgo.toISOString().split('T')[0],
+      end_date: today.toISOString().split('T')[0],
+    };
+  };
+
+  const [filters, setFilters] = useState<any>(getInitialFilters);
+
   // Productos
   const { data: movements = [], isLoading: loading, error, refetch: fetchMovements } = useFetchMovements(filters);
   const [editing, setEditing] = useState<WarehouseMovementProductAttributes | null>(null);
@@ -43,6 +56,12 @@ const MovementComponentView: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [selectedType, setSelectedType] = useState<'producto' | 'recurso'>('producto');
 
+  // Asegura que los datos se carguen con los filtros iniciales
+  useEffect(() => {
+    fetchMovements();
+    fetchResourceMovements();
+  }, []);
+
   const handleFilter = (newFilters: any) => {
     setFilters(newFilters);
   };
@@ -50,10 +69,10 @@ const MovementComponentView: React.FC = () => {
   const getResourceName = (id: string) => resources.find((r: any) => r.id === id)?.name || id;
   const getProductName = (id: string) => products.find((p: any) => p.id === id)?.name || id;
   const getStoreName = (id: string | null | undefined) => {
-  if (!id) return '';
-  const store = stores.find((s: any) => String(s.id) === String(id));
-  return store ? (store.store_name || store.store_name || store.id) : id;
-};
+    if (!id) return '';
+    const store = stores.find((s: any) => String(s.id) === String(id));
+    return store ? (store.store_name || store.id) : id;
+  };
 
   // Filtrar movimientos por producto, almacén o tienda
   const filteredMovements = movements.filter(
@@ -63,11 +82,11 @@ const MovementComponentView: React.FC = () => {
       (filters.movement_type ? mov.movement_type === filters.movement_type : true) &&
       (filters.start_date ? new Date(mov.movement_date) >= new Date(filters.start_date) : true) &&
       (filters.end_date ? new Date(mov.movement_date) <= new Date(filters.end_date) : true) &&
-      (searchTerm ? (
-        getProductName(mov.product_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
-        getWarehouseName(mov.warehouse_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
-        getStoreName(mov.store_id).toLowerCase().includes(searchTerm.toLowerCase())
-      ) : true)
+      (searchTerm
+        ? getProductName(mov.product_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
+          getWarehouseName(mov.warehouse_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
+          getStoreName(mov.store_id).toLowerCase().includes(searchTerm.toLowerCase())
+        : true)
   );
 
   // Filtrar movimientos de recursos
@@ -77,10 +96,10 @@ const MovementComponentView: React.FC = () => {
       (filters.movement_type ? mov.movement_type === filters.movement_type : true) &&
       (filters.start_date ? new Date(mov.movement_date) >= new Date(filters.start_date) : true) &&
       (filters.end_date ? new Date(mov.movement_date) <= new Date(filters.end_date) : true) &&
-      (searchTerm ? (
-        getResourceName(mov.resource_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
-        getWarehouseName(mov.warehouse_id).toLowerCase().includes(searchTerm.toLowerCase())
-      ) : true)
+      (searchTerm
+        ? getResourceName(mov.resource_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
+          getWarehouseName(mov.warehouse_id).toLowerCase().includes(searchTerm.toLowerCase())
+        : true)
   );
 
   return (
@@ -107,9 +126,7 @@ const MovementComponentView: React.FC = () => {
         <button
           onClick={() => setSelectedType('producto')}
           className={`w-1/2 sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
-            selectedType === 'producto'
-              ? 'bg-red-700 text-white'
-              : 'bg-white text-red-700 border border-red-700'
+            selectedType === 'producto' ? 'bg-red-700 text-white' : 'bg-white text-red-700 border border-red-700'
           }`}
         >
           <Package size={18} /> Producto
@@ -117,9 +134,7 @@ const MovementComponentView: React.FC = () => {
         <button
           onClick={() => setSelectedType('recurso')}
           className={`w-1/2 sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
-            selectedType === 'recurso'
-              ? 'bg-orange-500 text-white'
-              : 'bg-white text-orange-500 border border-orange-500'
+            selectedType === 'recurso' ? 'bg-orange-500 text-white' : 'bg-white text-orange-500 border border-orange-500'
           }`}
         >
           <Users size={18} /> Recurso
@@ -290,7 +305,7 @@ const MovementComponentView: React.FC = () => {
           </>
         )}
       </div>
-      </div>
+    </div>
   );
 };
 
