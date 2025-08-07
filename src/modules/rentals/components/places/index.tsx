@@ -1,41 +1,35 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Place } from '../../types/places';
-import { usePlaces } from '../../hook/usePlaces';
+import { useFetchPlaces, useCreatePlace, useUpdatePlace, useDeletePlace } from '../../hook/usePlaces';
 import ModalCreatePlace from './modal-create-place';
 import PlaceCard from './place-card';
 
 const Places: React.FC = () => {
-  const { fetchPlaces, createPlace, updatePlace, deletePlace } = usePlaces();
-  const [places, setPlaces] = useState<Place[]>([]);
+  const { data: places, isLoading, isError } = useFetchPlaces();
+  const createPlace = useCreatePlace();
+  const updatePlace = useUpdatePlace();
+  const deletePlace = useDeletePlace();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
-  // Fetch all places on mount
-  useEffect(() => {
-    fetchPlaces().then(setPlaces);
-  }, [fetchPlaces]);
 
   // Handle create
   const handleCreate = async (placeData: Omit<Place, '_id'>) => {
-    const newPlace = await createPlace(placeData);
-    setPlaces((prev) => [...prev, newPlace]);
-    setIsCreateModalOpen(false);
+    createPlace.mutate(placeData, {
+      onSuccess: () => setIsCreateModalOpen(false)
+    });
   };
 
   // Handle edit
   const handleEdit = async (placeId: string, updated: Partial<Place>) => {
-    const updatedPlace = await updatePlace(placeId, updated);
-    setPlaces((prev) => prev.map((p) => (p._id === placeId ? updatedPlace : p)));
+    updatePlace.mutate({ id: placeId, payload: updated });
   };
 
   // Handle delete
   const handleDelete = async (placeId: string) => {
-    await deletePlace(placeId);
-    setPlaces((prev) => prev.filter((p) => p._id !== placeId));
+    deletePlace.mutate(placeId);
   };
 
   // Handle view rentals (dummy)
   const handleViewRentals = (place: Place) => {
-    // Implementar lógica para ver alquileres de un lugar
     alert(`Ver alquileres de: ${place.name}`);
   };
 
@@ -50,8 +44,10 @@ const Places: React.FC = () => {
           Crear Lugar
         </button>
       </div>
+      {isLoading && <p>Cargando lugares...</p>}
+      {isError && <p>Error al cargar lugares.</p>}
       <div className="flex flex-wrap gap-4">
-        {places.map((place) => (
+        {places && places.map((place) => (
           <PlaceCard
             key={place._id}
             place={place}
@@ -70,5 +66,6 @@ const Places: React.FC = () => {
     </div>
   );
 };
+
 
 export default Places;

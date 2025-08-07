@@ -14,7 +14,7 @@ import { useFetchSales } from '@/modules/sales/hooks/useSales';
 import { useFetchReturns } from '@/modules/sales/hooks/useReturns';
 import { CreateCashSessionPayload, CloseCashSessionPayload } from '@/modules/sales/types/cash-session';
 import { invalidateStoreQueries } from '@/modules/sales/utils/cache-helpers';
-
+import ModalEditStore from '../store/modal-edit-store';
 
 interface InformationComponentViewProps {
   selectedStore?: StoreAttributes | null;
@@ -26,7 +26,7 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInitialSetup, setIsInitialSetup] = useState(true);
-  const [, setIsEditStoreModalOpen] = useState(false);
+  const [isEditStoreModalOpen, setIsEditStoreModalOpen] = useState(false);
   const [previousStoreId, setPreviousStoreId] = useState<string | undefined>(selectedStore?.id);
   const queryClient = useQueryClient();
 
@@ -667,6 +667,15 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
           </tbody>
         </table>
       </div>
+      
+      {/* Modal de editar*/}
+      {selectedStore && (
+        <ModalEditStore
+          isOpen={isEditStoreModalOpen}
+          onClose={() => setIsEditStoreModalOpen(false)}
+          store={selectedStore}
+        />
+      )}
 
       {/* Modal de registro de cierre de caja */}
       <ModalCreateCashRegister
@@ -683,6 +692,7 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
       />
     </div>
   );
+  
 };
 
 export default InformationComponentView;

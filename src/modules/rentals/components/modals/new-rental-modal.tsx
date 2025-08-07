@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
+import { FiPlus, FiUser } from 'react-icons/fi';
+import { useFetchCustomers } from '../../hook/useCustomers';
+import { Customer } from '../../types/customer';
+import ModalCreateCustomer from './modal-create-customer';
 
 interface NewRentalModalProps {
   onClose: () => void;
   onSubmit: (rentalData: {
-    nombreComprador: string;
+    customerId: string; // Cambiado de nombreComprador a customerId
     nombreVendedor: string;
     fechaInicio: string;
     fechaFin: string;
@@ -13,30 +17,47 @@ interface NewRentalModalProps {
 
 const NewRentalModal: React.FC<NewRentalModalProps> = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
-    nombreComprador: '',
+    customerId: '',
     nombreVendedor: '',
     fechaInicio: '',
     fechaFin: '',
     monto: ''
   });
 
+  const [isCreateCustomerModalOpen, setIsCreateCustomerModalOpen] = useState(false);
+  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [newCustomerName, setNewCustomerName] = useState('');
+
+  // Hook para obtener customers
+  const { data: customers = [], isLoading: loadingCustomers } = useFetchCustomers();
+
+  // Filtrar customers basado en la búsqueda
+  const filteredCustomers = customers.filter((customer: Customer) =>
+    customer.full_name.toLowerCase().includes(customerSearchQuery.toLowerCase()) ||
+    customer.dni.toString().includes(customerSearchQuery)
+  );
+
+  const selectedCustomer = customers.find((c: Customer) => c.id === formData.customerId);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.nombreComprador && formData.nombreVendedor && formData.fechaInicio && formData.fechaFin && formData.monto) {
+    if (formData.customerId && formData.nombreVendedor && formData.fechaInicio && formData.fechaFin && formData.monto) {
       onSubmit({
-        nombreComprador: formData.nombreComprador,
+        customerId: formData.customerId,
         nombreVendedor: formData.nombreVendedor,
         fechaInicio: formData.fechaInicio,
         fechaFin: formData.fechaFin,
         monto: parseFloat(formData.monto)
       });
       setFormData({
-        nombreComprador: '',
+        customerId: '',
         nombreVendedor: '',
         fechaInicio: '',
         fechaFin: '',
         monto: ''
       });
+      setCustomerSearchQuery('');
     }
   };
 
@@ -45,6 +66,37 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({ onClose, onSubmit }) =>
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleCustomerSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setCustomerSearchQuery(value);
+    setShowCustomerDropdown(value.length > 0);
+    
+    // Si el usuario borra todo, limpiar la selección
+    if (value.length === 0) {
+      setFormData(prev => ({ ...prev, customerId: '' }));
+    }
+  };
+
+  const handleCustomerSelect = (customer: Customer) => {
+    setFormData(prev => ({ ...prev, customerId: customer.id }));
+    setCustomerSearchQuery(customer.full_name);
+    setShowCustomerDropdown(false);
+  };
+
+  const handleCreateNewCustomer = () => {
+    setIsCreateCustomerModalOpen(true);
+    setShowCustomerDropdown(false);
+    // Pre-llenar el nombre con lo que el usuario escribió
+    setNewCustomerName(customerSearchQuery);
+  };
+
+  const handleCustomerCreated = (newCustomer: Customer) => {
+    setFormData(prev => ({ ...prev, customerId: newCustomer.id }));
+    setCustomerSearchQuery(newCustomer.full_name);
+    setIsCreateCustomerModalOpen(false);
+    setNewCustomerName('');
   };
 
   return (
@@ -60,20 +112,72 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({ onClose, onSubmit }) =>
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="nombreComprador" className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre del comprador
+            <div className="relative">
+              <label htmlFor="customer-search" className="block text-sm font-medium text-gray-700 mb-1">
+                Cliente
               </label>
               <input
                 type="text"
-                id="nombreComprador"
-                name="nombreComprador"
-                value={formData.nombreComprador}
-                onChange={handleChange}
+                id="customer-search"
+                value={customerSearchQuery}
+                onChange={handleCustomerSearch}
+                onFocus={() => setShowCustomerDropdown(customerSearchQuery.length > 0)}
                 className="w-full p-2 border-2 border-orange-400 rounded text-gray-700 focus:outline-none focus:border-red-500"
-                placeholder="Ignacio"
+                placeholder="Buscar cliente..."
                 required
               />
+              
+              {/* Dropdown de customers */}
+              {showCustomerDropdown && filteredCustomers.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                  {filteredCustomers.map((customer: Customer) => (
+                    <button
+                      key={customer.id}
+                      type="button"
+                      onClick={() => handleCustomerSelect(customer)}
+                      className="w-full px-3 py-2 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b border-gray-100 last:border-b-0"
+                    >
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                          <FiUser className="text-blue-600" size={14} />
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900">{customer.full_name}</div>
+                          <div className="text-sm text-gray-500">DNI: {customer.dni}</div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Mensaje cuando no hay coincidencias - estilo de referencia */}
+              {showCustomerDropdown && customerSearchQuery && filteredCustomers.length === 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg">
+                  <button
+                    type="button"
+                    onClick={handleCreateNewCustomer}
+                    className="w-full px-3 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100"
+                  >
+                    <div className="flex items-center">
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                        <FiPlus className="text-green-600" size={14} />
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900">{customerSearchQuery}</div>
+                        <div className="text-sm text-green-600">Crear nuevo</div>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              )}
+
+              {/* Mostrar cliente seleccionado */}
+              {selectedCustomer && (
+                <div className="mt-1 text-xs text-gray-600">
+                  Cliente seleccionado: {selectedCustomer.full_name}
+                </div>
+              )}
             </div>
 
             <div>
@@ -159,6 +263,14 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({ onClose, onSubmit }) =>
           </div>
         </form>
       </div>
+
+      {/* Modal para crear nuevo customer */}
+      <ModalCreateCustomer
+        isOpen={isCreateCustomerModalOpen}
+        onClose={() => setIsCreateCustomerModalOpen(false)}
+        onCustomerCreated={handleCustomerCreated}
+        initialName={newCustomerName}
+      />
     </div>
   );
 };

@@ -3,7 +3,14 @@ import { FiMapPin } from 'react-icons/fi';
 import { Save, X } from 'lucide-react';
 import { useCreateLocation } from '../../hook/useLocations';
 
-const ModalCreateLocation = ({ handleClose }: { handleClose: () => void }) => {
+import { Location } from '../../types/location';
+
+interface ModalCreateLocationProps {
+  handleClose: () => void;
+  onCreated?: (data: Location) => void;
+}
+
+const ModalCreateLocation: React.FC<ModalCreateLocationProps> = ({ handleClose, onCreated }) => {
   const [nombre, setNombre] = useState('');
   const [direccion, setDireccion] = useState('');
   const [capacidad, setCapacidad] = useState('');
@@ -31,9 +38,17 @@ const ModalCreateLocation = ({ handleClose }: { handleClose: () => void }) => {
       status: estado,
     };
 
+    console.log('🚀 Creating location with payload:', payload);
+
     mutate(payload, {
-      onSuccess: () => handleClose(),
-      onError: () => setLocalError('Hubo un error al crear la locación.'),
+      onSuccess: (data) => {
+        console.log('✅ Location created successfully:', data);
+        handleClose();
+      },
+      onError: (error) => {
+        console.error('❌ Error creating location:', error);
+        setLocalError('Hubo un error al crear la locación.');
+      },
     });
   };
 

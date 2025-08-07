@@ -9,10 +9,17 @@ import {
 } from "../action/locationActions";
 
 export const useFetchLocations = () => {
-  return useQuery<Location[], Error>({
+  const result = useQuery<Location[], Error>({
     queryKey: ["locations"],
-    queryFn: fetchLocations,
+    queryFn: async () => {
+      const locations = await fetchLocations();
+      return locations;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000,   // 10 minutos
   });
+
+  return result;
 };
 
 export const useFetchLocation = (id: string) => {

@@ -2,33 +2,69 @@ import React, { useState } from 'react';
 import { Location } from '../../types/location';
 import { FiX } from 'react-icons/fi';
 import { Place } from '../../types/places';
+import { useUpdatePlace } from '../../hook/usePlaces';
+import { useFetchLocations } from '../../hook/useLocations';
 
 interface ModalEditPlaceProps {
   place: Place;
   onClose: () => void;
-  onSubmit: (updatedPlace: Partial<Place>) => void;
 }
 
-import { useFetchLocations } from '../../hook/useLocations';
-
-const ModalEditPlace: React.FC<ModalEditPlaceProps> = ({ place, onClose, onSubmit }) => {
+const ModalEditPlace: React.FC<ModalEditPlaceProps> = ({ place, onClose }) => {
   const [formData, setFormData] = useState({
     name: place.name,
     area: place.area,
     location_id: place.location_id
   });
+  const [formError, setFormError] = useState<string | null>(null);
 
+  const updatePlace = useUpdatePlace();
   const { data, isLoading, isError } = useFetchLocations();
-  let locations: Location[] = [];
-  if (Array.isArray(data)) {
-    locations = data;
-  } else if (data && typeof data === 'object' && Array.isArray((data as any).locations)) {
-    locations = (data as any).locations;
-  }
+  const locations = React.useMemo(() => {
+    if (Array.isArray(data)) {
+      return data;
+    }
+    if (data && typeof data === 'object' && Array.isArray((data as any)?.data)) {
+      return (data as any).data;
+    }
+    return [];
+  }, [data]);
+  React.useEffect(() => {
+    console.log('Datos de ubicaciones recibidos:', data);
+    console.log('Ubicaciones procesadas:', locations);
+  }, [data, locations]);
+
+  const currentLocationName = React.useMemo(() => {
+    if (!formData.location_id || !locations.length) return 'Cargando ubicaciones...';
+    const location = locations.find((loc: Location) => loc.id === formData.location_id);
+    return location ? location.name : 'Ubicación no disponible';
+  }, [formData.location_id, locations]);
+
+  React.useEffect(() => {
+    console.log('Current location_id:', formData.location_id);
+    console.log('All locations:', locations);
+    const foundLocation = locations.find((l: Location) => String(l.id).trim() === String(formData.location_id).trim());
+    console.log('Found location:', foundLocation);
+  }, [formData.location_id, locations]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    if (!formData.name || !formData.area || !formData.location_id) {
+      setFormError('Todos los campos son obligatorios.');
+      return;
+    }
+    setFormError(null);
+    updatePlace.mutate(
+      { id: place.id, payload: formData },
+      {
+        onSuccess: () => {
+          onClose();
+        },
+        onError: () => {
+          setFormError('Error al actualizar el lugar.');
+        }
+      }
+    );
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -50,7 +86,9 @@ const ModalEditPlace: React.FC<ModalEditPlaceProps> = ({ place, onClose, onSubmi
             <FiX size={24} />
           </button>
         </div>
-
+        {isLoading && <p className="text-sm text-gray-500 mb-2">Cargando ubicaciones...</p>}
+        {isError && <p className="text-sm text-red-500 mb-2">Error al cargar ubicaciones.</p>}
+        {formError && <p className="text-sm text-red-500 mb-2">{formError}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -67,7 +105,6 @@ const ModalEditPlace: React.FC<ModalEditPlaceProps> = ({ place, onClose, onSubmi
               required
             />
           </div>
-
           <div>
             <label htmlFor="area" className="block text-sm font-medium text-gray-700 mb-1">
               Área
@@ -84,40 +121,23 @@ const ModalEditPlace: React.FC<ModalEditPlaceProps> = ({ place, onClose, onSubmi
             />
           </div>
 
-          <div>
-            <label htmlFor="location_id" className="block text-sm font-medium text-gray-700 mb-1">
-              Localización
-            </label>
-            <select
-              id="location_id"
-              name="location_id"
-              value={formData.location_id}
-              onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-              required
-            >
-              <option value="">Seleccionar localización</option>
-              {isLoading && <option disabled>Cargando localizaciones...</option>}
-              {isError && <option disabled>Error cargando localizaciones</option>}
-              {!isLoading && !isError && locations.map((loc: Location) => (
-                <option key={loc.id} value={loc.id}>{loc.name}</option>
-              ))}
-            </select>
+          <div className="text-sm text-gray-500">
+            <p>Nota: Los lugares se identifican únicamente por nombre y área.</p>
           </div>
-
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex justify-end gap-2 mt-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              disabled={updatePlace.status === 'pending'}
             >
-              Guardar Cambios
+              {updatePlace.status === 'pending' ? 'Guardando...' : 'Guardar Cambios'}
             </button>
           </div>
         </form>
