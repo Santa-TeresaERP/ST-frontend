@@ -63,6 +63,11 @@ const AccessDeniedModal: React.FC<AccessDeniedModalProps> = ({
             <div className="text-xs text-gray-600">
               <p><span className="font-medium">Módulo:</span> {module}</p>
               <p><span className="font-medium">Acción:</span> {action}</p>
+              {action.includes('revocados') && (
+                <p className="text-orange-600 font-medium mt-1">
+                  💡 Sugerencia: Recarga la página para actualizar tus permisos
+                </p>
+              )}
             </div>
           </div>
 
