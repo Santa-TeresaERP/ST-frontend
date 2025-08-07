@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FiMapPin, FiHome, FiBarChart2, FiCheckCircle } from 'react-icons/fi';
+import React, { useState, useEffect, useMemo } from 'react';
+import { FiMapPin, FiHome, FiBarChart2, FiCheckCircle, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { MdLocationOn } from 'react-icons/md';
 import ModalCreateLocation from './information location/modal-create-location';
 import ModalEditLocation from './information location/modal-edit-location';
@@ -7,71 +7,64 @@ import ModalCreatePlace from './places/modal-create-place';
 import PlaceCard from './places/place-card';
 import RentalHistoryView from './rental-history/rental-history-view';
 import { Place } from '../types';
-import { Location } from '../types/location'; // ✅ Usar el tipo correcto
-import { useFetchLocations } from '../hook/useLocations'; // ✅ Usar hook real
-import { useFetchPlacesByLocation, useCreatePlace } from '../hook/usePlaces'; // ✅ Hooks para places
+import { Location } from '../types/location';
+import { useFetchLocations } from '../hook/useLocations';
+import { useFetchPlacesByLocation } from '../hook/usePlaces';
 import { useQueryClient } from '@tanstack/react-query';
 
 const RentalsComponentView = () => {
+  // Estados para modales
   const [isCreateLocationModalOpen, setIsCreateLocationModalOpen] = useState(false);
   const [isEditLocationModalOpen, setIsEditLocationModalOpen] = useState(false);
   const [isCreatePlaceModalOpen, setIsCreatePlaceModalOpen] = useState(false);
+  
+  // Estados para vistas
   const [currentView, setCurrentView] = useState<"main" | "rental-history">("main");
   const [selectedPlaceForRentals, setSelectedPlaceForRentals] = useState<Place | null>(null);
   
-  // ✅ Estado usando hooks reales - SIN mock data
+  // Estados para locaciones y lugares
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
-  const [forceRefetchKey, setForceRefetchKey] = useState<number>(0); // ✅ Key para forzar refetch
+  const [forceRefetchKey, setForceRefetchKey] = useState<number>(0);
+  
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const placesPerPage = 20;
+
+  // Hooks para cargar datos
   const { data: locations = [], isLoading: locationsLoading, error: locationsError } = useFetchLocations();
-  
-  // ✅ Hook para cargar places por locación seleccionada - con key de forzado
   const { data: places = [], isLoading: placesLoading, error: placesError } = useFetchPlacesByLocation(selectedLocation?.id || null, forceRefetchKey);
-  const createPlaceMutation = useCreatePlace();
-  
   const queryClient = useQueryClient();
 
-  // Efecto para manejar cambios en places
-  useEffect(() => {
-    // Places cambió para la ubicación seleccionada
-  }, [places, selectedLocation, placesLoading, placesError, forceRefetchKey]);
+  // Lógica de paginación
+  const totalPages = Math.ceil(places.length / placesPerPage);
+  const indexOfLastPlace = currentPage * placesPerPage;
+  const indexOfFirstPlace = indexOfLastPlace - placesPerPage;
+  const currentPlaces = useMemo(() => places.slice(indexOfFirstPlace, indexOfLastPlace), [places, indexOfFirstPlace, indexOfLastPlace]);
 
-  // Efecto cuando se selecciona una locación
+  // Efectos
   useEffect(() => {
     if (selectedLocation) {
-      // Location seleccionada - places deberían actualizarse
+      setCurrentPage(1); // Reset página al cambiar locación
     }
   }, [selectedLocation]);
 
   // Funciones para manejar locaciones
   const handleSelectLocation = async (location: Location) => {
-    // FORZAR LIMPIEZA COMPLETA antes del cambio
-    
-    // 1. Cancelar queries en progreso
+    // Limpiar cache antes del cambio
     await queryClient.cancelQueries({
       queryKey: ['places']
     });
     
-    // 2. Remover completamente del cache
     queryClient.removeQueries({
       queryKey: ['places'],
       exact: false
     });
     
-    // 3. Incrementar force key para forzar nueva query
     setForceRefetchKey(prev => prev + 1);
-    
-    // 4. Cambiar la locación seleccionada
     setSelectedLocation(location);
-  // --- Estado para la paginación ---
-  const [currentPage, setCurrentPage] = useState(1);
-  const placesPerPage = 20;
+  };
 
-  // --- Lógica de paginación ---
-  const totalPages = Math.ceil(places.length / placesPerPage);
-  const indexOfLastPlace = currentPage * placesPerPage;
-  const indexOfFirstPlace = indexOfLastPlace - placesPerPage;
-  const currentPlaces = useMemo(() => places.slice(indexOfFirstPlace, indexOfLastPlace), [places, currentPage, placesPerPage]);
-
+  // Funciones para paginación
   const handlePageChange = (page: number) => {
     if (page > 0 && page <= totalPages) {
       setCurrentPage(page);
@@ -98,46 +91,14 @@ const RentalsComponentView = () => {
     
     return pageNumbers;
   };
-  // ---
 
-  const handleCreatePlace = (newPlace: Omit<Place, 'id'>) => {
-    setPlaces([...places, { ...newPlace, id: Date.now() }]);
-    setIsCreatePlaceModalOpen(false);
-    setCurrentPage(1); 
-  };
-
-  // Funciones para manejar lugares usando hooks reales
-  const handleCreatePlace = async (newPlace: { nombre: string; area: string }) => {
-    try {
-      if (!selectedLocation?.id) {
-        alert('Selecciona una locación primero');
-        return;
-      }
-      // Crear place con datos reales en el backend
-      const payload = {
-        nombre: newPlace.nombre,
-        area: newPlace.area,
-        location_id: selectedLocation.id
-      };
-
-      await createPlaceMutation.mutateAsync(payload);
-
-      setIsCreatePlaceModalOpen(false);
-    } catch (error) {
-      alert('Error al crear el lugar');
-    }
-  };
-
+  // Funciones para manejar lugares
   const handleEditPlace = (placeId: string, updatedPlace: Partial<Place>) => {
-    // Implementación de edición pendiente
     console.log('Editar place:', placeId, updatedPlace);
   };
 
   const handleDeletePlace = (placeId: string) => {
-    // Implementación de eliminación pendiente
     console.log('Eliminar place:', placeId);
-  const handleDeletePlace = (placeId: number) => {
-    setPlaces(places.filter(place => place.id !== placeId));
     setCurrentPage(1);
   };
 
@@ -151,8 +112,7 @@ const RentalsComponentView = () => {
     setSelectedPlaceForRentals(null);
   };
 
-  const places = allPlaces.filter((p) => p.location_id === selectedLocation?.id);
-
+  // Renderizado condicional para vista de historial
   if (currentView === "rental-history" && selectedPlaceForRentals) {
     return (
       <RentalHistoryView
@@ -216,13 +176,11 @@ const RentalsComponentView = () => {
                   className="w-full p-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white text-gray-900"
                 >
                   <option value="">Seleccionar locación</option>
-                  {locations.map((location) => {
-                    return (
-                      <option key={location.id} value={location.id}>
-                        {location.name} - {location.address}
-                      </option>
-                    );
-                  })}
+                  {locations.map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name} - {location.address}
+                    </option>
+                  ))}
                 </select>
               );
             })()}
@@ -316,16 +274,75 @@ const RentalsComponentView = () => {
           </div>
 
           {places.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {places.map((place: Place) => (
-                <PlaceCard
-                  key={`${selectedLocation?.id}-${place.id}-${forceRefetchKey}`}
-                  place={place}
-                  onEdit={handleEditPlace}
-                  onDelete={handleDeletePlace}
-                  onViewRentals={handleViewRentals}
-                />
-              ))}
+            <>
+              {placesLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Cargando lugares...</p>
+                </div>
+              ) : placesError ? (
+                <div className="text-center py-8">
+                  <p className="text-red-500">Error al cargar lugares: {placesError.message}</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {currentPlaces.map((place: Place) => (
+                    <PlaceCard
+                      key={`${selectedLocation.id}-${place.id}-${forceRefetchKey}`}
+                      place={place}
+                      onEdit={handleEditPlace}
+                      onDelete={handleDeletePlace}
+                      onViewRentals={handleViewRentals}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Componente de Paginación */}
+              {places.length > placesPerPage && (
+                <div className="flex justify-center items-center space-x-2 mt-8">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="p-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <FiChevronLeft size={20} />
+                  </button>
+
+                  {renderPageNumbers().map((number, index) => (
+                    <button
+                      key={index}
+                      onClick={() => typeof number === 'number' && handlePageChange(number)}
+                      className={`w-10 h-10 rounded-full text-sm font-semibold transition-colors duration-200
+                        ${
+                          number === currentPage
+                            ? 'bg-red-600 text-white shadow-md'
+                            : typeof number === 'number'
+                            ? 'text-gray-700 bg-gray-200 hover:bg-gray-300'
+                            : 'text-gray-500 cursor-default'
+                        }`}
+                      disabled={typeof number !== 'number'}
+                    >
+                      {number}
+                    </button>
+                  ))}
+
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="p-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <FiChevronRight size={20} />
+                  </button>
+                </div>
+              )}
+            </>
+          ) : placesLoading ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">Cargando lugares...</p>
+            </div>
+          ) : placesError ? (
+            <div className="text-center py-8">
+              <p className="text-red-500">Error al cargar lugares: {placesError.message}</p>
             </div>
           ) : (
             <div className="text-center py-8">
@@ -342,58 +359,6 @@ const RentalsComponentView = () => {
           )}
         </div>
       ) : null}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {currentPlaces.map((place) => (
-            <PlaceCard
-              key={place.id}
-              place={place}
-              onEdit={handleEditPlace}
-              onDelete={handleDeletePlace}
-              onViewRentals={handleViewRentals}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* --- Componente de Paginación --- */}
-      {places.length > placesPerPage && (
-        <div className="flex justify-center items-center space-x-2 mt-8">
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="p-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <FiChevronLeft size={20} />
-          </button>
-
-          {renderPageNumbers().map((number, index) => (
-            <button
-              key={index}
-              onClick={() => typeof number === 'number' && handlePageChange(number)}
-              className={`w-10 h-10 rounded-full text-sm font-semibold transition-colors duration-200
-                ${
-                  number === currentPage
-                    ? 'bg-red-600 text-white shadow-md'
-                    : typeof number === 'number'
-                    ? 'text-gray-700 bg-gray-200 hover:bg-gray-300'
-                    : 'text-gray-500 cursor-default'
-                }`}
-              disabled={typeof number !== 'number'}
-            >
-              {number}
-            </button>
-          ))}
-
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="p-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <FiChevronRight size={20} />
-          </button>
-        </div>
-      )}
 
       {/* Modales */}
       {isCreateLocationModalOpen && (
