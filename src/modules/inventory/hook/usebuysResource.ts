@@ -112,11 +112,12 @@ export const useUpdateBuysResource = () => {
 // Hook for deleting a BuysResource
 export const useDeleteBuysResource = () => {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, string>({
-    mutationFn: DeleteBuysResource,
+  return useMutation<void, Error, { id: string; status: boolean }>({
+    mutationFn: ({ id, status }) => DeleteBuysResource(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['buysResourcesWithResource'] });
     },
   });
 };
+
 

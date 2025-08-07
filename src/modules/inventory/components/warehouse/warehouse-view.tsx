@@ -14,7 +14,7 @@ import { useFetchWarehouses } from "@/modules/inventory/hook/useWarehouses";
 import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
 import ModalCreateProductWarehouse from './product/modal-create-product-warehouse'; 
 import ModalEditProductWarehouse from './product/modal-edit-product-warehouse';
-import ModalDeleteProductWarehouse from './product/modal-delete-product-warehouse';
+import { useDeleteWarehouseProduct } from "@/modules/inventory/hook/useWarehouseProducts";
 import ModalWarehouses from './warehouses/modal-warehouses';
 
 import { Input } from '@/app/components/ui/input';
@@ -28,7 +28,6 @@ const WarehouseView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [editingProduct, setEditingProduct] = useState<React.Key | null>(null);
-  const [deletingProduct, setDeletingProduct] = useState<React.Key | null>(null);
   const [showWarehouses, setShowWarehouses] = useState(false);
 
   // **NUEVOS ESTADOS PARA LOS FILTROS**
@@ -36,12 +35,10 @@ const WarehouseView: React.FC = () => {
   const [startDate, setStartDate] = useState<string>(""); // Filtro "Fecha desde"
   const [endDate, setEndDate] = useState<string>("");     // Filtro "Fecha hasta"
 
+  const { mutate: toggleStatus } = useDeleteWarehouseProduct();
+
   const selectedWarehouseProduct = editingProduct
     ? warehouseProducts?.find((p: any) => p.id === editingProduct)
-    : null;
-
-  const deletingWarehouseProduct = deletingProduct
-    ? warehouseProducts?.find((p: any) => p.id === deletingProduct)
     : null;
 
   // **LISTA DE PRODUCTOS ÚNICOS PARA EL FILTRO**
@@ -241,6 +238,7 @@ const WarehouseView: React.FC = () => {
               <th className="px-4 py-2 text-center">Producto</th>
               <th className="px-4 py-2 text-center">Cantidad</th>
               <th className="px-4 py-2 text-center">Fecha de Entrada</th>
+              <th className="px-4 py-2 text-center">Estado</th>
               <th className="px-4 py-2 text-center">Acciones</th>
             </tr>
           </thead>
@@ -256,11 +254,22 @@ const WarehouseView: React.FC = () => {
                   </td>
                   <td className="px-4 py-2 text-center">{product.quantity}</td>
                   <td className="px-4 py-2 text-center">{new Date(product.entry_date).toLocaleDateString()}</td>
+                  <td className="px-4 py-2 text-center">
+                    {product.status ? (
+                      <span className="text-green-600 font-semibold">Activo</span>
+                    ) : (
+                      <span className="text-red-600 font-semibold">Inactivo</span>
+                    )}
+                  </td>
                   <td className="px-4 py-2 flex justify-center gap-2">
                     <button onClick={() => setEditingProduct(product.id)} className="text-blue-600 hover:text-blue-800">
                       <Edit size={18} />
                     </button>
-                    <button onClick={() => setDeletingProduct(product.id)} className="text-red-600 hover:text-red-800">
+                    <button
+                      onClick={() => toggleStatus(product.id)}
+                      className={`hover:text-red-800 ${product.status ? 'text-red-600' : 'text-green-600'}`}
+                      title={product.status ? "Desactivar" : "Activar"}
+                    >
                       <Trash size={18} />
                     </button>
                   </td>
@@ -288,18 +297,7 @@ const WarehouseView: React.FC = () => {
           producto={selectedWarehouseProduct}
           onClose={() => setEditingProduct(null)}
         />
-      )}
-
-      {deletingProduct && deletingWarehouseProduct && (
-        <ModalDeleteProductWarehouse
-          isOpen={!!deletingProduct}
-          onClose={() => setDeletingProduct(null)}
-          warehouseProductId={deletingProduct as string}
-          productName={
-            products?.find((p) => p.id === deletingWarehouseProduct.product_id)?.name
-          }
-        />
-      )}
+      )} 
 
       {showWarehouses && (
         <ModalWarehouses

@@ -16,6 +16,8 @@ export const updateProduction = async (id: string, payload: UpdateProductionPayl
   return response.data;
 };
 
-export const deleteProduction = async (id: string): Promise<void> => {
-  await api.delete(`/productions/${id}`);
+// action/productions.ts
+ export const toggleProduction = async ({ id, isActive }: { id: string; isActive: boolean }) => {
+  const res = await api.patch<Production>(`/productions/${id}/status`, { isActive });
+  return res.data;
 };

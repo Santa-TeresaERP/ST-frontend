@@ -1,5 +1,5 @@
 export interface WarehouseMovementProductAttributes {
-  movement_id: string;
+  id: string;
   warehouse_id: string;
   store_id?: string | null;
   product_id: string;
@@ -7,6 +7,7 @@ export interface WarehouseMovementProductAttributes {
   quantity: number;
   movement_date: Date;
   observations?: string;
+  status: boolean ;
   createdAt?: Date;
   updatedAt?: Date;
 }

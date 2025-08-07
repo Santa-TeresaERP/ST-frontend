@@ -1,24 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Edit, List, Plus, Loader2 } from 'lucide-react';
-import ModalDeleteProduction from './modal-delete-production';
+import { Edit, List, Plus, Loader2, MinusCircle, PlusCircle } from 'lucide-react';
 import ModalCreateProduction from './modal-create-production';
 import ModalEditProduction from './modal-edit-production';
 import ModalCreatePlant from './modal-create-plant';
 import ModalFilterProduction from './modal-filter-production'; // Importar el modal de filtros
-import { useFetchProductions, useDeleteProduction } from '../../hook/useProductions';
+import { useFetchProductions } from '../../hook/useProductions';
 import { Production } from '../../types/productions';
 import { useFetchProducts } from '../../hook/useProducts';
 import { useFetchPlants } from '../../hook/usePlants';
+import { toggleProduction } from '../../action/productions';
 
 const ProductionView = () => {
   const { data: productions, isLoading, error } = useFetchProductions();
-  const deleteProductionMutation = useDeleteProduction();
   const { data: products } = useFetchProducts();
   const { data: plants } = useFetchPlants();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isPlantModalOpen, setIsPlantModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false); // Estado para el modal de filtros
   const [selectedProduction, setSelectedProduction] = useState<Production | null>(null);
@@ -41,23 +39,15 @@ const ProductionView = () => {
     return product ? product.name : 'Producto no encontrado';
   };
 
-  // Manejar la eliminación de una producción
-  const handleDeleteProduction = async () => {
-    if (!selectedProduction || !selectedProduction.id) {
-      console.error('No se puede eliminar: la producción seleccionada no tiene un ID válido.');
-      alert('Error: No se puede eliminar esta producción porque no tiene un ID válido.');
-      return;
-    }
+  const handleToggle = async (prod: Production) => {
+    await toggleProduction({ id: prod.id, isActive: !prod.isActive });
 
-    try {
-      console.log('Eliminando producción con ID:', selectedProduction.id); // Depuración
-      await deleteProductionMutation.mutateAsync(selectedProduction.id);
-      setIsDeleteModalOpen(false);
-      setSelectedProduction(null);
-    } catch (error) {
-      console.error('Error al eliminar la producción:', error);
-      alert('Hubo un error al intentar eliminar la producción.');
-    }
+    // Actualizar el estado local luego del cambio
+    setFilteredProductions((prev) =>
+      prev.map((p) =>
+        p.id === prod.id ? { ...p, isActive: !p.isActive } : p
+      )
+    );
   };
 
   // Lógica para aplicar los filtros
@@ -173,6 +163,7 @@ const ProductionView = () => {
                 <th className="px-6 py-3 text-left">Descripción</th>
                 <th className="px-6 py-3 text-left">Planta</th>
                 <th className="px-6 py-3 text-left">Fecha</th>
+                <th className="px-6 py-3 text-left">Estado</th>
                 <th className="px-6 py-3 text-center">Acciones</th>
               </tr>
             </thead>
@@ -196,6 +187,12 @@ const ProductionView = () => {
                     })}
                   </td>
                   <td className="px-6 py-4">
+                    {production.isActive
+                      ? <span className="px-2 py-1 text-xs font-semibold rounded bg-green-100 text-green-800">Activo</span>
+                      : <span className="px-2 py-1 text-xs font-semibold rounded bg-red-100 text-red-800">Inactivo</span>
+                    }
+                  </td>
+                  <td className="px-6 py-4">
                     <div className="flex space-x-2 justify-center">
                       <button
                         onClick={() => {
@@ -208,20 +205,15 @@ const ProductionView = () => {
                         <Edit size={18} />
                       </button>
                       <button
-                        onClick={() => {
-                          if (production.id) {
-                            setSelectedProduction(production); // Configura correctamente la producción seleccionada
-                            setIsDeleteModalOpen(true);
-                          } else {
-                            console.error('La producción no tiene un ID válido.');
-                            alert('Error: No se puede eliminar esta producción porque no tiene un ID válido.');
-                          }
-                        }}
-                        className="p-2 text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 rounded-lg transition-colors duration-200"
-                        title="Eliminar"
+                        onClick={() => handleToggle(production)}
+                        className="p-2 text-yellow-600 hover:text-yellow-800 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors duration-200"
+                        title={production.isActive ? "Desactivar" : "Activar"}
                       >
-                        <Trash2 size={18} />
-                      </button>
+                        {production.isActive
+                          ? <MinusCircle size={18}/>  // reemplaza con el ícono que prefieras
+                        : <PlusCircle size={18}/>
+                      }
+                    </button>
                     </div>
                   </td>
                 </tr>
@@ -261,11 +253,6 @@ const ProductionView = () => {
               }
             : null
         }
-      />
-      <ModalDeleteProduction
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleDeleteProduction}
       />
       <ModalCreatePlant
         isOpen={isPlantModalOpen}
