@@ -1,43 +1,90 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchPlaces, fetchPlace, createPlace, updatePlace, deletePlace } from '../action/places';
-import { Place, CreatePlacePayload, UpdatePlacePayload } from '../types/places';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Place } from '../types';
+import { fetchPlaces, fetchPlacesByLocation, createPlace, updatePlace, deletePlace } from '../action/placeActions';
 
-export const useFetchPlaces = (location_id?: string) => {
+// Hook básico para obtener todos los places
+export const useFetchPlaces = () => {
   return useQuery<Place[], Error>({
-    queryKey: ['places', location_id],
-    queryFn: () => fetchPlaces(location_id),
-    enabled: !!location_id,
+    queryKey: ['places'],
+    queryFn: fetchPlaces,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000,   // 10 minutos
   });
 };
 
-export const useFetchPlace = (id: string) => {
-  return useQuery<Place, Error>({
-    queryKey: ['places', id],
-    queryFn: () => fetchPlace(id),
-    enabled: !!id,
+// Hook optimizado para obtener places por location_id (CON FILTRO EN FRONTEND)
+export const useFetchPlacesByLocation = (locationId: string | null, forceRefetchKey?: number) => {
+  // Primero obtenemos todos los places
+  const { data: allPlaces = [], isLoading: allPlacesLoading } = useFetchPlaces();
+
+  return useQuery<Place[], Error>({
+    queryKey: ['places', 'filtered', locationId, forceRefetchKey],
+    queryFn: () => {
+      if (!locationId) {
+        return Promise.resolve([]);
+      }
+      
+      if (!allPlaces || allPlaces.length === 0) {
+        return fetchPlacesByLocation(locationId);
+      }
+
+      // Filtrar en frontend usando los datos que ya tenemos
+      const filtered = allPlaces.filter(place => {
+        return place.location_id === locationId;
+      });
+
+      return Promise.resolve(filtered);
+    },
+    enabled: !!locationId && !allPlacesLoading,
+    staleTime: 30 * 1000, // 30 segundos
+    gcTime: 2 * 60 * 1000, // 2 minutos
   });
 };
 
+// Hook para crear place
 export const useCreatePlace = () => {
   const queryClient = useQueryClient();
-  return useMutation<Place, Error, CreatePlacePayload>({
+
+  return useMutation({
     mutationFn: createPlace,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['places'] }),
+    onSuccess: () => {
+      // Invalidar todas las queries relacionadas con places
+      queryClient.invalidateQueries({ queryKey: ['places'] });
+    },
+    onError: (error) => {
+      console.error('❌ Error creating place:', error);
+    },
   });
 };
 
+// Hook para actualizar place
 export const useUpdatePlace = () => {
   const queryClient = useQueryClient();
-  return useMutation<Place, Error, { id: string; payload: UpdatePlacePayload }>({
-    mutationFn: ({ id, payload }) => updatePlace(id, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['places'] }),
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Place> }) => updatePlace(id, data),
+    onSuccess: () => {
+      // Invalidar todas las queries relacionadas con places
+      queryClient.invalidateQueries({ queryKey: ['places'] });
+    },
+    onError: (error) => {
+      console.error('❌ Error updating place:', error);
+    },
   });
 };
 
+// Hook para eliminar place
 export const useDeletePlace = () => {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, string>({
+
+  return useMutation({
     mutationFn: deletePlace,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['places'] }),
+    onSuccess: () => {
+      // Invalidar todas las queries relacionadas con places
+      queryClient.invalidateQueries({ queryKey: ['places'] });
+    },
+    onError: (error) => {
+      console.error('❌ Error deleting place:', error);
+    },
   });
 };

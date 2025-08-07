@@ -120,19 +120,9 @@ const ModalEditPlace: React.FC<ModalEditPlaceProps> = ({ place, onClose }) => {
               required
             />
           </div>
-          <div>
-            <label htmlFor="location_id" className="block text-sm font-medium text-gray-700 mb-1">
-              Ubicación
-            </label>
-            <input
-              type="text"
-              id="location_id"
-              name="location_id"
-              value={currentLocationName}
-              className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
-              readOnly
-              disabled
-            />
+
+          <div className="text-sm text-gray-500">
+            <p>Nota: Los lugares se identifican únicamente por nombre y área.</p>
           </div>
           <div className="flex justify-end gap-2 mt-4">
             <button

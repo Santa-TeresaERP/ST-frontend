@@ -9,30 +9,34 @@ import {
   FiTrash2,
 } from "react-icons/fi";
 import { Rental } from "../../types/rentals";
-import { useFetchAllRentals } from "../../hook/useRentals"; // Asegúrate que la ruta sea correcta
-import { useFetchUsers } from "../../../user-creations/hook/useUsers"; // ajusta la ruta si es distinta
+import { useFetchAllRentals } from "../../hook/useRentals";
+import { useFetchUsers } from "../../../user-creations/hook/useUsers";
+import { useFetchCustomers } from "../../hook/useCustomers";
 
 interface RentalHistoryViewProps {
   placeName: string;
+  placeId: string; // ✅ Cambiado de number a string (UUID)
   onBack: () => void;
 }
 
 const RentalHistoryView: React.FC<RentalHistoryViewProps> = ({
   placeName,
+  placeId,
   onBack,
 }) => {
   const [selectedRental, setSelectedRental] = useState<Rental | null>(null);
   const { data: rentals = [], isLoading, isError } = useFetchAllRentals();
   const { data: users = [] } = useFetchUsers();
+  const { data: customers = [] } = useFetchCustomers();
 
-  // Datos mock del comprador (temporal hasta que se relacione con backend)
-  const buyerDetails = {
-    nombreCompleto: "Juanita Perez",
-    dni: "77777777",
-    numeroCelular: "999 999 999",
-    correoElectronico: "juanita@email.com",
-  };
+  // Filtrar alquileres por el lugar específico
+  const placeRentals = rentals.filter(rental => 
+    rental.place_id === placeId.toString()
+  );
+
   const userMap = new Map(users.map((user) => [user.id, user.name]));
+  const customerMap = new Map(customers.map((customer) => [customer.id, customer]));
+  
   const handleRentalSelect = (rental: Rental) => {
     setSelectedRental(rental);
   };
@@ -48,35 +52,25 @@ const RentalHistoryView: React.FC<RentalHistoryViewProps> = ({
         <div className="flex items-center mb-4">
           <button
             onClick={onBack}
-            className="mr-4 p-2 text-gray-600 hover:text-gray-800 transition-colors"
+            className="mr-4 p-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
           >
-            <FiArrowLeft size={24} />
+            <FiArrowLeft size={20} />
           </button>
-          <h1 className="text-4xl font-bold text-center text-red-600">
-            Alquileres de Lugar {placeName}
+          <h1 className="text-3xl font-bold text-red-600">
+            Historial de Alquileres - {placeName}
           </h1>
         </div>
-      </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 max-w-6xl mx-auto">
-        {/* Headers */}
-        <div className="grid grid-cols-8 gap-4 mb-6 px-3">
-          {[
-            "Comprador",
-            "Lugar",
-            "Vendedor",
-            "Fecha Inicio",
-            "Fecha Termino",
-            "Monto",
-            "Estado",
-            "Acciones",
-          ].map((label) => (
-            <div key={label} className="text-center">
-              <button className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium w-full">
-                {label}
-              </button>
-            </div>
-          ))}
+        {/* Tabla Header */}
+        <div className="grid grid-cols-8 gap-4 p-3 bg-red-600 text-white rounded-t-lg font-medium">
+          <div className="text-center">Comprador</div>
+          <div className="text-center">Lugar</div>
+          <div className="text-center">Vendedor</div>
+          <div className="text-center">Fecha Inicio</div>
+          <div className="text-center">Fecha Fin</div>
+          <div className="text-center">Monto</div>
+          <div className="text-center">Estado</div>
+          <div className="text-center">Acciones</div>
         </div>
 
         {/* Content */}
@@ -84,9 +78,11 @@ const RentalHistoryView: React.FC<RentalHistoryViewProps> = ({
           <p className="text-center text-gray-500">Cargando alquileres...</p>
         ) : isError ? (
           <p className="text-center text-red-500">Error al cargar alquileres</p>
+        ) : placeRentals.length === 0 ? (
+          <p className="text-center text-gray-500 p-8">No hay alquileres para este lugar</p>
         ) : (
           <div className="space-y-0">
-            {rentals.map((rental) => (
+            {placeRentals.map((rental) => (
               <React.Fragment key={rental.id}>
                 <div
                   className={`grid grid-cols-8 gap-4 p-3 rounded-lg border cursor-pointer transition-colors ${
@@ -97,7 +93,7 @@ const RentalHistoryView: React.FC<RentalHistoryViewProps> = ({
                   onClick={() => handleRentalSelect(rental)}
                 >
                   <div className="text-center text-gray-700 font-medium">
-                    Comprador
+                    {customerMap.get(rental.customer_id)?.full_name || 'Customer no encontrado'}
                   </div>
                   <div className="text-center text-gray-700 font-medium">
                     {rental.place_id}
@@ -105,7 +101,6 @@ const RentalHistoryView: React.FC<RentalHistoryViewProps> = ({
                   <div className="text-center text-gray-700 font-medium">
                     {userMap.get(rental.user_id) || "Usuario desconocido"}
                   </div>
-
                   <div className="text-center text-gray-700 font-medium">
                     {formatDate(rental.start_date)}
                   </div>
@@ -120,32 +115,20 @@ const RentalHistoryView: React.FC<RentalHistoryViewProps> = ({
                       Activo
                     </span>
                   </div>
-                  <div className="flex justify-center space-x-2">
-                    <button
-                      className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        console.log("Editar alquiler:", rental.id);
-                      }}
-                    >
-                      <FiEdit2 size={14} />
+                  <div className="flex justify-center gap-2">
+                    <button className="text-blue-600 hover:text-blue-800">
+                      <FiEdit2 size={16} />
                     </button>
-                    <button
-                      className="bg-red-600 text-white p-2 rounded hover:bg-red-700"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        console.log("Eliminar alquiler:", rental.id);
-                      }}
-                    >
-                      <FiTrash2 size={14} />
+                    <button className="text-red-600 hover:text-red-800">
+                      <FiTrash2 size={16} />
                     </button>
                   </div>
                 </div>
 
-                {/* Detalles del comprador (mock) */}
+                {/* Detalles expandidos */}
                 {selectedRental?.id === rental.id && (
-                  <div className="bg-gray-100 border border-gray-200 rounded-lg p-6 mt-2 mb-3">
-                    <h3 className="text-lg font-bold text-center mb-4">
+                  <div className="bg-white border border-red-200 rounded-lg p-6 mx-4 mb-4">
+                    <h3 className="text-lg font-semibold text-red-600 mb-4 text-center">
                       DATOS DEL COMPRADOR
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
@@ -157,7 +140,7 @@ const RentalHistoryView: React.FC<RentalHistoryViewProps> = ({
                           </span>
                         </div>
                         <p className="font-medium">
-                          {buyerDetails.nombreCompleto}
+                          {customerMap.get(rental.customer_id)?.full_name || 'N/A'}
                         </p>
                       </div>
                       <div>
@@ -165,7 +148,7 @@ const RentalHistoryView: React.FC<RentalHistoryViewProps> = ({
                           <FiCreditCard className="text-red-500" size={16} />
                           <span className="text-gray-700 font-medium">DNI</span>
                         </div>
-                        <p className="font-medium">{buyerDetails.dni}</p>
+                        <p className="font-medium">{customerMap.get(rental.customer_id)?.dni || 'N/A'}</p>
                       </div>
                       <div>
                         <div className="flex justify-center items-center gap-2">
@@ -175,7 +158,7 @@ const RentalHistoryView: React.FC<RentalHistoryViewProps> = ({
                           </span>
                         </div>
                         <p className="font-medium">
-                          {buyerDetails.numeroCelular}
+                          {customerMap.get(rental.customer_id)?.phone || 'N/A'}
                         </p>
                       </div>
                       <div>
@@ -186,7 +169,7 @@ const RentalHistoryView: React.FC<RentalHistoryViewProps> = ({
                           </span>
                         </div>
                         <p className="font-medium">
-                          {buyerDetails.correoElectronico}
+                          {customerMap.get(rental.customer_id)?.email || 'N/A'}
                         </p>
                       </div>
                     </div>
@@ -196,11 +179,6 @@ const RentalHistoryView: React.FC<RentalHistoryViewProps> = ({
             ))}
           </div>
         )}
-      </div>
-
-      {/* Footer */}
-      <div className="mt-6 text-center">
-        <p className="text-gray-500 text-sm">Alquiler / información</p>
       </div>
     </div>
   );
