@@ -2,10 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchPlaces, fetchPlace, createPlace, updatePlace, deletePlace } from '../action/places';
 import { Place, CreatePlacePayload, UpdatePlacePayload } from '../types/places';
 
-export const useFetchPlaces = () => {
+export const useFetchPlaces = (location_id?: string) => {
   return useQuery<Place[], Error>({
-    queryKey: ['places'],
-    queryFn: fetchPlaces,
+    queryKey: ['places', location_id],
+    queryFn: () => fetchPlaces(location_id),
+    enabled: !!location_id,
   });
 };
 
