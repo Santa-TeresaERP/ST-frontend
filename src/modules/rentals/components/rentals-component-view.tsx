@@ -11,13 +11,19 @@ import { Location } from "../types/location";
 import { Place } from "../types/places";
 import { useFetchLocations } from "../hook/useLocations";
 import { useFetchPlaces, useCreatePlace } from "../hook/usePlaces";
+import { useDeletePlace } from "../hook/usePlaces";
 
 const RentalsComponentView = () => {
-  const [isCreateLocationModalOpen, setIsCreateLocationModalOpen] = useState(false);
+  const [isCreateLocationModalOpen, setIsCreateLocationModalOpen] =
+    useState(false);
   const [isEditLocationModalOpen, setIsEditLocationModalOpen] = useState(false);
   const [isCreatePlaceModalOpen, setIsCreatePlaceModalOpen] = useState(false);
-  const [currentView, setCurrentView] = useState<"main" | "rental-history">("main");
-  const [selectedPlaceForRentals, setSelectedPlaceForRentals] = useState<Place | null>(null);
+  const [currentView, setCurrentView] = useState<"main" | "rental-history">(
+    "main"
+  );
+  const [selectedPlaceForRentals, setSelectedPlaceForRentals] =
+    useState<Place | null>(null);
+  const { mutate: deletePlace } = useDeletePlace();
 
   const {
     data: locationsData,
@@ -32,8 +38,8 @@ const RentalsComponentView = () => {
   const locations: Location[] = Array.isArray(locationsData)
     ? locationsData
     : Array.isArray((locationsData as any)?.data)
-    ? (locationsData as any).data
-    : [];
+      ? (locationsData as any).data
+      : [];
 
   const [selectedLocation, setSelectedLocation] = useState<Location>({
     id: "",
@@ -66,9 +72,21 @@ const RentalsComponentView = () => {
     // TODO: Implementar edición de lugar con hook correspondiente
   };
 
-  const handleDeletePlace = (placeId: string) => {
-    // TODO: Implementar eliminación de lugar con hook correspondiente
-  };
+const handleDeletePlace = React.useCallback((placeId: string) => {
+  const confirmDelete = window.confirm(
+    "¿Estás seguro que deseas eliminar este lugar?"
+  );
+  if (confirmDelete) {
+    deletePlace(placeId, {
+      onSuccess: () => {
+        console.log("✅ Lugar eliminado correctamente");
+      },
+      onError: (err) => {
+        console.error("❌ Error al eliminar lugar:", err);
+      },
+    });
+  }
+}, [deletePlace]);
 
   const handleViewRentals = (place: Place) => {
     setSelectedPlaceForRentals(place);
@@ -80,7 +98,9 @@ const RentalsComponentView = () => {
     setSelectedPlaceForRentals(null);
   };
 
-  const places = allPlaces.filter((p) => p.location_id === selectedLocation?.id);
+  const places = allPlaces.filter(
+    (p) => p.location_id === selectedLocation?.id
+  );
 
   if (currentView === "rental-history" && selectedPlaceForRentals) {
     return (
@@ -93,7 +113,9 @@ const RentalsComponentView = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <h1 className="text-4xl font-bold text-center text-red-600 pb-6">Alquileres</h1>
+      <h1 className="text-4xl font-bold text-center text-red-600 pb-6">
+        Alquileres
+      </h1>
 
       {/* Selector de locaciones */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm">
@@ -133,7 +155,9 @@ const RentalsComponentView = () => {
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center space-x-2">
             <MdLocationOn className="text-red-600" size={24} />
-            <h2 className="text-xl font-bold text-red-600">Información de la Localización</h2>
+            <h2 className="text-xl font-bold text-red-600">
+              Información de la Localización
+            </h2>
           </div>
           <button
             onClick={() => setIsEditLocationModalOpen(true)}
@@ -162,7 +186,9 @@ const RentalsComponentView = () => {
           <div>
             <FiCheckCircle className="text-red-500 inline mr-2" />
             <span className="font-semibold">Estado:</span>
-            <p className="ml-7 text-green-600 font-semibold">{selectedLocation?.status}</p>
+            <p className="ml-7 text-green-600 font-semibold">
+              {selectedLocation?.status}
+            </p>
           </div>
         </div>
       </div>
@@ -172,7 +198,9 @@ const RentalsComponentView = () => {
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center space-x-2">
             <MdLocationOn className="text-red-600" size={24} />
-            <h2 className="text-xl font-bold text-red-600">Lugares en la Localización</h2>
+            <h2 className="text-xl font-bold text-red-600">
+              Lugares en la Localización
+            </h2>
           </div>
           <button
             onClick={() => setIsCreatePlaceModalOpen(true)}

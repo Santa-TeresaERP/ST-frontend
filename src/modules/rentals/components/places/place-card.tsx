@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { FaUser } from 'react-icons/fa';
-import ModalEditPlace from './modal-edit-place';
-import NewRentalModal from '../modals/new-rental-modal';
-import { Place } from '../../types/places';
+import React, { useState } from "react";
+import { FaUser } from "react-icons/fa";
+import ModalEditPlace from "./modal-edit-place";
+import NewRentalModal from "../modals/new-rental-modal";
+import { Place } from "../../types/places";
 
 interface PlaceCardProps {
   place: Place;
@@ -11,25 +11,22 @@ interface PlaceCardProps {
   onViewRentals: (place: Place) => void;
 }
 
-const PlaceCard: React.FC<PlaceCardProps> = ({ place, onEdit, onViewRentals }) => {
+const PlaceCard: React.FC<PlaceCardProps> = ({
+  place,
+  onEdit,
+  onDelete,
+  onViewRentals,
+}) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isNewRentalModalOpen, setIsNewRentalModalOpen] = useState(false);
 
-  const handleEdit = () => {
-    setIsEditModalOpen(true);
-  };
-
-  const handleViewRentals = () => {
-    onViewRentals(place);
-  };
-
-  const handleAlquilar = () => {
-    setIsNewRentalModalOpen(true);
-  };
+  const handleEdit = () => setIsEditModalOpen(true);
+  const handleAlquilar = () => setIsNewRentalModalOpen(true);
+  const handleViewRentals = () => onViewRentals(place);
 
   const handleEditSubmit = (updatedPlace: Partial<Place>) => {
-    if (place._id) {
-      onEdit(place._id, updatedPlace);
+    if (place.id) {
+      onEdit(place.id, updatedPlace);
     }
     setIsEditModalOpen(false);
   };
@@ -41,11 +38,14 @@ const PlaceCard: React.FC<PlaceCardProps> = ({ place, onEdit, onViewRentals }) =
     fechaFin: string;
     monto: number;
   }) => {
-    console.log('Nuevo alquiler para lugar:', place.name, 'Datos:', rentalData);
+    console.log("Nuevo alquiler para lugar:", place.name, "Datos:", rentalData);
     setIsNewRentalModalOpen(false);
-    // Aquí puedes agregar lógica para guardar el alquiler
   };
-
+  const handleDelete = () => {
+    if (place.id) {
+      onDelete(place.id); // 👈 sin confirmación
+    }
+  };
   return (
     <>
       <div className="bg-gray-200 rounded-lg p-4 w-64 h-80 flex flex-col">
@@ -87,10 +87,16 @@ const PlaceCard: React.FC<PlaceCardProps> = ({ place, onEdit, onViewRentals }) =
           >
             Alquilar
           </button>
+                    <button 
+            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
+            onClick={handleDelete}
+          >
+            Eliminar
+          </button>
         </div>
       </div>
 
-      {/* Modal de edición */}
+
       {isEditModalOpen && (
         <ModalEditPlace
           place={place}
@@ -99,7 +105,6 @@ const PlaceCard: React.FC<PlaceCardProps> = ({ place, onEdit, onViewRentals }) =
         />
       )}
 
-      {/* Modal de nuevo alquiler */}
       {isNewRentalModalOpen && (
         <NewRentalModal
           onClose={() => setIsNewRentalModalOpen(false)}
