@@ -15,7 +15,7 @@ const Header = () => {
   };
 
   const handleBack = () => {
-    router.back();
+  router.push("/pages/dashboard");
   };
 
   return (
