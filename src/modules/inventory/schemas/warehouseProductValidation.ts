@@ -12,6 +12,7 @@ export const warehouseProductValidationSchema = z.object({
     invalid_type_error: 'La cantidad debe ser un número'
   }).min(0, 'La cantidad debe ser mayor o igual a 0'),
   entry_date: z.string().min(1, 'La fecha de entrada es requerida'),
+  status: z.boolean().default(true),
 });
 
 export const warehouseProductValidation = (data: unknown) => {

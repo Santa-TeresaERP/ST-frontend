@@ -7,6 +7,7 @@ export const ProductionSchema = z.object({
   productionDate: z.string(),
   observation: z.string().optional(),
   plant_id: z.string(),
+  isActive: z.boolean().default(true),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
 });

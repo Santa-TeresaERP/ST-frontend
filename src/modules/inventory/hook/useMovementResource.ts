@@ -35,8 +35,8 @@ export const useUpdateWarehouseMovementResource = () => {
 
 export const useDeleteWarehouseMovementResource = () => {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, string>({
-    mutationFn: deleteWarehouseMovementResource,
+  return useMutation<void, Error, { id: string }>({
+    mutationFn: ({ id }) => deleteWarehouseMovementResource(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['warehouseMovementResource'] }),
   });
 };

@@ -27,7 +27,8 @@ export type CreateMovementProductPayload = {
   movement_type: "entrada" | "salida";  // Solo estas dos opciones exactas
   quantity: number;               // Número no negativo (>= 0)
   movement_date: string | Date;   // Fecha válida
-  observations?: string;          // String opcional, máximo 150 caracteres
+  observations?: string;
+  status: boolean;   // Estado del movimiento
 };
 
 export const createMovement = async (
@@ -45,6 +46,13 @@ export const updateMovement = async (
   return response.data;
 };
 
-export const deleteMovement = async (id: string): Promise<void> => {
-  await api.delete(`/warehouseMovementProduct/${id}`);
+export const deleteMovement = async ({
+  id,
+  status,
+}: {
+  id: string;
+  status: boolean;
+}): Promise<void> => {
+  await api.put(`/warehouseMovementProduct/${id}`);
 };
+

@@ -14,6 +14,7 @@ export const BuysResourceSchema = z.object({
   total_cost: z.number({ invalid_type_error: 'El costo total debe ser un número' }),
   supplier_id: z.string().uuid('El ID del proveedor debe ser un UUID válido'),
   entry_date: z.coerce.date({ invalid_type_error: 'La fecha de entrada debe ser válida' }),
+  status: z.boolean().default(true), // Campo para el estado del recurso
 });
 
 // Inferir el tipo a partir del esquema
@@ -36,6 +37,7 @@ export interface CreateBuysResourcePayload {
   total_cost: number;
   supplier_id: string;
   entry_date: Date;
+  status?: boolean; // Campo para el estado del recurso, opcional para permitir creación sin especificar
 }
 
 // Payload para actualizar un recurso de compra
@@ -48,4 +50,5 @@ export interface UpdateBuysResourcePayload {
   total_cost?: number;
   supplier_id?: string;
   entry_date?: Date;
+  status?: boolean; // Campo para el estado del recurso
 }

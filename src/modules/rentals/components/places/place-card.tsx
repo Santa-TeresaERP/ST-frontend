@@ -83,6 +83,12 @@ const PlaceCard: React.FC<PlaceCardProps> = ({
           </button>
           <button 
             className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
+            onClick={() => place._id && onDelete(place._id)}
+          >
+            Eliminar
+          </button>
+          <button 
+            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
             onClick={handleAlquilar}
           >
             Alquilar
