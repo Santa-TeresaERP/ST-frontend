@@ -1,3 +1,5 @@
+import React, { useState, useEffect } from "react";
+import { useAuthStore } from "@/core/store/auth";
 import React, { useState } from 'react';
 import { FiPlus, FiUser } from 'react-icons/fi';
 import { useFetchCustomers } from '../../hook/useCustomers';
@@ -15,14 +17,42 @@ interface NewRentalModalProps {
   }) => void;
 }
 
-const NewRentalModal: React.FC<NewRentalModalProps> = ({ onClose, onSubmit }) => {
+const NewRentalModal: React.FC<NewRentalModalProps> = ({
+  onClose,
+  onSubmit,
+}) => {
+  const { user } = useAuthStore();
+
   const [formData, setFormData] = useState({
+    nombreComprador: "",
+    nombreVendedor: "",
+    fechaInicio: "",
+    fechaFin: "",
+    monto: "",
     customerId: '',
     nombreVendedor: '',
     fechaInicio: '',
     fechaFin: '',
     monto: ''
   });
+
+  // ✅ Actualizar nombre del vendedor cuando el usuario esté disponible
+  useEffect(() => {
+    if (user) {
+      console.log("👤 Usuario activo desde store:", {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      });
+
+      if (user.name) {
+        setFormData((prev) => ({
+          ...prev,
+          nombreVendedor: user.name,
+        }));
+      }
+    }
+  }, [user]);
 
   const [isCreateCustomerModalOpen, setIsCreateCustomerModalOpen] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
@@ -42,15 +72,29 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({ onClose, onSubmit }) =>
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (
+      formData.nombreComprador &&
+      formData.nombreVendedor &&
+      formData.fechaInicio &&
+      formData.fechaFin &&
+      formData.monto
+    ) {
     if (formData.customerId && formData.nombreVendedor && formData.fechaInicio && formData.fechaFin && formData.monto) {
       onSubmit({
         customerId: formData.customerId,
         nombreVendedor: formData.nombreVendedor,
         fechaInicio: formData.fechaInicio,
         fechaFin: formData.fechaFin,
-        monto: parseFloat(formData.monto)
+        monto: parseFloat(formData.monto),
       });
+
+      // Limpiar formulario
       setFormData({
+        nombreComprador: "",
+        nombreVendedor: user?.name || "",
+        fechaInicio: "",
+        fechaFin: "",
+        monto: "",
         customerId: '',
         nombreVendedor: '',
         fechaInicio: '',
@@ -64,7 +108,7 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({ onClose, onSubmit }) =>
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -109,9 +153,15 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({ onClose, onSubmit }) =>
           </h2>
         </div>
 
-        {/* Form */}
+        {/* Formulario */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="nombreComprador"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Nombre del comprador
             <div className="relative">
               <label htmlFor="customer-search" className="block text-sm font-medium text-gray-700 mb-1">
                 Cliente
@@ -181,7 +231,10 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({ onClose, onSubmit }) =>
             </div>
 
             <div>
-              <label htmlFor="nombreVendedor" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="nombreVendedor"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Nombre del vendedor
               </label>
               <input
@@ -189,9 +242,9 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({ onClose, onSubmit }) =>
                 id="nombreVendedor"
                 name="nombreVendedor"
                 value={formData.nombreVendedor}
-                onChange={handleChange}
-                className="w-full p-2 border-2 border-orange-400 rounded text-gray-700 focus:outline-none focus:border-red-500"
-                placeholder="Carmen"
+                readOnly // ✅ evita que el campo se edite
+                className="w-full p-2 border-2 border-orange-400 bg-gray-100 text-gray-700 rounded focus:outline-none"
+                placeholder="Cargando..."
                 required
               />
             </div>
@@ -199,7 +252,10 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({ onClose, onSubmit }) =>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="fechaInicio" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="fechaInicio"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Fecha inicio
               </label>
               <input
@@ -214,7 +270,10 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({ onClose, onSubmit }) =>
             </div>
 
             <div>
-              <label htmlFor="fechaFin" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="fechaFin"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Fecha fin
               </label>
               <input
@@ -230,7 +289,10 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({ onClose, onSubmit }) =>
           </div>
 
           <div>
-            <label htmlFor="monto" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="monto"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Monto
             </label>
             <input
