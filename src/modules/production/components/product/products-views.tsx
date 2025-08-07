@@ -1,35 +1,26 @@
-import { useState, useEffect } from 'react'; // Agregado useEffect para sincronizar datos
-import { Trash2, Edit, List, Plus, Loader2, AlertTriangle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Trash2, Edit, List, Plus, Loader2, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import ModalDeleteProducto from './modal-delete-product';
 import ModalEditProducto from './modal-edit-product';
 import ModalCreateProducto from './modal-create-product';
 import ModalCreateCategoria from './modal-create-category';
 import { useFetchProducts, useDeleteProduct } from '@/modules/production/hook/useProducts';
 import { useFetchProductions } from '@/modules/production/hook/useProductions';
-import { useFetchCategories } from '@/modules/production/hook/useCategories'; // Importado para obtener categorías
+import { useFetchCategories } from '@/modules/production/hook/useCategories';
 import { FiBox } from 'react-icons/fi';
 import { Tooltip } from '@/app/components/ui/tooltip';
-
 
 const ProductosView = () => {
   const { data: productos, isLoading, error } = useFetchProducts();
   const { data: producciones } = useFetchProductions();
-  const { data: categories } = useFetchCategories(); // Hook para obtener categorías
+  const { data: categories } = useFetchCategories();
   const deleteProductMutation = useDeleteProduct();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
 
-  useEffect(() => {
-    if (!productos) return;
-
-    const filtered = productos.filter((product) => {
-      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = !selectedCategoryId || product.category_id === selectedCategoryId;
-      return matchesSearch && matchesCategory;
-    });
-
-    setFilteredProducts(filtered);
-  }, [searchTerm, selectedCategoryId, productos]);
+  // --- Estados para la paginación ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const [productsPerPage] = useState(20);
 
   const [filteredProducts, setFilteredProducts] = useState<
     {
@@ -42,24 +33,24 @@ const ProductosView = () => {
       imagen_url?: string;
       updatedAt?: Date;
     }[]
-  >([]); // Estado para los productos filtrados
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<{
-    id: string;
-    name: string;
-    description: string;
-    price: number;
-    category_id: string;
-    imagen_url: string;
-  } | null>(null);
+  >([]);
 
-  // Sincronizar productos filtrados con los datos originales cuando cambien
+  useEffect(() => {
+    if (!productos) return;
+
+    const filtered = productos.filter((product) => {
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = !selectedCategoryId || product.category_id === selectedCategoryId;
+      return matchesSearch && matchesCategory;
+    });
+
+    setFilteredProducts(filtered);
+    setCurrentPage(1); // Resetear a la primera página al aplicar nuevos filtros
+  }, [searchTerm, selectedCategoryId, productos]);
+
   useEffect(() => {
     setFilteredProducts(productos || []);
-  }, [productos]); // Actualiza los productos filtrados cuando cambien los datos originales
+  }, [productos]);
 
   const isProductLinkedToProduction = (productId: string): boolean => {
     return producciones?.some(production => production.productId === productId) ?? false;
@@ -67,14 +58,12 @@ const ProductosView = () => {
 
   const handleDeleteClick = (product: typeof selectedProduct) => {
     if (!product || isProductLinkedToProduction(product.id)) return;
-
     setSelectedProduct(product);
     setIsDeleteModalOpen(true);
   };
 
   const handleEditClick = (product: typeof selectedProduct) => {
     if (!product) return;
-
     setSelectedProduct({
       ...product,
       category_id: product.category_id || '',
@@ -88,7 +77,6 @@ const ProductosView = () => {
       alert('No se puede eliminar este producto porque está vinculado a una producción.');
       return;
     }
-
     try {
       await deleteProductMutation.mutateAsync(productId);
       setIsDeleteModalOpen(false);
@@ -98,6 +86,53 @@ const ProductosView = () => {
       alert('Hubo un error al intentar eliminar el producto.');
     }
   };
+
+  // --- Lógica de paginación ---
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+
+  const paginate = (pageNumber: number) => {
+    if (pageNumber < 1 || pageNumber > totalPages) return;
+    setCurrentPage(pageNumber);
+  };
+
+  const renderPageNumbers = () => {
+    const pageNumbers = [];
+    const maxPagesToShow = 5;
+    const startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+    if (startPage > 1) {
+      pageNumbers.push(1, '...');
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+
+    if (endPage < totalPages) {
+      pageNumbers.push('...', totalPages);
+    }
+    
+    return pageNumbers;
+  };
+  // ---
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<{
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    category_id: string;
+    imagen_url: string;
+  } | null>(null);
 
   if (isLoading) {
     return (
@@ -124,7 +159,7 @@ const ProductosView = () => {
             <h3 className="text-sm font-medium text-red-800">Error al cargar los productos</h3>
             <p className="text-sm text-red-700 mt-1">Por favor, intenta nuevamente más tarde.</p>
             <button
-              onClick={() => window.location.reload()} // Botón para recargar la página
+              onClick={() => window.location.reload()}
               className="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
             >
               Reintentar
@@ -196,7 +231,6 @@ const ProductosView = () => {
         </div>
       </div>
 
-
       {/* Lista de productos */}
       {filteredProducts.length === 0 ? (
         <div className="text-center text-gray-500 mt-8 px-4">
@@ -204,7 +238,7 @@ const ProductosView = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-2 sm:px-0">
-          {filteredProducts.map((producto) => {
+          {currentProducts.map((producto) => { // Usamos currentProducts aquí
             const isLinked = isProductLinkedToProduction(producto.id);
 
             return (
@@ -311,6 +345,46 @@ const ProductosView = () => {
         </div>
       )}
 
+      {/* --- Componente de Paginación --- */}
+      {filteredProducts.length > productsPerPage && (
+        <div className="flex justify-center items-center space-x-2 mt-8">
+          <button
+            onClick={() => paginate(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="p-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft size={20} />
+          </button>
+
+          {renderPageNumbers().map((number, index) => (
+            <button
+              key={index}
+              onClick={() => typeof number === 'number' && paginate(number)}
+              className={`w-10 h-10 rounded-full text-sm font-semibold transition-colors duration-200
+                ${
+                  number === currentPage
+                    ? 'bg-red-600 text-white shadow-md'
+                    : typeof number === 'number'
+                    ? 'text-gray-700 bg-gray-200 hover:bg-gray-300'
+                    : 'text-gray-500 cursor-default'
+                }`}
+              disabled={typeof number !== 'number'}
+            >
+              {number}
+            </button>
+          ))}
+
+          <button
+            onClick={() => paginate(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="p-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      )}
+      {/* --- Fin del componente de Paginación --- */}
+
       <ModalCreateProducto
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
@@ -320,7 +394,7 @@ const ProductosView = () => {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         producto={selectedProduct}
-        categories={categories || []} // Pasa las categorías disponibles
+        categories={categories || []}
       />
 
       <ModalDeleteProducto

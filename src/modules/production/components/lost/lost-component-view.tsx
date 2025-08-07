@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { FiFilter, FiSearch, FiPlus, FiTrash2, FiEdit, FiAlertTriangle, FiCalendar, FiX, FiSave  } from 'react-icons/fi';
+import { FiFilter, FiSearch, FiPlus, FiTrash2, FiEdit, FiAlertTriangle, FiCalendar, FiX, FiSave } from 'react-icons/fi';
 import { useFetchAllLost, useCreateLost, useDeleteLost, useUpdateLost } from '@/modules/production/hook/useLost';
 import { lostSchema } from '@/modules/production/schemas/lostValidation';
 import { CreateLostPayload } from '@/modules/production/types/lost';
@@ -10,14 +10,13 @@ import { useFetchProducts } from '../../hook/useProducts';
 const LostComponentView: React.FC = () => {
   // Obtener datos usando los hooks
   const { data: lostData = [], isLoading, error } = useFetchAllLost();
-  const { data: productions = [], isLoading: loadingProducts } = useFetchProductions();
+  const { data: productions = [], isLoading: loadingProductions } = useFetchProductions();
   const { data: productsData = [], isLoading: isLoadingProducts, error: errorProducts } = useFetchProducts();
   const createLostMutation = useCreateLost();
   const deleteLostMutation = useDeleteLost();
   const updateLostMutation = useUpdateLost(); // Hook que deberías tener
   const [editingLostItem, setEditingLostItem] = useState<any | null>(null);
   const [deletingLostItem, setDeletingLostItem] = useState<any | null>(null);
-
 
   // Estados para filtros y modal
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,13 +36,13 @@ const LostComponentView: React.FC = () => {
   });
 
   const productionDisplayStrings = useMemo(() => {
-    if (isLoading || loadingProducts || isLoadingProducts) {
+    if (isLoading || loadingProductions || isLoadingProducts) {
       return new Map<string, string>();
     }
 
     // Primero creamos un mapa para contar cuántas veces aparece cada combinación producto-fecha
     const productDateCount = new Map<string, number>();
-    const productionDisplayMap = new Map<string, {display: string, count: number}>();
+    const productionDisplayMap = new Map<string, { display: string, count: number }>();
 
     // Procesamos todas las producciones para crear las cadenas de visualización
     productions.forEach(production => {
@@ -78,7 +77,7 @@ const LostComponentView: React.FC = () => {
     });
 
     return displayStrings;
-  }, [lostData, productions, productsData, isLoading, loadingProducts, isLoadingProducts]);
+  }, [lostData, productions, productsData, isLoading, loadingProductions, isLoadingProducts]);
 
   const getProductionDisplay = (lostId: string) => {
     return productionDisplayStrings.get(lostId) || 'ID de pérdida no encontrado';
@@ -89,7 +88,7 @@ const LostComponentView: React.FC = () => {
     const displayString = productionDisplayStrings.get(item.id) || '';
     const productName = displayString.toLowerCase();
     const matchesSearch = productName.includes(searchTerm.toLowerCase()) || 
-                         item.observations?.toLowerCase().includes(searchTerm.toLowerCase());
+                          item.observations?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = selectedType === 'all' || item.lost_type === selectedType;
     
     // Filtro por fecha
@@ -97,7 +96,15 @@ const LostComponentView: React.FC = () => {
     const matchesStartDate = !startDate || itemDate >= new Date(startDate);
     const matchesEndDate = !endDate || itemDate <= new Date(endDate + 'T23:59:59');
     
-    return matchesSearch && matchesType && matchesStartDate && matchesEndDate;
+    // Nuevo filtro: solo pérdidas de los últimos 3 días si no hay filtro de fecha manual
+    const today = new Date();
+    const threeDaysAgo = new Date(today);
+    threeDaysAgo.setDate(today.getDate() - 3); // Resta 3 días a la fecha actual
+
+    // Aplica el filtro de 3 días solo si no hay un rango de fechas manual seleccionado
+    const matchesDefaultDate = (!startDate && !endDate) ? itemDate >= threeDaysAgo : true;
+
+    return matchesSearch && matchesType && matchesStartDate && matchesEndDate && matchesDefaultDate;
   });
 
   // Tipos de pérdida para el filtro
@@ -130,35 +137,33 @@ const LostComponentView: React.FC = () => {
     }
   };
 
-const handleUpdateLostItem = async () => {
-  if (!editingLostItem) return;
+  const handleUpdateLostItem = async () => {
+    if (!editingLostItem) return;
 
-  try {
-    const validation = lostSchema.safeParse(editingLostItem);
-    if (!validation.success) {
-      toast.error(validation.error.errors[0].message);
-      return;
-    }
-
-    await updateLostMutation.mutateAsync({
-      id: editingLostItem.id,
-      payload: {
-        production_id: editingLostItem.production_id,
-        quantity: editingLostItem.quantity,
-        lost_type: editingLostItem.lost_type,
-        observations: editingLostItem.observations,
+    try {
+      const validation = lostSchema.safeParse(editingLostItem);
+      if (!validation.success) {
+        toast.error(validation.error.errors[0].message);
+        return;
       }
-    });
 
-    toast.success('Pérdida actualizada correctamente');
-    setEditingLostItem(null);
-  } catch (error) {
-    toast.error('Error al actualizar la pérdida');
-    console.error(error);
-  }
-};
+      await updateLostMutation.mutateAsync({
+        id: editingLostItem.id,
+        payload: {
+          production_id: editingLostItem.production_id,
+          quantity: editingLostItem.quantity,
+          lost_type: editingLostItem.lost_type,
+          observations: editingLostItem.observations,
+        }
+      });
 
-
+      toast.success('Pérdida actualizada correctamente');
+      setEditingLostItem(null);
+    } catch (error) {
+      toast.error('Error al actualizar la pérdida');
+      console.error(error);
+    }
+  };
 
   // Manejar eliminar registro
   const handleDeleteItem = async (id: string) => {
@@ -181,7 +186,7 @@ const handleUpdateLostItem = async () => {
     setEndDate('');
   };
 
-  if (isLoading || loadingProducts || isLoadingProducts) return <div className="p-4">Cargando datos...</div>;
+  if (isLoading || loadingProductions || isLoadingProducts) return <div className="p-4">Cargando datos...</div>;
   if (error) return <div className="p-4 text-red-500">Error al cargar pérdidas: {error.message}</div>;
   if (errorProducts) return <div className="p-4 text-red-500">Error al cargar productos: {errorProducts.message}</div>;
 
@@ -357,7 +362,7 @@ const handleUpdateLostItem = async () => {
         </table>
       </div>
 
-    {/* Modal para agregar nueva pérdida */}
+      {/* Modal para agregar nueva pérdida */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -386,7 +391,7 @@ const handleUpdateLostItem = async () => {
                 <label className="text-base font-bold text-gray-700">
                   Producción <span className="text-red-600">*</span>
                 </label>
-                {(loadingProducts || isLoadingProducts) ? (
+                {(loadingProductions || isLoadingProducts) ? (
                   <div className="text-sm text-gray-500 mt-1">Cargando producciones/productos...</div>
                 ) : productions.length === 0 ? (
                   <div className="text-sm text-red-500 mt-1">No hay producciones disponibles</div>
@@ -483,7 +488,7 @@ const handleUpdateLostItem = async () => {
               <button
                 className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-800 text-white rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
                 onClick={handleAddLostItem}
-                disabled={createLostMutation.isPending || loadingProducts || isLoadingProducts}
+                disabled={createLostMutation.isPending || loadingProductions || isLoadingProducts}
               >
                 <FiSave />
                 {createLostMutation.isPending ? 'Guardando...' : 'Guardar'}
@@ -495,108 +500,108 @@ const handleUpdateLostItem = async () => {
 
       {/* Modal para editar perdida */}
       {editingLostItem && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
-      <div className="bg-gradient-to-r from-red-600 to-red-800 text-white px-6 py-4 flex items-center justify-between">
-        <h3 className="text-2xl font-semibold flex items-center gap-2">
-          <FiEdit /> Editar Pérdida
-        </h3>
-        <button
-          onClick={() => setEditingLostItem(null)}
-          className="hover:text-gray-300"
-        >
-          <FiX size={20} />
-        </button>
-      </div>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="bg-gradient-to-r from-red-600 to-red-800 text-white px-6 py-4 flex items-center justify-between">
+              <h3 className="text-2xl font-semibold flex items-center gap-2">
+                <FiEdit /> Editar Pérdida
+              </h3>
+              <button
+                onClick={() => setEditingLostItem(null)}
+                className="hover:text-gray-300"
+              >
+                <FiX size={20} />
+              </button>
+            </div>
 
-      <div className="p-6 space-y-4">
-        <div>
-          <label className="text-base font-bold text-gray-700">
-            Producción <span className="text-red-600">*</span>
-          </label>
-          <select
-            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-            value={editingLostItem.production_id}
-            onChange={(e) => setEditingLostItem({ ...editingLostItem, production_id: e.target.value })}
-          >
-            <option value="">Seleccionar producción</option>
-            {productions.map(prod => {
-              const product = productsData.find(p => p.id === prod.productId);
-              const productName = product ? product.name : 'Producto Desconocido';
-              const prodDate = prod.productionDate
-                ? new Date(prod.productionDate).toLocaleDateString()
-                : 'Sin fecha';
-              return (
-                <option key={prod.id} value={prod.id}>
-                  {`${productName} ${prodDate}`}
-                </option>
-              );
-            })}
-          </select>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="text-base font-bold text-gray-700">
+                  Producción <span className="text-red-600">*</span>
+                </label>
+                <select
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  value={editingLostItem.production_id}
+                  onChange={(e) => setEditingLostItem({ ...editingLostItem, production_id: e.target.value })}
+                >
+                  <option value="">Seleccionar producción</option>
+                  {productions.map(prod => {
+                    const product = productsData.find(p => p.id === prod.productId);
+                    const productName = product ? product.name : 'Producto Desconocido';
+                    const prodDate = prod.productionDate
+                      ? new Date(prod.productionDate).toLocaleDateString()
+                      : 'Sin fecha';
+                    return (
+                      <option key={prod.id} value={prod.id}>
+                        {`${productName} ${prodDate}`}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-base font-bold text-gray-700">Cantidad</label>
+                <input
+                  type="number"
+                  min="1"
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  value={editingLostItem.quantity}
+                  onChange={(e) => setEditingLostItem({ ...editingLostItem, quantity: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+
+              <div>
+                <label className="text-base font-bold text-gray-700">Tipo de Pérdida</label>
+                <select
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  value={editingLostItem.lost_type}
+                  onChange={(e) => setEditingLostItem({ ...editingLostItem, lost_type: e.target.value })}
+                >
+                  <option value="">Seleccionar tipo</option>
+                  <option value="Daño">Daño</option>
+                  <option value="Pérdida">Pérdida</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-base font-bold text-gray-700">Observaciones</label>
+                <textarea
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:red-500"
+                  rows={3}
+                  value={editingLostItem.observations || ''}
+                  onChange={(e) => setEditingLostItem({ ...editingLostItem, observations: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="text-base font-bold text-gray-700">Fecha de Registro</label>
+                <input
+                  type="text"
+                  value={editingLostItem.created_at ? new Date(editingLostItem.created_at).toLocaleDateString() : 'N/A'}
+                  disabled
+                  className="w-full mt-1 px-3 py-2 border border-gray-200 bg-gray-100 rounded-lg"
+                />
+              </div>
+            </div>
+
+            <div className="bg-gray-50 px-6 py-3 flex justify-end gap-2">
+              <button
+                onClick={() => setEditingLostItem(null)}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 flex items-center gap-2"
+              >
+                <FiX /> Cancelar
+              </button>
+              <button
+                onClick={handleUpdateLostItem}
+                className="px-4 py-2 bg-gradient-to-r from-red-600 to-orange-800 text-white rounded-lg hover:opacity-90 flex items-center gap-2"
+              >
+                <FiSave /> Guardar
+              </button>
+            </div>
+          </div>
         </div>
-
-        <div>
-          <label className="text-base font-bold text-gray-700">Cantidad</label>
-          <input
-            type="number"
-            min="1"
-            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-            value={editingLostItem.quantity}
-            onChange={(e) => setEditingLostItem({ ...editingLostItem, quantity: parseInt(e.target.value) || 0 })}
-          />
-        </div>
-
-        <div>
-          <label className="text-base font-bold text-gray-700">Tipo de Pérdida</label>
-          <select
-            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-            value={editingLostItem.lost_type}
-            onChange={(e) => setEditingLostItem({ ...editingLostItem, lost_type: e.target.value })}
-          >
-            <option value="">Seleccionar tipo</option>
-            <option value="Daño">Daño</option>
-            <option value="Pérdida">Pérdida</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="text-base font-bold text-gray-700">Observaciones</label>
-          <textarea
-            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:red-500"
-            rows={3}
-            value={editingLostItem.observations || ''}
-            onChange={(e) => setEditingLostItem({ ...editingLostItem, observations: e.target.value })}
-          />
-        </div>
-
-        <div>
-          <label className="text-base font-bold text-gray-700">Fecha de Registro</label>
-          <input
-            type="text"
-            value={editingLostItem.created_at ? new Date(editingLostItem.created_at).toLocaleDateString() : 'N/A'}
-            disabled
-            className="w-full mt-1 px-3 py-2 border border-gray-200 bg-gray-100 rounded-lg"
-          />
-        </div>
-      </div>
-
-      <div className="bg-gray-50 px-6 py-3 flex justify-end gap-2">
-        <button
-          onClick={() => setEditingLostItem(null)}
-          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 flex items-center gap-2"
-        >
-          <FiX /> Cancelar
-        </button>
-        <button
-          onClick={handleUpdateLostItem}
-          className="px-4 py-2 bg-gradient-to-r from-red-600 to-orange-800 text-white rounded-lg hover:opacity-90 flex items-center gap-2"
-        >
-          <FiSave /> Guardar
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
     </div>
   );

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PlusCircle, Package, Users, Edit } from 'lucide-react';
 import { useFetchMovements } from '@/modules/inventory/hook/useMovementProduct';
 import CreateMovementProduct from './movement/product/create-movement-product';
@@ -22,7 +22,21 @@ import FilterMovement from './movement/filter-movement';
 import ToggleMovementStatus from './movement/toggle-movement-status';
 
 const MovementComponentView: React.FC = () => {
-  const [filters, setFilters] = useState<Record<string, any>>({});
+  // Se inicializa el estado de los filtros con las fechas de los últimos 3 días
+  const getInitialFilters = () => {
+    const today = new Date();
+    const threeDaysAgo = new Date(today);
+    threeDaysAgo.setDate(today.getDate() - 2);
+
+    return {
+      start_date: threeDaysAgo.toISOString().split('T')[0],
+      end_date: today.toISOString().split('T')[0],
+    };
+  };
+
+  const [filters, setFilters] = useState<any>(getInitialFilters);
+
+  // Productos
   const { data: movements = [], isLoading: loading, error, refetch: fetchMovements } = useFetchMovements(filters);
   const [editing, setEditing] = useState<WarehouseMovementProductAttributes | null>(null);
 
@@ -44,40 +58,51 @@ const MovementComponentView: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [selectedType, setSelectedType] = useState<'producto' | 'recurso'>('producto');
 
-  const handleFilter = (newFilters: Record<string, any>) => setFilters(newFilters);
+  // Asegura que los datos se carguen con los filtros iniciales
+  useEffect(() => {
+    fetchMovements();
+    fetchResourceMovements();
+  }, []);
 
-  const getWarehouseName = (id: string) => warehouses.find(w => w.id === id)?.name || id;
-  const getResourceName = (id: string) => resources.find(r => r.id === id)?.name || id;
-  const getProductName = (id: string) => products.find(p => p.id === id)?.name || id;
-  const getStoreName = (id?: string | null) => {
+  const handleFilter = (newFilters: any) => {
+    setFilters(newFilters);
+  };
+  const getWarehouseName = (id: string) => warehouses.find((w: any) => w.id === id)?.name || id;
+  const getResourceName = (id: string) => resources.find((r: any) => r.id === id)?.name || id;
+  const getProductName = (id: string) => products.find((p: any) => p.id === id)?.name || id;
+  const getStoreName = (id: string | null | undefined) => {
     if (!id) return '';
-    const s = stores.find(x => String(x.id) === String(id));
-    return s ? s.store_name || id : id;
+    const store = stores.find((s: any) => String(s.id) === String(id));
+    return store ? (store.store_name || store.id) : id;
   };
 
-  const filteredMovements = movements.filter(mov => (
-    mov.status &&
-    (!filters.product_id || mov.product_id === filters.product_id) &&
-    (!filters.store_id || mov.store_id?.toLowerCase().includes(filters.store_id.toLowerCase())) &&
-    (!filters.movement_type || mov.movement_type === filters.movement_type) &&
-    (!filters.start_date || new Date(mov.movement_date) >= new Date(filters.start_date)) &&
-    (!filters.end_date || new Date(mov.movement_date) <= new Date(filters.end_date)) &&
-    (!searchTerm ||
-      getProductName(mov.product_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getWarehouseName(mov.warehouse_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getStoreName(mov.store_id).toLowerCase().includes(searchTerm.toLowerCase()))
-  ));
+  // Filtrar movimientos por producto, almacén o tienda
+  const filteredMovements = movements.filter(
+    (mov) =>
+      (filters.product_id ? mov.product_id === filters.product_id : true) &&
+      (filters.store_id ? mov.store_id?.toLowerCase().includes(filters.store_id.toLowerCase()) : true) &&
+      (filters.movement_type ? mov.movement_type === filters.movement_type : true) &&
+      (filters.start_date ? new Date(mov.movement_date) >= new Date(filters.start_date) : true) &&
+      (filters.end_date ? new Date(mov.movement_date) <= new Date(filters.end_date) : true) &&
+      (searchTerm
+        ? getProductName(mov.product_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
+          getWarehouseName(mov.warehouse_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
+          getStoreName(mov.store_id).toLowerCase().includes(searchTerm.toLowerCase())
+        : true)
+  );
 
-  const filteredResourceMovements = resourceMovements.filter(mov => (
-    mov.status &&
-    (!filters.resource_id || mov.resource_id === filters.resource_id) &&
-    (!filters.movement_type || mov.movement_type === filters.movement_type) &&
-    (!filters.start_date || new Date(mov.movement_date) >= new Date(filters.start_date)) &&
-    (!filters.end_date || new Date(mov.movement_date) <= new Date(filters.end_date)) &&
-    (!searchTerm ||
-      getResourceName(mov.resource_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getWarehouseName(mov.warehouse_id).toLowerCase().includes(searchTerm.toLowerCase()))
-  ));
+  // Filtrar movimientos de recursos
+  const filteredResourceMovements = resourceMovements.filter(
+    (mov) =>
+      (filters.resource_id ? mov.resource_id === filters.resource_id : true) &&
+      (filters.movement_type ? mov.movement_type === filters.movement_type : true) &&
+      (filters.start_date ? new Date(mov.movement_date) >= new Date(filters.start_date) : true) &&
+      (filters.end_date ? new Date(mov.movement_date) <= new Date(filters.end_date) : true) &&
+      (searchTerm
+        ? getResourceName(mov.resource_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
+          getWarehouseName(mov.warehouse_id).toLowerCase().includes(searchTerm.toLowerCase())
+        : true)
+  );
 
   return (
     <div className="p-6 space-y-4 bg-gray-50 min-h-screen">
@@ -100,20 +125,16 @@ const MovementComponentView: React.FC = () => {
         </button>
         <button
           onClick={() => setSelectedType('producto')}
-          className={`px-4 py-2 rounded-full font-semibold flex items-center gap-2 ${
-            selectedType === 'producto'
-              ? 'bg-red-700 text-white'
-              : 'bg-white text-red-700 border border-red-700'
+          className={`w-1/2 sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
+            selectedType === 'producto' ? 'bg-red-700 text-white' : 'bg-white text-red-700 border border-red-700'
           }`}
         >
           <Package size={18} /> Producto
         </button>
         <button
           onClick={() => setSelectedType('recurso')}
-          className={`px-4 py-2 rounded-full font-semibold flex items-center gap-2 ${
-            selectedType === 'recurso'
-              ? 'bg-orange-500 text-white'
-              : 'bg-white text-orange-500 border border-orange-500'
+          className={`w-1/2 sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
+            selectedType === 'recurso' ? 'bg-orange-500 text-white' : 'bg-white text-orange-500 border border-orange-500'
           }`}
         >
           <Users size={18} /> Recurso
