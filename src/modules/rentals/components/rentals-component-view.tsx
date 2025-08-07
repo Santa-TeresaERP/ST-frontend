@@ -116,7 +116,7 @@ const RentalsComponentView = () => {
   if (currentView === "rental-history" && selectedPlaceForRentals) {
     return (
       <RentalHistoryView
-        placeName={selectedPlaceForRentals.nombre}
+        placeName={selectedPlaceForRentals.name}
         placeId={selectedPlaceForRentals.id}
         onBack={handleBackToMain}
       />

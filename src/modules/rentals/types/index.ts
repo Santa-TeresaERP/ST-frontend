@@ -8,9 +8,8 @@ export interface Location {
 
 export interface Place {
   id: string; // ✅ Backend devuelve UUID (string), no number
-  nombre: string; // ✅ Transformado desde "name" del backend
+  name: string; // ✅ Consistente con el backend API
   area: string;
-  // ✅ Removido "tipo" porque no existe en el backend
   location_id?: string; // ✅ Opcional, viene del backend
   createdAt?: string; // ✅ Opcional, viene del backend
   updatedAt?: string; // ✅ Opcional, viene del backend

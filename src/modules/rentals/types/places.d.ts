@@ -1,5 +1,4 @@
 export interface Place {
-
   id: string;
   name: string;
   area: string;
@@ -8,5 +7,5 @@ export interface Place {
   updatedAt?: string;
 }
 
-export type CreatePlacePayload = Omit<Place, '_id'>;
-export type UpdatePlacePayload = Partial<Omit<Place, '_id'>>;
+export type CreatePlacePayload = Omit<Place, 'id'>;
+export type UpdatePlacePayload = Partial<Omit<Place, 'id'>>;

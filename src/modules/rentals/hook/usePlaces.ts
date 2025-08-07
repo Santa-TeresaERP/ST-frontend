@@ -1,8 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchPlaces,
-  fetchPlace,
-  fetchPlacesByLocation,
   createPlace,
   updatePlace,
   deletePlace
@@ -11,13 +9,13 @@ import {
   Place,
   CreatePlacePayload,
   UpdatePlacePayload
-} from '../types/places';
+} from '../types/places.d';
 
 // ✅ Obtener todos los places
 export const useFetchPlaces = () => {
   return useQuery<Place[], Error>({
     queryKey: ['places'],
-    queryFn: fetchPlaces,
+    queryFn: () => fetchPlaces(), // Llamar sin parámetros para obtener todos
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
@@ -34,15 +32,17 @@ export const useFetchPlacesByLocation = (
     queryKey: ['places', 'filtered', locationId, forceRefetchKey],
     queryFn: () => {
       if (!locationId) return Promise.resolve([]);
-      if (!allPlaces || allPlaces.length === 0) {
-        return fetchPlacesByLocation(locationId);
+      
+      // Si tenemos datos en cache y es un array, filtrar localmente
+      if (Array.isArray(allPlaces) && allPlaces.length > 0) {
+        const filtered = allPlaces.filter(
+          (place: Place) => place.location_id === locationId
+        );
+        return Promise.resolve(filtered);
       }
 
-      const filtered = allPlaces.filter(
-        (place) => place.location_id === locationId
-      );
-
-      return Promise.resolve(filtered);
+      // Si no hay datos en cache, hacer petición directa al servidor
+      return fetchPlaces(locationId);
     },
     enabled: !!locationId && !allPlacesLoading,
     staleTime: 30 * 1000,
