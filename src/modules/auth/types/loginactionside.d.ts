@@ -8,5 +8,5 @@ export interface LoginCredentials {
 
 export interface LoginResponse {
   token: string;
-  user: UserWithPermissions;
+  user: UserWithPermissions | string; // Permitir tanto objeto como string
 }

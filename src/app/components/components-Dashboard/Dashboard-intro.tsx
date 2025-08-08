@@ -7,6 +7,30 @@ import { useAuthStore } from '@/core/store/auth';
 
 const Dashboard = () => {
   const user = useAuthStore((state) => state.user);
+  const userWithPermissions = useAuthStore((state) => state.userWithPermissions);
+
+  // 🔥 OBTENER NOMBRE DE USUARIO DE MANERA FLEXIBLE
+  const getUserName = () => {
+    // Si user es un string, usarlo directamente
+    if (typeof user === 'string') {
+      return user;
+    }
+    // Si user es un objeto con name
+    if (user && typeof user === 'object' && user.name) {
+      return user.name;
+    }
+    // Si userWithPermissions tiene name
+    if (userWithPermissions && typeof userWithPermissions === 'object' && userWithPermissions.name) {
+      return userWithPermissions.name;
+    }
+    // Si userWithPermissions es un string
+    if (typeof userWithPermissions === 'string') {
+      return userWithPermissions;
+    }
+    return 'Usuario';
+  };
+
+  const displayName = getUserName();
 
   return (
     <div className="min-h-screen">
@@ -19,7 +43,7 @@ const Dashboard = () => {
       <main className="p-8 relative">
         <div className="relative mb-12 text-center">
           <h2 className="text-2xl md:text-5xl font-extrabold text-white bg-clip-text bg-gradient-to-r from-red-700 to-red-800 mb-4 animate-fade-in">
-            ¡Bienvenido <span className="text-white">{user?.name || 'Usuario'}</span>!
+            ¡Bienvenido <span className="text-white">{displayName}</span>!
           </h2>
 
           <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-transparent via-red-700 to-transparent opacity-80"></div>

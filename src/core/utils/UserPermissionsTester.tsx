@@ -12,7 +12,8 @@ export const UserPermissionsTester = () => {
   const { data: users, isLoading } = useFetchUsers();
 
   // Encontrar el usuario actual con sus permisos completos
-  const currentUserWithPermissions = users?.find(u => u.id === user?.id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const currentUserWithPermissions = users?.find(u => u.id === user?.id) as any;
 
   if (isLoading) {
     return <div className="p-4 text-center">Cargando permisos...</div>;

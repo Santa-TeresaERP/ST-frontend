@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
+import { z } from 'zod';
 import { userSchema } from '../schemas/userValidation';
 
 export type User = z.infer<typeof userSchema>;

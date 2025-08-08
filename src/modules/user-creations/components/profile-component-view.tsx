@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useFetchUser } from "@/modules/user-creations/hook/useUsers";
 import { useFetchRoles } from "@/modules/roles/hook/useRoles";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../app/components/ui/card";
+import { Card, CardContent, CardHeader } from "../../../app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
@@ -155,11 +155,11 @@ const UserDetail = ({ userId, onClose }: { userId: string; onClose: () => void }
         </Card>
 
         {/* Modal contraseña */}
-        {user && (
+        {user?.id && (
           <ChangePasswordForm
             isOpen={isChangePasswordModalOpen}
             onClose={handleCloseChangePasswordModal}
-            user={user}
+            user={{ id: user.id }}
           />
         )}
       </div>

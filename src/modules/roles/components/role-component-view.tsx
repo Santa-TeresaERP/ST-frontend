@@ -123,18 +123,25 @@ const RoleList: React.FC = () => {
   }
 
   if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <div className="bg-gray-100 p-6 rounded-lg max-w-md text-center">
-          <ShieldAlert className="h-10 w-10 text-red-600 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-700 mb-2">Error al cargar los roles</h2>
-          <p className="text-gray-600">{error.message}</p>
-          <Button className="mt-4 bg-red-600 hover:bg-red-700 text-white" onClick={() => window.location.reload()}>
-            Reintentar
-          </Button>
+    // Si es error 403, mostrar modal de acceso denegado
+    if (error.message.includes('403') || error.message.includes('Forbidden')) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
+            <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-700 mb-2">Acceso Restringido</h2>
+            <p className="text-gray-600 mb-4">
+              No tienes permisos para ver la gestión de roles del sistema.
+            </p>
+            <p className="text-sm text-gray-500">
+              Contacta al administrador para obtener acceso.
+            </p>
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
+    // Para otros errores, mostrar mensaje genérico
+    return <div className="text-center text-red-800 font-semibold">Error cargando roles: {error.message}</div>;
   }
 
   return (

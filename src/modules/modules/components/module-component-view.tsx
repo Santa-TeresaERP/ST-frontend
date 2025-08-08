@@ -6,13 +6,13 @@ import ModuleModal from './modal-update-module';
 import { Module } from '@/modules/modules/types/modules';
 import { useQueryClient } from '@tanstack/react-query';
 
-// 🔥 IMPORTAR SISTEMA DE PERMISOS Y HOOK DE USUARIOS
+// 🔥 IMPORTAR SISTEMA DE PERMISOS Y HOOK DE USUARIO ACTUAL
 import { 
   MODULE_IDS,
   AccessDeniedModal,
   Permission,
 } from '@/core/utils';
-import { useFetchUsers } from '@/modules/user-creations/hook/useUsers';
+import { useCurrentUser } from '@/modules/auth/hook/useCurrentUser';
 import { useAuthStore } from '@/core/store/auth';
 
 // 🔥 INTERFAZ PARA ERRORES DE AXIOS
@@ -30,15 +30,13 @@ const ModuleList: React.FC = () => {
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
   const queryClient = useQueryClient(); // 🔥 AGREGAR QUERY CLIENT
   
-  // 🔥 OBTENER USUARIO ACTUAL Y LISTA DE USUARIOS CON PERMISOS
+  // 🔥 OBTENER USUARIO ACTUAL CON SUS PERMISOS DESDE /auth/me
   const { user } = useAuthStore();
-  const { data: users, isLoading: usersLoading } = useFetchUsers();
-  
-  // 🔥 ENCONTRAR EL USUARIO ACTUAL CON SUS PERMISOS
-  const currentUserWithPermissions = users?.find(u => u.id === user?.id);
+  const { data: currentUserWithPermissions, isLoading: usersLoading } = useCurrentUser();
   
   // 🔥 OBTENER PERMISOS PARA EL MÓDULO DE MODULES
-  const modulePermission = currentUserWithPermissions?.Role?.Permissions?.find(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const modulePermission = (currentUserWithPermissions as any)?.Role?.Permissions?.find(
     (permission: Permission) => permission.moduleId === MODULE_IDS.MODULES
   );
   
@@ -47,7 +45,8 @@ const ModuleList: React.FC = () => {
   const canEdit = modulePermission?.canEdit || false;
   const canCreate = modulePermission?.canWrite || false;
   const canDelete = modulePermission?.canDelete || false;
-  const isAdmin = currentUserWithPermissions?.Role?.name === 'Admin';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isAdmin = (currentUserWithPermissions as any)?.Role?.name === 'Admin';
   
   const [showAccessDenied, setShowAccessDenied] = useState(false);
   const [accessDeniedAction, setAccessDeniedAction] = useState('');
@@ -56,11 +55,11 @@ const ModuleList: React.FC = () => {
   console.log('🔍 ModuleList - Análisis de Permisos:', {
     userId: user?.id,
     userFound: !!currentUserWithPermissions,
-    roleName: currentUserWithPermissions?.Role?.name,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    roleName: (currentUserWithPermissions as any)?.Role?.name,
     moduleId: MODULE_IDS.MODULES,
     modulePermission,
     permisos: { canView, canEdit, canCreate, canDelete, isAdmin },
-    totalUsers: users?.length || 0,
     usersLoading
   });
 
@@ -173,8 +172,10 @@ const ModuleList: React.FC = () => {
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-800">
             <strong>Debug Permisos:</strong> 
-            Usuario: {currentUserWithPermissions?.name || 'No encontrado'} | 
-            Rol: {currentUserWithPermissions?.Role?.name || 'Sin rol'} | 
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            Usuario: {(currentUserWithPermissions as any)?.name || 'No encontrado'} | 
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            Rol: {(currentUserWithPermissions as any)?.Role?.name || 'Sin rol'} | 
             Ver: {canView ? '✅' : '❌'} | 
             Editar: {canEdit ? '✅' : '❌'} | 
             Crear: {canCreate ? '✅' : '❌'} | 

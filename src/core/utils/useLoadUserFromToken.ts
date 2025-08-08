@@ -1,73 +1,80 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuthStore } from '@/core/store/auth';
-import { useFetchUsers } from '@/modules/user-creations/hook/useUsers';
-import { UserWithPermissions } from './permission-types';
+import { useCurrentUser } from '@/modules/auth/hook/useCurrentUser';
 
 /**
  * 🔥 HOOK PARA CARGAR USUARIO DESDE TOKEN AL INICIAR LA APP
- * Este hook se ejecuta cuando la app inicia y hay un token guardado
+ * Ahora usa el endpoint /auth/me que no requiere permisos especiales
  */
 export const useLoadUserFromToken = () => {
   const { user, setUser, setUserWithPermissions } = useAuthStore();
-  const { data: users } = useFetchUsers();
+  const { data: currentUserData, isLoading, error } = useCurrentUser();
+  const hasTriedToLoad = useRef(false);
 
   useEffect(() => {
-    // Solo intentar cargar si no hay usuario pero hay token
-    if (!user) {
-      const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+    // Solo intentar cargar si no hay usuario pero hay token Y tenemos datos del usuario
+    if (!user && !isLoading && !hasTriedToLoad.current && currentUserData) {
+      const token = localStorage.getItem('authToken');
       
-      if (token && users) {
+      if (token && currentUserData) {
         console.log('🔍 =================================');
-        console.log('🔍 CARGANDO USUARIO DESDE TOKEN');
+        console.log('🔍 CARGANDO USUARIO DESDE /auth/me');
         console.log('🔍 =================================');
         
-        try {
-          // Decodificar el token para obtener el userId
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          const userId = payload.userId || payload.id || payload.user_id || payload.sub;
-          
-          console.log('🔍 Token decodificado:', {
-            payload,
-            userId,
-            totalUsers: users.length
-          });
-          
-          if (userId) {
-            // Buscar el usuario completo en la lista
-            const fullUser = users.find(u => u.id === userId) as UserWithPermissions;
-            
-            if (fullUser) {
-              console.log('🔍 ✅ Usuario encontrado:', {
-                id: fullUser.id,
-                name: fullUser.name,
-                role: fullUser.Role?.name,
-                totalPermissions: fullUser.Role?.Permissions?.length || 0
-              });
-              
-              // Guardar usuario básico
-              const basicUser = {
-                id: fullUser.id,
-                name: fullUser.name,
-                email: fullUser.email,
-                roleId: fullUser.roleId
-              };
-              
-              setUser(basicUser);
-              setUserWithPermissions(fullUser);
-              
-              console.log('🔍 ✅ Usuario cargado en el store desde token');
-            } else {
-              console.log('🔍 ❌ Usuario no encontrado en la lista');
-            }
-          } else {
-            console.log('🔍 ❌ No se pudo extraer userId del token');
-          }
-        } catch (error) {
-          console.error('🔍 ❌ Error decodificando token:', error);
-        }
+        hasTriedToLoad.current = true; // Marcar que ya intentamos cargar
         
+        console.log('🔍 ✅ Usuario obtenido desde /auth/me:', {
+          id: currentUserData.id,
+          name: currentUserData.name,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          role: (currentUserData as any).Role?.name,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          totalPermissions: (currentUserData as any).Role?.Permissions?.length || 0
+        });
+        
+        // Guardar usuario básico
+        const basicUser = {
+          id: currentUserData.id || '',
+          name: currentUserData.name,
+          email: currentUserData.email,
+          roleId: currentUserData.roleId,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          dni: (currentUserData as any).dni || '',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          phonenumber: (currentUserData as any).phonenumber || '',
+          password: '', // No guardar password por seguridad
+          status: currentUserData.status
+        };
+        
+        setUser(basicUser);
+        setUserWithPermissions(currentUserData);
+        
+        console.log('🔍 ✅ Usuario cargado en el store desde /auth/me');
         console.log('🔍 =================================');
       }
     }
-  }, [user, users, setUser, setUserWithPermissions]);
+    
+    // Si hay usuario, marcar que ya cargamos
+    if (user) {
+      hasTriedToLoad.current = true;
+    }
+  }, [user, currentUserData, isLoading, setUser, setUserWithPermissions]);
+
+  // 🔥 MANEJAR ERRORES (ej: token expirado)
+  useEffect(() => {
+    if (error && !user) {
+      console.log('🔍 ❌ Error obteniendo usuario actual, limpiando token...');
+      localStorage.removeItem('authToken');
+      hasTriedToLoad.current = false;
+    }
+  }, [error, user]);
+
+  // 🔥 RESET del flag cuando se hace logout (no hay usuario ni token)
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (!user && !token) {
+      hasTriedToLoad.current = false;
+      console.log('🔄 Reset flag de carga - Ready para nueva sesión');
+    }
+  }, [user]);
 };

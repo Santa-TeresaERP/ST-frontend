@@ -7,7 +7,7 @@ import Modal from './modal-create-user';
 import DeleteUserModal from './modal-delete-user';
 import { User } from '@/modules/user-creations/types/user';
 import { Button } from '@/app/components/ui/button';
-import { UserIcon, Pencil, Trash2, PlusCircle } from 'lucide-react';
+import { UserIcon, Pencil, Trash2, PlusCircle, ShieldAlert } from 'lucide-react';
 
 const UserList: React.FC = () => {
   const { data: users, isLoading, error } = useFetchUsers();
@@ -80,17 +80,35 @@ const UserList: React.FC = () => {
 
   if (isLoading) {
     console.log('Loading users...');
-    return <div>Loading...</div>;
+    return <div className="text-center text-red-800 font-semibold">Cargando usuarios...</div>;
   }
 
   if (error) {
     console.error('Error fetching users:', error);
-    return <div>{error.message}</div>;
+    // Si es error 403, mostrar modal de acceso denegado
+    if (error.message.includes('403') || error.message.includes('Forbidden')) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
+            <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-700 mb-2">Acceso Restringido</h2>
+            <p className="text-gray-600 mb-4">
+              No tienes permisos para ver la gestión de usuarios del sistema.
+            </p>
+            <p className="text-sm text-gray-500">
+              Contacta al administrador para obtener acceso.
+            </p>
+          </div>
+        </div>
+      );
+    }
+    // Para otros errores, mostrar mensaje genérico
+    return <div className="text-center text-red-800 font-semibold">Error cargando usuarios: {error.message}</div>;
   }
 
   console.log('Users fetched:', users);
 
-  if (viewingProfile && selectedUser) {
+  if (viewingProfile && selectedUser && selectedUser.id) {
     return <UserDetail userId={selectedUser.id} onClose={handleCloseProfile} />;
   }
 

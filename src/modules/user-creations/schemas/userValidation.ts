@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const userSchema = z.object({
+  id: z.string().optional(), // Agregamos el id como opcional para compatibilidad
   name: z
     .string()
     .max(45, 'El nombre completo no debe exceder los 45 caracteres')

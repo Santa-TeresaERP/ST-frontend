@@ -5,14 +5,14 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token'); 
+  const token = localStorage.getItem('authToken'); // 🔥 USAR LA CLAVE CORRECTA
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// 🔥 INTERCEPTOR DE RESPUESTA PARA MANEJAR ERRORES 403
+// 🔥 INTERCEPTOR DE RESPUESTA PARA MANEJAR ERRORES 403 Y 401
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -20,6 +20,13 @@ api.interceptors.response.use(
     if (error.response?.status === 403) {
       error.isPermissionError = true;
     }
+    
+    // Si es error 401 (Unauthorized), limpiar token automáticamente
+    if (error.response?.status === 401) {
+      console.log('🔍 Token inválido o expirado, limpiando...');
+      localStorage.removeItem('authToken');
+    }
+    
     return Promise.reject(error);
   }
 );
