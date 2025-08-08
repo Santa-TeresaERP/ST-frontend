@@ -1,34 +1,37 @@
 import React, { useState } from 'react';
-import { Place } from '../../types/places';
-import { useFetchPlaces, useCreatePlace, useUpdatePlace, useDeletePlace } from '../../hook/usePlaces';
+import { Place } from '../../types/places.d';
+import { useFetchPlaces, useDeletePlace } from '../../hook/usePlaces';
+import { useQueryClient } from '@tanstack/react-query';
 import ModalCreatePlace from './modal-create-place';
+import ModalEditPlace from './modal-edit-place';
 import PlaceCard from './place-card';
 
 const Places: React.FC = () => {
-  const { data: places, isLoading, isError } = useFetchPlaces();
-  const createPlace = useCreatePlace();
-  const updatePlace = useUpdatePlace();
+  const { data: places = [], isLoading, isError } = useFetchPlaces();
   const deletePlace = useDeletePlace();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingPlace, setEditingPlace] = useState<Place | null>(null);
+  const queryClient = useQueryClient();
 
-  // Handle create
-  const handleCreate = async (placeData: Omit<Place, '_id'>) => {
-    createPlace.mutate(placeData, {
-      onSuccess: () => setIsCreateModalOpen(false)
-    });
+  const handleCreated = () => {
+    // Invalidar la consulta para forzar la recarga de lugares
+    queryClient.invalidateQueries({ queryKey: ['places'] });
+    setIsCreateModalOpen(false);
   };
 
-  // Handle edit
-  const handleEdit = async (placeId: string, updated: Partial<Place>) => {
-    updatePlace.mutate({ id: placeId, payload: updated });
+  const handleUpdated = () => {
+    queryClient.invalidateQueries({ queryKey: ['places'] });
+    setEditingPlace(null);
   };
 
-  // Handle delete
   const handleDelete = async (placeId: string) => {
-    deletePlace.mutate(placeId);
+    try {
+      await deletePlace.mutateAsync(placeId);
+    } catch (error) {
+      console.error('Error eliminando lugar:', error);
+    }
   };
 
-  // Handle view rentals (dummy)
   const handleViewRentals = (place: Place) => {
     alert(`Ver alquileres de: ${place.name}`);
   };
@@ -44,28 +47,41 @@ const Places: React.FC = () => {
           Crear Lugar
         </button>
       </div>
+
       {isLoading && <p>Cargando lugares...</p>}
       {isError && <p>Error al cargar lugares.</p>}
+
       <div className="flex flex-wrap gap-4">
-        {places && places.map((place) => (
+        {places.map((place) => (
           <PlaceCard
-            key={place._id}
+            key={place.id}
             place={place}
-            onEdit={handleEdit}
+            onEdit={() => setEditingPlace(place)}
             onDelete={handleDelete}
             onViewRentals={handleViewRentals}
           />
         ))}
       </div>
+
+      {/* Modal de creación */}
       {isCreateModalOpen && (
         <ModalCreatePlace
+          isOpen={true}
           onClose={() => setIsCreateModalOpen(false)}
-          onSubmit={handleCreate}
+          onCreated={handleCreated}
+        />
+      )}
+
+      {/* Modal de edición */}
+      {editingPlace && (
+        <ModalEditPlace
+          place={editingPlace}
+          onClose={() => setEditingPlace(null)}
+          onUpdated={handleUpdated}
         />
       )}
     </div>
   );
 };
-
 
 export default Places;

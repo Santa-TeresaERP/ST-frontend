@@ -6,7 +6,7 @@ import ModalEditLocation from './information location/modal-edit-location';
 import ModalCreatePlace from './places/modal-create-place';
 import PlaceCard from './places/place-card';
 import RentalHistoryView from './rental-history/rental-history-view';
-import { Place } from '../types';
+import { Place } from '../types/places.d';
 import { Location } from '../types/location';
 import { useFetchLocations } from '../hook/useLocations';
 import { useFetchPlacesByLocation, useDeletePlace } from '../hook/usePlaces';
@@ -105,11 +105,11 @@ const RentalsComponentView = () => {
     if (confirmDelete) {
       deletePlace(placeId, {
         onSuccess: () => {
-          console.log("✅ Lugar eliminado correctamente");
+          console.log("Lugar eliminado correctamente");
           setCurrentPage(1);
         },
         onError: (err) => {
-          console.error("❌ Error al eliminar lugar:", err);
+          console.error("Error al eliminar lugar:", err);
         },
       });
     }
@@ -389,6 +389,7 @@ const RentalsComponentView = () => {
 
       {isCreatePlaceModalOpen && selectedLocation && (
         <ModalCreatePlace
+          isOpen={isCreatePlaceModalOpen}
           locationId={selectedLocation.id}
           onClose={() => setIsCreatePlaceModalOpen(false)}
           onCreated={() => {
