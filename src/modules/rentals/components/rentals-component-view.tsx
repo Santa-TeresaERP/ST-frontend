@@ -6,52 +6,44 @@ import ModalEditLocation from './information location/modal-edit-location';
 import ModalCreatePlace from './places/modal-create-place';
 import PlaceCard from './places/place-card';
 import RentalHistoryView from './rental-history/rental-history-view';
-import { Place } from '../types';
+import { Place } from '../types/places.d';
 import { Location } from '../types/location';
 import { useFetchLocations } from '../hook/useLocations';
 import { useFetchPlacesByLocation, useDeletePlace } from '../hook/usePlaces';
 import { useQueryClient } from '@tanstack/react-query';
 
 const RentalsComponentView = () => {
-  // Estados para modales
   const [isCreateLocationModalOpen, setIsCreateLocationModalOpen] = useState(false);
   const [isEditLocationModalOpen, setIsEditLocationModalOpen] = useState(false);
   const [isCreatePlaceModalOpen, setIsCreatePlaceModalOpen] = useState(false);
-  
-  // Estados para vistas
+
   const [currentView, setCurrentView] = useState<"main" | "rental-history">("main");
   const [selectedPlaceForRentals, setSelectedPlaceForRentals] = useState<Place | null>(null);
-  
-  // Estados para locaciones y lugares
+
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [forceRefetchKey, setForceRefetchKey] = useState<number>(0);
-  
-  // Estados para paginación
+
   const [currentPage, setCurrentPage] = useState(1);
   const placesPerPage = 20;
 
-  // Hooks para cargar datos
   const { data: locations = [], isLoading: locationsLoading, error: locationsError } = useFetchLocations();
   const { data: places = [], isLoading: placesLoading, error: placesError } = useFetchPlacesByLocation(selectedLocation?.id || null, forceRefetchKey);
   const { mutate: deletePlace } = useDeletePlace();
   const queryClient = useQueryClient();
 
-  // Lógica de paginación
   const totalPages = Math.ceil(places.length / placesPerPage);
   const indexOfLastPlace = currentPage * placesPerPage;
   const indexOfFirstPlace = indexOfLastPlace - placesPerPage;
   const currentPlaces = useMemo(() => places.slice(indexOfFirstPlace, indexOfLastPlace), [places, indexOfFirstPlace, indexOfLastPlace]);
 
-  // Efectos
   useEffect(() => {
     if (selectedLocation) {
-      setCurrentPage(1); // Reset página al cambiar locación
+      setCurrentPage(1); 
     }
   }, [selectedLocation]);
 
-  // Funciones para manejar locaciones
   const handleSelectLocation = async (location: Location) => {
-    // Limpiar cache antes del cambio
+
     await queryClient.cancelQueries({
       queryKey: ['places']
     });
@@ -65,7 +57,7 @@ const RentalsComponentView = () => {
     setSelectedLocation(location);
   };
 
-  // Funciones para paginación
+
   const handlePageChange = (page: number) => {
     if (page > 0 && page <= totalPages) {
       setCurrentPage(page);
@@ -93,7 +85,6 @@ const RentalsComponentView = () => {
     return pageNumbers;
   };
 
-  // Funciones para manejar lugares
   const handleEditPlace = (placeId: string, updatedPlace: Partial<Place>) => {
     console.log('Editar place:', placeId, updatedPlace);
   };
@@ -105,11 +96,11 @@ const RentalsComponentView = () => {
     if (confirmDelete) {
       deletePlace(placeId, {
         onSuccess: () => {
-          console.log("✅ Lugar eliminado correctamente");
+          console.log("Lugar eliminado correctamente");
           setCurrentPage(1);
         },
         onError: (err) => {
-          console.error("❌ Error al eliminar lugar:", err);
+          console.error("Error al eliminar lugar:", err);
         },
       });
     }
@@ -125,7 +116,6 @@ const RentalsComponentView = () => {
     setSelectedPlaceForRentals(null);
   };
 
-  // Renderizado condicional para vista de historial
   if (currentView === "rental-history" && selectedPlaceForRentals) {
     return (
       <RentalHistoryView
@@ -389,6 +379,7 @@ const RentalsComponentView = () => {
 
       {isCreatePlaceModalOpen && selectedLocation && (
         <ModalCreatePlace
+          isOpen={isCreatePlaceModalOpen}
           locationId={selectedLocation.id}
           onClose={() => setIsCreatePlaceModalOpen(false)}
           onCreated={() => {
