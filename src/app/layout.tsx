@@ -5,6 +5,8 @@ import "./globals.css";
 import ReactQueryProvider from "../core/provider/react-query-provider";
 import HeaderClient from "./components/components-header/HeaderClient";
 import { AuthInitializer } from "../core/components/AuthInitializer";
+// 🔥 SUPRESOR DE ERRORES 403 EN CONSOLA
+import "../core/utils/error-suppressor";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",

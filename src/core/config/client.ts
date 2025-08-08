@@ -12,4 +12,16 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// 🔥 INTERCEPTOR DE RESPUESTA PARA MANEJAR ERRORES 403
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Si es error 403, agregar flag para manejo silencioso en componentes
+    if (error.response?.status === 403) {
+      error.isPermissionError = true;
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

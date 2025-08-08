@@ -28,6 +28,13 @@ export const useUpdateModule = () => {
     }) => updateModules(id, payload),
     onSuccess: () => queryClient.invalidateQueries({
       queryKey: ["modules"]
-    })
+    }),
+    // 🔥 NO MOSTRAR ERRORES 403 EN CONSOLA - LOS MANEJAMOS EN EL COMPONENTE
+    onError: (error) => {
+      // Solo mostrar en consola errores que NO sean 403
+      if (!error.message.includes('403') && !error.message.includes('Forbidden')) {
+        console.error('Mutation error:', error);
+      }
+    }
   });
 };

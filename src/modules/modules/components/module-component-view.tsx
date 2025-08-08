@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../app/component
 import { Cuboid, ShieldAlert, Lock } from 'lucide-react';
 import ModuleModal from './modal-update-module';
 import { Module } from '@/modules/modules/types/modules';
+import { useQueryClient } from '@tanstack/react-query';
 
 // 🔥 IMPORTAR SISTEMA DE PERMISOS Y HOOK DE USUARIOS
 import { 
@@ -14,11 +15,20 @@ import {
 import { useFetchUsers } from '@/modules/user-creations/hook/useUsers';
 import { useAuthStore } from '@/core/store/auth';
 
+// 🔥 INTERFAZ PARA ERRORES DE AXIOS
+interface AxiosError extends Error {
+  response?: {
+    status: number;
+    data?: unknown;
+  };
+}
+
 const ModuleList: React.FC = () => {
   const { data: modules, isLoading, error } = useFetchModules();
   const updateModuleMutation = useUpdateModule();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
+  const queryClient = useQueryClient(); // 🔥 AGREGAR QUERY CLIENT
   
   // 🔥 OBTENER USUARIO ACTUAL Y LISTA DE USUARIOS CON PERMISOS
   const { user } = useAuthStore();
@@ -87,14 +97,53 @@ const ModuleList: React.FC = () => {
       });
       handleCloseModal();
     } catch (error) {
+      // 🔥 VERIFICAR SI ES ERROR 403 SIN MOSTRARLO EN CONSOLA
+      const isPermissionError = (error as AxiosError)?.response?.status === 403 ||
+                               error instanceof Error && (
+                                 error.message.includes('403') || 
+                                 error.message.includes('Forbidden')
+                               );
+
+      if (isPermissionError) {
+        handleCloseModal();
+        setAccessDeniedAction('editar este módulo (permisos revocados)');
+        setShowAccessDenied(true);
+        queryClient.invalidateQueries({ queryKey: ['users'] });
+        return; // 🔥 SALIR SILENCIOSAMENTE
+      }
+      
+      // 🔥 SOLO LOGGEAR ERRORES QUE NO SEAN 403
       console.error('Error updating module:', error);
+      alert('Error al actualizar el módulo. Inténtalo de nuevo.');
     }
   };
 
   if (isLoading || usersLoading) return <div className="text-center text-red-800 font-semibold">Cargando módulos y permisos...</div>;
-  if (error) return <div className="text-center text-red-800 font-semibold">{error.message}</div>;
+  
+  // 🔥 VERIFICAR SI ES ERROR 403 (Acceso denegado) - Mostrar modal específico
+  if (error) {
+    // Si es error 403, mostrar modal de acceso denegado
+    if (error.message.includes('403') || error.message.includes('Forbidden')) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
+            <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-700 mb-2">Acceso Restringido</h2>
+            <p className="text-gray-600 mb-4">
+              No tienes permisos para ver la gestión de módulos del sistema.
+            </p>
+            <p className="text-sm text-gray-500">
+              Contacta al administrador para obtener acceso.
+            </p>
+          </div>
+        </div>
+      );
+    }
+    // Para otros errores, mostrar mensaje genérico
+    return <div className="text-center text-red-800 font-semibold">Error cargando módulos: {error.message}</div>;
+  }
 
-  // 🔥 VERIFICAR SI TIENE PERMISO PARA VER EL MÓDULO
+  // 🔥 VERIFICAR SI TIENE PERMISO PARA VER EL MÓDULO (verificación adicional por permisos locales)
   if (!canView && !isAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
