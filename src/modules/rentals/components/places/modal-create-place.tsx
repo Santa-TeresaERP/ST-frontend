@@ -1,16 +1,12 @@
-import React, { useState } from "react";
-import { FiX } from "react-icons/fi";
 import React, { useEffect, useState } from 'react';
 import { FiX } from 'react-icons/fi';
 import { Location } from '../../types/location';
 import { useCreatePlace } from '../../hook/usePlaces';
-import { CreatePlacePayload } from '../../types/places';
+import { CreatePlacePayload } from '../../types/places.d';
 import { fetchLocations } from '../../action/locationActions';
 
 interface ModalCreatePlaceProps {
   onClose: () => void;
-  onSubmit: (placeData: { name: string; area: string; location_id: string }) => void;
-  locationId: string;
   onCreated?: () => void;
   locationId?: string;
 }
@@ -132,6 +128,7 @@ const ModalCreatePlace: React.FC<ModalCreatePlaceProps> = ({
               required
             />
           </div>
+          
           <div>
             <label
               htmlFor="area"
@@ -149,6 +146,7 @@ const ModalCreatePlace: React.FC<ModalCreatePlaceProps> = ({
               required
             />
           </div>
+          
           <div>
             <label
               htmlFor="location_id"
@@ -173,8 +171,6 @@ const ModalCreatePlace: React.FC<ModalCreatePlaceProps> = ({
             </select>
           </div>
 
-          <
-            div className="flex justify-end space-x-3 pt-4">
           <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"

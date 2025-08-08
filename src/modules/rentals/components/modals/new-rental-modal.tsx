@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useAuthStore } from "@/core/store/auth";
-import React, { useState } from 'react';
 import { FiPlus, FiUser } from 'react-icons/fi';
+import { useAuthStore } from "@/core/store/auth";
 import { useFetchCustomers } from '../../hook/useCustomers';
 import { Customer } from '../../types/customer';
 import ModalCreateCustomer from './modal-create-customer';
@@ -9,7 +8,7 @@ import ModalCreateCustomer from './modal-create-customer';
 interface NewRentalModalProps {
   onClose: () => void;
   onSubmit: (rentalData: {
-    customerId: string; // Cambiado de nombreComprador a customerId
+    customerId: string;
     nombreVendedor: string;
     fechaInicio: string;
     fechaFin: string;
@@ -24,11 +23,6 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({
   const { user } = useAuthStore();
 
   const [formData, setFormData] = useState({
-    nombreComprador: "",
-    nombreVendedor: "",
-    fechaInicio: "",
-    fechaFin: "",
-    monto: "",
     customerId: '',
     nombreVendedor: '',
     fechaInicio: '',
@@ -36,7 +30,23 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({
     monto: ''
   });
 
-  // ✅ Actualizar nombre del vendedor cuando el usuario esté disponible
+  const [isCreateCustomerModalOpen, setIsCreateCustomerModalOpen] = useState(false);
+  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [newCustomerName, setNewCustomerName] = useState('');
+
+  // Hook para obtener customers
+  const { data: customers = [] } = useFetchCustomers();
+
+  // Filtrar customers basado en la búsqueda
+  const filteredCustomers = customers.filter((customer: Customer) =>
+    customer.full_name.toLowerCase().includes(customerSearchQuery.toLowerCase()) ||
+    customer.dni.toString().includes(customerSearchQuery)
+  );
+
+  const selectedCustomer = customers.find((c: Customer) => c.id === formData.customerId);
+
+  // Actualizar nombre del vendedor cuando el usuario esté disponible
   useEffect(() => {
     if (user) {
       console.log("👤 Usuario activo desde store:", {
@@ -54,31 +64,9 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({
     }
   }, [user]);
 
-  const [isCreateCustomerModalOpen, setIsCreateCustomerModalOpen] = useState(false);
-  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
-  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
-  const [newCustomerName, setNewCustomerName] = useState('');
-
-  // Hook para obtener customers
-  const { data: customers = [], isLoading: loadingCustomers } = useFetchCustomers();
-
-  // Filtrar customers basado en la búsqueda
-  const filteredCustomers = customers.filter((customer: Customer) =>
-    customer.full_name.toLowerCase().includes(customerSearchQuery.toLowerCase()) ||
-    customer.dni.toString().includes(customerSearchQuery)
-  );
-
-  const selectedCustomer = customers.find((c: Customer) => c.id === formData.customerId);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      formData.nombreComprador &&
-      formData.nombreVendedor &&
-      formData.fechaInicio &&
-      formData.fechaFin &&
-      formData.monto
-    ) {
+    
     if (formData.customerId && formData.nombreVendedor && formData.fechaInicio && formData.fechaFin && formData.monto) {
       onSubmit({
         customerId: formData.customerId,
@@ -90,13 +78,8 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({
 
       // Limpiar formulario
       setFormData({
-        nombreComprador: "",
-        nombreVendedor: user?.name || "",
-        fechaInicio: "",
-        fechaFin: "",
-        monto: "",
         customerId: '',
-        nombreVendedor: '',
+        nombreVendedor: user?.name || '',
         fechaInicio: '',
         fechaFin: '',
         monto: ''
@@ -155,13 +138,8 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({
 
         {/* Formulario */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label
-                htmlFor="nombreComprador"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Nombre del comprador
+          <div className="grid grid-cols-1 gap-4">
+            {/* Campo de búsqueda de cliente */}
             <div className="relative">
               <label htmlFor="customer-search" className="block text-sm font-medium text-gray-700 mb-1">
                 Cliente
@@ -201,7 +179,7 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({
                 </div>
               )}
 
-              {/* Mensaje cuando no hay coincidencias - estilo de referencia */}
+              {/* Mensaje cuando no hay coincidencias */}
               {showCustomerDropdown && customerSearchQuery && filteredCustomers.length === 0 && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg">
                   <button
@@ -230,6 +208,7 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({
               )}
             </div>
 
+            {/* Campo vendedor */}
             <div>
               <label
                 htmlFor="nombreVendedor"
@@ -242,7 +221,7 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({
                 id="nombreVendedor"
                 name="nombreVendedor"
                 value={formData.nombreVendedor}
-                readOnly // ✅ evita que el campo se edite
+                readOnly
                 className="w-full p-2 border-2 border-orange-400 bg-gray-100 text-gray-700 rounded focus:outline-none"
                 placeholder="Cargando..."
                 required
@@ -327,12 +306,14 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({
       </div>
 
       {/* Modal para crear nuevo customer */}
-      <ModalCreateCustomer
-        isOpen={isCreateCustomerModalOpen}
-        onClose={() => setIsCreateCustomerModalOpen(false)}
-        onCustomerCreated={handleCustomerCreated}
-        initialName={newCustomerName}
-      />
+      {isCreateCustomerModalOpen && (
+        <ModalCreateCustomer
+          isOpen={isCreateCustomerModalOpen}
+          onClose={() => setIsCreateCustomerModalOpen(false)}
+          onCustomerCreated={handleCustomerCreated}
+          initialName={newCustomerName}
+        />
+      )}
     </div>
   );
 };

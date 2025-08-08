@@ -1,17 +1,3 @@
-// RentalsComponentView.tsx - fusionado
-import React, { useState } from "react";
-import { FiMapPin, FiHome, FiBarChart2, FiCheckCircle } from "react-icons/fi";
-import { MdLocationOn } from "react-icons/md";
-import ModalCreateLocation from "./information location/modal-create-location";
-import ModalEditLocation from "./information location/modal-edit-location";
-import ModalCreatePlace from "./places/modal-create-place";
-import PlaceCard from "./places/place-card";
-import RentalHistoryView from "./rental-history/rental-history-view";
-import { Location } from "../types/location";
-import { Place } from "../types/places";
-import { useFetchLocations } from "../hook/useLocations";
-import { useFetchPlaces, useCreatePlace } from "../hook/usePlaces";
-import { useDeletePlace } from "../hook/usePlaces";
 import React, { useState, useEffect, useMemo } from 'react';
 import { FiMapPin, FiHome, FiBarChart2, FiCheckCircle, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { MdLocationOn } from 'react-icons/md';
@@ -23,64 +9,14 @@ import RentalHistoryView from './rental-history/rental-history-view';
 import { Place } from '../types';
 import { Location } from '../types/location';
 import { useFetchLocations } from '../hook/useLocations';
-import { useFetchPlacesByLocation } from '../hook/usePlaces';
+import { useFetchPlacesByLocation, useDeletePlace } from '../hook/usePlaces';
 import { useQueryClient } from '@tanstack/react-query';
 
 const RentalsComponentView = () => {
-  const [isCreateLocationModalOpen, setIsCreateLocationModalOpen] =
-    useState(false);
   // Estados para modales
   const [isCreateLocationModalOpen, setIsCreateLocationModalOpen] = useState(false);
   const [isEditLocationModalOpen, setIsEditLocationModalOpen] = useState(false);
   const [isCreatePlaceModalOpen, setIsCreatePlaceModalOpen] = useState(false);
-  const [currentView, setCurrentView] = useState<"main" | "rental-history">(
-    "main"
-  );
-  const [selectedPlaceForRentals, setSelectedPlaceForRentals] =
-    useState<Place | null>(null);
-  const { mutate: deletePlace } = useDeletePlace();
-
-  const {
-    data: locationsData,
-    isLoading: isLoadingLocations,
-    isError,
-    refetch,
-  } = useFetchLocations();
-
-  const { data: allPlaces = [], isLoading: isLoadingPlaces } = useFetchPlaces();
-  const { mutate: createPlace } = useCreatePlace();
-
-  const locations: Location[] = Array.isArray(locationsData)
-    ? locationsData
-    : Array.isArray((locationsData as any)?.data)
-      ? (locationsData as any).data
-      : [];
-
-  const [selectedLocation, setSelectedLocation] = useState<Location>({
-    id: "",
-    name: "",
-    address: "",
-    capacity: 0,
-    status: "",
-  });
-
-  const handleSelectLocation = (locationId: string) => {
-    const found = locations.find((loc) => loc.id === locationId);
-    if (found) {
-      setSelectedLocation(found);
-    }
-  };
-
-  const handleCreatePlace = (newPlace: Omit<Place, "_id">) => {
-    createPlace(newPlace, {
-      onSuccess: () => {
-        console.log("✅ Lugar creado correctamente");
-        setIsCreatePlaceModalOpen(false);
-      },
-      onError: (err) => {
-        console.error("❌ Error al crear lugar:", err);
-      },
-    });
   
   // Estados para vistas
   const [currentView, setCurrentView] = useState<"main" | "rental-history">("main");
@@ -97,6 +33,7 @@ const RentalsComponentView = () => {
   // Hooks para cargar datos
   const { data: locations = [], isLoading: locationsLoading, error: locationsError } = useFetchLocations();
   const { data: places = [], isLoading: placesLoading, error: placesError } = useFetchPlacesByLocation(selectedLocation?.id || null, forceRefetchKey);
+  const { mutate: deletePlace } = useDeletePlace();
   const queryClient = useQueryClient();
 
   // Lógica de paginación
@@ -161,25 +98,22 @@ const RentalsComponentView = () => {
     console.log('Editar place:', placeId, updatedPlace);
   };
 
-const handleDeletePlace = React.useCallback((placeId: string) => {
-  const confirmDelete = window.confirm(
-    "¿Estás seguro que deseas eliminar este lugar?"
-  );
-  if (confirmDelete) {
-    deletePlace(placeId, {
-      onSuccess: () => {
-        console.log("✅ Lugar eliminado correctamente");
-      },
-      onError: (err) => {
-        console.error("❌ Error al eliminar lugar:", err);
-      },
-    });
-  }
-}, [deletePlace]);
-  const handleDeletePlace = (placeId: string) => {
-    console.log('Eliminar place:', placeId);
-    setCurrentPage(1);
-  };
+  const handleDeletePlace = React.useCallback((placeId: string) => {
+    const confirmDelete = window.confirm(
+      "¿Estás seguro que deseas eliminar este lugar?"
+    );
+    if (confirmDelete) {
+      deletePlace(placeId, {
+        onSuccess: () => {
+          console.log("✅ Lugar eliminado correctamente");
+          setCurrentPage(1);
+        },
+        onError: (err) => {
+          console.error("❌ Error al eliminar lugar:", err);
+        },
+      });
+    }
+  }, [deletePlace]);
 
   const handleViewRentals = (place: Place) => {
     setSelectedPlaceForRentals(place);
@@ -190,10 +124,6 @@ const handleDeletePlace = React.useCallback((placeId: string) => {
     setCurrentView("main");
     setSelectedPlaceForRentals(null);
   };
-
-  const places = allPlaces.filter(
-    (p) => p.location_id === selectedLocation?.id
-  );
 
   // Renderizado condicional para vista de historial
   if (currentView === "rental-history" && selectedPlaceForRentals) {
@@ -208,9 +138,7 @@ const handleDeletePlace = React.useCallback((placeId: string) => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <h1 className="text-4xl font-bold text-center text-red-600 pb-6">
-        Alquileres
-      </h1>
+      <h1 className="text-4xl font-bold text-center text-red-600 pb-6">Alquileres</h1>
 
       {/* Selector de Locaciones */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -280,22 +208,6 @@ const handleDeletePlace = React.useCallback((placeId: string) => {
         </div>
       </div>
 
-      {/* Información de la locación */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center space-x-2">
-            <MdLocationOn className="text-red-600" size={24} />
-            <h2 className="text-xl font-bold text-red-600">
-              Información de la Localización
-            </h2>
-          </div>
-          <button
-            onClick={() => setIsEditLocationModalOpen(true)}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm"
-          >
-            + Editar locación
-          </button>
-        </div>
       {/* Información de la Localización */}
       {selectedLocation ? (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -346,17 +258,6 @@ const handleDeletePlace = React.useCallback((placeId: string) => {
               <p className="text-green-600 font-medium ml-7">{selectedLocation.status}</p>
             </div>
           </div>
-          <div>
-            <FiBarChart2 className="text-red-500 inline mr-2" />
-            <span className="font-semibold">Capacidad:</span>
-            <p className="ml-7">{selectedLocation?.capacity}</p>
-          </div>
-          <div>
-            <FiCheckCircle className="text-red-500 inline mr-2" />
-            <span className="font-semibold">Estado:</span>
-            <p className="ml-7 text-green-600 font-semibold">
-              {selectedLocation?.status}
-            </p>
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -368,22 +269,6 @@ const handleDeletePlace = React.useCallback((placeId: string) => {
         </div>
       )}
 
-      {/* Lugares */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center space-x-2">
-            <MdLocationOn className="text-red-600" size={24} />
-            <h2 className="text-xl font-bold text-red-600">
-              Lugares en la Localización
-            </h2>
-          </div>
-          <button
-            onClick={() => setIsCreatePlaceModalOpen(true)}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm"
-          >
-            + Nuevo Lugar
-          </button>
-        </div>
       {/* Lugares en la Localización */}
       {selectedLocation ? (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
