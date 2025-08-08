@@ -14,7 +14,7 @@ const Places: React.FC = () => {
   const queryClient = useQueryClient();
 
   const handleCreated = () => {
-    // Invalidar la consulta para forzar la recarga de lugares
+
     queryClient.invalidateQueries({ queryKey: ['places'] });
     setIsCreateModalOpen(false);
   };

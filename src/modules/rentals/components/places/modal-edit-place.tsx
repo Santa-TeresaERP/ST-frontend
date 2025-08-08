@@ -23,14 +23,14 @@ const ModalEditPlace: React.FC<ModalEditPlaceProps> = ({ place, onClose, onUpdat
   const queryClient = useQueryClient();
   const updatePlace = useUpdatePlace();
   const { data, isLoading, isError } = useFetchLocations();
-  // Handle the API response data safely
+
   const locations = React.useMemo<Location[]>(() => {
     try {
-      // If data is already an array of locations
+
       if (Array.isArray(data)) {
         return data;
       }
-      // If data is an object with a 'data' property that's an array
+
       if (data && typeof data === 'object' && data !== null) {
         const dataObj = data as { data?: unknown };
         if (Array.isArray(dataObj.data)) {
@@ -49,7 +49,6 @@ const ModalEditPlace: React.FC<ModalEditPlaceProps> = ({ place, onClose, onUpdat
     console.log('Ubicaciones procesadas:', locations);
   }, [data, locations]);
 
-  // Debug location finding
   React.useEffect(() => {
     if (formData.location_id && locations.length > 0) {
       const foundLocation = locations.find(loc => String(loc.id).trim() === String(formData.location_id).trim());
@@ -78,7 +77,7 @@ const ModalEditPlace: React.FC<ModalEditPlaceProps> = ({ place, onClose, onUpdat
       { id: place.id, payload: formData },
       {
         onSuccess: () => {
-          // Invalidate and refetch places query
+
           queryClient.invalidateQueries({ queryKey: ['places'] });
           onClose();
           if (onUpdated) {

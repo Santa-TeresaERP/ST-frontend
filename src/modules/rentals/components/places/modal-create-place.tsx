@@ -78,21 +78,19 @@ const ModalCreatePlace: React.FC<ModalCreatePlaceProps> = ({
 
     createPlace.mutate(payload, {
       onSuccess: (createdPlace) => {
-        // Actualización optimista
+ 
         queryClient.setQueryData<Place[]>(['places'], (old = []) => [...old, createdPlace]);
         
-        // Reset form
         setFormData({
           name: '',
           area: '',
           location_id: locationId || ''
         });
         
-        // Cerrar el modal y notificar al componente padre
         if (onCreated) {
           onCreated();
         } else {
-          // Si no hay callback, invalidar la consulta aquí
+       
           queryClient.invalidateQueries({ queryKey: ['places'] });
           onClose();
         }
