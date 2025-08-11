@@ -31,6 +31,7 @@ const DepartmentSection = ({ title, items }: DepartmentSectionProps) => {
       case "Museo": router.push('/pages/dashboard/museo'); break;
       case "Alquileres": router.push('/pages/dashboard/alquileres'); break;
       case "Finanzas": router.push('/pages/dashboard/finanzas'); break;
+      case "Monasterio": router.push('/pages/dashboard/monasterio'); break;
       default: console.warn(`No route defined for ${name}`);
     }
   };
