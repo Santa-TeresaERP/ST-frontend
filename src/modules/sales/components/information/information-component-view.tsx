@@ -376,16 +376,15 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
     <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 space-y-6">
       
       {/* Información de la Tienda */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-red-700 flex items-center space-x-2">
+      <div className="flex flex-col md:flex-row justify-between items-center md:items-start">
+        <h2 className="text-2xl font-bold text-red-700 flex items-center space-x-2 mb-4 md:mb-0">
           <FiInfo className="text-red-600" size={24} />
           <span>Información de la Tienda</span>
         </h2>
         {selectedStore && (
           <button
             onClick={() => setIsEditStoreModalOpen(true)}
-            className="flex items-center space-x-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors ml-auto"
-            style={{ minWidth: 0 }}
+            className="flex items-center space-x-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors w-full md:w-auto"
           >
             <FiPlus size={18} />
             <span>Editar Tienda</span>
@@ -429,12 +428,12 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
       </div>
 
       {/* Información de la Caja */}
-      <div className="flex justify-between items-center pt-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center pt-6 space-y-4 md:space-y-0">
         <h2 className="text-2xl font-bold text-red-700 flex items-center space-x-2">
           <FiDollarSign className="text-red-600" size={24} />
           <span>Información de Caja</span>
         </h2>
-        <div className="flex flex-col items-end">
+        <div className="flex flex-col items-start md:items-end w-full md:w-auto">
           <button
             onClick={() => {
               console.log('🔘 [DEBUG] Botón clickeado - Estado completo:', {
@@ -472,7 +471,7 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
               setIsModalOpen(true);
             }}
             disabled={!selectedStore?.id}
-            className={`flex items-center space-x-1 px-4 py-2 rounded-lg transition-colors ${
+            className={`flex items-center justify-center space-x-1 px-4 py-2 rounded-lg transition-colors w-full md:w-auto ${
               !selectedStore?.id
                 ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
                 : 'bg-red-600 hover:bg-red-700 text-white'
@@ -489,17 +488,17 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
             </span>
           </button>
           {!selectedStore && (
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 mt-2 md:text-right w-full">
               ⚠️ Selecciona una tienda para configurar la caja
             </p>
           )}
           {selectedStore && !isInitialSetup && (
-            <p className="text-xs text-blue-600 mt-1">
+            <p className="text-xs text-blue-600 mt-2 md:text-right w-full">
               📊 Sesión activa - listo para cerrar mes
             </p>
           )}
           {selectedStore && isInitialSetup && (
-            <p className="text-xs text-green-600 mt-1">
+            <p className="text-xs text-green-600 mt-2 md:text-right w-full">
               ✅ Listo para configurar caja en {selectedStore.store_name}
             </p>
           )}
@@ -558,14 +557,14 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
           </div>
           {/* Mensaje para sesión creada automáticamente */}
           {filteredCashSessionHistory.length > 0 &&
-           new Date(filteredActiveCashSession.started_at).getTime() > 
-           new Date(filteredCashSessionHistory[0].ended_at || '').getTime() - 5000 && (
-            <div className="mt-3 p-2 bg-blue-100 border border-blue-300 rounded">
-              <p className="text-blue-800 text-sm">
-                ℹ️ <strong>Nota:</strong> Esta sesión fue creada automáticamente al cerrar la anterior. 
-                El dinero inicial corresponde al dinero final de la sesión previa.
-              </p>
-            </div>
+            new Date(filteredActiveCashSession.started_at).getTime() > 
+            new Date(filteredCashSessionHistory[0].ended_at || '').getTime() - 5000 && (
+              <div className="mt-3 p-2 bg-blue-100 border border-blue-300 rounded">
+                <p className="text-blue-800 text-sm">
+                  ℹ️ <strong>Nota:</strong> Esta sesión fue creada automáticamente al cerrar la anterior. 
+                  El dinero inicial corresponde al dinero final de la sesión previa.
+                </p>
+              </div>
           )}
           {shouldCloseSession && (
             <div className="mt-3 p-2 bg-amber-100 border border-amber-300 rounded">

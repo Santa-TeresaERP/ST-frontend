@@ -32,13 +32,13 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
   selectedStoreId,
   selectedStore,
   currentSessionSales = 0,
-  currentSessionReturns = 0 // Agregar valor por defecto para pérdidas
+  currentSessionReturns = 0
 }) => {
   const [formData, setFormData] = React.useState<CashRegisterFormData>({
     store_id: selectedStoreId || '',
     start_amount: 0,
     end_amount: 0,
-    total_returns: currentSessionReturns || 0, // Usar pérdidas calculadas
+    total_returns: currentSessionReturns || 0,
     total_sales: currentSessionSales || 0
   });
 
@@ -145,10 +145,10 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg md:max-w-2xl my-8">
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-bold text-gray-800">
@@ -167,7 +167,7 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
             {isInitialSetup ? (
               // Formulario para configuración inicial - SOLO UNA VEZ
               <>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-blue-800 text-sm">
                     <strong>Configuración Inicial:</strong> Esta información se solicita solo una vez para inicializar el sistema de caja.
                   </p>
@@ -217,7 +217,7 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
             ) : (
               // Formulario para cierre de mes
               <>
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                   <p className="text-amber-800 text-sm">
                     <strong>Cierre de Mes:</strong> El total de ventas se calcula automáticamente a partir de los registros del sistema.
                   </p>
