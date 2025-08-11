@@ -196,8 +196,8 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl relative mx-2 animate-fadeIn">
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl lg:max-w-4xl relative mx-auto my-8 animate-fadeIn">
         <div className="bg-gradient-to-r from-red-700 to-red-900 text-white p-4 rounded-t-2xl flex items-center justify-center relative gap-2">
           <FiShoppingCart size={24} />
           <h2 className="text-lg font-semibold text-center">
@@ -212,10 +212,10 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({
           </button>
         </div>
 
-        <div className="p-6 flex flex-col lg:flex-row gap-6">
+        <div className="p-6 flex flex-col lg:flex-row gap-6 lg:gap-8">
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="lg:w-1/2 space-y-4 text-left"
+            className="w-full lg:w-1/2 space-y-4 text-left"
           >
             <div>
               <label className="block text-gray-700 font-medium mb-1">
@@ -354,7 +354,7 @@ const ModalCreateSales: React.FC<ModalCreateSalesProps> = ({
 
           <div className="w-px bg-gray-300 hidden lg:block"></div>
 
-          <div className="lg:w-1/2">
+          <div className="w-full lg:w-1/2 mt-4 lg:mt-0">
             <h3 className="text-base font-semibold text-gray-700 mb-4 flex items-center gap-2">
               <FiPackage size={18} /> Productos de la venta
             </h3>
