@@ -7,6 +7,8 @@ import { Input } from "../../../app/components/ui/input";
 import { Label } from "../../../app/components/ui/label";
 import { User } from '@/modules/user-creations/types/user';
 import { useFetchRoles } from '@/modules/roles/hook/useRoles';
+import { useModulePermissions } from '@/core/utils/permission-hooks';
+import { MODULE_IDS } from '@/core/utils/permission-types';
 import { userSchema } from '@/modules/user-creations/schemas/userValidation';
 import { z } from 'zod';
 import { Save, UserPlus } from "lucide-react";
@@ -20,9 +22,10 @@ type ModalProps = {
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const [selectedRole, setSelectedRole] = useState<string>('');
   const { data: roles, isLoading: isLoadingRoles, error: errorRoles } = useFetchRoles();
+  const { canView: canViewRoles } = useModulePermissions(MODULE_IDS.ROLES);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const data = new FormData(e.target as HTMLFormElement);
     const formData: Record<string, unknown> = Object.fromEntries(data.entries());
@@ -42,7 +45,18 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
       return;
     }
 
-    onSubmit(formData as Omit<User, "createdAt" | "updatedAt"> & { password: string });
+    try {
+      await onSubmit(formData as Omit<User, "createdAt" | "updatedAt"> & { password: string });
+    } catch (error: unknown) {
+      // Si es error de permisos silencioso, no hacer nada (el componente padre maneja el modal)
+      const errorObj = error as { isPermissionError?: boolean; silent?: boolean };
+      if (errorObj?.isPermissionError && errorObj?.silent) {
+        // Error silencioso, no hacer nada aquí
+        return;
+      }
+      // Para otros errores, mostrar en consola
+      console.error('Error creating user:', error);
+    }
   };
 
   if (isLoadingRoles) {
@@ -59,12 +73,31 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
   }
 
   if (errorRoles) {
+    // Verificar si es un error de permisos
+    const isPermissionError = !roles && errorRoles;
+    
     return (
       <Dialog open={isOpen}> {/* Mantener el Dialog abierto para mostrar el error */}
-        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[600px] h-[30vh] flex items-center justify-center p-0 rounded-2xl shadow-xl">
-          <div className="text-center text-red-600 p-4">
-            <p className="text-lg font-semibold">Error al cargar datos</p>
-            <p className="text-sm">Por favor, intente de nuevo más tarde.</p>
+        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[600px] h-[40vh] flex items-center justify-center p-0 rounded-2xl shadow-xl">
+          <div className="text-center p-6">
+            <div className="bg-orange-100 rounded-full p-4 mx-auto mb-4 w-16 h-16 flex items-center justify-center">
+              <UserPlus className="w-8 h-8 text-orange-600" />
+            </div>
+            <p className="text-lg font-semibold text-gray-800 mb-2">
+              {isPermissionError ? "Sin Permisos para Ver Roles" : "Error al Cargar Datos"}
+            </p>
+            <p className="text-sm text-gray-600 mb-4">
+              {isPermissionError 
+                ? "No tienes permisos para ver la lista de roles. Contacta al administrador para obtener los permisos necesarios." 
+                : "Por favor, intente de nuevo más tarde."
+              }
+            </p>
+            <Button 
+              onClick={onClose}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              Cerrar
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -188,18 +221,32 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
               required
+              disabled={!canViewRoles}
               className={`w-full px-4 py-2 border rounded-md text-sm bg-white focus:outline-none ${
                 errors.roleId ? "border-red-600" : "border-black"
-              }`}
+              } ${!canViewRoles ? "bg-gray-100 cursor-not-allowed" : ""}`}
             >
-              <option value="">Seleccione un rol</option>
-              {roles?.map((role) => (
-                <option key={role.id} value={role.id}>
-                  {role.name}
-                </option>
-              ))}
+              {!canViewRoles ? (
+                <option value="">🔒 Sin permisos para ver roles</option>
+              ) : isLoadingRoles ? (
+                <option value="">Cargando roles...</option>
+              ) : (
+                <>
+                  <option value="">Seleccione un rol</option>
+                  {roles?.map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.name}
+                    </option>
+                  ))}
+                </>
+              )}
             </select>
             {errors.roleId && <p className="text-red-600 text-sm">{errors.roleId}</p>}
+            {!canViewRoles && (
+              <p className="text-orange-600 text-sm">
+                ⚠️ Necesitas permisos para ver roles. Contacta al administrador.
+              </p>
+            )}
           </div>
 
           {/* El DialogFooter se moverá fuera del form para que siempre esté visible y no se desplace con el contenido */}

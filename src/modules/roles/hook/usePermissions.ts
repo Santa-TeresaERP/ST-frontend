@@ -2,6 +2,14 @@ import { CreatePermissionPayload, UpdatePermissionPayload, Permission } from "..
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { deletePermission, getPermission, createPermission, fetchPermissions, getPermissionsByRole } from "../action/permissions";
 import { updateRolePermissions, UpdatePermissionResponse } from "../action/role"; // ← Importar la función y tipo correctos
+import { useModulePermissions } from '@/core/utils/permission-hooks';
+import { MODULE_IDS } from '@/core/utils/permission-types';
+
+interface AxiosError extends Error {
+  response?: {
+    status: number;
+  };
+}
 
 export const useFetchPermissions = () => {
   return useQuery<Permission[], Error>({
@@ -41,20 +49,37 @@ export const useCreatePermission = () => {
 
 export const useUpdatePermission = () => {
   const queryClient = useQueryClient();
+  const { canEdit } = useModulePermissions(MODULE_IDS.ROLES);
+  
   return useMutation<UpdatePermissionResponse, Error, {
     id: string;
     payload: UpdatePermissionPayload;
   }>({
-    mutationFn: ({
+    mutationFn: async ({
       id,
       payload
     }) => {
+      if (!canEdit) {
+        // Crear un error silencioso
+        throw { isPermissionError: true, silent: true, message: 'No tienes permisos para actualizar permisos de roles' };
+      }
+      
       console.log('🔍 useUpdatePermission - Hook llamado con:', {
         id,
         payload,
         totalPermissions: payload.permissions?.length || 0
       });
-      return updateRolePermissions(id, payload); // ← Usar la función correcta
+      
+      try {
+        return await updateRolePermissions(id, payload); // ← Usar la función correcta
+      } catch (error: unknown) {
+        // Si es error 403, convertirlo a error silencioso
+        const axiosError = error as AxiosError;
+        if (axiosError?.response?.status === 403) {
+          throw { isPermissionError: true, silent: true, message: 'Permisos revocados para actualizar permisos de roles' };
+        }
+        throw error;
+      }
     },
     onSuccess: (data, variables) => {
       console.log('✅ useUpdatePermission - Mutation exitosa:', {
@@ -68,12 +93,25 @@ export const useUpdatePermission = () => {
         queryKey: ["roles"]
       });
     },
-    onError: (error, variables) => {
-      console.error('❌ useUpdatePermission - Error:', {
-        roleId: variables.id,
-        error
-      });
-    }
+    onError: (error: unknown, variables) => {
+      // Solo loggear errores que NO sean silenciosos
+      const errorObj = error as { silent?: boolean; isPermissionError?: boolean };
+      if (!errorObj?.silent && !errorObj?.isPermissionError) {
+        console.error('❌ useUpdatePermission - Error:', {
+          roleId: variables.id,
+          error
+        });
+      }
+    },
+    // Configurar reintentos: NO reintentar errores de permisos
+    retry: (failureCount, error: unknown) => {
+      const errorObj = error as { isPermissionError?: boolean };
+      if (errorObj?.isPermissionError) {
+        return false; // No reintentar errores de permisos
+      }
+      return failureCount < 3; // Reintentar otros errores máximo 3 veces
+    },
+    retryDelay: 0, // Sin delay entre reintentos
   });
 };
 

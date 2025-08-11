@@ -2,7 +2,6 @@
 export * from './permission-types';
 export * from './permission-manager';
 export * from './permission-hooks';
-export * from './permission-helpers';
 export * from './useSyncUserPermissions';
 export * from './useLoadUserFromToken';
 export { default as AccessDeniedModal } from './AccessDeniedModal';
