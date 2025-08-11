@@ -7,8 +7,8 @@ import { GeneralExpense } from './generalExpense.d';
  */
 export interface FinancialReport {
   id: string;
-  start_date: string;
-  end_date: string;
+  start_date: date;
+  end_date: date;
   total_income: number;
   total_expenses: number;
   net_profit: number;
@@ -23,8 +23,7 @@ export interface FinancialReport {
  * Define el payload necesario para ENVIAR una petición de creación de reporte.
  */
 export interface CreateReportPayload {
-  start_date: string;
-  end_date: string;
+  start_date: date;
   observations?: string;
 }
 
@@ -33,4 +32,5 @@ export interface CreateReportPayload {
  */
 export interface UpdateReportPayload {
   observations?: string;
+  end_date?: date;
 }

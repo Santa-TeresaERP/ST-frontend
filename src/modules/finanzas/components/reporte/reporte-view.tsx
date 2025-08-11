@@ -1,44 +1,24 @@
 import React, { useState } from 'react';
-import { Eye, Trash2, FileText, Wallet, Plus, BarChart3, TrendingUp, Calendar, DollarSign } from 'lucide-react';
+import { Eye, Trash2, FileText, Plus, BarChart3 } from 'lucide-react';
 import ModalInformeModulo from './modal-reporte-modulo';
 import ModalReporte from './modal-reporte';
-
-interface ReporteData {
-  id: number;
-  modulo: string;
-  fechaInicio: string;
-  fechaFin?: string;
-  observaciones?: string;
-  ingresos: string;
-  gastos: string;
-  ganancia: string;
-}
+import {
+  useFetchFinancialReports,
+  useCreateFinancialReport,
+  useUpdateFinancialReport,
+  useDeleteFinancialReport
+} from '../../hooks/useFinancialReports';
+import { FinancialReport } from '../../types/financialReport';
 
 export default function ReporteComponentView() {
-  const [reportes, setReportes] = useState<ReporteData[]>([
-    {
-      id: 1,
-      modulo: "Ventas Online",
-      fechaInicio: "2024-01-01",
-      fechaFin: "2024-01-31",
-      observaciones: "Mes con alta demanda",
-      ingresos: "S/. 45,250.00",
-      gastos: "S/. 12,800.00",
-      ganancia: "S/. 32,450.00"
-    },
-    {
-      id: 2,
-      modulo: "Marketing Digital",
-      fechaInicio: "2024-02-01",
-      observaciones: "Campaña en progreso",
-      ingresos: "En proceso...",
-      gastos: "En proceso...",
-      ganancia: "En proceso..."
-    }
-  ]);
+  const { data: reportes = [], isLoading } = useFetchFinancialReports();
+  const createReport = useCreateFinancialReport();
+  const updateReport = useUpdateFinancialReport();
+  const deleteReport = useDeleteFinancialReport();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFinalizacion, setIsFinalizacion] = useState(false);
-  const [selectedReporte, setSelectedReporte] = useState<ReporteData | undefined>(undefined);
+  const [selectedReporte, setSelectedReporte] = useState<FinancialReport | undefined>(undefined);
   const [isInformeOpen, setIsInformeOpen] = useState(false);
 
   const handleOpenNuevo = () => {
@@ -47,7 +27,7 @@ export default function ReporteComponentView() {
     setIsModalOpen(true);
   };
 
-  const handleOpenFinalizar = (r: ReporteData) => {
+  const handleOpenFinalizar = (r: FinancialReport) => {
     setIsFinalizacion(true);
     setSelectedReporte(r);
     setIsModalOpen(true);
@@ -55,32 +35,38 @@ export default function ReporteComponentView() {
 
   const handleModalSubmit = (data: any) => {
     if (!isFinalizacion) {
-      const nuevo: ReporteData = {
-        id: Date.now(),
-        modulo: data.modulo || 'Nuevo Módulo',
-        fechaInicio: data.fechaInicio || new Date().toISOString().split('T')[0],
-        fechaFin: undefined,
-        observaciones: data.observaciones || '',
-        ingresos: 'En proceso...',
-        gastos: 'En proceso...',
-        ganancia: 'En proceso...',
-      };
-      setReportes(prev => [nuevo, ...prev]);
+      createReport.mutate(
+        {
+          start_date: data.fechaInicio,
+          observations: data.observaciones || '',
+        },
+        { onSuccess: () => setIsModalOpen(false) }
+      );
     } else if (selectedReporte) {
-      setReportes(prev =>
-        prev.map(r =>
-          r.id === selectedReporte.id
-            ? { ...r, fechaFin: data.fechaFin, observaciones: data.observaciones }
-            : r
-        )
+      updateReport.mutate(
+        {
+          id: selectedReporte.id,
+          payload: {
+            end_date: data.fechaFin,
+            observations: data.observaciones,
+          },
+        },
+        { onSuccess: () => setIsModalOpen(false) }
       );
     }
-    setIsModalOpen(false);
   };
 
-  const handleDelete = (id: number) => {
-    setReportes(prev => prev.filter(r => r.id !== id));
+  const handleDelete = (id: string) => {
+    deleteReport.mutate(id);
   };
+
+  const formatDateLocal = (dateString: string) => {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Fecha inválida';
+    return date.toLocaleDateString('es-PE');
+  }
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 p-8">
@@ -110,7 +96,7 @@ export default function ReporteComponentView() {
                 {reportes.length} reportes
               </span>
             </div>
-            
+
             <div className="flex gap-3">
               <button
                 onClick={() => setIsInformeOpen(true)}
@@ -137,15 +123,14 @@ export default function ReporteComponentView() {
               <thead>
                 <tr className="bg-gradient-to-r from-gray-800 to-gray-700">
                   {[
-                    { label: 'Módulos' },
-                    { label: 'Fecha inicio'},
-                    { label: 'Fecha fin'},
+                    { label: 'Fecha inicio' },
+                    { label: 'Fecha fin' },
                     { label: 'Ingresos totales' },
                     { label: 'Gastos totales' },
                     { label: 'Ganancia neta' },
                     { label: 'Observaciones' },
                     { label: 'Acciones' },
-                  ].map((h, index) => (
+                  ].map((h) => (
                     <th key={h.label} className="px-6 py-4 text-left">
                       <div className="flex items-center gap-2 text-white font-medium text-sm">
                         {h.label}
@@ -155,47 +140,57 @@ export default function ReporteComponentView() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {reportes.map((r, index) => (
-                  <tr key={r.id} className="hover:bg-gray-50 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <span className="font-medium text-gray-800">{r.modulo}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">{r.fechaInicio}</td>
-                    <td className="px-6 py-4 text-gray-600">{r.fechaFin || '–'}</td>
-                    <td className="px-6 py-4">
-                      <span className={`font-semibold ${r.ingresos.includes('proceso') ? 'text-orange-600' : 'text-green-600'}`}>
-                        {r.ingresos}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`font-semibold ${r.gastos.includes('proceso') ? 'text-orange-600' : 'text-red-600'}`}>
-                        {r.gastos}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`font-semibold ${r.ganancia.includes('proceso') ? 'text-orange-600' : 'text-blue-600'}`}>
-                        {r.ganancia}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-gray-600 text-sm">{r.observaciones || '–'}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleOpenFinalizar(r)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all hover:scale-105"
-                          title="Ver detalles"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                      </div>
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={7} className="text-center py-8 text-gray-500">
+                      Cargando reportes...
                     </td>
                   </tr>
-                ))}
-                {reportes.length === 0 && (
+                ) : (
+                  reportes.map((r) => (
+                    <tr key={r.id} className="hover:bg-gray-50 transition-colors group">
+                      <td className="px-6 py-4 text-gray-600">{formatDateLocal(r.start_date)}</td>
+                      <td className="px-6 py-4 text-gray-600">{r.end_date ? formatDateLocal(r.end_date) : '–'}</td>
+                      <td className="px-6 py-4">
+                        <span className="font-semibold text-green-600">
+                          S/. {r.total_income.toLocaleString()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="font-semibold text-red-600">
+                          S/. {r.total_expenses.toLocaleString()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="font-semibold text-blue-600">
+                          S/. {r.net_profit.toLocaleString()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-gray-600 text-sm">{r.observations || '–'}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleOpenFinalizar(r)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all hover:scale-105"
+                            title="Finalizar"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(r.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all hover:scale-105"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+                {!isLoading && reportes.length === 0 && (
                   <tr>
                     <td colSpan={8} className="text-center py-12">
                       <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
@@ -210,21 +205,13 @@ export default function ReporteComponentView() {
         </div>
       </div>
 
+      {/* Modals */}
       <ModalReporte
         isOpen={isModalOpen}
-        isFinalizacion={isFinalizacion}
-        initialData={selectedReporte}
         onClose={() => setIsModalOpen(false)}
+        initialData={selectedReporte}
+        isFinalizacion={isFinalizacion}
         onSubmit={handleModalSubmit}
-      />
-
-      <ModalInformeModulo
-        isOpen={isInformeOpen}
-        onClose={() => setIsInformeOpen(false)}
-        reportes={reportes}
-        onExport={(modulo: string, datos: any) => {
-          console.log('Exportando:', modulo, datos);
-        }}
       />
     </div>
   );
