@@ -1,121 +1,206 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
+import { useUpdateGeneralExpense } from '../../hooks/useGeneralExpenses';
+import { useUpdateGeneralIncome } from '../../hooks/useGeneralIncomes';
+import { UpdateExpensePayload } from '../../types/generalExpense';
+import { UpdateIncomePayload } from '../../types/generalIncome';
+import { useFetchModules } from '../../../modules/hook/useModules'; // Ajusta ruta
 
-interface ModalEditProps {
-  tipo: 'ingreso' | 'gasto';
-  data: {
-    id: number;
-    modulo: string;
-    tipo: string;
-    monto: string;
-    fecha: string;
-    observaciones: string;
-  };
-  onSave: (updated: any) => void;
-  onClose: () => void;
+interface EditEntry {
+  id: string;
+  module_id: string;
+  income_type?: string;    // solo para ingreso
+  expense_type?: string;   // solo para gasto
+  amount: number;
+  date: string;
+  description?: string;
 }
 
-const ModalEditEntrada: React.FC<ModalEditProps> = ({ tipo, data, onSave, onClose }) => {
-  const [form, setForm] = useState(data);
+interface ModalEditEntradaProps {
+  tipo: 'ingreso' | 'gasto';
+  data: EditEntry;
+  onClose: () => void;
+  onSave: (updatedData: EditEntry) => void;
+}
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+export default function ModalEditEntrada({ tipo, data, onClose }: ModalEditEntradaProps) {
+  const [form, setForm] = useState<EditEntry>({
+    ...data,
+    date: formatDate(data.date),
+  });
+
+  const updateIngreso = useUpdateGeneralIncome();
+  const updateGasto = useUpdateGeneralExpense();
+
+  const { data: modules = [] } = useFetchModules();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm(prev => ({
+      ...prev,
+      [name]: name === 'amount' ? Number(value) : value
+    }));
   };
 
-  const handleSubmit = () => {
-    onSave(form);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (tipo === 'ingreso') {
+      const payload: UpdateIncomePayload = {
+        module_id: form.module_id,
+        income_type: form.income_type || '',
+        amount: form.amount,
+        date: form.date,
+        description: form.description || undefined,
+      };
+      updateIngreso.mutate(
+        { id: form.id, payload },
+        { onSuccess: () => onClose() }
+      );
+    } else {
+      const payload: UpdateExpensePayload = {
+        module_id: form.module_id,
+        expense_type: form.expense_type || '',
+        amount: form.amount,
+        date: form.date,
+        description: form.description || undefined,
+      };
+      updateGasto.mutate(
+        { id: form.id, payload },
+        { onSuccess: () => onClose() }
+      );
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl shadow-lg max-w-lg w-full p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-800">
-            Editar {tipo === 'ingreso' ? 'Ingreso' : 'Gasto'}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-xl p-6 w-[550px] max-w-full"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="font-semibold text-xl capitalize">
+            {tipo === 'ingreso' ? 'Editar Ingreso' : 'Editar Gasto'}
           </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+            <X className="w-6 h-6" />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Módulo</label>
+            <label htmlFor="module_id" className="block text-sm font-medium text-gray-700 mb-1">
+              Módulo
+            </label>
+            <select
+              id="module_id"
+              name="module_id"
+              value={form.module_id}
+              onChange={handleChange}
+              required
+              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="" disabled>Seleccione un módulo</option>
+              {modules.map((mod) => (
+                <option key={mod.id} value={mod.id}>
+                  {mod.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor={tipo === 'ingreso' ? 'income_type' : 'expense_type'} className="block text-sm font-medium text-gray-700 mb-1">
+              Tipo {tipo === 'ingreso' ? 'Ingreso' : 'Gasto'}
+            </label>
             <input
               type="text"
-              name="modulo"
-              value={form.modulo}
+              id={tipo === 'ingreso' ? 'income_type' : 'expense_type'}
+              name={tipo === 'ingreso' ? 'income_type' : 'expense_type'}
+              value={tipo === 'ingreso' ? form.income_type || '' : form.expense_type || ''}
               onChange={handleChange}
-              className="mt-1 block w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              required
+              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Tipo</label>
+            <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
+              Monto
+            </label>
             <input
-              type="text"
-              name="tipo"
-              value={form.tipo}
+              type="number"
+              step="0.01"
+              id="amount"
+              name="amount"
+              value={form.amount}
               onChange={handleChange}
-              className="mt-1 block w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              required
+              min="0"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Monto</label>
-            <input
-              type="text"
-              name="monto"
-              value={form.monto}
-              onChange={handleChange}
-              className="mt-1 block w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Fecha</label>
+            <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
+              Fecha
+            </label>
             <input
               type="date"
-              name="fecha"
-              value={form.fecha}
+              id="date"
+              name="date"
+              value={form.date}
               onChange={handleChange}
-              className="mt-1 block w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              required
+              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-        </div>
 
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700">Observaciones</label>
-          <textarea
-            name="observaciones"
-            value={form.observaciones}
-            onChange={handleChange}
-            className="mt-1 block w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+              Observaciones
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              value={form.description || ''}
+              onChange={handleChange}
+              rows={3}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            />
+          </div>
 
-        <div className="mt-6 flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSubmit}
-            className={`px-4 py-2 rounded-lg text-white font-semibold ${
-              tipo === 'ingreso'
-                ? 'bg-green-600 hover:bg-green-700'
-                : 'bg-red-600 hover:bg-red-700'
-            }`}
-          >
-            Guardar
-          </button>
-        </div>
+          <div className="flex justify-end gap-3 pt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl bg-gray-200 px-5 py-2 font-semibold hover:bg-gray-300 transition"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className={`rounded-xl px-5 py-2 font-semibold text-white ${
+                tipo === 'ingreso' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'
+              } transition`}
+            >
+              Guardar
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
-};
-
-export default ModalEditEntrada;
+}

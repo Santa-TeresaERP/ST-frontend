@@ -5,10 +5,10 @@ import {
   UpdateExpensePayload
 } from '../types/generalExpense.d';
 
-const EXPENSES_ENDPOINT = '/finanzas/expenses';
+const EXPENSES_ENDPOINT = '/generalExpense';
 
 /**
- * Llama a: GET /finanzas/expenses
+ * Llama a: GET /generalExpense
  * Obtiene todos los registros de gastos.
  */
 export const fetchGeneralExpenses = async (): Promise<GeneralExpense[]> => {
@@ -17,7 +17,7 @@ export const fetchGeneralExpenses = async (): Promise<GeneralExpense[]> => {
 };
 
 /**
- * Llama a: GET /finanzas/expenses/:id
+ * Llama a: GET /generalExpense/:id
  * Obtiene un registro de gasto específico por su ID.
  */
 export const fetchGeneralExpenseById = async (id: string): Promise<GeneralExpense> => {
@@ -26,16 +26,17 @@ export const fetchGeneralExpenseById = async (id: string): Promise<GeneralExpens
 };
 
 /**
- * Llama a: POST /finanzas/expenses
+ * Llama a: POST /generalExpense
  * Crea un nuevo registro de gasto.
  */
 export const createGeneralExpense = async (payload: CreateExpensePayload): Promise<GeneralExpense> => {
+  console.log('Payload enviado a API:', payload);
   const response = await api.post<GeneralExpense>(EXPENSES_ENDPOINT, payload);
   return response.data;
 };
 
 /**
- * Llama a: PUT /finanzas/expenses/:id
+ * Llama a: PUT /generalExpense/:id
  * Actualiza un registro de gasto existente.
  */
 export const updateGeneralExpense = async (id: string, payload: UpdateExpensePayload): Promise<GeneralExpense> => {
