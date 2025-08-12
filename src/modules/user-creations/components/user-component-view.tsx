@@ -8,14 +8,16 @@ import DeleteUserModal from './modal-delete-user';
 import { User } from '@/modules/user-creations/types/user';
 import { Button } from '@/app/components/ui/button';
 import { UserIcon, Pencil, Trash2, PlusCircle, ShieldAlert } from 'lucide-react';
-import { useModulePermissions } from '@/core/utils/permission-hooks';
-import { MODULE_IDS } from '@/core/utils/permission-types';
+import { useModulePermission, MODULE_NAMES } from '@/core/utils/useModulesMap';
 import { useQueryClient } from '@tanstack/react-query';
 import AccessDeniedModal from '@/core/utils/AccessDeniedModal';
 
 const UserList: React.FC = () => {
   const queryClient = useQueryClient();
-  const { canView, canCreate, canEdit, canDelete } = useModulePermissions(MODULE_IDS.USERS);
+  const { hasPermission: canView } = useModulePermission(MODULE_NAMES.USERS, 'canRead');
+  const { hasPermission: canCreate } = useModulePermission(MODULE_NAMES.USERS, 'canWrite');
+  const { hasPermission: canEdit } = useModulePermission(MODULE_NAMES.USERS, 'canEdit');
+  const { hasPermission: canDelete } = useModulePermission(MODULE_NAMES.USERS, 'canDelete');
   const { data: users, isLoading, error } = useFetchUsers();
   const createUserMutation = useCreateUser();
   const deleteUserMutation = useDeleteUser();

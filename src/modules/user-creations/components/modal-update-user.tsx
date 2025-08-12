@@ -14,8 +14,7 @@ import { Label } from "../../../app/components/ui/label";
 import { User } from "@/modules/user-creations/types/user";
 import { useUpdateUser } from "@/modules/user-creations/hook/useUsers";
 import { useFetchRoles } from "@/modules/roles/hook/useRoles";
-import { useModulePermissions } from '@/core/utils/permission-hooks';
-import { MODULE_IDS } from '@/core/utils/permission-types';
+import { useModulePermission, MODULE_NAMES } from '@/core/utils/useModulesMap';
 import { z } from "zod";
 import { Save, UserCog } from "lucide-react";
 import AccessDeniedModal from '@/core/utils/AccessDeniedModal';
@@ -50,7 +49,7 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
   const [showAccessDenied, setShowAccessDenied] = useState(false);
   const { mutateAsync: updateUser } = useUpdateUser();
   const { data: roles, error: errorRoles, isLoading: isLoadingRoles } = useFetchRoles();
-  const { canView: canViewRoles } = useModulePermissions(MODULE_IDS.ROLES);
+  const { hasPermission: canViewRoles } = useModulePermission(MODULE_NAMES.ROLES, 'canRead');
 
   useEffect(() => {
     if (user) {

@@ -12,15 +12,10 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// 🔥 INTERCEPTOR DE RESPUESTA PARA MANEJAR ERRORES 403 Y 401
+// 🔥 INTERCEPTOR DE RESPUESTA PARA MANEJAR ERRORES 401
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Si es error 403, agregar flag para manejo silencioso en componentes
-    if (error.response?.status === 403) {
-      error.isPermissionError = true;
-    }
-    
     // Si es error 401 (Unauthorized), limpiar token automáticamente
     if (error.response?.status === 401) {
       console.log('🔍 Token inválido o expirado, limpiando...');

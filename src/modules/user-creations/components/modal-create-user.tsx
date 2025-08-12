@@ -7,8 +7,7 @@ import { Input } from "../../../app/components/ui/input";
 import { Label } from "../../../app/components/ui/label";
 import { User } from '@/modules/user-creations/types/user';
 import { useFetchRoles } from '@/modules/roles/hook/useRoles';
-import { useModulePermissions } from '@/core/utils/permission-hooks';
-import { MODULE_IDS } from '@/core/utils/permission-types';
+import { useModulePermission, MODULE_NAMES } from '@/core/utils/useModulesMap';
 import { userSchema } from '@/modules/user-creations/schemas/userValidation';
 import { z } from 'zod';
 import { Save, UserPlus } from "lucide-react";
@@ -22,7 +21,7 @@ type ModalProps = {
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const [selectedRole, setSelectedRole] = useState<string>('');
   const { data: roles, isLoading: isLoadingRoles, error: errorRoles } = useFetchRoles();
-  const { canView: canViewRoles } = useModulePermissions(MODULE_IDS.ROLES);
+  const { hasPermission: canViewRoles } = useModulePermission(MODULE_NAMES.ROLES, 'canRead');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {

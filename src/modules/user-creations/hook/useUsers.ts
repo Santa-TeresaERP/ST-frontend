@@ -2,8 +2,7 @@ import { CreateUserPayload, UpdateUserPayload, User } from '@/modules/user-creat
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { deleteUser, getUser, updateUser, createUser } from '../action/user';
 import { fetchUsers } from '@/modules/user-creations/action/user';
-import { useModulePermissions } from '@/core/utils/permission-hooks';
-import { MODULE_IDS } from '@/core/utils/permission-types';
+import { useModulePermission, MODULE_NAMES } from '@/core/utils/useModulesMap';
 
 interface AxiosError extends Error {
   response?: {
@@ -12,7 +11,7 @@ interface AxiosError extends Error {
 }
 
 export const useFetchUsers = () => {
-  const { canView } = useModulePermissions(MODULE_IDS.USERS);
+  const { hasPermission: canView } = useModulePermission(MODULE_NAMES.USERS, 'canRead');
   
   return useQuery<User[], Error>({
     queryKey: ['users'], // Simplificar la clave
@@ -31,7 +30,7 @@ export const useFetchUsers = () => {
 };
 
 export const useFetchUser = (id: string) => {
-  const { canView } = useModulePermissions(MODULE_IDS.USERS);
+  const { hasPermission: canView } = useModulePermission(MODULE_NAMES.USERS, 'canRead');
   
   return useQuery<User, Error>({
     queryKey: ['user', id],
@@ -50,7 +49,7 @@ export const useFetchUser = (id: string) => {
 
 export const useCreateUser = () => {
   const queryClient = useQueryClient();
-  const { canCreate } = useModulePermissions(MODULE_IDS.USERS);
+  const { hasPermission: canCreate } = useModulePermission(MODULE_NAMES.USERS, 'canWrite');
   
   return useMutation<User, Error, CreateUserPayload>({
     mutationFn: async (payload: CreateUserPayload) => {
@@ -91,7 +90,7 @@ export const useCreateUser = () => {
 
 export const useUpdateUser = () => {
   const queryClient = useQueryClient();
-  const { canEdit } = useModulePermissions(MODULE_IDS.USERS);
+  const { hasPermission: canEdit } = useModulePermission(MODULE_NAMES.USERS, 'canEdit');
   
   return useMutation<User, Error, { id: string; payload: UpdateUserPayload }>({
     mutationFn: async ({ id, payload }: { id: string; payload: UpdateUserPayload }) => {
@@ -132,7 +131,7 @@ export const useUpdateUser = () => {
 
 export const useDeleteUser = () => {
   const queryClient = useQueryClient();
-  const { canDelete } = useModulePermissions(MODULE_IDS.USERS);
+  const { hasPermission: canDelete } = useModulePermission(MODULE_NAMES.USERS, 'canDelete');
   
   return useMutation<void, Error, string>({
     mutationFn: async (id: string) => {

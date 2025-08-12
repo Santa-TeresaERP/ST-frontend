@@ -57,37 +57,25 @@ export interface UserFromAPI {
   };
 }
 
-// 🔥 MAPEO DE IDs DE MÓDULOS FIJOS (DEPRECATED - usar useModulesMap)
-// ⚠️  ESTOS IDs SON SOLO PARA REFERENCIA Y BACKWARD COMPATIBILITY
-// ✅  USA: useModulePermissions('USERS') en lugar de MODULE_IDS.USERS
-export const MODULE_IDS = {
-  // Módulos principales del sistema
-  MODULES: 'bdf2c753-3802-48fe-99d4-15edb48f0ae9',    // Gestión de módulos
-  USERS: '6a0784a3-a601-4e59-a405-db7fc5ad1be1',      // Gestión de usuarios
-  ROLES: '82b63d5f-a196-47f1-888e-ac79ec66f16f',      // Gestión de roles
-  
-  // Módulos de negocio
-  INVENTORY: 'd91c04d0-06f8-4ed9-8276-1f620444a9e0',  // Inventario
-  PRODUCTION: 'e72c52b4-8bea-4a02-a956-0aa5944eba60', // Producción
-  
-  // 🚧 OTROS MÓDULOS (agregar IDs reales cuando estén disponibles)
-  // MUSEUM: 'museum-id-here',    // Museo
-  // RENTALS: 'rentals-id-here',  // Alquileres
-  // SALES: 'sales-id-here',      // Ventas
-} as const;
+// 🔥 SISTEMA DINÁMICO DE MÓDULOS
+// Los IDs se obtienen automáticamente del backend usando useModulesMap()
+// No más UUIDs hardcodeados - todo es dinámico 🚀
 
-// 🔥 HELPER para obtener nombres legibles de módulos
+// 🔥 NOMBRES DE MÓDULOS DEL BACKEND (exactos)
+// ✅ Usar estos nombres con useModulesMap().getModuleId(MODULE_NAMES.USERS)
 export const MODULE_NAMES = {
-  [MODULE_IDS.MODULES]: 'modulos',
-  [MODULE_IDS.USERS]: 'user',
-  [MODULE_IDS.ROLES]: 'roles',
-  [MODULE_IDS.INVENTORY]: 'inventario',
-  [MODULE_IDS.PRODUCTION]: 'Produccion',
+  // Nombres exactos del backend (deben coincidir con tu createModules)
+  MODULES: 'modulos',      // Gestión de módulos
+  USERS: 'user',           // Gestión de usuarios  
+  ROLES: 'roles',          // Gestión de roles
+  INVENTORY: 'inventario', // Inventario
+  PRODUCTION: 'Produccion', // Producción (nota la mayúscula)
   
-  // 🚧 Pendientes de agregar
-  // [MODULE_IDS.MUSEUM]: 'museo',
-  // [MODULE_IDS.RENTALS]: 'rentals',
-  // [MODULE_IDS.SALES]: 'sales',
+  // 🚧 Futuros módulos - agregar según backend
+  // MUSEUM: 'museo',
+  // RENTALS: 'alquileres', 
+  // SALES: 'ventas',
+  // FINANZAS: 'finanzas',
 } as const;
 
 // Resultado de verificación de permisos (para componentes que muestran feedback)

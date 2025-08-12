@@ -2,8 +2,7 @@ import { CreateRolePayload, UpdateRolePayload, Role } from "../types/roles";
 import { UpdatePermissionPayload } from "../types/permission";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { deleteRole, getRole, createRole, updateRole, fetchRoles, updateRolePermissions } from "../action/role";
-import { useModulePermissions } from '@/core/utils/permission-hooks';
-import { MODULE_IDS } from '@/core/utils/permission-types';
+import { useModulePermission, MODULE_NAMES } from '@/core/utils/useModulesMap';
 
 interface AxiosError extends Error {
   response?: {
@@ -12,7 +11,7 @@ interface AxiosError extends Error {
 }
 
 export const useFetchRoles = () => {
-  const { canView } = useModulePermissions(MODULE_IDS.ROLES);
+  const { hasPermission: canView } = useModulePermission(MODULE_NAMES.ROLES, 'canRead');
   
   return useQuery<Role[], Error>({
     queryKey: ["roles"], // Simplificar la clave
@@ -31,7 +30,7 @@ export const useFetchRoles = () => {
 };
 
 export const useFetchRole = (id: string) => {
-  const { canView } = useModulePermissions(MODULE_IDS.ROLES);
+  const { hasPermission: canView } = useModulePermission(MODULE_NAMES.ROLES, 'canRead');
   
   return useQuery<Role, Error>({
     queryKey: ["role", id],
@@ -50,7 +49,7 @@ export const useFetchRole = (id: string) => {
 
 export const useCreateRole = () => {
   const queryClient = useQueryClient();
-  const { canCreate } = useModulePermissions(MODULE_IDS.ROLES);
+  const { hasPermission: canCreate } = useModulePermission(MODULE_NAMES.ROLES, 'canWrite');
   
   return useMutation<Role, Error, CreateRolePayload>({
     mutationFn: async (payload: CreateRolePayload) => {
@@ -93,7 +92,7 @@ export const useCreateRole = () => {
 
 export const useUpdateRole = () => {
   const queryClient = useQueryClient();
-  const { canEdit } = useModulePermissions(MODULE_IDS.ROLES);
+  const { hasPermission: canEdit } = useModulePermission(MODULE_NAMES.ROLES, 'canEdit');
   
   return useMutation<Role, Error, {
     id: string;
@@ -139,7 +138,7 @@ export const useUpdateRole = () => {
 
 export const useDeleteRole = () => {
   const queryClient = useQueryClient();
-  const { canDelete } = useModulePermissions(MODULE_IDS.ROLES);
+  const { hasPermission: canDelete } = useModulePermission(MODULE_NAMES.ROLES, 'canDelete');
   
   return useMutation<void, Error, string>({
     mutationFn: async (id: string) => {

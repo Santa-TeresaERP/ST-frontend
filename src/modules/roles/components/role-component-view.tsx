@@ -11,13 +11,14 @@ import RoleModal from './modal-update-role';
 import PermissionEditor from './permission-editor-final';
 import { Button } from "@/app/components/ui/button";
 import { useQueryClient } from '@tanstack/react-query';
-import { useModulePermissions } from '@/core/utils/permission-hooks';
-import { MODULE_IDS } from '@/core/utils/permission-types';
+import { useModulePermission, MODULE_NAMES } from '@/core/utils/useModulesMap';
 import AccessDeniedModal from '@/core/utils/AccessDeniedModal';
 
 const RoleList: React.FC = () => {
   const queryClient = useQueryClient();
-  const { canView, canCreate, canEdit } = useModulePermissions(MODULE_IDS.ROLES);
+  const { hasPermission: canView } = useModulePermission(MODULE_NAMES.ROLES, 'canRead');
+  const { hasPermission: canCreate } = useModulePermission(MODULE_NAMES.ROLES, 'canWrite');
+  const { hasPermission: canEdit } = useModulePermission(MODULE_NAMES.ROLES, 'canEdit');
   const { data: roles, isLoading, error } = useFetchRoles();
   const { data: modules } = useFetchModules();
   const createRoleMutation = useCreateRole();

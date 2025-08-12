@@ -2,8 +2,7 @@ import { CreatePermissionPayload, UpdatePermissionPayload, Permission } from "..
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { deletePermission, getPermission, createPermission, fetchPermissions, getPermissionsByRole } from "../action/permissions";
 import { updateRolePermissions, UpdatePermissionResponse } from "../action/role"; // ← Importar la función y tipo correctos
-import { useModulePermissions } from '@/core/utils/permission-hooks';
-import { MODULE_IDS } from '@/core/utils/permission-types';
+import { useModulePermission, MODULE_NAMES } from '@/core/utils/useModulesMap';
 
 interface AxiosError extends Error {
   response?: {
@@ -49,7 +48,7 @@ export const useCreatePermission = () => {
 
 export const useUpdatePermission = () => {
   const queryClient = useQueryClient();
-  const { canEdit } = useModulePermissions(MODULE_IDS.ROLES);
+  const { hasPermission: canEdit } = useModulePermission(MODULE_NAMES.ROLES, 'canEdit');
   
   return useMutation<UpdatePermissionResponse, Error, {
     id: string;
