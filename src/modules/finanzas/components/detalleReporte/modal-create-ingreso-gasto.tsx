@@ -1,29 +1,84 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X } from 'lucide-react'; 
+import { CreateExpensePayload } from '../../types/generalExpense';
+import { CreateIncomePayload } from '../../types/generalIncome';
+import { useFetchModules } from '../../../modules/hook/useModules'; // ajusta ruta si es necesario
+import { Module } from '../../../modules/types/modules';
 
 interface Props {
   onClose: () => void;
-  onSave: (data: any) => void;
+  onSave: (data: CreateIncomePayload | CreateExpensePayload) => void;
   tipo: 'ingreso' | 'gasto';
 }
 
 const ModalAddEntrada: React.FC<Props> = ({ onClose, onSave, tipo }) => {
+  // Aquí el estado interno con nombres neutros para el formulario
   const [formData, setFormData] = useState({
-    modulo: '',
-    tipo: '',
-    monto: '',
-    fecha: '',
-    observaciones: ''
+    module_id: '',
+    income_type: '',   // para ingresos
+    expense_type: '',  // para gastos
+    amount: '',
+    date: '',
+    description: ''
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+
+  // Carga módulos con el hook
+  const { data: modulos = [], isLoading } = useFetchModules();
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = () => {
-    onSave({ ...formData, observaciones: formData.observaciones || '' });
+    if (!formData.module_id) {
+      alert('Debe seleccionar un módulo');
+      return;
+    }
+    if (tipo === 'ingreso' && !formData.income_type.trim()) {
+      alert('Debe ingresar un tipo para ingreso');
+      return;
+    }
+    if (tipo === 'gasto' && !formData.expense_type.trim()) {
+      alert('Debe ingresar un tipo para gasto');
+      return;
+    }
+
+    if (!formData.date) {
+      alert('Debe seleccionar una fecha');
+      return;
+    }
+    const amountNum = Number(formData.amount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+      alert('Ingrese un monto válido mayor que 0');
+      return;
+    }
+
+    // Aquí mapeo a los nombres exactos que usa el backend
+    if (tipo === 'ingreso') {
+      const payload: CreateIncomePayload = {
+        module_id: formData.module_id,
+        income_type: formData.income_type,
+        amount: amountNum,
+        date: formData.date,
+        description: formData.description || undefined,
+      };
+      onSave(payload);
+    } else {
+      const payload: CreateExpensePayload = {
+        module_id: formData.module_id,
+        expense_type: formData.expense_type,
+        amount: amountNum,
+        date: formData.date,
+        description: formData.description || undefined,
+      };
+      onSave(payload);
+    }
     onClose();
   };
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -41,35 +96,52 @@ const ModalAddEntrada: React.FC<Props> = ({ onClose, onSave, tipo }) => {
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700">Módulo Asociado</label>
             <select
-              name="modulo"
-              value={formData.modulo}
+              name="module_id"
+              value={formData.module_id}
               onChange={handleChange}
+              disabled={isLoading}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
             >
               <option value="">Seleccione un módulo</option>
-              <option value="Ventas">Ventas</option>
-              <option value="Servicios">Servicios</option>
+              {modulos.map((m: Module) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
             </select>
+            {isLoading && <p className="text-xs text-gray-500 mt-1">Cargando módulos...</p>}
           </div>
 
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700">Tipo</label>
-            <input
-              type="text"
-              name="tipo"
-              value={formData.tipo}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
-              placeholder="Ej: Pago, Donación"
-            />
+            {tipo === 'ingreso' ? (
+              <input
+                type="text"
+                name="income_type"
+                value={formData.income_type}
+                onChange={handleChange}
+                placeholder="Ej: Pago, Donación"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+              />
+            ) : (
+              <input
+                type="text"
+                name="expense_type"
+                value={formData.expense_type}
+                onChange={handleChange}
+                placeholder="Ej: Compra, Servicio"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+              />
+            )}
           </div>
+
 
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700">Monto</label>
             <input
               type="number"
-              name="monto"
-              value={formData.monto}
+              name="amount"
+              value={formData.amount}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
               placeholder="S/ 0.00"
@@ -80,8 +152,8 @@ const ModalAddEntrada: React.FC<Props> = ({ onClose, onSave, tipo }) => {
             <label className="block mb-1 text-sm font-medium text-gray-700">Fecha</label>
             <input
               type="date"
-              name="fecha"
-              value={formData.fecha}
+              name="date"
+              value={formData.date}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"
             />
@@ -90,8 +162,8 @@ const ModalAddEntrada: React.FC<Props> = ({ onClose, onSave, tipo }) => {
           <div className="md:col-span-2">
             <label className="block mb-1 text-sm font-medium text-gray-700">Observaciones</label>
             <textarea
-              name="observaciones"
-              value={formData.observaciones}
+              name="description"
+              value={formData.description}
               onChange={handleChange}
               rows={3}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-400"

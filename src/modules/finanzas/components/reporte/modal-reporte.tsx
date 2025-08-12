@@ -117,7 +117,7 @@ const ModalReporte: React.FC<ModalReporteProps> = ({
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl max-h-[90vh]">
-        <div className="bg-[#8B0000] text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
+        <div className="bg-gradient-to-r from-red-700 to-red-600 text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
           <FiX
             size={24}
             className="absolute left-5 top-1/2 transform -translate-y-1/2 cursor-pointer hover:opacity-75"
