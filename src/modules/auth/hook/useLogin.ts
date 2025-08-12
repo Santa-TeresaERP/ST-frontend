@@ -11,48 +11,96 @@ export const useAdminLogin = () => {
 
   const mutation = useMutation<LoginResponse, Error, LoginCredentials>({
     mutationFn: login,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       console.log('🔥 RESPUESTA COMPLETA DEL LOGIN:', data);
       
-      // 🔥 VERIFICAR SI EL USER ES STRING O OBJETO
-      let userToSave: User;
-      let userWithPermissionsToSave: UserWithPermissions;
-      
-      if (typeof data.user === 'string') {
-        // Si viene como string (nombre), crear objeto básico
-        console.log('⚠️ Usuario viene como string, creando objeto básico');
-        userToSave = {
-          id: 'temp-id', // ID temporal hasta que se cargue desde token
-          name: data.user,
-          email: '',
-          roleId: ''
-        } as User;
-        
-        userWithPermissionsToSave = {
-          id: 'temp-id',
-          name: data.user,
-          email: '',
-          roleId: '',
-          status: true
-        } as UserWithPermissions;
-      } else {
-        // Si viene como objeto completo
-        userToSave = data.user as User;
-        userWithPermissionsToSave = data.user;
+      // 🔥 PASO 1: GUARDAR TOKEN INMEDIATAMENTE
+      if (data.token) {
+        localStorage.setItem('authToken', data.token);
+        console.log('✅ Token guardado en localStorage');
       }
       
-      // Guardar usuario básico (para compatibilidad)
-      setUser(userToSave);
-      
-      // 🔥 GUARDAR USUARIO CON PERMISOS COMPLETOS (estructura del backend)
-      setUserWithPermissions(userWithPermissionsToSave);
-      
-      console.log('✅ Usuario logueado con permisos:', {
-        name: userWithPermissionsToSave.name,
-        role: userWithPermissionsToSave.Role?.name,
-        totalPermissions: userWithPermissionsToSave.Role?.Permissions?.length || 0,
-        permissions: userWithPermissionsToSave.Role?.Permissions
-      });
+      try {
+        // 🔥 PASO 2: OBTENER DATOS FRESCOS DIRECTAMENTE (sin React Query para evitar conflictos)
+        console.log('🔄 Obteniendo permisos frescos después del login...');
+        
+        const response = await fetch(`${process.env.NEXT_PUBLIC_GATEWAY_URL || 'http://localhost:3005'}/auth/me`, {
+          headers: {
+            'Authorization': `Bearer ${data.token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          const freshUserData = result.data;
+          
+          console.log('✅ Datos frescos obtenidos:', {
+            name: freshUserData.name,
+            role: freshUserData.Role?.name,
+            totalPermissions: freshUserData.Role?.Permissions?.length || 0
+          });
+          
+          // 🔥 PASO 3: Crear usuario básico para compatibilidad
+          const extendedUserData = freshUserData as UserWithPermissions & { 
+            dni?: string; 
+            phonenumber?: string; 
+          };
+          
+          const userToSave: User = {
+            id: freshUserData.id,
+            name: freshUserData.name,
+            email: freshUserData.email,
+            roleId: freshUserData.roleId,
+            dni: extendedUserData.dni || '',
+            phonenumber: extendedUserData.phonenumber || '',
+            password: '',
+            status: freshUserData.status
+          };
+          
+          // 🔥 PASO 4: Guardar en el store
+          setUser(userToSave);
+          setUserWithPermissions(freshUserData);
+          
+          console.log('🎉 ¡LOGIN COMPLETO CON PERMISOS SINCRONIZADOS!');
+          return;
+        }
+        
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        
+      } catch (error) {
+        console.error('❌ Error obteniendo datos frescos, usando datos del login como fallback:', error);
+        
+        // 🔥 FALLBACK: usar los datos del login como respaldo
+        let userToSave: User;
+        let userWithPermissionsToSave: UserWithPermissions;
+        
+        if (typeof data.user === 'string') {
+          console.log('⚠️ Usuario viene como string, creando objeto básico');
+          userToSave = {
+            id: 'temp-id',
+            name: data.user,
+            email: '',
+            roleId: ''
+          } as User;
+          
+          userWithPermissionsToSave = {
+            id: 'temp-id',
+            name: data.user,
+            email: '',
+            roleId: '',
+            status: true
+          } as UserWithPermissions;
+        } else {
+          userToSave = data.user as User;
+          userWithPermissionsToSave = data.user;
+        }
+        
+        setUser(userToSave);
+        setUserWithPermissions(userWithPermissionsToSave);
+        
+        console.log('⚠️ Login completado con datos de fallback');
+      }
     },
   });
 
