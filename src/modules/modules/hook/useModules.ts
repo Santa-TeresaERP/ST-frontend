@@ -11,7 +11,7 @@ export const useFetchModules = () => {
 
 export const useFetchModule = (id: string) => {
   return useQuery<Module, Error>({
-    queryKey: ["module", id],
+    queryKey: ["modules", id],
     queryFn: () => getModule(id)
   });
 };

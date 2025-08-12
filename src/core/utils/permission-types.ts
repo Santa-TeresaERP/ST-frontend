@@ -1,31 +1,40 @@
 // 🔥 TIPOS BASADOS EN TU BACKEND REAL
+
+/**
+ * Usuario con información completa de permisos
+ * Incluye el rol y sus permisos asociados
+ */
 export interface UserWithPermissions {
   id: string;
   name: string;
   email: string;
   roleId: string;
-  status: boolean;
+  status: boolean; // Usuario activo/inactivo
   Role?: {
     id: string;
-    name: string;
+    name: string; // Ej: "Admin", "Operador"
     description: string;
-    status: boolean;
-    Permissions: Permission[];
+    status: boolean; // Rol activo/inactivo
+    Permissions: Permission[]; // Array de permisos por módulo
   };
 }
 
+/**
+ * Permisos específicos para un módulo
+ * Define qué acciones puede realizar el usuario en cada módulo
+ */
 export interface Permission {
   id: string;
-  moduleId: string;
-  canRead: boolean;
-  canWrite: boolean;
-  canEdit: boolean;  // ← Volver a canEdit para coincidir con el backend
-  canDelete: boolean;
-  createdAt?: string;  // ← Agregado opcional
-  updatedAt?: string;  // ← Agregado opcional
+  moduleId: string; // ID del módulo al que aplica
+  canRead: boolean;   // Ver/Leer datos
+  canWrite: boolean;  // Crear nuevos registros
+  canEdit: boolean;   // Modificar registros existentes
+  canDelete: boolean; // Eliminar registros
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-// 🔥 TIPO EXTENDIDO PARA EL ENDPOINT DE USUARIOS (incluye todos los campos)
+// 🔥 TIPO EXTENDIDO PARA EL ENDPOINT DE USUARIOS (incluye todos los campos del backend)
 export interface UserFromAPI {
   id: string;
   name: string;
@@ -48,24 +57,26 @@ export interface UserFromAPI {
   };
 }
 
-// 🔥 MAPEO DE IDs DE MÓDULOS FIJOS (según tu backend)
+// 🔥 MAPEO DE IDs DE MÓDULOS FIJOS (DEPRECATED - usar useModulesMap)
+// ⚠️  ESTOS IDs SON SOLO PARA REFERENCIA Y BACKWARD COMPATIBILITY
+// ✅  USA: useModulePermissions('USERS') en lugar de MODULE_IDS.USERS
 export const MODULE_IDS = {
-  // 🔥 MÓDULOS ACTIVOS CON IDs REALES DEL BACKEND (ACTUALIZADOS 2025-08-11)
-  MODULES: 'bdf2c753-3802-48fe-99d4-15edb48f0ae9',    // "modulos" ✅ ID REAL DEL BACKEND
-  USERS: '6a0784a3-a601-4e59-a405-db7fc5ad1be1',      // "user" ✅ ID REAL DEL BACKEND
-  ROLES: '82b63d5f-a196-47f1-888e-ac79ec66f16f',      // "roles" ✅ ID REAL DEL BACKEND
+  // Módulos principales del sistema
+  MODULES: 'bdf2c753-3802-48fe-99d4-15edb48f0ae9',    // Gestión de módulos
+  USERS: '6a0784a3-a601-4e59-a405-db7fc5ad1be1',      // Gestión de usuarios
+  ROLES: '82b63d5f-a196-47f1-888e-ac79ec66f16f',      // Gestión de roles
   
-  // 🚧 OTROS MÓDULOS DEL BACKEND
-  INVENTORY: 'd91c04d0-06f8-4ed9-8276-1f620444a9e0',  // "inventario"
-  PRODUCTION: 'e72c52b4-8bea-4a02-a956-0aa5944eba60', // "Produccion"
+  // Módulos de negocio
+  INVENTORY: 'd91c04d0-06f8-4ed9-8276-1f620444a9e0',  // Inventario
+  PRODUCTION: 'e72c52b4-8bea-4a02-a956-0aa5944eba60', // Producción
   
-  // 🚧 COMENTADOS TEMPORALMENTE PARA TESTING
-  // MUSEUM: 'museum-id-here',                            // "museo" - reemplaza con el ID real
-  // RENTALS: 'rentals-id-here',                          // "rentals" - reemplaza con el ID real
-  // SALES: 'sales-id-here',                              // "sales" - reemplaza con el ID real
+  // 🚧 OTROS MÓDULOS (agregar IDs reales cuando estén disponibles)
+  // MUSEUM: 'museum-id-here',    // Museo
+  // RENTALS: 'rentals-id-here',  // Alquileres
+  // SALES: 'sales-id-here',      // Ventas
 } as const;
 
-// 🔥 HELPER para obtener nombres de módulos
+// 🔥 HELPER para obtener nombres legibles de módulos
 export const MODULE_NAMES = {
   [MODULE_IDS.MODULES]: 'modulos',
   [MODULE_IDS.USERS]: 'user',
@@ -73,16 +84,16 @@ export const MODULE_NAMES = {
   [MODULE_IDS.INVENTORY]: 'inventario',
   [MODULE_IDS.PRODUCTION]: 'Produccion',
   
-  // 🚧 COMENTADOS TEMPORALMENTE PARA TESTING
+  // 🚧 Pendientes de agregar
   // [MODULE_IDS.MUSEUM]: 'museo',
   // [MODULE_IDS.RENTALS]: 'rentals',
   // [MODULE_IDS.SALES]: 'sales',
 } as const;
 
-// Resultado de verificación de permisos
+// Resultado de verificación de permisos (para componentes que muestran feedback)
 export interface PermissionResult {
   hasPermission: boolean;
-  reason?: string;
-  module?: string;
-  action?: string;
+  reason?: string;    // Motivo del rechazo
+  module?: string;    // Módulo donde se intentó la acción
+  action?: string;    // Acción que se intentó realizar
 }

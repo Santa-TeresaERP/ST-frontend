@@ -4,15 +4,20 @@ import { useCurrentUser } from '@/modules/auth/hook/useCurrentUser';
 
 /**
  * 🔥 HOOK PARA CARGAR USUARIO DESDE TOKEN AL INICIAR LA APP
- * Ahora usa el endpoint /auth/me que no requiere permisos especiales
+ * Usa el endpoint /auth/me para obtener datos del usuario sin permisos especiales
+ * Se ejecuta automáticamente al cargar la aplicación si hay un token válido
  */
 export const useLoadUserFromToken = () => {
   const { user, setUser, setUserWithPermissions } = useAuthStore();
   const { data: currentUserData, isLoading, error } = useCurrentUser();
-  const hasTriedToLoad = useRef(false);
+  const hasTriedToLoad = useRef(false); // Evita múltiples cargas
 
   useEffect(() => {
-    // Solo intentar cargar si no hay usuario pero hay token Y tenemos datos del usuario
+    // Intentar cargar usuario solo si:
+    // 1. No hay usuario en store
+    // 2. No está cargando
+    // 3. No hemos intentado cargar antes
+    // 4. Tenemos datos del usuario
     if (!user && !isLoading && !hasTriedToLoad.current && currentUserData) {
       const token = localStorage.getItem('authToken');
       
@@ -32,7 +37,7 @@ export const useLoadUserFromToken = () => {
           totalPermissions: (currentUserData as any).Role?.Permissions?.length || 0
         });
         
-        // Guardar usuario básico
+        // Crear objeto de usuario básico (sin password por seguridad)
         const basicUser = {
           id: currentUserData.id || '',
           name: currentUserData.name,
@@ -46,6 +51,7 @@ export const useLoadUserFromToken = () => {
           status: currentUserData.status
         };
         
+        // Guardar en el store
         setUser(basicUser);
         setUserWithPermissions(currentUserData);
         
@@ -54,13 +60,13 @@ export const useLoadUserFromToken = () => {
       }
     }
     
-    // Si hay usuario, marcar que ya cargamos
+    // Si ya hay usuario, marcar que ya cargamos
     if (user) {
       hasTriedToLoad.current = true;
     }
   }, [user, currentUserData, isLoading, setUser, setUserWithPermissions]);
 
-  // 🔥 MANEJAR ERRORES (ej: token expirado)
+  // 🔥 MANEJO DE ERRORES (ej: token expirado o inválido)
   useEffect(() => {
     if (error && !user) {
       console.log('🔍 ❌ Error obteniendo usuario actual, limpiando token...');
@@ -69,7 +75,7 @@ export const useLoadUserFromToken = () => {
     }
   }, [error, user]);
 
-  // 🔥 RESET del flag cuando se hace logout (no hay usuario ni token)
+  // 🔥 RESET del flag cuando se hace logout
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     if (!user && !token) {

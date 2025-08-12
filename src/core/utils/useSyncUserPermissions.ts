@@ -5,11 +5,12 @@ import { useFetchUsers } from '@/modules/user-creations/hook/useUsers';
 
 /**
  * 🔥 HOOK PARA SINCRONIZAR PERMISOS DESPUÉS DEL LOGIN
- * Usa el endpoint de usuarios para obtener permisos completos
+ * Obtiene los permisos completos del usuario desde el endpoint de usuarios
+ * Se ejecuta automáticamente cuando hay un usuario en el store
  */
 export const useSyncUserPermissions = () => {
   const { user, setUserWithPermissions } = useAuthStore();
-  const { data: users } = useFetchUsers();
+  const { data: users } = useFetchUsers(); // Lista completa de usuarios con permisos
 
   useEffect(() => {
     console.log('🔍 =================================');
@@ -39,7 +40,7 @@ export const useSyncUserPermissions = () => {
       } : 'NO ENCONTRADO');
       
       if (currentUserWithPermissions) {
-        // Actualizar el usuario con permisos completos
+        // Actualizar el store con permisos completos
         setUserWithPermissions(currentUserWithPermissions as any);
         console.log('🔍 ✅ Usuario con permisos actualizado en el store');
       } else {
