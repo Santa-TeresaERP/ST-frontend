@@ -82,6 +82,13 @@ const Dashboard = () => {
             ]} />
           </div>
         </div>
+        <div className="flex flex-col md:flex-row justify-center items-start gap-8">
+          <div className="flex-1 flex justify-center">
+            <DepartmentSection title="Monasterio" items={[
+              { name: "Monasterio", icon: "monastery.png" },
+            ]} />
+          </div>
+        </div>
       </main>
     </div>
   );

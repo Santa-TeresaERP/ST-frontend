@@ -88,8 +88,11 @@ const ModalDetailSales: React.FC<ModalDetailSalesProps> = ({ isOpen, onClose, sa
 
           {/* Productos vendidos */}
           <div>
-            <p className="font-semibold text-lg text-gray-800 mb-3">Productos vendidos:</p>
-            
+            <p className="font-semibold text-lg text-gray-800 mb-3">Productos vendidos:
+              <button className="text-lg bg-red-700 text-white px-4 py-1 rounded-lg hover:bg-red-800 flex items-center gap-1 disabled:opacity-50 ml-auto mr-0">
+                <span>Reporte</span>
+              </button>
+            </p>
             {isLoading ? (
               <div className="flex justify-center items-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
@@ -150,6 +153,7 @@ const ModalDetailSales: React.FC<ModalDetailSalesProps> = ({ isOpen, onClose, sa
             )}
           </div>
         </div>
+
       </div>
     </div>
   );

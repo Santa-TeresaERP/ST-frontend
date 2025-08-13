@@ -1,90 +1,96 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Place } from '../types';
-import { fetchPlaces, fetchPlacesByLocation, createPlace, updatePlace, deletePlace } from '../action/placeActions';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  fetchPlaces,
+  createPlace,
+  updatePlace,
+  deletePlace
+} from '../action/places'; // Asegúrate de que esta ruta sea correcta
+import {
+  Place,
+  CreatePlacePayload,
+  UpdatePlacePayload
+} from '../types/places.d';
 
-// Hook básico para obtener todos los places
+// ✅ Obtener todos los places
 export const useFetchPlaces = () => {
   return useQuery<Place[], Error>({
     queryKey: ['places'],
-    queryFn: fetchPlaces,
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000,   // 10 minutos
+    queryFn: () => fetchPlaces(), // Llamar sin parámetros para obtener todos
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 };
 
-// Hook optimizado para obtener places por location_id (CON FILTRO EN FRONTEND)
-export const useFetchPlacesByLocation = (locationId: string | null, forceRefetchKey?: number) => {
-  // Primero obtenemos todos los places
+// ✅ Obtener places filtrados por location_id (usando cache si es posible)
+export const useFetchPlacesByLocation = (
+  locationId: string | null,
+  forceRefetchKey?: number
+) => {
   const { data: allPlaces = [], isLoading: allPlacesLoading } = useFetchPlaces();
 
   return useQuery<Place[], Error>({
     queryKey: ['places', 'filtered', locationId, forceRefetchKey],
     queryFn: () => {
-      if (!locationId) {
-        return Promise.resolve([]);
-      }
+      if (!locationId) return Promise.resolve([]);
       
-      if (!allPlaces || allPlaces.length === 0) {
-        return fetchPlacesByLocation(locationId);
+      // Si tenemos datos en cache y es un array, filtrar localmente
+      if (Array.isArray(allPlaces) && allPlaces.length > 0) {
+        const filtered = allPlaces.filter(
+          (place: Place) => place.location_id === locationId
+        );
+        return Promise.resolve(filtered);
       }
 
-      // Filtrar en frontend usando los datos que ya tenemos
-      const filtered = allPlaces.filter(place => {
-        return place.location_id === locationId;
-      });
-
-      return Promise.resolve(filtered);
+      // Si no hay datos en cache, hacer petición directa al servidor
+      return fetchPlaces(locationId);
     },
     enabled: !!locationId && !allPlacesLoading,
-    staleTime: 30 * 1000, // 30 segundos
-    gcTime: 2 * 60 * 1000, // 2 minutos
+    staleTime: 30 * 1000,
+    gcTime: 2 * 60 * 1000,
   });
 };
 
-// Hook para crear place
+// ✅ Crear place
 export const useCreatePlace = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<Place, Error, CreatePlacePayload>({
     mutationFn: createPlace,
     onSuccess: () => {
-      // Invalidar todas las queries relacionadas con places
       queryClient.invalidateQueries({ queryKey: ['places'] });
     },
     onError: (error) => {
-      console.error('❌ Error creating place:', error);
+      console.error('❌ Error creando place:', error);
     },
   });
 };
 
-// Hook para actualizar place
+// ✅ Actualizar place
 export const useUpdatePlace = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Place> }) => updatePlace(id, data),
+  return useMutation<Place, Error, { id: string; payload: UpdatePlacePayload }>({
+    mutationFn: ({ id, payload }) => updatePlace(id, payload),
     onSuccess: () => {
-      // Invalidar todas las queries relacionadas con places
       queryClient.invalidateQueries({ queryKey: ['places'] });
     },
     onError: (error) => {
-      console.error('❌ Error updating place:', error);
+      console.error('❌ Error actualizando place:', error);
     },
   });
 };
 
-// Hook para eliminar place
+// ✅ Eliminar place
 export const useDeletePlace = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<void, Error, string>({
     mutationFn: deletePlace,
     onSuccess: () => {
-      // Invalidar todas las queries relacionadas con places
       queryClient.invalidateQueries({ queryKey: ['places'] });
     },
     onError: (error) => {
-      console.error('❌ Error deleting place:', error);
+      console.error('❌ Error eliminando place:', error);
     },
   });
 };

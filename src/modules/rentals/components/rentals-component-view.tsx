@@ -1,56 +1,52 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FiMapPin, FiHome, FiBarChart2, FiCheckCircle, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiMapPin, FiHome, FiBarChart2, FiCheckCircle, FiChevronLeft, FiChevronRight, FiX, FiUser } from 'react-icons/fi';
 import { MdLocationOn } from 'react-icons/md';
 import ModalCreateLocation from './information location/modal-create-location';
 import ModalEditLocation from './information location/modal-edit-location';
 import ModalCreatePlace from './places/modal-create-place';
 import PlaceCard from './places/place-card';
 import RentalHistoryView from './rental-history/rental-history-view';
-import { Place } from '../types';
+import { Place } from '../types/places.d';
 import { Location } from '../types/location';
 import { useFetchLocations } from '../hook/useLocations';
-import { useFetchPlacesByLocation } from '../hook/usePlaces';
+import { useFetchPlacesByLocation, useDeletePlace } from '../hook/usePlaces';
+import { useFetchCustomers } from '../hook/useCustomers';
 import { useQueryClient } from '@tanstack/react-query';
 
 const RentalsComponentView = () => {
-  // Estados para modales
   const [isCreateLocationModalOpen, setIsCreateLocationModalOpen] = useState(false);
   const [isEditLocationModalOpen, setIsEditLocationModalOpen] = useState(false);
   const [isCreatePlaceModalOpen, setIsCreatePlaceModalOpen] = useState(false);
-  
-  // Estados para vistas
+  const [isCustomerPanelOpen, setIsCustomerPanelOpen] = useState(false);
+
   const [currentView, setCurrentView] = useState<"main" | "rental-history">("main");
   const [selectedPlaceForRentals, setSelectedPlaceForRentals] = useState<Place | null>(null);
-  
-  // Estados para locaciones y lugares
+
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [forceRefetchKey, setForceRefetchKey] = useState<number>(0);
-  
-  // Estados para paginación
+
   const [currentPage, setCurrentPage] = useState(1);
   const placesPerPage = 20;
 
-  // Hooks para cargar datos
   const { data: locations = [], isLoading: locationsLoading, error: locationsError } = useFetchLocations();
   const { data: places = [], isLoading: placesLoading, error: placesError } = useFetchPlacesByLocation(selectedLocation?.id || null, forceRefetchKey);
+  const { data: customers = [], isLoading: customersLoading, error: customersError } = useFetchCustomers();
+  const { mutate: deletePlace } = useDeletePlace();
   const queryClient = useQueryClient();
 
-  // Lógica de paginación
   const totalPages = Math.ceil(places.length / placesPerPage);
   const indexOfLastPlace = currentPage * placesPerPage;
   const indexOfFirstPlace = indexOfLastPlace - placesPerPage;
   const currentPlaces = useMemo(() => places.slice(indexOfFirstPlace, indexOfLastPlace), [places, indexOfFirstPlace, indexOfLastPlace]);
 
-  // Efectos
   useEffect(() => {
     if (selectedLocation) {
-      setCurrentPage(1); // Reset página al cambiar locación
+      setCurrentPage(1); 
     }
   }, [selectedLocation]);
 
-  // Funciones para manejar locaciones
   const handleSelectLocation = async (location: Location) => {
-    // Limpiar cache antes del cambio
+
     await queryClient.cancelQueries({
       queryKey: ['places']
     });
@@ -64,7 +60,7 @@ const RentalsComponentView = () => {
     setSelectedLocation(location);
   };
 
-  // Funciones para paginación
+
   const handlePageChange = (page: number) => {
     if (page > 0 && page <= totalPages) {
       setCurrentPage(page);
@@ -92,15 +88,26 @@ const RentalsComponentView = () => {
     return pageNumbers;
   };
 
-  // Funciones para manejar lugares
   const handleEditPlace = (placeId: string, updatedPlace: Partial<Place>) => {
     console.log('Editar place:', placeId, updatedPlace);
   };
 
-  const handleDeletePlace = (placeId: string) => {
-    console.log('Eliminar place:', placeId);
-    setCurrentPage(1);
-  };
+  const handleDeletePlace = React.useCallback((placeId: string) => {
+    const confirmDelete = window.confirm(
+      "¿Estás seguro que deseas eliminar este lugar?"
+    );
+    if (confirmDelete) {
+      deletePlace(placeId, {
+        onSuccess: () => {
+          console.log("Lugar eliminado correctamente");
+          setCurrentPage(1);
+        },
+        onError: (err) => {
+          console.error("Error al eliminar lugar:", err);
+        },
+      });
+    }
+  }, [deletePlace]);
 
   const handleViewRentals = (place: Place) => {
     setSelectedPlaceForRentals(place);
@@ -112,11 +119,10 @@ const RentalsComponentView = () => {
     setSelectedPlaceForRentals(null);
   };
 
-  // Renderizado condicional para vista de historial
   if (currentView === "rental-history" && selectedPlaceForRentals) {
     return (
       <RentalHistoryView
-        placeName={selectedPlaceForRentals.nombre}
+        placeName={selectedPlaceForRentals.name}
         placeId={selectedPlaceForRentals.id}
         onBack={handleBackToMain}
       />
@@ -191,6 +197,13 @@ const RentalsComponentView = () => {
             onClick={() => setIsCreateLocationModalOpen(true)}
           >
             + Nueva locación
+          </button>
+
+          <button
+            className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+            onClick={() => setIsCustomerPanelOpen(true)}
+          >
+            👥 Ver clientes
           </button>
         </div>
       </div>
@@ -376,12 +389,80 @@ const RentalsComponentView = () => {
 
       {isCreatePlaceModalOpen && selectedLocation && (
         <ModalCreatePlace
+          isOpen={isCreatePlaceModalOpen}
           locationId={selectedLocation.id}
           onClose={() => setIsCreatePlaceModalOpen(false)}
           onCreated={() => {
             queryClient.invalidateQueries({ queryKey: ['places', selectedLocation.id] });
           }}
         />
+      )}
+
+      {/* Panel lateral de clientes */}
+      {isCustomerPanelOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50">
+          <div className="fixed right-0 top-0 h-full w-96 bg-white shadow-xl transform transition-transform duration-300 ease-in-out overflow-y-auto">
+            <div className="p-6">
+              {/* Header del panel */}
+              <div className="flex justify-between items-center mb-6 border-b pb-4">
+                <h2 className="text-xl font-bold text-gray-800 flex items-center space-x-2">
+                  <FiUser className="text-blue-600" />
+                  <span>Lista de Clientes</span>
+                </h2>
+                <button
+                  onClick={() => setIsCustomerPanelOpen(false)}
+                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <FiX size={24} />
+                </button>
+              </div>
+
+              {/* Contenido del panel */}
+              {customersLoading ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : customersError ? (
+                <div className="text-red-600 text-center py-8">
+                  Error al cargar clientes: {customersError.message}
+                </div>
+              ) : customers.length === 0 ? (
+                <div className="text-gray-500 text-center py-8">
+                  No hay clientes registrados
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {customers.map((customer) => (
+                    <div key={customer.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors">
+                      <div className="flex items-start space-x-3">
+                        <div className="bg-blue-100 rounded-full p-2">
+                          <FiUser className="text-blue-600" size={16} />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-800 text-sm">
+                            {customer.full_name}
+                          </h3>
+                          <p className="text-gray-600 text-xs mt-1">
+                            📧 {customer.email}
+                          </p>
+                          <p className="text-gray-600 text-xs">
+                            📱 {customer.phone}
+                          </p>
+                          <p className="text-gray-600 text-xs">
+                            🆔 DNI: {customer.dni}
+                          </p>
+                          <p className="text-gray-500 text-xs mt-2">
+                            ID: {customer.id}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation"; 
@@ -17,12 +17,12 @@ const Header = () => {
   };
 
   const handleBack = () => {
-    router.back();
+    router.push("/pages/dashboard");
   };
 
   return (
-    <header className="relative z-10 h-36 w-full bg-red-800 rounded-b-[1rem] flex flex-col items-center">
-      <div className="mx-auto flex justify-between max-w-[2000px] w-full md:p-6 p-3 md:items-center">
+    <header className="relative z-10 h-36 w-full bg-red-800 rounded-b-[1rem] flex flex-col items-center justify-between p-3 md:p-6">
+      <div className="mx-auto flex justify-between w-full max-w-[2000px] items-center">
         {/* Icono de retroceso - Blanco */}
         <div onClick={handleBack} className="cursor-pointer">
           <div className="w-10 h-10 relative">
@@ -36,9 +36,14 @@ const Header = () => {
           </div>
         </div>
 
-        {/* Logo de iglesia (se mantiene igual) */}
-        <div className="mt-6 md:mt-0">
-          <Image src="/iglesiaIcon.png" alt="Iglesia Icon" width={40} height={40} className="w-10 h-10" />
+        {/* Logo de iglesia y texto SANTA TERESA */}
+        <div className="flex flex-col items-center">
+          <div className="mt-2 md:mt-0">
+            <Image src="/iglesiaIcon.png" alt="Iglesia Icon" width={40} height={40} className="w-10 h-10" />
+          </div>
+          <div className="border-b border-white w-[180px] text-center mt-2">
+            <h1 className="text-xl font-semibold text-white">SANTA TERESA</h1>
+          </div>
         </div>
 
         {/* Icono de usuario - Blanco */}
@@ -54,9 +59,7 @@ const Header = () => {
           </div>
         </div>
       </div>
-      <div className="border-b border-white w-[180px] text-center">
-        <h1 className="text-xl font-semibold text-white">SANTA TERESA</h1>
-      </div>
+      
       <LogoutModal
         isOpen={isLogoutModalOpen}
         onClose={() => setLogoutModalOpen(false)}

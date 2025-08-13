@@ -5,10 +5,10 @@ import {
   UpdateIncomePayload
 } from '../types/generalIncome.d';
 
-const INCOMES_ENDPOINT = '/finanzas/incomes';
+const INCOMES_ENDPOINT = '/generallncome';
 
 /**
- * Llama a: GET /finanzas/incomes
+ * Llama a: GET /generalIncome
  * Obtiene todos los registros de ingresos.
  */
 export const fetchGeneralIncomes = async (): Promise<GeneralIncome[]> => {
@@ -17,7 +17,7 @@ export const fetchGeneralIncomes = async (): Promise<GeneralIncome[]> => {
 };
 
 /**
- * Llama a: GET /finanzas/incomes/:id
+ * Llama a: GET /generalIncome/:id
  * Obtiene un registro de ingreso específico por su ID.
  */
 export const fetchGeneralIncomeById = async (id: string): Promise<GeneralIncome> => {
@@ -26,7 +26,7 @@ export const fetchGeneralIncomeById = async (id: string): Promise<GeneralIncome>
 };
 
 /**
- * Llama a: POST /finanzas/incomes
+ * Llama a: POST /generalIncome
  * Crea un nuevo registro de ingreso.
  */
 export const createGeneralIncome = async (payload: CreateIncomePayload): Promise<GeneralIncome> => {
@@ -35,7 +35,7 @@ export const createGeneralIncome = async (payload: CreateIncomePayload): Promise
 };
 
 /**
- * Llama a: PUT /finanzas/incomes/:id
+ * Llama a: PUT /generalIncome/:id
  * Actualiza un registro de ingreso existente.
  */
 export const updateGeneralIncome = async (id: string, payload: UpdateIncomePayload): Promise<GeneralIncome> => {
@@ -44,7 +44,7 @@ export const updateGeneralIncome = async (id: string, payload: UpdateIncomePaylo
 };
 
 /**
- * Llama a: DELETE /finanzas/incomes/:id
+ * Llama a: DELETE /generalIncome/:id
  * Elimina un registro de ingreso.
  */
 export const deleteGeneralIncome = async (id: string): Promise<void> => {

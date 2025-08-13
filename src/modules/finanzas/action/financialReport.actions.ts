@@ -5,10 +5,9 @@ import {
   UpdateReportPayload
 } from '../types/financialReport.d';
 
-const REPORTS_ENDPOINT = '/finanzas/reports';
+const REPORTS_ENDPOINT = '/financialReport';
 
 /**
- * Llama a: GET /finanzas/reports
  * Obtiene todos los reportes financieros.
  */
 export const fetchFinancialReports = async (): Promise<FinancialReport[]> => {
@@ -17,7 +16,6 @@ export const fetchFinancialReports = async (): Promise<FinancialReport[]> => {
 };
 
 /**
- * Llama a: GET /finanzas/reports/:id
  * Obtiene un reporte financiero específico por su ID.
  */
 export const fetchFinancialReportById = async (id: string): Promise<FinancialReport> => {
@@ -26,7 +24,6 @@ export const fetchFinancialReportById = async (id: string): Promise<FinancialRep
 };
 
 /**
- * Llama a: POST /finanzas/reports
  * Envía la solicitud para generar un nuevo reporte financiero.
  */
 export const createFinancialReport = async (payload: CreateReportPayload): Promise<FinancialReport> => {
@@ -35,7 +32,6 @@ export const createFinancialReport = async (payload: CreateReportPayload): Promi
 };
 
 /**
- * Llama a: PUT /finanzas/reports/:id
  * Actualiza las observaciones de un reporte existente.
  */
 export const updateFinancialReport = async (id: string, payload: UpdateReportPayload): Promise<FinancialReport> => {
@@ -44,7 +40,6 @@ export const updateFinancialReport = async (id: string, payload: UpdateReportPay
 };
 
 /**
- * Llama a: DELETE /finanzas/reports/:id
  * Elimina un reporte financiero.
  */
 export const deleteFinancialReport = async (id: string): Promise<void> => {

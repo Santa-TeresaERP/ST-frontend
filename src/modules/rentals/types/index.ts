@@ -6,15 +6,7 @@ export interface Location {
   estado: string;
 }
 
-export interface Place {
-  id: string; // ✅ Backend devuelve UUID (string), no number
-  nombre: string; // ✅ Transformado desde "name" del backend
-  area: string;
-  // ✅ Removido "tipo" porque no existe en el backend
-  location_id?: string; // ✅ Opcional, viene del backend
-  createdAt?: string; // ✅ Opcional, viene del backend
-  updatedAt?: string; // ✅ Opcional, viene del backend
-}
+// Place type is now defined in places.d.ts
 
 export interface Rental {
   id: number;
