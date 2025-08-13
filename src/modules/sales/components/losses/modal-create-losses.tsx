@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { X, Save } from "lucide-react";
 import { FiAlertOctagon } from "react-icons/fi";
 import { useCreateReturn } from "@/modules/sales/hooks/useReturns";
 import { useFetchSales } from "@/modules/sales/hooks/useSales";
+import { useFetchSalesDetails } from "@/modules/sales/hooks/useSalesDetails";
+import { useFetchReturns } from "@/modules/sales/hooks/useReturns";
 import { useFetchWarehouseStoreItems } from "@/modules/sales/hooks/useInventoryQueries";
 import { returnsAttributes } from "../../types/returns";
-import { returnSchema } from "@/modules/sales/schemas/returnsSchema";
 
 interface ModalCreateLossProps {
   isOpen: boolean;
@@ -30,6 +31,8 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
 
   const { data: storeInventory = [] } = useFetchWarehouseStoreItems();
   const { data: sales = [] } = useFetchSales();
+  const { data: salesDetails = [] } = useFetchSalesDetails();
+  const { data: existingReturns = [] } = useFetchReturns();
   const { mutateAsync, isPending } = useCreateReturn();
 
   const productDropdownRef = useRef<HTMLDivElement>(null);
@@ -79,57 +82,86 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
     };
   }, []);
 
-  // ... imports se mantienen igual ...
+  // Calcular la cantidad disponible en inventario o venta
+  const { availableQuantity, source, maxAvailable } = useMemo(() => {
+    if (!productId) return { availableQuantity: 0, source: 'inventario', maxAvailable: 0 };
+    
+    // Si hay una venta seleccionada, validar contra la cantidad vendida
+    if (salesId) {
+      // Obtener la cantidad vendida del detalle de venta
+      const saleDetail = salesDetails.find(detail => 
+        detail.saleId === salesId && detail.productId === productId
+      );
+      
+      if (!saleDetail) return { availableQuantity: 0, source: 'venta', maxAvailable: 0 };
+      
+      // Calcular pérdidas previas para esta venta y producto
+      const lossesForThisSale = existingReturns
+        .filter(ret => 
+          ret.salesId === salesId && 
+          ret.productId === productId
+        )
+        .reduce((sum, ret) => sum + (ret.quantity || 0), 0);
+      
+      const soldQty = saleDetail.quantity || 0;
+      const remainingQty = Math.max(0, soldQty - lossesForThisSale);
+      
+      return {
+        availableQuantity: remainingQty,
+        source: 'venta',
+        maxAvailable: soldQty
+      };
+    }
+    
+    // Si no hay venta seleccionada, usar la cantidad en inventario
+    const inventoryItem = storeInventory.find(item => 
+      item.productId === productId && item.storeId === selectedStoreId
+    );
+    
+    const inventoryQty = inventoryItem?.quantity || 0;
+    
+    return {
+      availableQuantity: inventoryQty,
+      source: 'inventario',
+      maxAvailable: inventoryQty
+    };
+  }, [salesId, productId, salesDetails, existingReturns, storeInventory, selectedStoreId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!productId || !salesId || !reason || !observations) {
-      setLocalError("Por favor, completa todos los campos.");
+    setLocalError("");
+    
+    if (!productId) {
+      setLocalError("Por favor seleccione un producto");
       return;
     }
-
-    if (!selectedStoreId) {
-      setLocalError(
-        "Debes seleccionar una tienda antes de registrar pérdidas."
-      );
+    
+    if (quantity <= 0) {
+      setLocalError("La cantidad debe ser mayor a cero");
       return;
     }
-
+    
+    // Validar que no se exceda la cantidad disponible
+    if (quantity > availableQuantity) {
+      setLocalError(`La cantidad excede el máximo disponible (${availableQuantity})`);
+      return;
+    }
+    
     try {
-      const payload = {
+      const newLoss: Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt'> = {
         productId,
-        salesId,
-        reason,
-        observations,
+        salesId: salesId || undefined, // Hacer el salesId opcional
+        reason: reason || "Pérdida de inventario", // Razón por defecto si no se especifica
+        observations: observations || `Pérdida registrada ${salesId ? 'desde venta' : 'directa de inventario'}`,
         quantity,
+        price: 0, // Ajustar según sea necesario
       };
-
-      const validation = returnSchema.safeParse(payload);
-      if (!validation.success) {
-        setLocalError(
-          "Datos inválidos: " +
-            validation.error.errors.map((e) => e.message).join(", ")
-        );
-        return;
-      }
-
-      console.log("✅ Payload que se enviará:", validation.data);
-
-      await mutateAsync(validation.data);
+      
+      await mutateAsync(newLoss);
       onClose();
-
-      // Reset campos
-      setProductSearch("");
-      setProductId("");
-      setSalesSearch("");
-      setSalesId("");
-      setReason("");
-      setObservations("");
-      setQuantity(1);
     } catch (error) {
-      console.error("Error al guardar la pérdida:", error);
-      setLocalError("Hubo un error al guardar la pérdida.");
+      console.error("Error al registrar la pérdida:", error);
+      setLocalError("Error al registrar la pérdida. Intente nuevamente.");
     }
   };
 
@@ -144,6 +176,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
             Registrar Pérdida
           </h2>
           <button
+            type="button"
             onClick={onClose}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
           >
@@ -166,6 +199,19 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
           )}
 
           <div className="space-y-4">
+            {/* Mostrar información de disponibilidad */}
+            {salesId && productId && (
+              <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>Disponible para pérdidas:</strong> {availableQuantity} unidad(es)
+                  <br />
+                  <span className="text-xs text-blue-600">
+                    ({source}: {maxAvailable})
+                  </span>
+                </p>
+              </div>
+            )}
+
             {/* Selector de producto */}
             <div className="relative" ref={productDropdownRef}>
               <label className="block text-gray-700 mb-1 font-medium">
@@ -210,69 +256,116 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
             </div>
 
             {/* Venta */}
-            <div className="relative" ref={salesDropdownRef}>
-              <label className="block text-gray-700 mb-1 font-medium">
-                Venta <span className="text-red-600">*</span>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="sale">
+                Venta (opcional)
               </label>
-              <input
-                type="text"
-                value={salesSearch}
-                onChange={(e) => {
-                  setSalesSearch(e.target.value);
-                  setSalesId("");
-                  setShowSalesDropdown(true);
-                }}
-                onFocus={() => setShowSalesDropdown(true)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="Buscar por fecha o monto"
-              />
-              {showSalesDropdown && (
-                <ul className="absolute z-10 bg-white border border-gray-300 mt-1 w-full rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {(salesSearch
-                    ? filteredSales
-                    : [...filteredSales]
-                        .sort(
-                          (a, b) =>
-                            new Date(b.income_date).getTime() -
-                            new Date(a.income_date).getTime()
-                        )
-                        .slice(0, 3)
-                  ).map((sale) => (
-                    <li
-                      key={sale.id}
-                      className="px-4 py-2 hover:bg-red-100 cursor-pointer text-sm"
+              <div className="relative" ref={salesDropdownRef}>
+                <input
+                  type="text"
+                  id="sale"
+                  value={salesSearch}
+                  onChange={(e) => {
+                    setSalesSearch(e.target.value);
+                    setShowSalesDropdown(true);
+                  }}
+                  onFocus={() => setShowSalesDropdown(true)}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  placeholder="Buscar venta por fecha o monto (opcional)..."
+                />
+                {salesSearch && (
+                  <button
+                    type="button"
+                    className="absolute right-2 top-2 text-gray-500 hover:text-gray-700"
+                    onClick={() => {
+                      setSalesId("");
+                      setSalesSearch("");
+                      setShowSalesDropdown(false);
+                    }}
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+                {showSalesDropdown && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                    <div
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-700 font-medium"
                       onClick={() => {
-                        const formatted = new Date(
-                          sale.income_date
-                        ).toLocaleString("es-PE");
-                        setSalesSearch(
-                          `${formatted} - S/ ${sale.total_income}`
-                        );
-                        setSalesId(sale.id!);
+                        setSalesId("");
+                        setSalesSearch("");
                         setShowSalesDropdown(false);
                       }}
                     >
-                      🗕️ {new Date(sale.income_date).toLocaleString("es-PE")} —
-                      💵 S/ {sale.total_income}
-                    </li>
-                  ))}
-                </ul>
+                      Sin venta (descontar de inventario)
+                    </div>
+                    {filteredSales.length > 0 ? (
+                      filteredSales.map((sale) => (
+                        <div
+                          key={sale.id}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                          onClick={() => {
+                            if (sale.id) setSalesId(sale.id);
+                            setSalesSearch(new Date(sale.income_date).toLocaleString("es-PE"));
+                            setShowSalesDropdown(false);
+                          }}
+                        >
+                          {new Date(sale.income_date).toLocaleString("es-PE")} - S/ {sale.total_income}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-2 text-gray-500">No se encontraron ventas</div>
+                    )}
+                  </div>
+                )}
+              </div>
+              {salesId && (
+                <p className="mt-1 text-sm text-gray-500">
+                  Descontando de la venta seleccionada
+                </p>
               )}
             </div>
 
             {/* Cantidad */}
-            <div>
-              <label className="block text-gray-700 mb-1 font-medium">
-                Cantidad <span className="text-red-600">*</span>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="quantity">
+                Cantidad *
               </label>
-              <input
-                type="number"
-                value={quantity}
-                min={1}
-                onChange={(e) => setQuantity(Number(e.target.value))}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="Cantidad de productos devueltos"
-              />
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
+                  className="bg-gray-200 px-3 py-1 rounded-l-lg hover:bg-gray-300"
+                  disabled={quantity <= 1}
+                >
+                  -
+                </button>
+                <input
+                  type="number"
+                  id="quantity"
+                  min="1"
+                  max={availableQuantity}
+                  value={quantity}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 1;
+                    setQuantity(Math.min(value, availableQuantity));
+                  }}
+                  className="w-16 text-center border-t border-b border-gray-300 py-1"
+                />
+                <button
+                  type="button"
+                  onClick={() => setQuantity(prev => Math.min(prev + 1, availableQuantity))}
+                  className="bg-gray-200 px-3 py-1 rounded-r-lg hover:bg-gray-300"
+                  disabled={quantity >= availableQuantity}
+                >
+                  +
+                </button>
+              </div>
+              {availableQuantity > 0 && (
+                <p className="mt-1 text-sm text-gray-500">
+                  Disponible en {source}: {availableQuantity} unidades
+                  {source === 'venta' && maxAvailable > 0 && ` (de ${maxAvailable} unidades vendidas)`}
+                </p>
+              )}
             </div>
 
             {/* Razón */}
@@ -284,6 +377,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
                 value={reason}
                 onChange={e => setReason(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none bg-white"
+                required
               >
                 <option value="">Selecciona una razón</option>
                 <option value="transporte">Transporte</option>
@@ -295,7 +389,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
             {/* Observaciones */}
             <div>
               <label className="block text-gray-700 mb-1 font-medium">
-                Observación <span className="text-red-600">*</span>
+                Observación
               </label>
               <textarea
                 value={observations}
@@ -325,11 +419,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
               }`}
             >
               <Save size={18} />
-              {isPending
-                ? "Guardando..."
-                : selectedStoreId
-                  ? "Guardar"
-                  : "Selecciona Tienda"}
+              {isPending ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
         </form>
