@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Filter,
   Home,
@@ -17,8 +17,9 @@ import ModalEditProductWarehouse from './product/modal-edit-product-warehouse';
 import { useDeleteWarehouseProduct } from "@/modules/inventory/hook/useWarehouseProducts";
 import ModalWarehouses from './warehouses/modal-warehouses';
 
-import { Input } from '@/app/components/ui/input';
-import { Button } from '@/app/components/ui/button';
+// 🔥 IMPORTAR SISTEMA DE PERMISOS OPTIMIZADO
+import { useModulePermissions } from '@/core/utils/permission-hooks';
+import { MODULE_NAMES } from '@/core/utils/useModulesMap';
 
 // Función para obtener las fechas de los últimos 3 días
 const getInitialDateFilters = () => {
@@ -36,7 +37,7 @@ const WarehouseView: React.FC = () => {
   // Obtener las fechas iniciales
   const initialDates = getInitialDateFilters();
 
-  const { data: warehouseProducts, isLoading, error, refetch } = useFetchWarehouseProducts();
+  const { data: warehouseProducts, isLoading, error  } = useFetchWarehouseProducts();
   const { data: warehouses } = useFetchWarehouses();
   const { data: products } = useFetchProducts();
 
@@ -51,6 +52,9 @@ const WarehouseView: React.FC = () => {
   const [endDate, setEndDate] = useState<string>(initialDates.endDate);
 
   const { mutate: toggleStatus } = useDeleteWarehouseProduct();
+
+  // 🔥 USAR HOOK OPTIMIZADO DE PERMISOS - UNA SOLA LLAMADA
+  const { canView, canCreate, canEdit, canDelete, isAdmin } = useModulePermissions(MODULE_NAMES.INVENTORY);
 
   const selectedWarehouseProduct = editingProduct
     ? warehouseProducts?.find((p: any) => p.id === editingProduct)
@@ -135,26 +139,48 @@ const WarehouseView: React.FC = () => {
         <h2 className="text-3xl font-semibold text-blue-700">Gestión de Almacén</h2>
       </div>
 
+      {/* 🔥 INDICADOR DE PERMISOS EN DESARROLLO */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            <strong>Debug Permisos:</strong> 
+            Módulo: {MODULE_NAMES.INVENTORY} | 
+            Crear: {canCreate ? '✅' : '❌'} | 
+            Editar: {canEdit ? '✅' : '❌'} | 
+            Eliminar: {canDelete ? '✅' : '❌'} |
+            Admin: {isAdmin ? '✅' : '❌'}
+          </p>
+        </div>
+      )}
+
       <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
         <div className="flex items-center space-x-2 text-gray-600">
           <Home size={24} className="text-blue-700" />
           <span className="text-lg font-medium">Lista de productos</span>
         </div>
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto">
-          <button
-            className="flex items-center gap-2 px-4 py-2 rounded-full font-semibold bg-blue-700 text-white hover:bg-blue-800 transition-colors"
-            onClick={() => setShowWarehouses(true)}
-          >
-            <Home size={18} /> Almacenes
-          </button>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-full font-semibold bg-blue-700 text-white hover:bg-blue-800"
-          >
-            <PlusCircle size={18} /> Crear Producto
-          </button>
+          {/* 🔥 BOTÓN DE ALMACENES - SOLO SI TIENE PERMISOS DE VER */}
+          {(canView || isAdmin) && (
+            <button
+              className="flex items-center gap-2 px-4 py-2 rounded-full font-semibold bg-blue-700 text-white hover:bg-blue-800 transition-colors"
+              onClick={() => setShowWarehouses(true)}
+            >
+              <Home size={18} /> Almacenes
+            </button>
+          )}
+          
+          {/* 🔥 BOTÓN DE CREAR PRODUCTO - SOLO SI TIENE PERMISOS DE CREAR */}
+          {(canCreate || isAdmin) && (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-full font-semibold bg-blue-700 text-white hover:bg-blue-800"
+            >
+              <PlusCircle size={18} /> Crear Producto
+            </button>
+          )}
         </div>
       </div>
+
 
       {/* Sección de Filtros */}
       <div className="bg-white rounded-xl shadow p-4 border border-gray-200">
@@ -280,16 +306,28 @@ const WarehouseView: React.FC = () => {
                     )}
                   </td>
                   <td className="px-4 py-2 flex justify-center gap-2">
-                    <button onClick={() => setEditingProduct(product.id)} className="text-blue-600 hover:text-blue-800">
-                      <Edit size={18} />
-                    </button>
-                    <button
-                      onClick={() => toggleStatus(product.id)}
-                      className={`hover:text-red-800 ${product.status ? 'text-red-600' : 'text-green-600'}`}
-                      title={product.status ? "Desactivar" : "Activar"}
-                    >
-                      <Trash size={18} />
-                    </button>
+                    {/* 🔥 BOTÓN DE EDITAR - SOLO SI TIENE PERMISOS DE EDITAR */}
+                    {(canEdit || isAdmin) && (
+                      <button onClick={() => setEditingProduct(product.id)} className="text-blue-600 hover:text-blue-800">
+                        <Edit size={18} />
+                      </button>
+                    )}
+                    
+                    {/* 🔥 BOTÓN DE ELIMINAR/ACTIVAR - SOLO SI TIENE PERMISOS DE ELIMINAR */}
+                    {(canDelete || isAdmin) && (
+                      <button
+                        onClick={() => toggleStatus(product.id)}
+                        className={`hover:text-red-800 ${product.status ? 'text-red-600' : 'text-green-600'}`}
+                        title={product.status ? "Desactivar" : "Activar"}
+                      >
+                        <Trash size={18} />
+                      </button>
+                    )}
+                    
+                    {/* 🔥 MENSAJE CUANDO NO HAY PERMISOS */}
+                    {!canEdit && !canDelete && !isAdmin && (
+                      <span className="text-gray-400 text-sm">Sin permisos</span>
+                    )}
                   </td>
                 </tr>
               ))
@@ -304,20 +342,23 @@ const WarehouseView: React.FC = () => {
         </table>
       </div>
 
-      {showCreate && (
+      {/* 🔥 MODAL DE CREAR - SOLO SI TIENE PERMISOS */}
+      {showCreate && (canCreate || isAdmin) && (
         <ModalCreateProductWarehouse
           onClose={() => setShowCreate(false)}
         />
       )}
 
-      {editingProduct && selectedWarehouseProduct && (
+      {/* 🔥 MODAL DE EDITAR - SOLO SI TIENE PERMISOS */}
+      {editingProduct && selectedWarehouseProduct && (canEdit || isAdmin) && (
         <ModalEditProductWarehouse
           producto={selectedWarehouseProduct}
           onClose={() => setEditingProduct(null)}
         />
       )} 
 
-      {showWarehouses && (
+      {/* 🔥 MODAL DE ALMACENES - SOLO SI TIENE PERMISOS DE VER */}
+      {showWarehouses && (canView || isAdmin) && (
         <ModalWarehouses
           open={showWarehouses}
           onOpenChange={setShowWarehouses}

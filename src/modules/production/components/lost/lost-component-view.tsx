@@ -405,7 +405,11 @@ const LostComponentView: React.FC = () => {
                           <FiTrash2 />
                         </button>
                       )}
-                    
+                      
+                      {/* 🔥 MENSAJE CUANDO NO HAY PERMISOS */}
+                      {!canEdit && !canDelete && !isAdmin && (
+                        <span className="text-gray-400 text-sm">Sin permisos</span>
+                      )}
                     </div>
                   </td>
                 </tr>

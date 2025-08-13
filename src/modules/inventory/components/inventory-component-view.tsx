@@ -1,13 +1,51 @@
 import React, { useState } from 'react';
 import { Repeat, Home, Users, Truck } from 'lucide-react';
+import { ShieldAlert, Loader2 } from 'lucide-react';
 import WarehouseView from './warehouse/warehouse-view';
 import ResourceView from './resourcehouse/resourcehouse-view';
 import SuppliersView from './supplier/supplier.view';
 import MovementComponentView from './movements/movement-component-view';
 
+// 🔥 IMPORTAR SISTEMA DE PERMISOS OPTIMIZADO
+import { useModulePermissions } from '@/core/utils/permission-hooks';
+import { MODULE_NAMES } from '@/core/utils/useModulesMap';
+
 
 const InventoryComponentView: React.FC = () => {
   const [selectedView, setSelectedView] = useState<'movimientos' | 'almacen' | 'recursos' | 'proveedores'>('movimientos');
+
+  // 🔥 USAR HOOK OPTIMIZADO DE PERMISOS - UNA SOLA LLAMADA
+  const { canView, isLoading, isAdmin } = useModulePermissions(MODULE_NAMES.INVENTORY);
+
+  // 🔥 MOSTRAR LOADING MIENTRAS SE VERIFICAN PERMISOS
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="animate-spin h-12 w-12 text-red-600 mx-auto mb-4" />
+          <p className="text-gray-600">Verificando permisos...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 🔥 VERIFICAR PERMISOS DE ACCESO AL MÓDULO
+  if (!canView && !isAdmin) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
+          <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-700 mb-2">Acceso Restringido</h2>
+          <p className="text-gray-600 mb-4">
+            No tienes permisos para ver el módulo de inventario.
+          </p>
+          <p className="text-sm text-gray-500">
+            Contacta al administrador para obtener acceso.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -16,6 +54,18 @@ const InventoryComponentView: React.FC = () => {
         <h1 className="text-5xl font-bold text-center text-red-700 pb-4">Panel de Almacén</h1>
         <p className="text-gray-600 text-center">Gestión completa de productos, producción y pérdidas</p>
       </div>
+
+      {/* 🔥 INDICADOR DE PERMISOS EN DESARROLLO */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            <strong>Debug Permisos:</strong> 
+            Módulo: {MODULE_NAMES.INVENTORY} | 
+            Ver: {canView ? '✅' : '❌'} | 
+            Admin: {isAdmin ? '✅' : '❌'} |
+          </p>
+        </div>
+      )}
 
       {/* Navigation Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 p-6">

@@ -249,6 +249,11 @@ const ProductionView = () => {
                           }
                         </button>
                       )}
+                      
+                      {/* 🔥 MENSAJE CUANDO NO HAY PERMISOS */}
+                      {!canEdit && !isAdmin && (
+                        <span className="text-gray-400 text-sm">Sin permisos</span>
+                      )}
                     </div>
                   </td>
                 </tr>

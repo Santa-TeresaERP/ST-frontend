@@ -10,12 +10,19 @@ import {
   useFetchWarehouses, 
 } from "@/modules/inventory/hook/useWarehouses";
 
+// 🔥 IMPORTAR SISTEMA DE PERMISOS OPTIMIZADO
+import { useModulePermissions } from '@/core/utils/permission-hooks';
+import { MODULE_NAMES } from '@/core/utils/useModulesMap';
+
 interface ModalWarehousesProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange }) => {
+  // 🔥 USAR HOOK OPTIMIZADO DE PERMISOS - UNA SOLA LLAMADA
+  const { canCreate, canEdit, canDelete, isAdmin } = useModulePermissions(MODULE_NAMES.INVENTORY);
+
   // Estados para controlar los modales
   const [showCreateWarehouse, setShowCreateWarehouse] = useState(false);
   const [showEditWarehouse, setShowEditWarehouse] = useState(false);
@@ -57,15 +64,32 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
           </div>
         </div>
 
+        {/* 🔥 INDICADOR DE PERMISOS EN DESARROLLO */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mx-6 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <strong>Debug Permisos:</strong> 
+              Módulo: {MODULE_NAMES.INVENTORY} | 
+              Crear: {canCreate ? '✅' : '❌'} | 
+              Editar: {canEdit ? '✅' : '❌'} | 
+              Eliminar: {canDelete ? '✅' : '❌'} |
+              Admin: {isAdmin ? '✅' : '❌'}
+            </p>
+          </div>
+        )}
+
         {/* Botón agregar */}
         <div className="flex justify-end mb-2 p-6 ">
-          <button
-            className="flex items-center gap-2 bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white px-5 py-3 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-            onClick={() => setShowCreateWarehouse(true)}
-          >
-            <Plus size={20} />
-            <span className="font-medium">Agregar Almacén</span>
-          </button>
+          {/* 🔥 BOTÓN DE CREAR - SOLO SI TIENE PERMISOS */}
+          {(canCreate || isAdmin) && (
+            <button
+              className="flex items-center gap-2 bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white px-5 py-3 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+              onClick={() => setShowCreateWarehouse(true)}
+            >
+              <Plus size={20} />
+              <span className="font-medium">Agregar Almacén</span>
+            </button>
+          )}
         </div>
 
         {/* Estados de carga y error */}
@@ -131,16 +155,28 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
                     </div>
                   </div>
                   <div className="flex gap-2 mt-4">
-                    <button
-                      onClick={() => {
-                        setSelectedWarehouse(warehouse);
-                        setShowEditWarehouse(true);
-                      }}
-                      className="p-2 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200"
-                    >
-                      <Edit3 size={20} />
-                    </button>
-                    <ToggleWarehouseStatus warehouse={warehouse} />
+                    {/* 🔥 BOTÓN DE EDITAR - SOLO SI TIENE PERMISOS */}
+                    {(canEdit || isAdmin) && (
+                      <button
+                        onClick={() => {
+                          setSelectedWarehouse(warehouse);
+                          setShowEditWarehouse(true);
+                        }}
+                        className="p-2 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200"
+                      >
+                        <Edit3 size={20} />
+                      </button>
+                    )}
+                    
+                    {/* 🔥 BOTÓN DE TOGGLE STATUS - SOLO SI TIENE PERMISOS DE ELIMINAR */}
+                    {(canDelete || isAdmin) && (
+                      <ToggleWarehouseStatus warehouse={warehouse} />
+                    )}
+                    
+                    {/* 🔥 MENSAJE CUANDO NO HAY PERMISOS */}
+                    {!canEdit && !canDelete && !isAdmin && (
+                      <span className="text-gray-400 text-sm">Sin permisos</span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -187,16 +223,28 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
                     </div>
                   </div>
                   <div className="flex gap-2 mt-4">
-                    <button
-                      onClick={() => {
-                        setSelectedWarehouse(warehouse);
-                        setShowEditWarehouse(true);
-                      }}
-                      className="p-2 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200"
-                    >
-                      <Edit3 size={20} />
-                    </button>
-                    <ToggleWarehouseStatus warehouse={warehouse} />
+                    {/* 🔥 BOTÓN DE EDITAR - SOLO SI TIENE PERMISOS */}
+                    {(canEdit || isAdmin) && (
+                      <button
+                        onClick={() => {
+                          setSelectedWarehouse(warehouse);
+                          setShowEditWarehouse(true);
+                        }}
+                        className="p-2 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200"
+                      >
+                        <Edit3 size={20} />
+                      </button>
+                    )}
+                    
+                    {/* 🔥 BOTÓN DE TOGGLE STATUS - SOLO SI TIENE PERMISOS DE ELIMINAR */}
+                    {(canDelete || isAdmin) && (
+                      <ToggleWarehouseStatus warehouse={warehouse} />
+                    )}
+                    
+                    {/* 🔥 MENSAJE CUANDO NO HAY PERMISOS */}
+                    {!canEdit && !canDelete && !isAdmin && (
+                      <span className="text-gray-400 text-sm">Sin permisos</span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -206,21 +254,26 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
         </div>
       )}
 
-        {/* Modal crear almacén */}
-        <ModalCreateWarehousesView
-          showModal={showCreateWarehouse}
-          onClose={() => setShowCreateWarehouse(false)}
-        />
+        {/* 🔥 MODAL CREAR ALMACÉN - SOLO SI TIENE PERMISOS */}
+        {showCreateWarehouse && (canCreate || isAdmin) && (
+          <ModalCreateWarehousesView
+            showModal={showCreateWarehouse}
+            onClose={() => setShowCreateWarehouse(false)}
+          />
+        )}
 
-        {/* Modal editar almacén */}
-        <ModalEditWarehousesView
-          showModal={showEditWarehouse}
-          onClose={() => setShowEditWarehouse(false)}
-          warehouse={selectedWarehouse}
-          onSuccess={() => setShowEditWarehouse(false)}
-        />
+        {/* 🔥 MODAL EDITAR ALMACÉN - SOLO SI TIENE PERMISOS */}
+        {showEditWarehouse && (canEdit || isAdmin) && (
+          <ModalEditWarehousesView
+            showModal={showEditWarehouse}
+            onClose={() => setShowEditWarehouse(false)}
+            warehouse={selectedWarehouse}
+            onSuccess={() => setShowEditWarehouse(false)}
+          />
+        )}
 
-        {/* Modal eliminar almacén */}
+        {/* 🔥 MODAL ELIMINAR ALMACÉN - SOLO SI TIENE PERMISOS */}
+        {showDeleteWarehouse && (canDelete || isAdmin) && (
           <ModalDeleteWarehouse
             isOpen={showDeleteWarehouse}
             onClose={() => {
@@ -234,6 +287,7 @@ const ModalWarehouses: React.FC<ModalWarehousesProps> = ({ open, onOpenChange })
             warehouseId={selectedWarehouse?.id} // ✅ Verificar que esto no sea undefined
             warehouseName={selectedWarehouse?.name}
           />
+        )}
       </div>
     </div>
   );
