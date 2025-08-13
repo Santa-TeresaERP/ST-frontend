@@ -85,7 +85,10 @@ export const useModulesMap = () => {
 };
 
 /**
- * 🔥 CONSTANTES DE NOMBRES DE MÓDULOS
+ * 🔥 CONSTANTES DE NOMBRES DE MÓDULOS (LUGAR CENTRALIZADO)
+ * 
+ * ⚠️ IMPORTANTE: Este es el ÚNICO lugar donde se definen MODULE_NAMES
+ * No duplicar en otros archivos - importar desde aquí
  * 
  * Estos nombres deben coincidir EXACTAMENTE con los nombres
  * en tu backend (el array de módulos que me mostraste)

@@ -10,10 +10,17 @@ import { useFetchProducts } from '../../hook/useProducts';
 import { useFetchPlants } from '../../hook/usePlants';
 import { toggleProduction } from '../../action/productions';
 
+// 🔥 IMPORTAR SISTEMA DE PERMISOS OPTIMIZADO
+import { useModulePermissions } from '@/core/utils/permission-hooks';
+import { MODULE_NAMES } from '@/core/utils/useModulesMap';
+
 const ProductionView = () => {
   const { data: productions, isLoading, error } = useFetchProductions();
   const { data: products } = useFetchProducts();
   const { data: plants } = useFetchPlants();
+
+  // 🔥 USAR HOOK OPTIMIZADO DE PERMISOS - UNA SOLA LLAMADA
+  const { canCreate, canEdit, isAdmin } = useModulePermissions(MODULE_NAMES.PRODUCTION);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -124,6 +131,19 @@ const ProductionView = () => {
           </p>
         </div>
 
+        {/* 🔥 INDICADOR DE PERMISOS EN DESARROLLO */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <strong>Debug Permisos:</strong> 
+              Módulo: {MODULE_NAMES.PRODUCTION} | 
+              Crear: {canCreate ? '✅' : '❌'} | 
+              Editar: {canEdit ? '✅' : '❌'} | 
+              Admin: {isAdmin ? '✅' : '❌'}
+            </p>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <button
             onClick={() => setIsFilterModalOpen(true)} // Abrir el modal de filtros
@@ -132,20 +152,28 @@ const ProductionView = () => {
             <List size={18} />
             <span>Filtrar Producción</span>
           </button>
-          <button
-            onClick={handleOpenCreateModal}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-500 transition-all duration-300 shadow-md hover:shadow-lg"
-          >
-            <Plus size={18} />
-            <span>Registrar Producción</span>
-          </button>
-          <button
-            onClick={handleOpenPlantModal}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-500 transition-all duration-300 shadow-md hover:shadow-lg"
-          >
-            <List size={18} />
-            <span>Plantas</span>
-          </button>
+          
+          {/* 🔥 BOTÓN DE CREAR PRODUCCIÓN - SOLO SI TIENE PERMISOS */}
+          {(canCreate || isAdmin) && (
+            <button
+              onClick={handleOpenCreateModal}
+              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-500 transition-all duration-300 shadow-md hover:shadow-lg"
+            >
+              <Plus size={18} />
+              <span>Registrar Producción</span>
+            </button>
+          )}
+          
+          {/* 🔥 BOTÓN DE PLANTAS - SOLO SI TIENE PERMISOS */}
+          {(canCreate || isAdmin) && (
+            <button
+              onClick={handleOpenPlantModal}
+              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-700 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-500 transition-all duration-300 shadow-md hover:shadow-lg"
+            >
+              <List size={18} />
+              <span>Plantas</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -194,26 +222,33 @@ const ProductionView = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex space-x-2 justify-center">
-                      <button
-                        onClick={() => {
-                          setSelectedProduction(production);
-                          setIsEditModalOpen(true);
-                        }}
-                        className="p-2 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200"
-                        title="Editar"
-                      >
-                        <Edit size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleToggle(production)}
-                        className="p-2 text-yellow-600 hover:text-yellow-800 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors duration-200"
-                        title={production.isActive ? "Desactivar" : "Activar"}
-                      >
-                        {production.isActive
-                          ? <MinusCircle size={18}/>  // reemplaza con el ícono que prefieras
-                        : <PlusCircle size={18}/>
-                      }
-                    </button>
+                      {/* 🔥 BOTÓN DE EDITAR - SOLO SI TIENE PERMISOS */}
+                      {(canEdit || isAdmin) && (
+                        <button
+                          onClick={() => {
+                            setSelectedProduction(production);
+                            setIsEditModalOpen(true);
+                          }}
+                          className="p-2 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200"
+                          title="Editar"
+                        >
+                          <Edit size={18} />
+                        </button>
+                      )}
+                      
+                      {/* 🔥 BOTÓN DE TOGGLE (ACTIVAR/DESACTIVAR) - SOLO SI TIENE PERMISOS DE EDITAR */}
+                      {(canEdit || isAdmin) && (
+                        <button
+                          onClick={() => handleToggle(production)}
+                          className="p-2 text-yellow-600 hover:text-yellow-800 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors duration-200"
+                          title={production.isActive ? "Desactivar" : "Activar"}
+                        >
+                          {production.isActive
+                            ? <MinusCircle size={18}/>
+                            : <PlusCircle size={18}/>
+                          }
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

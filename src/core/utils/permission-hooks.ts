@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { useAuthStore } from '@/core/store/auth';
 import { PermissionManager } from './permission-manager';
+import { useModulesMap } from './useModulesMap';
+import { Permission } from './permission-types';
 
 /**
  * 🔥 HOOK PRINCIPAL PARA MANEJO DE PERMISOS
@@ -25,30 +27,72 @@ export const usePermissions = () => {
 /**
  * 🔥 HOOK PARA PERMISOS DE UN MÓDULO ESPECÍFICO
  * Retorna los 4 permisos básicos (CRUD) para un módulo
- * @param moduleId ID del módulo a verificar
+ * @param moduleName Nombre del módulo (ej: 'Produccion', 'user', etc.)
  */
-export const useModulePermissions = (moduleId: string) => {
-  const { permissionManager, isLoggedIn, isAdmin } = usePermissions();
+export const useModulePermissions = (moduleName: string) => {
+  const { getModuleId, hasModuleAccess } = useModulesMap();
+  const { user } = usePermissions();
 
   // Calcular permisos específicos del módulo
   const permissions = useMemo(() => {
-    const canView = permissionManager.canRead(moduleId);     // Ver/Leer
-    const canEdit = permissionManager.canEdit(moduleId);     // Editar
-    const canCreate = permissionManager.canWrite(moduleId);  // Crear
-    const canDelete = permissionManager.canDelete(moduleId); // Eliminar
+    // Si no hay usuario o acceso a módulos, devolver permisos en false
+    if (!user || !hasModuleAccess) {
+      return {
+        canView: false,
+        canEdit: false,
+        canCreate: false,
+        canDelete: false,
+        isLoading: !user, // Cargando usuario vs sin acceso a módulos
+      };
+    }
+
+    // 🔥 OBTENER EL UUID DEL MÓDULO POR SU NOMBRE
+    const moduleId = getModuleId(moduleName);
+    
+    if (!moduleId || !user.Role?.Permissions) {
+      return {
+        canView: false,
+        canEdit: false,
+        canCreate: false,
+        canDelete: false,
+        isLoading: false,
+      };
+    }
+
+    // Buscar el permiso específico para este módulo usando UUID
+    const modulePermission = user.Role.Permissions.find(
+      (perm: Permission) => perm.moduleId === moduleId
+    );
+
+    if (!modulePermission) {
+      return {
+        canView: false,
+        canEdit: false,
+        canCreate: false,
+        canDelete: false,
+        isLoading: false,
+      };
+    }
+
+    // 🔥 MAPEAR PERMISOS CORRECTAMENTE
+    const canView = modulePermission.canRead === true;     // Ver/Leer
+    const canEdit = modulePermission.canEdit === true;     // Editar
+    const canCreate = modulePermission.canWrite === true;  // Crear
+    const canDelete = modulePermission.canDelete === true; // Eliminar
 
     return {
       canView,
       canEdit,
       canCreate,
       canDelete,
+      isLoading: false,
     };
-  }, [permissionManager, moduleId]);
+  }, [moduleName, user, getModuleId, hasModuleAccess]);
 
   return {
     ...permissions,
-    isLoggedIn,
-    isAdmin,
-    isLoading: false, // No hay loading async aquí
+    isLoggedIn: !!user,
+    isAdmin: false, // No tenemos campo isAdmin en Role, usar canRead en modulos para verificar admin
+    hasModuleAccess, // Info adicional sobre acceso a módulos
   };
 };

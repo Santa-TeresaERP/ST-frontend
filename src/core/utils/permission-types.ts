@@ -61,22 +61,8 @@ export interface UserFromAPI {
 // Los IDs se obtienen automáticamente del backend usando useModulesMap()
 // No más UUIDs hardcodeados - todo es dinámico 🚀
 
-// 🔥 NOMBRES DE MÓDULOS DEL BACKEND (exactos)
-// ✅ Usar estos nombres con useModulesMap().getModuleId(MODULE_NAMES.USERS)
-export const MODULE_NAMES = {
-  // Nombres exactos del backend (deben coincidir con tu createModules)
-  MODULES: 'modulos',      // Gestión de módulos
-  USERS: 'user',           // Gestión de usuarios  
-  ROLES: 'roles',          // Gestión de roles
-  INVENTORY: 'inventario', // Inventario
-  PRODUCTION: 'Produccion', // Producción (nota la mayúscula)
-  
-  // 🚧 Futuros módulos - agregar según backend
-  // MUSEUM: 'museo',
-  // RENTALS: 'alquileres', 
-  // SALES: 'ventas',
-  // FINANZAS: 'finanzas',
-} as const;
+// ✅ MODULE_NAMES ahora está centralizado en useModulesMap.ts
+// Importar desde allí: import { MODULE_NAMES } from '@/core/utils/useModulesMap';
 
 // Resultado de verificación de permisos (para componentes que muestran feedback)
 export interface PermissionResult {

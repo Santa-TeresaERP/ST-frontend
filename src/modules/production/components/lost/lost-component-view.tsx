@@ -2,10 +2,14 @@ import React, { useState, useMemo } from 'react';
 import { FiFilter, FiSearch, FiPlus, FiTrash2, FiEdit, FiAlertTriangle, FiCalendar, FiX, FiSave } from 'react-icons/fi';
 import { useFetchAllLost, useCreateLost, useDeleteLost, useUpdateLost } from '@/modules/production/hook/useLost';
 import { lostSchema } from '@/modules/production/schemas/lostValidation';
-import { CreateLostPayload } from '@/modules/production/types/lost';
+import { CreateLostPayload, Lost } from '@/modules/production/types/lost';
 import { toast } from 'react-toastify';
 import { useFetchProductions } from '../../hook/useProductions';
 import { useFetchProducts } from '../../hook/useProducts';
+
+// 🔥 IMPORTAR SISTEMA DE PERMISOS OPTIMIZADO
+import { useModulePermissions } from '@/core/utils/permission-hooks';
+import { MODULE_NAMES } from '@/core/utils/useModulesMap';
 
 const LostComponentView: React.FC = () => {
   // Obtener datos usando los hooks
@@ -15,8 +19,12 @@ const LostComponentView: React.FC = () => {
   const createLostMutation = useCreateLost();
   const deleteLostMutation = useDeleteLost();
   const updateLostMutation = useUpdateLost(); // Hook que deberías tener
-  const [editingLostItem, setEditingLostItem] = useState<any | null>(null);
-  const [deletingLostItem, setDeletingLostItem] = useState<any | null>(null);
+
+  // 🔥 USAR HOOK OPTIMIZADO DE PERMISOS - UNA SOLA LLAMADA
+  const { canCreate, canEdit, canDelete, isAdmin } = useModulePermissions(MODULE_NAMES.PRODUCTION);
+
+  const [editingLostItem, setEditingLostItem] = useState<Lost | null>(null);
+  const [deletingLostItem, setDeletingLostItem] = useState<Lost | null>(null);
 
   // Estados para filtros y modal
   const [searchTerm, setSearchTerm] = useState('');
@@ -167,14 +175,13 @@ const LostComponentView: React.FC = () => {
 
   // Manejar eliminar registro
   const handleDeleteItem = async (id: string) => {
-    if (window.confirm('¿Estás seguro de eliminar este registro?')) {
-      try {
-        await deleteLostMutation.mutateAsync(id);
-        toast.success('Registro eliminado correctamente');
-      } catch (error) {
-        toast.error('Error al eliminar el registro');
-        console.error(error);
-      }
+    try {
+      await deleteLostMutation.mutateAsync(id);
+      toast.success('Registro eliminado correctamente');
+      setDeletingLostItem(null);
+    } catch (error) {
+      toast.error('Error al eliminar el registro');
+      console.error(error);
     }
   };
 
@@ -198,16 +205,52 @@ const LostComponentView: React.FC = () => {
           <FiAlertTriangle size={24} />
           <span>Gestión de Pérdidas</span>
         </h2>
+
+        {/* 🔥 INDICADOR DE PERMISOS EN DESARROLLO */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <strong>Debug Permisos:</strong> 
+              Módulo: {MODULE_NAMES.PRODUCTION} | 
+              Crear: {canCreate ? '✅' : '❌'} | 
+              Editar: {canEdit ? '✅' : '❌'} | 
+              Eliminar: {canDelete ? '✅' : '❌'} |
+              Admin: {isAdmin ? '✅' : '❌'}
+            </p>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-800 text-white rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
-            disabled={createLostMutation.isPending}
-          >
-            <FiPlus /> Nueva Pérdida
-          </button>
+          {/* 🔥 BOTÓN DE NUEVA PÉRDIDA - SOLO SI TIENE PERMISOS */}
+          {(canCreate || isAdmin) && (
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-800 text-white rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+              disabled={createLostMutation.isPending}
+            >
+              <FiPlus /> Nueva Pérdida
+            </button>
+          )}
         </div>
       </div>
+
+      {/* 🔥 MENSAJE INFORMATIVO SI NO HAY PERMISOS */}
+      {!canCreate && !isAdmin && (
+        <div className="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-r-lg">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                <strong>Vista limitada:</strong> No tienes permisos para crear, editar o eliminar registros de pérdidas. Solo puedes ver los datos.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -341,12 +384,28 @@ const LostComponentView: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-xl font-medium">
                     <div className="flex space-x-2 justify-center">
-                      <button onClick={() => setEditingLostItem(lost)} className="text-blue-600 hover:text-blue-800">
-                        <FiEdit />
-                      </button>
-                      <button onClick={() => setDeletingLostItem(lost)} className="text-red-600 hover:text-red-800">
-                        <FiTrash2 />
-                      </button>
+                      {/* 🔥 BOTÓN DE EDITAR - SOLO SI TIENE PERMISOS */}
+                      {(canEdit || isAdmin) && (
+                        <button 
+                          onClick={() => setEditingLostItem(lost)} 
+                          className="text-blue-600 hover:text-blue-800"
+                          title="Editar pérdida"
+                        >
+                          <FiEdit />
+                        </button>
+                      )}
+                      
+                      {/* 🔥 BOTÓN DE ELIMINAR - SOLO SI TIENE PERMISOS */}
+                      {(canDelete || isAdmin) && (
+                        <button 
+                          onClick={() => setDeletingLostItem(lost)} 
+                          className="text-red-600 hover:text-red-800"
+                          title="Eliminar pérdida"
+                        >
+                          <FiTrash2 />
+                        </button>
+                      )}
+                    
                     </div>
                   </td>
                 </tr>
@@ -597,6 +656,62 @@ const LostComponentView: React.FC = () => {
                 className="px-4 py-2 bg-gradient-to-r from-red-600 to-orange-800 text-white rounded-lg hover:opacity-90 flex items-center gap-2"
               >
                 <FiSave /> Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación para eliminar */}
+      {deletingLostItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="bg-gradient-to-r from-red-600 to-red-800 text-white px-6 py-4 flex items-center justify-between">
+              <h3 className="text-2xl font-semibold flex items-center gap-2">
+                <FiTrash2 /> Confirmar Eliminación
+              </h3>
+              <button
+                onClick={() => setDeletingLostItem(null)}
+                className="hover:text-gray-300"
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <p className="text-gray-700 mb-4">
+                ¿Estás seguro de que quieres eliminar este registro de pérdida?
+              </p>
+              <div className="bg-gray-50 p-3 rounded-lg mb-4">
+                <p className="text-sm text-gray-600">
+                  <strong>Producto:</strong> {getProductionDisplay(deletingLostItem.id)}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>Cantidad:</strong> {deletingLostItem.quantity}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>Tipo:</strong> {deletingLostItem.lost_type}
+                </p>
+              </div>
+              <p className="text-red-600 text-sm font-medium">
+                Esta acción no se puede deshacer.
+              </p>
+            </div>
+
+            <div className="bg-gray-50 px-6 py-3 flex justify-end gap-2">
+              <button
+                onClick={() => setDeletingLostItem(null)}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 flex items-center gap-2"
+              >
+                <FiX /> Cancelar
+              </button>
+              <button
+                onClick={() => handleDeleteItem(deletingLostItem.id)}
+                className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-800 text-white rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+                disabled={deleteLostMutation.isPending}
+              >
+                <FiTrash2 />
+                {deleteLostMutation.isPending ? 'Eliminando...' : 'Eliminar'}
               </button>
             </div>
           </div>
