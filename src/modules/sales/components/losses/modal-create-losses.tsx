@@ -131,6 +131,7 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
     e.preventDefault();
     setLocalError("");
     
+    // Validación de campos requeridos
     if (!productId) {
       setLocalError("Por favor seleccione un producto");
       return;
@@ -142,26 +143,45 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
     }
     
     // Validar que no se exceda la cantidad disponible
-    if (quantity > availableQuantity) {
-      setLocalError(`La cantidad excede el máximo disponible (${availableQuantity})`);
+    if (salesId && quantity > availableQuantity) {
+      setLocalError(`La cantidad excede el máximo disponible en la venta (${availableQuantity})`);
       return;
+    }
+    
+    // Validar inventario si no hay venta seleccionada
+    if (!salesId) {
+      const inventoryItem = storeInventory.find(item => 
+        item.productId === productId && item.storeId === selectedStoreId
+      );
+      
+      if (!inventoryItem || inventoryItem.quantity < quantity) {
+        setLocalError(`No hay suficiente inventario disponible (${inventoryItem?.quantity || 0} disponibles)`);
+        return;
+      }
     }
     
     try {
       const newLoss: Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt'> = {
         productId,
-        salesId: salesId || undefined, // Hacer el salesId opcional
-        reason: reason || "Pérdida de inventario", // Razón por defecto si no se especifica
-        observations: observations || `Pérdida registrada ${salesId ? 'desde venta' : 'directa de inventario'}`,
+        salesId: salesId || undefined,
+        reason: reason || (salesId ? "Devolución de venta" : "Pérdida de inventario"),
+        observations: observations || (salesId 
+          ? `Pérdida registrada desde venta` 
+          : `Pérdida registrada directamente de inventario`),
         quantity,
-        price: 0, // Ajustar según sea necesario
+        price: 0,
       };
       
       await mutateAsync(newLoss);
       onClose();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error al registrar la pérdida:", error);
-      setLocalError("Error al registrar la pérdida. Intente nuevamente.");
+      const errorMessage = error && typeof error === 'object' && 'response' in error && 
+                         error.response && typeof error.response === 'object' && 'data' in error.response &&
+                         error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data
+                       ? String(error.response.data.error)
+                       : "Error al registrar la pérdida. Intente nuevamente.";
+      setLocalError(errorMessage);
     }
   };
 
@@ -200,13 +220,15 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
 
           <div className="space-y-4">
             {/* Mostrar información de disponibilidad */}
-            {salesId && productId && (
-              <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
-                <p className="text-sm text-blue-800">
+            {productId && (
+              <div className={`p-3 ${salesId ? 'bg-blue-50 border-blue-100' : 'bg-gray-50 border-gray-200'} border rounded-lg`}>
+                <p className="text-sm text-gray-800">
                   <strong>Disponible para pérdidas:</strong> {availableQuantity} unidad(es)
                   <br />
-                  <span className="text-xs text-blue-600">
-                    ({source}: {maxAvailable})
+                  <span className="text-xs text-gray-600">
+                    {salesId 
+                      ? `(de la venta seleccionada: ${maxAvailable} unidades vendidas)`
+                      : `(en inventario: ${maxAvailable} unidades disponibles)`}
                   </span>
                 </p>
               </div>
