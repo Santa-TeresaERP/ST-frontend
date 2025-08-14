@@ -1,11 +1,42 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FileText, ListChecks } from 'lucide-react';
-import DetalleReporteView from './detalleReporte/detalle-reporte-view';
 import DetalleReporte from './detalleReporte/detalle-reporte-view';
 import ReporteComponentView from './reporte/reporte-view';
+import { useFetchFinancialReports } from '../../finanzas/hooks/useFinancialReports'; // Ajusta ruta si es necesario
+import { FinancialReport } from '../../finanzas/types/financialReport'; // Ajusta ruta si es necesario
 
 const FinanzasComponentView: React.FC = () => {
   const [selectedView, setSelectedView] = useState<'general' | 'detalle'>('general');
+
+  // Fetch reportes para poder seleccionar uno y pasarlo a DetalleReporte
+  const { data: reportes = [], isLoading: loadingReportes } = useFetchFinancialReports();
+
+  // id del reporte seleccionado para ver el detalle
+  const [selectedReportId, setSelectedReportId] = useState<string | undefined>(undefined);
+
+  // Cuando cambian los reportes, selecciono el primero por defecto (si existe)
+  useEffect(() => {
+    if (reportes.length > 0 && !selectedReportId) {
+      setSelectedReportId(reportes[0].id);
+    }
+  }, [reportes, selectedReportId]);
+
+  // Encuentro el reporte completo a pasar a DetalleReporte y hago el mapeo de campos
+  const selectedReporteFull: FinancialReport | undefined = reportes.find(r => r.id === selectedReportId);
+
+  // Función para mapear la estructura que espera DetalleReporte
+  const mapToDetalleReporteProp = (r?: FinancialReport) => {
+    if (!r) return undefined;
+    return {
+      id: r.id,
+      name: (r as any).name ?? `Reporte ${r.id}`, // si tu API tiene nombre usa r.name, si no, dejo fallback
+      fechaInicio: r.start_date,
+      fechaFin: r.end_date ?? undefined,
+      observaciones: r.observations ?? undefined,
+    };
+  };
+
+  const detalleProp = mapToDetalleReporteProp(selectedReporteFull);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -66,17 +97,40 @@ const FinanzasComponentView: React.FC = () => {
             <div className="my-6" />
           </>
         )}
+
         {selectedView === 'detalle' && (
           <>
-            <DetalleReporte
-              reporte={{
-                id: 1,
-                modulo: 'Finanzas',
-                fechaInicio: '2024-01-01',
-                fechaFin: '2024-12-31',
-                observaciones: 'Observaciones de ejemplo'
-              }}
-            />
+            {/* Selector de reportes — se muestra solo en la vista detalle */}
+            <div className="mb-6 flex items-center justify-center gap-4">
+              {loadingReportes ? (
+                <div className="text-sm text-gray-500">Cargando reportes...</div>
+              ) : reportes.length === 0 ? (
+                <div className="text-sm text-gray-500">No hay reportes disponibles. Crea uno en "Reporte General".</div>
+              ) : (
+                <>
+                  <label className="text-sm font-medium text-gray-700">Seleccionar reporte:</label>
+                  <select
+                    className="border border-gray-300 rounded px-3 py-2"
+                    value={selectedReportId ?? ''}
+                    onChange={(e) => setSelectedReportId(e.target.value)}
+                  >
+                    {reportes.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        { (r as any).name ?? `${new Date(r.start_date).toLocaleDateString('es-PE')} (${r.id.slice(0,6)})` }
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
+            </div>
+
+            {/* Si hay un reporte seleccionado, lo pasamos como prop */}
+            {detalleProp ? (
+              <DetalleReporte reporte={detalleProp} />
+            ) : (
+              <div className="text-sm text-gray-500">Selecciona un reporte para ver su detalle</div>
+            )}
+
             <div className="my-6" />
           </>
         )}
