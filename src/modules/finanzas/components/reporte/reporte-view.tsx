@@ -1,54 +1,170 @@
 import React, { useState } from 'react';
 import { Eye, Trash2, FileText, Plus, BarChart3 } from 'lucide-react';
-import ModalInformeModulo from './modal-reporte-modulo';
 import ModalReporte from './modal-reporte';
+import ModalInformeModulo from './modal-reporte-modulo';
 import {
   useFetchFinancialReports,
   useCreateFinancialReport,
   useUpdateFinancialReport,
   useDeleteFinancialReport
 } from '../../hooks/useFinancialReports';
+import { useFetchGeneralIncomes } from '../../hooks/useGeneralIncomes';
+import { useFetchGeneralExpenses } from '../../hooks/useGeneralExpenses';
 import { FinancialReport } from '../../types/financialReport';
 
 export default function ReporteComponentView() {
   const { data: reportes = [], isLoading } = useFetchFinancialReports();
+  const { data: incomes = [], isLoading: incomesLoading, error: incomesError } = useFetchGeneralIncomes();
+  const { data: expenses = [], isLoading: expensesLoading, error: expensesError } = useFetchGeneralExpenses();
   const createReport = useCreateFinancialReport();
   const updateReport = useUpdateFinancialReport();
   const deleteReport = useDeleteFinancialReport();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isFinalizacion, setIsFinalizacion] = useState(false);
   const [selectedReporte, setSelectedReporte] = useState<FinancialReport | undefined>(undefined);
   const [isInformeOpen, setIsInformeOpen] = useState(false);
 
-  const handleOpenNuevo = () => {
-    setIsFinalizacion(false);
-    setSelectedReporte(undefined);
+  // Determinar si es primer reporte o finalización
+  const hasReports = reportes.length > 0;
+  const activeReport = reportes.find(r => r.end_date === null); // Reporte en proceso
+
+  // Calcular totales actuales para el reporte activo
+  const currentTotalIncome = incomes
+    .filter(income => !income.report_id)
+    .reduce((sum, income) => sum + income.amount, 0);
+
+  const currentTotalExpenses = expenses
+    .filter(expense => !expense.report_id)
+    .reduce((sum, expense) => sum + expense.amount, 0);
+
+  const currentNetProfit = currentTotalIncome - currentTotalExpenses;
+
+  // Debug: Agregar logs para verificar los datos
+  console.log('🔍 Debug Estado Reportes:', {
+    // Estados de carga
+    isLoading,
+    incomesLoading,
+    expensesLoading,
+    
+    // Errores
+    incomesError: incomesError?.message,
+    expensesError: expensesError?.message,
+    
+    // Datos crudos
+    totalIncomes: incomes.length,
+    totalExpenses: expenses.length,
+    totalReportes: reportes.length,
+    
+    // Datos filtrados
+    incomesWithoutReport: incomes.filter(income => !income.report_id).length,
+    expensesWithoutReport: expenses.filter(expense => !expense.report_id).length,
+    
+    // Cálculos
+    currentTotalIncome,
+    currentTotalExpenses,
+    currentNetProfit,
+    
+    // Muestras de datos
+    sampleIncome: incomes[0],
+    sampleExpense: expenses[0],
+    
+    // Estado del reporte
+    hasReports,
+    activeReport: activeReport ? {
+      id: activeReport.id,
+      start_date: activeReport.start_date,
+      end_date: activeReport.end_date
+    } : null,
+    
+    // Todos los ingresos para inspección
+    allIncomes: incomes.map(income => ({
+      id: income.id,
+      amount: income.amount,
+      report_id: income.report_id,
+      description: income.description
+    })),
+    
+    // Todos los gastos para inspección
+    allExpenses: expenses.map(expense => ({
+      id: expense.id,
+      amount: expense.amount,
+      report_id: expense.report_id,
+      description: expense.description
+    }))
+  });
+
+  // Función para determinar si es el reporte activo (en proceso)
+  const isActiveReport = (report: FinancialReport) => {
+    return activeReport && report.id === activeReport.id;
+  };
+
+  // Función para formatear números correctamente
+  const formatCurrency = (amount: number) => {
+    // Convertir a número si viene como string y asegurarse de que es válido
+    const num = Number(amount);
+    if (isNaN(num)) return '0.00';
+    
+    return num.toFixed(2);
+  };
+
+  // Función para mostrar el valor de ingresos
+  const displayIncome = (report: FinancialReport) => {
+    if (isActiveReport(report)) {
+      return currentTotalIncome === 0 
+        ? "En proceso" 
+        : `En proceso (S/. ${formatCurrency(currentTotalIncome)})`;
+    }
+    return `S/. ${formatCurrency(report.total_income)}`;
+  };
+
+  // Función para mostrar el valor de gastos
+  const displayExpenses = (report: FinancialReport) => {
+    if (isActiveReport(report)) {
+      return currentTotalExpenses === 0 
+        ? "En proceso" 
+        : `En proceso (S/. ${formatCurrency(currentTotalExpenses)})`;
+    }
+    return `S/. ${formatCurrency(report.total_expenses)}`;
+  };
+
+  // Función para mostrar la ganancia neta
+  const displayNetProfit = (report: FinancialReport) => {
+    if (isActiveReport(report)) {
+      if (currentNetProfit === 0) {
+        return "En proceso";
+      }
+      return `En proceso (S/. ${formatCurrency(currentNetProfit)})`;
+    }
+    return `S/. ${formatCurrency(report.net_profit)}`;
+  };
+
+  const handleOpenModal = () => {
+    setSelectedReporte(activeReport);
     setIsModalOpen(true);
   };
 
-  const handleOpenFinalizar = (r: FinancialReport) => {
-    setIsFinalizacion(true);
-    setSelectedReporte(r);
-    setIsModalOpen(true);
-  };
-
-  const handleModalSubmit = (data: any) => {
-    if (!isFinalizacion) {
+  const handleModalSubmit = (data: {
+    start_date?: string;
+    end_date?: string;
+    observations?: string;
+  }) => {
+    if (!hasReports || !activeReport) {
+      // Crear primer reporte
       createReport.mutate(
         {
-          start_date: data.fechaInicio,
-          observations: data.observaciones || '',
+          start_date: data.start_date,
+          observations: data.observations || '',
         },
         { onSuccess: () => setIsModalOpen(false) }
       );
-    } else if (selectedReporte) {
+    } else {
+      // Finalizar reporte activo
       updateReport.mutate(
         {
-          id: selectedReporte.id,
+          id: activeReport.id,
           payload: {
-            end_date: data.fechaFin,
-            observations: data.observaciones,
+            end_date: data.end_date,
+            observations: data.observations,
           },
         },
         { onSuccess: () => setIsModalOpen(false) }
@@ -65,6 +181,25 @@ export default function ReporteComponentView() {
     if (isNaN(date.getTime())) return 'Fecha inválida';
     return date.toLocaleDateString('es-PE');
   }
+
+  // Convertir datos de reportes al formato que espera el modal de módulo
+  const convertReportsToModuleFormat = () => {
+    return reportes.map((reporte, index) => ({
+      id: index + 1,
+      modulo: 'Finanzas', // Por ahora todos son del módulo de finanzas
+      fechaInicio: reporte.start_date,
+      fechaFin: reporte.end_date || undefined,
+      observaciones: reporte.observations || undefined,
+      ingresos: `S/. ${formatCurrency(reporte.total_income)}`,
+      gastos: `S/. ${formatCurrency(reporte.total_expenses)}`,
+      ganancia: `S/. ${formatCurrency(reporte.net_profit)}`
+    }));
+  };
+
+  const handleExportModule = (modulo: string, datos: { id: number; modulo: string; fechaInicio: string; fechaFin?: string; observaciones?: string; ingresos: string; gastos: string; ganancia: string; }[]) => {
+    console.log('Exportando:', { modulo, datos });
+    // Aquí puedes implementar la lógica de exportación
+  };
 
 
 
@@ -106,11 +241,11 @@ export default function ReporteComponentView() {
                 Informe por Módulo
               </button>
               <button
-                onClick={handleOpenNuevo}
+                onClick={handleOpenModal}
                 className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-red-700 transition-all shadow-lg"
               >
                 <Plus className="w-4 h-4" />
-                Nuevo Reporte
+                {hasReports && activeReport ? 'Finalizar Reporte' : 'Nuevo Reporte'}
               </button>
             </div>
           </div>
@@ -125,6 +260,7 @@ export default function ReporteComponentView() {
                   {[
                     { label: 'Fecha inicio' },
                     { label: 'Fecha fin' },
+                    { label: 'Estado' },
                     { label: 'Ingresos totales' },
                     { label: 'Gastos totales' },
                     { label: 'Ganancia neta' },
@@ -142,7 +278,7 @@ export default function ReporteComponentView() {
               <tbody className="divide-y divide-gray-100">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-8 text-gray-500">
+                    <td colSpan={8} className="text-center py-8 text-gray-500">
                       Cargando reportes...
                     </td>
                   </tr>
@@ -152,18 +288,33 @@ export default function ReporteComponentView() {
                       <td className="px-6 py-4 text-gray-600">{formatDateLocal(r.start_date)}</td>
                       <td className="px-6 py-4 text-gray-600">{r.end_date ? formatDateLocal(r.end_date) : '–'}</td>
                       <td className="px-6 py-4">
-                        <span className="font-semibold text-green-600">
-                          S/. {r.total_income.toLocaleString()}
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          isActiveReport(r) 
+                            ? 'bg-orange-100 text-orange-800' 
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          {isActiveReport(r) ? 'En proceso' : 'Finalizado'}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="font-semibold text-red-600">
-                          S/. {r.total_expenses.toLocaleString()}
+                        <span className={`font-semibold ${isActiveReport(r) ? 'text-orange-600' : 'text-green-600'}`}>
+                          {displayIncome(r)}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="font-semibold text-blue-600">
-                          S/. {r.net_profit.toLocaleString()}
+                        <span className={`font-semibold ${isActiveReport(r) ? 'text-orange-600' : 'text-red-600'}`}>
+                          {displayExpenses(r)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`font-semibold ${
+                          isActiveReport(r) 
+                            ? 'text-orange-600' 
+                            : r.net_profit >= 0 
+                              ? 'text-blue-600' 
+                              : 'text-red-600'
+                        }`}>
+                          {displayNetProfit(r)}
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -172,9 +323,9 @@ export default function ReporteComponentView() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => handleOpenFinalizar(r)}
+                            onClick={() => setSelectedReporte(r)}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all hover:scale-105"
-                            title="Finalizar"
+                            title="Ver detalles"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
@@ -210,8 +361,15 @@ export default function ReporteComponentView() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         initialData={selectedReporte}
-        isFinalizacion={isFinalizacion}
+        isFinalizacion={hasReports && activeReport !== undefined}
         onSubmit={handleModalSubmit}
+      />
+
+      <ModalInformeModulo
+        isOpen={isInformeOpen}
+        onClose={() => setIsInformeOpen(false)}
+        reportes={convertReportsToModuleFormat()}
+        onExport={handleExportModule}
       />
     </div>
   );

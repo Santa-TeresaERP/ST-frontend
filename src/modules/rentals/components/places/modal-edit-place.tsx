@@ -3,14 +3,16 @@ import { Location } from '../../types/location';
 import { FiX } from 'react-icons/fi';
 import { Place } from '../../types/places';
 import { useUpdatePlace } from '../../hook/usePlaces';
+import { useQueryClient } from '@tanstack/react-query';
 import { useFetchLocations } from '../../hook/useLocations';
 
 interface ModalEditPlaceProps {
   place: Place;
   onClose: () => void;
+  onUpdated?: () => void;
 }
 
-const ModalEditPlace: React.FC<ModalEditPlaceProps> = ({ place, onClose }) => {
+const ModalEditPlace: React.FC<ModalEditPlaceProps> = ({ place, onClose, onUpdated }) => {
   const [formData, setFormData] = useState({
     name: place.name,
     area: place.area,
@@ -18,33 +20,50 @@ const ModalEditPlace: React.FC<ModalEditPlaceProps> = ({ place, onClose }) => {
   });
   const [formError, setFormError] = useState<string | null>(null);
 
+  const queryClient = useQueryClient();
   const updatePlace = useUpdatePlace();
   const { data, isLoading, isError } = useFetchLocations();
-  const locations = React.useMemo(() => {
-    if (Array.isArray(data)) {
-      return data;
+
+  const locations = React.useMemo<Location[]>(() => {
+    try {
+
+      if (Array.isArray(data)) {
+        return data;
+      }
+
+      if (data && typeof data === 'object' && data !== null) {
+        const dataObj = data as { data?: unknown };
+        if (Array.isArray(dataObj.data)) {
+          return dataObj.data as Location[];
+        }
+      }
+      console.warn('Unexpected data format for locations:', data);
+      return [];
+    } catch (error) {
+      console.error('Error processing locations data:', error);
+      return [];
     }
-    if (data && typeof data === 'object' && Array.isArray((data as any)?.data)) {
-      return (data as any).data;
-    }
-    return [];
   }, [data]);
   React.useEffect(() => {
     console.log('Datos de ubicaciones recibidos:', data);
     console.log('Ubicaciones procesadas:', locations);
   }, [data, locations]);
 
-  const currentLocationName = React.useMemo(() => {
-    if (!formData.location_id || !locations.length) return 'Cargando ubicaciones...';
-    const location = locations.find((loc: Location) => loc.id === formData.location_id);
-    return location ? location.name : 'Ubicación no disponible';
-  }, [formData.location_id, locations]);
-
   React.useEffect(() => {
-    console.log('Current location_id:', formData.location_id);
-    console.log('All locations:', locations);
-    const foundLocation = locations.find((l: Location) => String(l.id).trim() === String(formData.location_id).trim());
-    console.log('Found location:', foundLocation);
+    if (formData.location_id && locations.length > 0) {
+      const foundLocation = locations.find(loc => String(loc.id).trim() === String(formData.location_id).trim());
+      console.log('Location debug:', {
+        currentLocationId: formData.location_id,
+        locations,
+        foundLocation,
+        locationIdType: typeof formData.location_id,
+        locationIds: locations.map(loc => ({
+          id: loc.id,
+          idType: typeof loc.id,
+          name: loc.name
+        }))
+      });
+    }
   }, [formData.location_id, locations]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -58,7 +77,12 @@ const ModalEditPlace: React.FC<ModalEditPlaceProps> = ({ place, onClose }) => {
       { id: place.id, payload: formData },
       {
         onSuccess: () => {
+
+          queryClient.invalidateQueries({ queryKey: ['places'] });
           onClose();
+          if (onUpdated) {
+            onUpdated();
+          }
         },
         onError: () => {
           setFormError('Error al actualizar el lugar.');
@@ -119,6 +143,28 @@ const ModalEditPlace: React.FC<ModalEditPlaceProps> = ({ place, onClose }) => {
               placeholder="Ej. Area Norte"
               required
             />
+          </div>
+
+          <div>
+            <label htmlFor="location_id" className="block text-sm font-medium text-gray-700 mb-1">
+              Ubicación
+            </label>
+            <select
+              id="location_id"
+              name="location_id"
+              value={formData.location_id || ''}
+              onChange={handleChange}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              required
+              disabled={isLoading || isError}
+            >
+              <option value="">Seleccione una ubicación</option>
+              {locations.map((location) => (
+                <option key={location.id} value={location.id}>
+                  {location.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="text-sm text-gray-500">
