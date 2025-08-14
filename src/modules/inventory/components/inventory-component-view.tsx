@@ -17,6 +17,22 @@ const InventoryComponentView: React.FC = () => {
   // 🔥 USAR HOOK OPTIMIZADO DE PERMISOS - UNA SOLA LLAMADA
   const { canView, isLoading, isAdmin } = useModulePermissions(MODULE_NAMES.INVENTORY);
 
+  // 🔥 DEBUG ADICIONAL PARA VERIFICAR ESTADO DEL USUARIO
+  const debugUserInfo = () => {
+    if (typeof window !== 'undefined') {
+      const authStore = JSON.parse(localStorage.getItem('auth-store') || '{}');
+      console.log('🔍 Debug Auth Store:', authStore);
+      console.log('🔍 User from store:', authStore?.state?.user);
+      console.log('🔍 User roles:', authStore?.state?.user?.roles);
+      console.log('🔍 Is Admin from hook:', isAdmin);
+    }
+  };
+
+  // Ejecutar debug en desarrollo
+  if (process.env.NODE_ENV === 'development') {
+    debugUserInfo();
+  }
+
   // 🔥 MOSTRAR LOADING MIENTRAS SE VERIFICAN PERMISOS
   if (isLoading) {
     return (
@@ -58,12 +74,13 @@ const InventoryComponentView: React.FC = () => {
       {/* 🔥 INDICADOR DE PERMISOS EN DESARROLLO */}
       {process.env.NODE_ENV === 'development' && (
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-800">
+          <p className="text-sm text-blue-800 mb-2">
             <strong>Debug Permisos:</strong> 
             Módulo: {MODULE_NAMES.INVENTORY} | 
             Ver: {canView ? '✅' : '❌'} | 
-            Admin: {isAdmin ? '✅' : '❌'} |
+            Admin: {isAdmin ? '✅' : '❌'}
           </p>
+
         </div>
       )}
 

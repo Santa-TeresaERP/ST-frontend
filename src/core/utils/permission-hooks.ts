@@ -31,7 +31,7 @@ export const usePermissions = () => {
  */
 export const useModulePermissions = (moduleName: string) => {
   const { getModuleId, hasModuleAccess } = useModulesMap();
-  const { user } = usePermissions();
+  const { user, isAdmin } = usePermissions(); // 🔥 OBTENER isAdmin DEL HOOK PRINCIPAL
 
   // Calcular permisos específicos del módulo
   const permissions = useMemo(() => {
@@ -92,7 +92,7 @@ export const useModulePermissions = (moduleName: string) => {
   return {
     ...permissions,
     isLoggedIn: !!user,
-    isAdmin: false, // No tenemos campo isAdmin en Role, usar canRead en modulos para verificar admin
+    isAdmin, // 🔥 USAR EL VALOR REAL DE isAdmin DEL HOOK PRINCIPAL
     hasModuleAccess, // Info adicional sobre acceso a módulos
   };
 };

@@ -99,11 +99,11 @@ export const MODULE_NAMES = {
   ROLES: 'roles',
   INVENTORY: 'inventario',
   PRODUCTION: 'Produccion',
+  SALES: 'Ventas', // 🔥 HABILITADO PARA MÓDULO DE VENTAS
   
   // 🚧 Futuros módulos - agregar según vayas creando en backend
   // MUSEUM: 'museo',
   // RENTALS: 'alquileres', 
-  // SALES: 'ventas',
   // FINANZAS: 'finanzas',
 } as const;
 
