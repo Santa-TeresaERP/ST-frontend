@@ -44,13 +44,18 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentLoss, setCurrentLoss] = useState<returnsAttributes | null>(null);
 
-  const filteredLosses =
-    selectedStoreId && !isLoadingSales
-      ? losses.filter((loss) => {
+  // Show all losses for the selected store, including those without salesId
+  const filteredLosses = selectedStoreId && !isLoadingSales
+    ? losses.filter((loss) => {
+        // If there's a salesId, check if it belongs to the selected store
+        if (loss.salesId) {
           const relatedSale = sales.find((s) => s.id === loss.salesId);
           return relatedSale?.store_id === selectedStoreId;
-        })
-      : [];
+        }
+        // If no salesId, include it in the list (will show empty store name)
+        return true;
+      })
+    : [];
 
   const handleCreateLoss = async (
     newLoss: Omit<returnsAttributes, "id" | "createdAt" | "updatedAt" | "price">
@@ -83,11 +88,10 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
   };
 
   const getStoreName = (salesId?: string) => {
-    if (!salesId) return "-";
+    if (!salesId) return ""; // Return empty string for missing salesId
     const rawSale = sales.find((s) => s.id === salesId);
-    const store_name = (rawSale as { store?: { store_name?: string } })?.store
-      ?.store_name;
-    return store_name || `Tienda ${salesId.slice(0, 6)}...`;
+    const store_name = (rawSale as { store?: { store_name?: string } })?.store?.store_name;
+    return store_name || "";
   };
 
   return (
