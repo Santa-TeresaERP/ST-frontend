@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from "react";
 import { useFetchUser } from "@/modules/user-creations/hook/useUsers";
 import { useFetchRoles } from "@/modules/roles/hook/useRoles";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../app/components/ui/card";
+import { useModulePermission } from "@/core/utils/useModulesMap";
+import { Card, CardContent, CardHeader } from "../../../app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
@@ -14,6 +15,9 @@ const UserDetail = ({ userId, onClose }: { userId: string; onClose: () => void }
   const { data: user, isLoading: isLoadingUser, error: errorUser } = useFetchUser(userId);
   const { data: roles, isLoading: isLoadingRoles, error: errorRoles } = useFetchRoles();
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+
+  // 🔥 VERIFICAR PERMISOS PARA EDITAR USUARIOS
+  const { hasPermission: canEditUsers, isLoading: isLoadingPermissions } = useModulePermission('user', 'canEdit');
 
   useEffect(() => {
     console.log('Fetching user details for ID:', userId);
@@ -30,6 +34,10 @@ const UserDetail = ({ userId, onClose }: { userId: string; onClose: () => void }
       console.log('Roles fetched:', roles);
     }
   }, [roles]);
+
+  useEffect(() => {
+    console.log('🔐 Permisos para editar usuarios:', { canEditUsers, isLoadingPermissions });
+  }, [canEditUsers, isLoadingPermissions]);
 
   if (isLoadingUser || isLoadingRoles) {
     console.log('Loading user details or roles...');
@@ -136,13 +144,21 @@ const UserDetail = ({ userId, onClose }: { userId: string; onClose: () => void }
 
             {/* Botones */}
             <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200">
-              <Button
-                onClick={handleOpenChangePasswordModal}
-                className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 px-4 py-2 w-full sm:w-auto"
-              >
-                <Lock className="w-4 h-4" />
-                Cambiar Contraseña
-              </Button>
+              {/* 🔐 BOTÓN CONDICIONADO POR PERMISOS */}
+              {canEditUsers ? (
+                <Button
+                  onClick={handleOpenChangePasswordModal}
+                  className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 px-4 py-2 w-full sm:w-auto"
+                >
+                  <Lock className="w-4 h-4" />
+                  Cambiar Contraseña
+                </Button>
+              ) : (
+                <div className="text-sm text-gray-500 italic flex items-center gap-2 px-4 py-2">
+                  <Lock className="w-4 h-4" />
+                  No tienes permisos para cambiar contraseñas
+                </div>
+              )}
               <Button
                 onClick={onClose}
                 className="bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-400 flex items-center gap-2 px-4 py-2 w-full sm:w-auto"
@@ -154,12 +170,12 @@ const UserDetail = ({ userId, onClose }: { userId: string; onClose: () => void }
           </CardContent>
         </Card>
 
-        {/* Modal contraseña */}
-        {user && (
+        {/* Modal contraseña - Solo si tiene permisos de edición */}
+        {user?.id && canEditUsers && (
           <ChangePasswordForm
             isOpen={isChangePasswordModalOpen}
             onClose={handleCloseChangePasswordModal}
-            user={user}
+            user={{ id: user.id }}
           />
         )}
       </div>

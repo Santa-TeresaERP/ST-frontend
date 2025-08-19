@@ -14,8 +14,10 @@ import { Label } from "../../../app/components/ui/label";
 import { User } from "@/modules/user-creations/types/user";
 import { useUpdateUser } from "@/modules/user-creations/hook/useUsers";
 import { useFetchRoles } from "@/modules/roles/hook/useRoles";
+import { useModulePermission, MODULE_NAMES } from '@/core/utils/useModulesMap';
 import { z } from "zod";
 import { Save, UserCog } from "lucide-react";
+import AccessDeniedModal from '@/core/utils/AccessDeniedModal';
 
 const userSchema = z.object({
   name: z
@@ -44,8 +46,10 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
   const [formData, setFormData] = useState<Partial<User>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showWarning, setShowWarning] = useState(false);
+  const [showAccessDenied, setShowAccessDenied] = useState(false);
   const { mutateAsync: updateUser } = useUpdateUser();
-  const { data: roles } = useFetchRoles();
+  const { data: roles, error: errorRoles, isLoading: isLoadingRoles } = useFetchRoles();
+  const { hasPermission: canViewRoles } = useModulePermission(MODULE_NAMES.ROLES, 'canRead');
 
   useEffect(() => {
     if (user) {
@@ -98,13 +102,67 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
         await updateUser({ id: user.id.toString(), payload });
         setShowWarning(false);
         onClose();
-      } catch (error) {
-        console.error("Error updating user:", error);
+      } catch (error: unknown) {
+        // Si es error de permisos, mostrar modal de acceso denegado sin loggear
+        const errorObj = error as { isPermissionError?: boolean; silent?: boolean; message?: string };
+        if (errorObj?.isPermissionError && errorObj?.silent) {
+          setShowAccessDenied(true);
+          setShowWarning(false);
+        } else {
+          console.error("Error updating user:", error);
+        }
       }
     }
   };
 
+  // Si hay error al cargar roles, mostrar mensaje apropiado
+  if (errorRoles) {
+    const isPermissionError = !roles && errorRoles;
+    
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[600px] h-[40vh] flex items-center justify-center p-0 rounded-2xl shadow-xl">
+          <div className="text-center p-6">
+            <div className="bg-orange-100 rounded-full p-4 mx-auto mb-4 w-16 h-16 flex items-center justify-center">
+              <UserCog className="w-8 h-8 text-orange-600" />
+            </div>
+            <p className="text-lg font-semibold text-gray-800 mb-2">
+              {isPermissionError ? "Sin Permisos para Ver Roles" : "Error al Cargar Datos"}
+            </p>
+            <p className="text-sm text-gray-600 mb-4">
+              {isPermissionError 
+                ? "No tienes permisos para ver la lista de roles. No se puede editar el usuario sin acceso a los roles disponibles." 
+                : "Por favor, intente de nuevo más tarde."
+              }
+            </p>
+            <Button 
+              onClick={onClose}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              Cerrar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Si está cargando roles, mostrar indicador
+  if (isLoadingRoles) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[600px] h-[30vh] flex items-center justify-center p-0 rounded-2xl shadow-xl">
+          <div className="flex flex-col items-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+            <span className="mt-4 text-lg text-gray-700">Cargando roles...</span>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[600px] p-0 overflow-hidden rounded-2xl shadow-xl">
         <div className="w-full bg-gradient-to-r from-green-600 to-green-700 py-6 px-6">
@@ -197,18 +255,32 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
                 name="roleId"
                 value={formData.roleId || ""}
                 onChange={handleInputChange}
+                disabled={!canViewRoles}
                 className={`w-full px-4 py-2 border rounded-md text-sm bg-white focus:outline-none ${
                   errors.roleId ? "border-red-600" : "border-black"
-                }`}
+                } ${!canViewRoles ? "bg-gray-100 cursor-not-allowed" : ""}`}
               >
-                <option value="">Seleccione un rol</option>
-                {roles?.map((role) => (
-                  <option key={role.id} value={role.id}>
-                    {role.name}
-                  </option>
-                ))}
+                {!canViewRoles ? (
+                  <option value="">🔒 Sin permisos para ver roles</option>
+                ) : isLoadingRoles ? (
+                  <option value="">Cargando roles...</option>
+                ) : (
+                  <>
+                    <option value="">Seleccione un rol</option>
+                    {roles?.map((role) => (
+                      <option key={role.id} value={role.id}>
+                        {role.name}
+                      </option>
+                    ))}
+                  </>
+                )}
               </select>
               {errors.roleId && <p className="text-red-600 text-sm">{errors.roleId}</p>}
+              {!canViewRoles && (
+                <p className="text-orange-600 text-sm">
+                  ⚠️ Necesitas permisos para ver roles. Contacta al administrador.
+                </p>
+              )}
             </div>
           </div>
 
@@ -266,6 +338,17 @@ const UserModal: React.FC<UserModalProps> = ({ isOpen, onClose, user }) => {
         )}
       </DialogContent>
     </Dialog>
+
+    {/* Modal de acceso denegado */}
+    <AccessDeniedModal
+      isOpen={showAccessDenied}
+      onClose={() => setShowAccessDenied(false)}
+      title="Permisos Insuficientes"
+      message="No tienes permisos para editar usuarios del sistema."
+      action="editar usuarios (permisos revocados)"
+      module="Gestión de Usuarios"
+    />
+  </>
   );
 };
 

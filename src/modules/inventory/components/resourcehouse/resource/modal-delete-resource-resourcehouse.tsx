@@ -1,6 +1,6 @@
 import React from 'react';
 // Verified Icons import path
-import { Trash2, X, Loader2 } from 'lucide-react'; 
+import { Trash2, Loader2 } from 'lucide-react'; 
 // Verified UI component import paths
 import { Button } from '@/app/components/ui/button'; 
 // Corrected import: Use Dialog component which exists
@@ -51,7 +51,7 @@ const ModalDeleteResource: React.FC<ModalDeleteResourceProps> = ({
           </DialogTitle>
           {/* Use DialogDescription */}
           <DialogDescription className="text-center pt-2">
-            ¿Estás seguro de que deseas eliminar el recurso "<strong>{resourceName || 'seleccionado'}</strong>"?
+            ¿Estás seguro de que deseas eliminar el recurso &quot;<strong>{resourceName || 'seleccionado'}</strong>&quot;?
             Esta acción no se puede deshacer.
           </DialogDescription>
         </DialogHeader>

@@ -26,12 +26,18 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ isOpen, onClose
       newPassword,
     };
 
-    // Aquí deberías agregar la lógica para cambiar la contraseña, por ejemplo, llamar a una API
     try {
       console.log('Changing password with payload:', payload);
       // await changePassword(payload);
       onClose();
-    } catch (error) {
+    } catch (error: unknown) {
+      // Si es error de permisos silencioso, no hacer nada
+      const errorObj = error as { isPermissionError?: boolean; silent?: boolean };
+      if (errorObj?.isPermissionError && errorObj?.silent) {
+        // Error silencioso, no hacer nada aquí
+        return;
+      }
+      // Para otros errores, mostrar en consola
       console.error('Error changing password:', error);
       setErrors({ submit: 'Error changing password' });
     }
