@@ -17,6 +17,8 @@ import {
   isStoreOperational,
   getStoreOperationalMessage,
 } from "../../utils/store-status";
+import { useModulePermissions } from "@/core/utils/permission-hooks";
+import { MODULE_NAMES } from "@/core/utils/useModulesMap";
 
 interface SalesComponentsViewProps {
   selectedStore: StoreAttributes | null;
@@ -32,6 +34,9 @@ const SalesComponentsView: React.FC<SalesComponentsViewProps> = ({
   const { data: storeSessionData } = useCheckStoreActiveSession(
     selectedStore?.id
   );
+
+  // Permisos del módulo
+  const { canCreate, canEdit, canDelete, isAdmin } = useModulePermissions(MODULE_NAMES.SALES);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -86,6 +91,22 @@ const SalesComponentsView: React.FC<SalesComponentsViewProps> = ({
         <span>Información de Ventas</span>
       </h2>
 
+      {/* Panel de información de permisos (solo para debug) */}
+      { (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <small className="text-blue-700">
+            <strong>Debug Permisos:</strong>{" "}
+            Módulo: {MODULE_NAMES.SALES} | 
+            Crear: {canCreate ? "✅" : "❌"} | 
+            Editar: {canEdit ? "✅" : "❌"} | 
+            Eliminar: {canDelete ? "✅" : "❌"} | 
+            Admin: {isAdmin ? "✅" : "❌"}
+          </small>
+        </div>
+      )}
+
+
+
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-grow">
           <div className="bg-green-50 p-4 rounded-lg border border-green-100">
@@ -110,9 +131,9 @@ const SalesComponentsView: React.FC<SalesComponentsViewProps> = ({
 
         <button
           onClick={() => setIsModalOpen(true)}
-          disabled={!selectedStore || !isStoreOperational(storeSessionData)}
+          disabled={!selectedStore || !isStoreOperational(storeSessionData) || !canCreate}
           className={`flex items-center px-4 py-2 rounded-lg transition-all ${
-            selectedStore && isStoreOperational(storeSessionData)
+            selectedStore && isStoreOperational(storeSessionData) && canCreate
               ? "bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white"
               : "bg-gray-300 text-gray-500 cursor-not-allowed"
           }`}
@@ -121,12 +142,16 @@ const SalesComponentsView: React.FC<SalesComponentsViewProps> = ({
               ? "Seleccione una tienda primero"
               : !isStoreOperational(storeSessionData)
               ? getStoreOperationalMessage(storeSessionData)
+              : !canCreate
+              ? "No tienes permisos para crear ventas"
               : "Crear nueva venta"
           }
         >
           <FiPlus className="mr-2 h-5 w-5" />
-          {selectedStore && isStoreOperational(storeSessionData)
+          {selectedStore && isStoreOperational(storeSessionData) && canCreate
             ? "Nueva Venta"
+            : !canCreate
+            ? "Sin Permisos"
             : "Selecciona Tienda"}
         </button>
       </div>
@@ -137,6 +162,17 @@ const SalesComponentsView: React.FC<SalesComponentsViewProps> = ({
             ⚠️ <strong>Tienda requerida:</strong> Selecciona una tienda en el
             panel principal para gestionar las ventas.
           </p>
+        </div>
+      )}
+
+      {!canCreate && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">
+            🚫 <strong>Sin permisos:</strong> No tienes permisos para crear nuevas ventas.
+          </p>
+          <small className="text-red-600">
+            Contacta con tu administrador para obtener los permisos necesarios.
+          </small>
         </div>
       )}
 
@@ -188,15 +224,27 @@ const SalesComponentsView: React.FC<SalesComponentsViewProps> = ({
                     <button
                       className="text-green-600 hover:text-green-800"
                       onClick={() => handleDetailClick(sale)}
+                      title="Ver detalles de la venta"
                     >
                       <FiHelpCircle size={18} />
                     </button>
-                    <button
-                      className="text-blue-500 hover:text-yellow-600"
-                      onClick={() => handleEditClick(sale)}
-                    >
-                      <FiEdit size={18} />
-                    </button>
+                    {canEdit && (
+                      <button
+                        className="text-blue-500 hover:text-yellow-600"
+                        onClick={() => handleEditClick(sale)}
+                        title="Editar venta"
+                      >
+                        <FiEdit size={18} />
+                      </button>
+                    )}
+                    {!canEdit && (
+                      <span
+                        className="text-gray-400 cursor-not-allowed"
+                        title="No tienes permisos para editar ventas"
+                      >
+                        <FiEdit size={18} />
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))
@@ -206,24 +254,28 @@ const SalesComponentsView: React.FC<SalesComponentsViewProps> = ({
       </div>
 
       {/* Modales */}
-      <ModalCreateSales
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
+      {canCreate && (
+        <ModalCreateSales
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
       <ModalDetailSales
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
         saleDetail={currentSale}
       />
-      <ModalEditSales
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        currentSale={currentSale}
-        onSave={() => {
-          setIsEditModalOpen(false);
-          setCurrentSale(null);
-        }}
-      />
+      {canEdit && (
+        <ModalEditSales
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          currentSale={currentSale}
+          onSave={() => {
+            setIsEditModalOpen(false);
+            setCurrentSale(null);
+          }}
+        />
+      )}
     </div>
   );
 };

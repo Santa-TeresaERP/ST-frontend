@@ -4,12 +4,10 @@ import { PlusCircle, Package, Users, Edit } from 'lucide-react';
 import { useFetchMovements } from '@/modules/inventory/hook/useMovementProduct';
 import CreateMovementProduct from './movement/product/create-movement-product';
 import EditMovementProduct from './movement/product/edit-movement-product';
-import DeleteMovementProduct from './movement/product/delete-movement-product';
 import { WarehouseMovementProductAttributes } from '../../types/movementProduct';
 
 import CreateMovementResource from './movement/resource/create-movement-resource';
 import EditMovementResource from './movement/resource/edit-movement-resource';
-import DeleteMovementResource from './movement/resource/delete-movement-resource';
 import { useFetchWarehouseMovementResources } from '@/modules/inventory/hook/useMovementResource';
 import { WarehouseMovementResource } from '@/modules/inventory/types/movementResource';
 
@@ -20,6 +18,10 @@ import { useFetchStores } from '@/modules/sales/hooks/useStore';
 
 import FilterMovement from './movement/filter-movement';
 import ToggleMovementStatus from './movement/toggle-movement-status';
+
+// 🔥 IMPORTAR SISTEMA DE PERMISOS OPTIMIZADO
+import { useModulePermissions } from '@/core/utils/permission-hooks';
+import { MODULE_NAMES } from '@/core/utils/useModulesMap';
 
 const MovementComponentView: React.FC = () => {
   // Se inicializa el estado de los filtros con las fechas de los últimos 3 días
@@ -43,7 +45,6 @@ const MovementComponentView: React.FC = () => {
   const {
     data: resourceMovements = [],
     isLoading: loadingResource,
-    error: errorResource,
     refetch: fetchResourceMovements,
   } = useFetchWarehouseMovementResources(filters);
   const [editingResource, setEditingResource] = useState<WarehouseMovementResource | null>(null);
@@ -54,6 +55,9 @@ const MovementComponentView: React.FC = () => {
   const { data: storesData } = useFetchStores();
   const stores = Array.isArray(storesData?.stores) ? storesData.stores : [];
 
+  // 🔥 USAR HOOK OPTIMIZADO DE PERMISOS - UNA SOLA LLAMADA
+  const { canCreate, canEdit, canDelete, isAdmin } = useModulePermissions(MODULE_NAMES.INVENTORY);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [selectedType, setSelectedType] = useState<'producto' | 'recurso'>('producto');
@@ -62,6 +66,7 @@ const MovementComponentView: React.FC = () => {
   useEffect(() => {
     fetchMovements();
     fetchResourceMovements();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFilter = (newFilters: any) => {
@@ -113,16 +118,34 @@ const MovementComponentView: React.FC = () => {
         </h2>
       </div>
 
+      {/* 🔥 INDICADOR DE PERMISOS EN DESARROLLO */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            <strong>Debug Permisos:</strong> 
+            Módulo: {MODULE_NAMES.INVENTORY} | 
+            Crear: {canCreate ? '✅' : '❌'} | 
+            Editar: {canEdit ? '✅' : '❌'} | 
+            Eliminar: {canDelete ? '✅' : '❌'} |
+            Admin: {isAdmin ? '✅' : '❌'}
+          </p>
+        </div>
+      )}
+
       {/* Acciones y Filtro */}
       <div className="flex flex-wrap gap-2 sm:justify-center md:justify-end sm:flex-nowrap">
-        <button
-          onClick={() => setShowCreate(true)}
-          className={`w-full sm:w-auto px-4 py-2 rounded-full font-semibold flex items-center gap-2 ${
-            selectedType === 'producto' ? 'bg-red-700 text-white' : 'bg-orange-500 text-white'
-          }`}
-        >
-          <PlusCircle size={18} /> Crear {selectedType === 'producto' ? 'Producto' : 'Recurso'}
-        </button>
+        {/* 🔥 BOTÓN DE CREAR - SOLO SI TIENE PERMISOS */}
+        {(canCreate || isAdmin) && (
+          <button
+            onClick={() => setShowCreate(true)}
+            className={`w-full sm:w-auto px-4 py-2 rounded-full font-semibold flex items-center gap-2 ${
+              selectedType === 'producto' ? 'bg-red-700 text-white' : 'bg-orange-500 text-white'
+            }`}
+          >
+            <PlusCircle size={18} /> Crear {selectedType === 'producto' ? 'Producto' : 'Recurso'}
+          </button>
+        )}
+        
         <button
           onClick={() => setSelectedType('producto')}
           className={`w-1/2 sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
@@ -231,19 +254,31 @@ const MovementComponentView: React.FC = () => {
                         )}
                       </td>
                       <td className="px-4 py-2 flex justify-center space-x-2">
-                        <button
-                          onClick={() => setEditing(mov)}
-                          className="text-blue-600 hover:text-blue-800"
-                          title="Editar"
-                        >
-                          <Edit size={18} />
-                        </button>
+                        {/* 🔥 BOTÓN DE EDITAR - SOLO SI TIENE PERMISOS DE EDITAR */}
+                        {(canEdit || isAdmin) && (
+                          <button
+                            onClick={() => setEditing(mov)}
+                            className="text-blue-600 hover:text-blue-800"
+                            title="Editar"
+                          >
+                            <Edit size={18} />
+                          </button>
+                        )}
+                        
+                        {/* 🔥 BOTÓN DE TOGGLE STATUS - SOLO SI TIENE PERMISOS DE ELIMINAR */}
+                        {(canDelete || isAdmin) && (
                           <ToggleMovementStatus
                             id={mov.id}
                             status={mov.status}
                             onToggled={fetchMovements}
                             type="producto"
                           />
+                        )}
+                        
+                        {/* 🔥 MENSAJE CUANDO NO HAY PERMISOS */}
+                        {!canEdit && !canDelete && !isAdmin && (
+                          <span className="text-gray-400 text-sm">Sin permisos</span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -315,19 +350,31 @@ const MovementComponentView: React.FC = () => {
                         )}
                       </td>
                       <td className="px-4 py-2 flex justify-center space-x-2">
-                        <button
-                          onClick={() => setEditingResource(mov)}
-                          className="text-blue-600 hover:text-blue-800"
-                          title="Editar"
-                        >
-                          <Edit size={18} />
-                        </button>
-                        <ToggleMovementStatus
-                          id={mov.id!}
-                          status={mov.status}
-                          onToggled={fetchResourceMovements}
-                          type="recurso"
-                        />
+                        {/* 🔥 BOTÓN DE EDITAR - SOLO SI TIENE PERMISOS DE EDITAR */}
+                        {(canEdit || isAdmin) && (
+                          <button
+                            onClick={() => setEditingResource(mov)}
+                            className="text-blue-600 hover:text-blue-800"
+                            title="Editar"
+                          >
+                            <Edit size={18} />
+                          </button>
+                        )}
+                        
+                        {/* 🔥 BOTÓN DE TOGGLE STATUS - SOLO SI TIENE PERMISOS DE ELIMINAR */}
+                        {(canDelete || isAdmin) && (
+                          <ToggleMovementStatus
+                            id={mov.id!}
+                            status={mov.status}
+                            onToggled={fetchResourceMovements}
+                            type="recurso"
+                          />
+                        )}
+                        
+                        {/* 🔥 MENSAJE CUANDO NO HAY PERMISOS */}
+                        {!canEdit && !canDelete && !isAdmin && (
+                          <span className="text-gray-400 text-sm">Sin permisos</span>
+                        )}
                       </td>
                     </tr>
                   ))}

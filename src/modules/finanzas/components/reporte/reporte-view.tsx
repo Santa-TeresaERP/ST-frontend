@@ -28,16 +28,22 @@ export default function ReporteComponentView() {
   const hasReports = reportes.length > 0;
   const activeReport = reportes.find(r => r.end_date === null); // Reporte en proceso
 
-  // Calcular totales actuales para el reporte activo
-  const currentTotalIncome = incomes
-    .filter(income => !income.report_id)
-    .reduce((sum, income) => sum + income.amount, 0);
+  // Calcular totales actuales para el reporte activo con mayor precisión
+  const currentTotalIncome = React.useMemo(() => {
+    return incomes
+      .filter(income => !income.report_id)
+      .reduce((sum, income) => sum + Number(income.amount || 0), 0);
+  }, [incomes]);
 
-  const currentTotalExpenses = expenses
-    .filter(expense => !expense.report_id)
-    .reduce((sum, expense) => sum + expense.amount, 0);
+  const currentTotalExpenses = React.useMemo(() => {
+    return expenses
+      .filter(expense => !expense.report_id)
+      .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+  }, [expenses]);
 
-  const currentNetProfit = currentTotalIncome - currentTotalExpenses;
+  const currentNetProfit = React.useMemo(() => {
+    return currentTotalIncome - currentTotalExpenses;
+  }, [currentTotalIncome, currentTotalExpenses]);
 
   // Debug: Agregar logs para verificar los datos
   console.log('🔍 Debug Estado Reportes:', {
@@ -99,7 +105,7 @@ export default function ReporteComponentView() {
   };
 
   // Función para formatear números correctamente
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | string) => {
     // Convertir a número si viene como string y asegurarse de que es válido
     const num = Number(amount);
     if (isNaN(num)) return '0.00';

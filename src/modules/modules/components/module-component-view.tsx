@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFetchModules, useUpdateModule } from '@/modules/modules/hook/useModules';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../app/components/ui/card';
 import { Cuboid, ShieldAlert, Lock } from 'lucide-react';
@@ -6,14 +6,14 @@ import ModuleModal from './modal-update-module';
 import { Module } from '@/modules/modules/types/modules';
 import { useQueryClient } from '@tanstack/react-query';
 
-// 🔥 IMPORTAR SISTEMA DE PERMISOS Y HOOK DE USUARIOS
+// 🔥 IMPORTAR SISTEMA DE PERMISOS Y HOOK DE USUARIO ACTUAL
 import { 
-  MODULE_IDS,
   AccessDeniedModal,
-  Permission,
 } from '@/core/utils';
-import { useFetchUsers } from '@/modules/user-creations/hook/useUsers';
+import { useModulePermission, MODULE_NAMES } from '@/core/utils/useModulesMap';
+import { useCurrentUser } from '@/modules/auth/hook/useCurrentUser';
 import { useAuthStore } from '@/core/store/auth';
+import { suppressAxios403Errors } from '@/core/utils/error-suppressor';
 
 // 🔥 INTERFAZ PARA ERRORES DE AXIOS
 interface AxiosError extends Error {
@@ -30,38 +30,44 @@ const ModuleList: React.FC = () => {
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
   const queryClient = useQueryClient(); // 🔥 AGREGAR QUERY CLIENT
   
-  // 🔥 OBTENER USUARIO ACTUAL Y LISTA DE USUARIOS CON PERMISOS
+  // 🔥 OBTENER USUARIO ACTUAL CON SUS PERMISOS DESDE /auth/me
   const { user } = useAuthStore();
-  const { data: users, isLoading: usersLoading } = useFetchUsers();
+  const { data: currentUserWithPermissions, isLoading: usersLoading } = useCurrentUser();
   
-  // 🔥 ENCONTRAR EL USUARIO ACTUAL CON SUS PERMISOS
-  const currentUserWithPermissions = users?.find(u => u.id === user?.id);
+  // 🔥 VERIFICAR ERROR 403 INMEDIATAMENTE - SIN USAR PERMISOS DINÁMICOS SI HAY ERROR
+  const is403Error = error && (error.message.includes('403') || error.message.includes('Forbidden'));
   
-  // 🔥 OBTENER PERMISOS PARA EL MÓDULO DE MODULES
-  const modulePermission = currentUserWithPermissions?.Role?.Permissions?.find(
-    (permission: Permission) => permission.moduleId === MODULE_IDS.MODULES
-  );
+  // 🔥 SOLO USAR SISTEMA DINÁMICO SI NO HAY ERROR 403
+  const { 
+    hasPermission: canView, 
+    isLoading: permissionsLoading 
+  } = useModulePermission(MODULE_NAMES.MODULES, 'canRead');
   
-  // 🔥 EXTRAER PERMISOS ESPECÍFICOS
-  const canView = modulePermission?.canRead || false;
-  const canEdit = modulePermission?.canEdit || false;
-  const canCreate = modulePermission?.canWrite || false;
-  const canDelete = modulePermission?.canDelete || false;
-  const isAdmin = currentUserWithPermissions?.Role?.name === 'Admin';
+  const { hasPermission: canEdit } = useModulePermission(MODULE_NAMES.MODULES, 'canEdit');
+  const { hasPermission: canCreate } = useModulePermission(MODULE_NAMES.MODULES, 'canWrite');
+  const { hasPermission: canDelete } = useModulePermission(MODULE_NAMES.MODULES, 'canDelete');
+  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isAdmin = (currentUserWithPermissions as any)?.Role?.name === 'Admin';
   
   const [showAccessDenied, setShowAccessDenied] = useState(false);
   const [accessDeniedAction, setAccessDeniedAction] = useState('');
+
+  // 🔥 ACTIVAR SUPRESOR DE ERRORES 403 EN LA CONSOLA
+  useEffect(() => {
+    suppressAxios403Errors();
+  }, []);
 
   // 🔥 DEBUG: Ver permisos actuales
   console.log('🔍 ModuleList - Análisis de Permisos:', {
     userId: user?.id,
     userFound: !!currentUserWithPermissions,
-    roleName: currentUserWithPermissions?.Role?.name,
-    moduleId: MODULE_IDS.MODULES,
-    modulePermission,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    roleName: (currentUserWithPermissions as any)?.Role?.name,
+    moduleName: MODULE_NAMES.MODULES,
     permisos: { canView, canEdit, canCreate, canDelete, isAdmin },
-    totalUsers: users?.length || 0,
-    usersLoading
+    usersLoading,
+    permissionsLoading
   });
 
   // 🔥 FUNCIÓN PARA MANEJAR ACCESO DENEGADO
@@ -120,26 +126,29 @@ const ModuleList: React.FC = () => {
 
   if (isLoading || usersLoading) return <div className="text-center text-red-800 font-semibold">Cargando módulos y permisos...</div>;
   
-  // 🔥 VERIFICAR SI ES ERROR 403 (Acceso denegado) - Mostrar modal específico
-  if (error) {
-    // Si es error 403, mostrar modal de acceso denegado
-    if (error.message.includes('403') || error.message.includes('Forbidden')) {
-      return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-          <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
-            <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-gray-700 mb-2">Acceso Restringido</h2>
-            <p className="text-gray-600 mb-4">
-              No tienes permisos para ver la gestión de módulos del sistema.
-            </p>
-            <p className="text-sm text-gray-500">
-              Contacta al administrador para obtener acceso.
-            </p>
-          </div>
+  // 🔥 VERIFICAR ERROR 403 INMEDIATAMENTE - NO ESPERAR A PERMISOS
+  if (is403Error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
+          <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-700 mb-2">Acceso Restringido</h2>
+          <p className="text-gray-600 mb-4">
+            No tienes permisos para ver la gestión de módulos del sistema.
+          </p>
+          <p className="text-sm text-gray-500">
+            Contacta al administrador para obtener acceso.
+          </p>
         </div>
-      );
-    }
-    // Para otros errores, mostrar mensaje genérico
+      </div>
+    );
+  }
+  
+  // 🔥 SOLO ESPERAR PERMISOS SI NO HAY ERROR 403
+  if (permissionsLoading) return <div className="text-center text-red-800 font-semibold">Verificando permisos...</div>;
+  
+  // 🔥 VERIFICAR OTROS ERRORES (que no sean 403)
+  if (error && !is403Error) {
     return <div className="text-center text-red-800 font-semibold">Error cargando módulos: {error.message}</div>;
   }
 
@@ -173,8 +182,10 @@ const ModuleList: React.FC = () => {
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-800">
             <strong>Debug Permisos:</strong> 
-            Usuario: {currentUserWithPermissions?.name || 'No encontrado'} | 
-            Rol: {currentUserWithPermissions?.Role?.name || 'Sin rol'} | 
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            Usuario: {(currentUserWithPermissions as any)?.name || 'No encontrado'} | 
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            Rol: {(currentUserWithPermissions as any)?.Role?.name || 'Sin rol'} | 
             Ver: {canView ? '✅' : '❌'} | 
             Editar: {canEdit ? '✅' : '❌'} | 
             Crear: {canCreate ? '✅' : '❌'} | 

@@ -13,6 +13,7 @@ interface ModalCreateCashRegisterProps {
   selectedStore?: StoreAttributes | null;
   currentSessionSales?: number;
   currentSessionReturns?: number; // Agregar pérdidas calculadas
+  suggestedInitialAmount?: number; // Nuevo: monto sugerido de la sesión anterior
 }
 
 interface CashRegisterFormData {
@@ -32,7 +33,8 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
   selectedStoreId,
   selectedStore,
   currentSessionSales = 0,
-  currentSessionReturns = 0
+  currentSessionReturns = 0,
+  suggestedInitialAmount = 0
 }) => {
   const [formData, setFormData] = React.useState<CashRegisterFormData>({
     store_id: selectedStoreId || '',
@@ -49,7 +51,8 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
       currentSessionReturns,
       activeCashSession: activeCashSession?.id,
       isInitialSetup,
-      selectedStoreId
+      selectedStoreId,
+      suggestedInitialAmount
     });
 
     // ✅ CORREGIDO: Validar que la sesión pertenece a la tienda seleccionada
@@ -62,15 +65,16 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
         total_returns: currentSessionReturns
       }));
     } else if (selectedStoreId) {
-      // Solo actualizar datos de la tienda si coincide
+      // ✅ NUEVO: Para configuración inicial, usar el monto sugerido de la sesión anterior
       setFormData(prev => ({
         ...prev,
         store_id: selectedStoreId,
+        start_amount: isInitialSetup && suggestedInitialAmount > 0 ? suggestedInitialAmount : prev.start_amount,
         total_sales: currentSessionSales,
         total_returns: currentSessionReturns
       }));
     }
-  }, [activeCashSession, isInitialSetup, selectedStoreId, selectedStore?.store_name, currentSessionSales, currentSessionReturns]);
+  }, [activeCashSession, isInitialSetup, selectedStoreId, selectedStore?.store_name, currentSessionSales, currentSessionReturns, suggestedInitialAmount]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -190,6 +194,12 @@ const ModalCreateCashRegister: React.FC<ModalCreateCashRegisterProps> = ({
                       min="0"
                       required
                     />
+                    {/* ✅ NUEVO: Mensaje informativo sobre el monto sugerido */}
+                    {isInitialSetup && suggestedInitialAmount > 0 && (
+                      <p className="text-sm text-blue-600 mt-1">
+                        💡 <strong>Sugerencia:</strong> Dinero final de la sesión anterior: S/ {suggestedInitialAmount.toFixed(2)}
+                      </p>
+                    )}
                   </div>
 
                   <div>

@@ -13,6 +13,7 @@ import { Button } from "../../../app/components/ui/button";
 import { Input } from "../../../app/components/ui/input";
 import { Label } from "../../../app/components/ui/label";
 import { Role } from '@/modules/roles/types/roles';
+import AccessDeniedModal from '@/core/utils/AccessDeniedModal';
 import { roleSchema } from "@/modules/roles/schemas/rolValidation";
 import { z } from 'zod';
 import { Check, User, Edit3, AlertTriangle } from 'lucide-react';
@@ -29,6 +30,8 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onSubmit }
   const [formData, setFormData] = useState<Partial<Role>>({ name: "", description: "" });
   const [errors, setErrors] = useState<Partial<Record<keyof Role, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAccessDenied, setShowAccessDenied] = useState(false);
+  const [accessDeniedAction, setAccessDeniedAction] = useState('');
 
   useEffect(() => {
     if (role) {
@@ -67,7 +70,14 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onSubmit }
         });
         setErrors(fieldErrors);
       } else {
-        console.error('Error submitting role:', error);
+        // Si es error de permisos, mostrar modal de acceso denegado sin loggear
+        const errorObj = error as { isPermissionError?: boolean; silent?: boolean; message?: string };
+        if (errorObj?.isPermissionError && errorObj?.silent) {
+          setAccessDeniedAction('actualizar rol (permisos revocados)');
+          setShowAccessDenied(true);
+        } else {
+          console.error('Error submitting role:', error);
+        }
       }
     } finally {
       setIsSubmitting(false);
@@ -171,6 +181,12 @@ const RoleModal: React.FC<RoleModalProps> = ({ isOpen, onClose, role, onSubmit }
           </form>
         </DialogContent>
       </Dialog>
+
+      <AccessDeniedModal 
+        isOpen={showAccessDenied}
+        onClose={() => setShowAccessDenied(false)}
+        action={accessDeniedAction}
+      />
     </>
   );
 };

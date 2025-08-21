@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFetchUsers, useCreateUser, useDeleteUser } from '@/modules/user-creations/hook/useUsers';
 import UserModal from './modal-update-user';
 import UserDetail from './profile-component-view';
@@ -7,9 +7,17 @@ import Modal from './modal-create-user';
 import DeleteUserModal from './modal-delete-user';
 import { User } from '@/modules/user-creations/types/user';
 import { Button } from '@/app/components/ui/button';
-import { UserIcon, Pencil, Trash2, PlusCircle } from 'lucide-react';
+import { UserIcon, Pencil, Trash2, PlusCircle, ShieldAlert } from 'lucide-react';
+import { useModulePermission, MODULE_NAMES } from '@/core/utils/useModulesMap';
+import { useQueryClient } from '@tanstack/react-query';
+import AccessDeniedModal from '@/core/utils/AccessDeniedModal';
 
 const UserList: React.FC = () => {
+  const queryClient = useQueryClient();
+  const { hasPermission: canView } = useModulePermission(MODULE_NAMES.USERS, 'canRead');
+  const { hasPermission: canCreate } = useModulePermission(MODULE_NAMES.USERS, 'canWrite');
+  const { hasPermission: canEdit } = useModulePermission(MODULE_NAMES.USERS, 'canEdit');
+  const { hasPermission: canDelete } = useModulePermission(MODULE_NAMES.USERS, 'canDelete');
   const { data: users, isLoading, error } = useFetchUsers();
   const createUserMutation = useCreateUser();
   const deleteUserMutation = useDeleteUser();
@@ -19,6 +27,33 @@ const UserList: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [showAccessDenied, setShowAccessDenied] = useState(false);
+  const [accessDeniedAction, setAccessDeniedAction] = useState('');
+
+  // Limpiar cache cuando no hay permisos
+  useEffect(() => {
+    if (!canView) {
+      queryClient.removeQueries({ queryKey: ['users'] });
+    }
+  }, [canView, queryClient]);
+
+  // Si no tiene permisos de lectura, mostrar mensaje de acceso denegado
+  if (!canView) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
+          <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-700 mb-2">Acceso Restringido</h2>
+          <p className="text-gray-600 mb-4">
+            No tienes permisos para ver la gestión de usuarios del sistema.
+          </p>
+          <p className="text-sm text-gray-500">
+            Contacta al administrador para obtener acceso.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const handleEditClick = (user: User) => {
     console.log('Edit button clicked for user:', user);
@@ -57,8 +92,17 @@ const UserList: React.FC = () => {
       console.log('Nuevo usuario creado:', data);
       await createUserMutation.mutateAsync(data);
       handleCloseCreateModal();
-    } catch (error) {
-      console.error('Error creating user:', error);
+    } catch (error: unknown) {
+      // Si es error de permisos, mostrar modal de acceso denegado sin loggear
+      const errorObj = error as { isPermissionError?: boolean; silent?: boolean; message?: string };
+      if (errorObj?.isPermissionError && errorObj?.silent) {
+        setAccessDeniedAction('crear usuarios (permisos revocados)');
+        setShowAccessDenied(true);
+        handleCloseCreateModal();
+      } else {
+        console.error('Error creating user:', error);
+        alert('Error al crear usuario: ' + (errorObj?.message || 'Error desconocido'));
+      }
     }
   };
 
@@ -73,24 +117,57 @@ const UserList: React.FC = () => {
       await deleteUserMutation.mutateAsync(userId);
       setIsDeleteModalOpen(false);
       setUserToDelete(null);
-    } catch (error) {
-      console.error('Error deleting user:', error);
+    } catch (error: unknown) {
+      // Si es error de permisos, mostrar modal de acceso denegado sin loggear
+      const errorObj = error as { isPermissionError?: boolean; silent?: boolean; message?: string };
+      if (errorObj?.isPermissionError && errorObj?.silent) {
+        setAccessDeniedAction('eliminar usuarios (permisos revocados)');
+        setShowAccessDenied(true);
+        setIsDeleteModalOpen(false);
+        setUserToDelete(null);
+      } else {
+        console.error('Error deleting user:', error);
+        alert('Error al eliminar usuario: ' + (errorObj?.message || 'Error desconocido'));
+      }
     }
   };
 
-  if (isLoading) {
+  // Solo mostrar loading si tiene permisos
+  if (canView && isLoading) {
     console.log('Loading users...');
-    return <div>Loading...</div>;
+    return <div className="text-center text-red-800 font-semibold">Cargando usuarios...</div>;
   }
 
-  if (error) {
+  // Solo mostrar error si tiene permisos y hay un error (que no sea 403)
+  if (canView && error) {
     console.error('Error fetching users:', error);
-    return <div>{error.message}</div>;
+    const isPermissionError = error.message.includes('403') || error.message.includes('Forbidden');
+    
+    if (isPermissionError) {
+      // Si es error 403, redirigir al mensaje de acceso denegado
+      // (esto no debería pasar normalmente ya que canView debería ser false)
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
+            <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-700 mb-2">Acceso Restringido</h2>
+            <p className="text-gray-600 mb-4">
+              No tienes permisos para ver la gestión de usuarios del sistema.
+            </p>
+            <p className="text-sm text-gray-500">
+              Contacta al administrador para obtener acceso.
+            </p>
+          </div>
+        </div>
+      );
+    }
+    
+    return <div className="text-center text-red-800 font-semibold">Error cargando usuarios: {error.message}</div>;
   }
 
   console.log('Users fetched:', users);
 
-  if (viewingProfile && selectedUser) {
+  if (viewingProfile && selectedUser && selectedUser.id) {
     return <UserDetail userId={selectedUser.id} onClose={handleCloseProfile} />;
   }
 
@@ -102,15 +179,17 @@ const UserList: React.FC = () => {
           <UserIcon className="w-7 h-7 sm:w-8 sm:h-8 text-red-600" />
           Gestión de Usuarios
         </h1>
-        <div className="flex justify-center sm:justify-end w-full sm:w-auto">
-          <Button
-            onClick={handleOpenCreateModal}
-            className="bg-red-600 hover:bg-red-500 text-white shadow-md flex items-center px-4 py-2 rounded-3xl"
-          >
-            <PlusCircle className="mr-2 h-5 w-5" />
-            Crear Usuario
-          </Button>
-        </div>
+        {canCreate && (
+          <div className="flex justify-center sm:justify-end w-full sm:w-auto">
+            <Button
+              onClick={handleOpenCreateModal}
+              className="bg-red-600 hover:bg-red-500 text-white shadow-md flex items-center px-4 py-2 rounded-3xl"
+            >
+              <PlusCircle className="mr-2 h-5 w-5" />
+              Crear Usuario
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Cards */}
@@ -142,26 +221,30 @@ const UserList: React.FC = () => {
 
               {/* Botones alineados horizontalmente */}
               <div className="flex sm:flex-row justify-center gap-2 mt-5 w-full">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEditClick(user);
-                  }}
-                  className="bg-white hover:bg-green-200 text-gray-800 border border-green-600 text-green-600 px-4 py-2 rounded-3xl text-sm font-medium shadow-sm flex items-center justify-center gap-1 w-full sm:w-auto"
-                >
-                  <Pencil className="w-4 h-4" />
-                  Editar
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteUser(user);
-                  }}
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-3xl text-sm font-medium shadow-sm flex items-center justify-center gap-1 w-full sm:w-auto"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Eliminar
-                </button>
+                {canEdit && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditClick(user);
+                    }}
+                    className="bg-white hover:bg-green-200 text-gray-800 border border-green-600 text-green-600 px-4 py-2 rounded-3xl text-sm font-medium shadow-sm flex items-center justify-center gap-1 w-full sm:w-auto"
+                  >
+                    <Pencil className="w-4 h-4" />
+                    Editar
+                  </button>
+                )}
+                {canDelete && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteUser(user);
+                    }}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-3xl text-sm font-medium shadow-sm flex items-center justify-center gap-1 w-full sm:w-auto"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Eliminar
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -189,6 +272,16 @@ const UserList: React.FC = () => {
           onDelete={confirmDeleteUser}
         />
       )}
+
+      {/* Modal de acceso denegado */}
+      <AccessDeniedModal
+        isOpen={showAccessDenied}
+        onClose={() => setShowAccessDenied(false)}
+        title="Permisos Insuficientes"
+        message="No tienes permisos para realizar esta acción en la gestión de usuarios del sistema."
+        action={accessDeniedAction}
+        module="Gestión de Usuarios"
+      />
     </div>
   );
 };

@@ -15,7 +15,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   userWithPermissions: null,
   setUser: (user) => set({ user }),
   setUserWithPermissions: (userWithPermissions) => set({ userWithPermissions }),
-  logout: () => set({ user: null, userWithPermissions: null }),
+  logout: () => {
+    // 🔥 LIMPIAR COMPLETAMENTE AL HACER LOGOUT
+    localStorage.removeItem('authToken');
+    set({ user: null, userWithPermissions: null });
+    console.log('🔓 Logout completo - Token y estado limpiados');
+  },
 }));
 
 interface UserState {

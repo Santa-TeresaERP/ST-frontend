@@ -3,13 +3,15 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation"; 
 import LogoutModal from "../../../modules/auth/components/modal-logout";
+import { useAuthStore } from '@/core/store/auth';
 
 const Header = () => {
   const [isLogoutModalOpen, setLogoutModalOpen] = useState(false);
-  const router = useRouter(); 
+  const router = useRouter();
+  const logout = useAuthStore((state) => state.logout);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    logout(); // Usar la función logout del store
     setLogoutModalOpen(false);
     router.push("/");
   };

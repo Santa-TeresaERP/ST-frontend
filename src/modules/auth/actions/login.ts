@@ -9,7 +9,8 @@ export const login = async (credentials: LoginCredentials): Promise<LoginRespons
 
     const { token } = response.data;
     
-    localStorage.setItem('token', token);
+    // Usar una sola clave consistente para el token
+    localStorage.setItem('authToken', token);
 
     return response.data;
   } catch (error) {

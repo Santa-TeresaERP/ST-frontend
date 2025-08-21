@@ -24,6 +24,8 @@ export const useCreateGeneralIncome = () => {
     mutationFn: createGeneralIncome,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [INCOMES_QUERY_KEY] });
+      // Invalidar también reportes financieros para sincronizar cálculos
+      queryClient.invalidateQueries({ queryKey: ['financialReports'] });
     },
   });
 };
@@ -35,6 +37,8 @@ export const useUpdateGeneralIncome = () => {
     mutationFn: ({ id, payload }) => updateGeneralIncome(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [INCOMES_QUERY_KEY] });
+      // Invalidar también reportes financieros para sincronizar cálculos
+      queryClient.invalidateQueries({ queryKey: ['financialReports'] });
     },
   });
 };
@@ -46,6 +50,8 @@ export const useDeleteGeneralIncome = () => {
     mutationFn: deleteGeneralIncome,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [INCOMES_QUERY_KEY] });
+      // Invalidar también reportes financieros para sincronizar cálculos
+      queryClient.invalidateQueries({ queryKey: ['financialReports'] });
     },
   });
 };

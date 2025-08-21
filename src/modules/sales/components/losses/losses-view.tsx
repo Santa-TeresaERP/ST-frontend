@@ -15,6 +15,8 @@ import { useFetchSales } from "@/modules/sales/hooks/useSales";
 import { useCheckStoreActiveSession } from "@/modules/sales/hooks/useCashSession";
 import { isStoreOperational, getStoreOperationalMessage } from "@/modules/sales/utils/store-status";
 import { returnsAttributes } from "@/modules/sales/types/returns";
+import { useModulePermissions } from "@/core/utils/permission-hooks";
+import { MODULE_NAMES } from "@/core/utils/useModulesMap";
 
 interface LossesComponentViewProps {
   selectedStoreId?: string;
@@ -30,6 +32,9 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
   // Hook para verificar si la tienda tiene una sesión de caja activa
   const { data: storeSessionData, isLoading: isLoadingSessionData } = useCheckStoreActiveSession(selectedStoreId);
 
+  // Permisos del módulo
+  const { canCreate, canEdit, canDelete, isAdmin } = useModulePermissions(MODULE_NAMES.SALES);
+
   const createReturnMutation = useCreateReturn();
   const updateReturnMutation = useUpdateReturn();
   const deleteReturnMutation = useDeleteReturn();
@@ -39,13 +44,18 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentLoss, setCurrentLoss] = useState<returnsAttributes | null>(null);
 
-  const filteredLosses =
-    selectedStoreId && !isLoadingSales
-      ? losses.filter((loss) => {
+  // Show all losses for the selected store, including those without salesId
+  const filteredLosses = selectedStoreId && !isLoadingSales
+    ? losses.filter((loss) => {
+        // If there's a salesId, check if it belongs to the selected store
+        if (loss.salesId) {
           const relatedSale = sales.find((s) => s.id === loss.salesId);
           return relatedSale?.store_id === selectedStoreId;
-        })
-      : [];
+        }
+        // If no salesId, include it in the list (will show empty store name)
+        return true;
+      })
+    : [];
 
   const handleCreateLoss = async (
     newLoss: Omit<returnsAttributes, "id" | "createdAt" | "updatedAt" | "price">
@@ -78,21 +88,34 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
   };
 
   const getStoreName = (salesId?: string) => {
-    if (!salesId) return "-";
+    if (!salesId) return ""; // Return empty string for missing salesId
     const rawSale = sales.find((s) => s.id === salesId);
-    const store_name = (rawSale as { store?: { store_name?: string } })?.store
-      ?.store_name;
-    return store_name || `Tienda ${salesId.slice(0, 6)}...`;
+    const store_name = (rawSale as { store?: { store_name?: string } })?.store?.store_name;
+    return store_name || "";
   };
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 space-y-6 text-gray-700">
+      
+      {/* Panel de permisos para verificación */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <small className="text-blue-700">
+          <strong>Estado Permisos:</strong>{" "}
+          Módulo: {MODULE_NAMES.SALES} | 
+          Crear: {canCreate ? "✅ SÍ" : "❌ NO"} | 
+          Editar: {canEdit ? "✅ SÍ" : "❌ NO"} | 
+          Eliminar: {canDelete ? "✅ SÍ" : "❌ NO"} | 
+          Admin: {isAdmin ? "✅ SÍ" : "❌ NO"}
+          <br />
+        </small>
+      </div>
+
       <div className="flex justify-end items-center">
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          disabled={!selectedStoreId || !isStoreOperational(storeSessionData)}
+          disabled={!selectedStoreId || !isStoreOperational(storeSessionData) || !canCreate}
           className={`flex items-center px-4 py-2 rounded-lg transition-all ${
-            selectedStoreId && isStoreOperational(storeSessionData)
+            selectedStoreId && isStoreOperational(storeSessionData) && canCreate
               ? "bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white"
               : "bg-gray-300 text-gray-500 cursor-not-allowed"
           }`}
@@ -101,11 +124,17 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
               ? "Seleccione una tienda primero" 
               : !isStoreOperational(storeSessionData)
                 ? getStoreOperationalMessage(storeSessionData)
+                : !canCreate
+                ? "No tienes permisos para crear pérdidas"
                 : "Crear nueva pérdida"
           }
         >
           <FiPlus className="mr-2 h-5 w-5" />
-          {selectedStoreId && isStoreOperational(storeSessionData) ? 'Nueva Pérdida' : 'Selecciona Tienda'}
+          {selectedStoreId && isStoreOperational(storeSessionData) && canCreate 
+            ? 'Nueva Pérdida' 
+            : !canCreate 
+            ? 'Sin Permisos'
+            : 'Selecciona Tienda'}
         </button>
       </div>
 
@@ -114,6 +143,17 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
           <p className="text-yellow-800">
             ⚠️ <strong>Tienda requerida:</strong> Selecciona una tienda en el panel principal para gestionar las pérdidas.
           </p>
+        </div>
+      )}
+
+      {!canCreate && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">
+            🚫 <strong>Sin permisos:</strong> No tienes permisos para crear nuevas pérdidas.
+          </p>
+          <small className="text-red-600">
+            Contacta con tu administrador para obtener los permisos necesarios.
+          </small>
         </div>
       )}
 
@@ -214,24 +254,46 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
                       : "-"}
                   </td>
                   <td className="px-4 py-2 text-center flex justify-center space-x-3">
-                    <button
-                      className="text-blue-500 hover:text-yellow-600"
-                      onClick={() => {
-                        setCurrentLoss(item);
-                        setIsEditModalOpen(true);
-                      }}
-                    >
-                      <FiEdit size={18} />
-                    </button>
-                    <button
-                      className="text-red-500 hover:text-red-600"
-                      onClick={() => {
-                        setCurrentLoss(item);
-                        setIsDeleteModalOpen(true);
-                      }}
-                    >
-                      <FiTrash2 size={18} />
-                    </button>
+                    {canEdit && (
+                      <button
+                        className="text-blue-500 hover:text-yellow-600"
+                        onClick={() => {
+                          setCurrentLoss(item);
+                          setIsEditModalOpen(true);
+                        }}
+                        title="Editar pérdida"
+                      >
+                        <FiEdit size={18} />
+                      </button>
+                    )}
+                    {!canEdit && (
+                      <span
+                        className="text-gray-400 cursor-not-allowed"
+                        title="No tienes permisos para editar pérdidas"
+                      >
+                        <FiEdit size={18} />
+                      </span>
+                    )}
+                    {canDelete && (
+                      <button
+                        className="text-red-500 hover:text-red-600"
+                        onClick={() => {
+                          setCurrentLoss(item);
+                          setIsDeleteModalOpen(true);
+                        }}
+                        title="Eliminar pérdida"
+                      >
+                        <FiTrash2 size={18} />
+                      </button>
+                    )}
+                    {!canDelete && (
+                      <span
+                        className="text-gray-400 cursor-not-allowed"
+                        title="No tienes permisos para eliminar pérdidas"
+                      >
+                        <FiTrash2 size={18} />
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -240,26 +302,32 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
         </div>
       )}
 
-      <ModalCreateLoss
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSave={handleCreateLoss}
-        selectedStoreId={selectedStoreId}
-      />
+      {canCreate && (
+        <ModalCreateLoss
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSave={handleCreateLoss}
+          selectedStoreId={selectedStoreId}
+        />
+      )}
 
-      <ModalEditLoss
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        currentLoss={currentLoss}
-        onSave={handleEditLoss}
-        selectedStoreId={selectedStoreId}
-      />
+      {canEdit && (
+        <ModalEditLoss
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          currentLoss={currentLoss}
+          onSave={handleEditLoss}
+          selectedStoreId={selectedStoreId}
+        />
+      )}
 
-      <ModalDeleteLoss
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleDeleteLoss}
-      />
+      {canDelete && (
+        <ModalDeleteLoss
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleDeleteLoss}
+        />
+      )}
     </div>
   );
 };

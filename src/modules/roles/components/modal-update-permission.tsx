@@ -9,6 +9,7 @@ import { Module } from "@/modules/modules/types/modules";
 import { Check, ChevronDown, Lock, Shield, ShieldCheck, ShieldHalf, Trash2 } from 'lucide-react';
 import { Card } from "../../../app/components/ui/card";
 import { useFetchPermissionsByRole } from "../hook/usePermissions";
+import AccessDeniedModal from '@/core/utils/AccessDeniedModal';
 
 type PermissionModalProps = {
   isOpen: boolean;
@@ -24,6 +25,8 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role
   const [modifiedModules, setModifiedModules] = useState<Set<string>>(new Set());
   const [selectedModule, setSelectedModule] = useState<string>("");
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showAccessDenied, setShowAccessDenied] = useState(false);
+  const [accessDeniedAction, setAccessDeniedAction] = useState('');
 
   // 🆕 NUEVO: Obtener permisos existentes del backend
   const { data: existingPermissions, isLoading: isLoadingPermissions, error: permissionsError } = useFetchPermissionsByRole(role?.id || null);
@@ -183,8 +186,15 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role
         await onSubmit(payload);
         setShowConfirmation(false);
         onClose();
-      } catch (error) {
-        console.error("Error updating permission:", error);
+      } catch (error: unknown) {
+        // Si es error de permisos, mostrar modal de acceso denegado sin loggear
+        const errorObj = error as { isPermissionError?: boolean; silent?: boolean; message?: string };
+        if (errorObj?.isPermissionError && errorObj?.silent) {
+          setAccessDeniedAction('actualizar permisos de roles (permisos revocados)');
+          setShowAccessDenied(true);
+        } else {
+          console.error("Error updating permission:", error);
+        }
       }
     }
   };
@@ -449,6 +459,12 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ isOpen, onClose, role
           </DialogContent>
         </Dialog>
       )}
+
+      <AccessDeniedModal 
+        isOpen={showAccessDenied}
+        onClose={() => setShowAccessDenied(false)}
+        action={accessDeniedAction}
+      />
     </>
   );
 };

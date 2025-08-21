@@ -24,6 +24,8 @@ export const useCreateGeneralExpense = () => {
     mutationFn: createGeneralExpense,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [EXPENSES_QUERY_KEY] });
+      // Invalidar también reportes financieros para sincronizar cálculos
+      queryClient.invalidateQueries({ queryKey: ['financialReports'] });
     },
   });
 };
@@ -35,6 +37,8 @@ export const useUpdateGeneralExpense = () => {
     mutationFn: ({ id, payload }) => updateGeneralExpense(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [EXPENSES_QUERY_KEY] });
+      // Invalidar también reportes financieros para sincronizar cálculos
+      queryClient.invalidateQueries({ queryKey: ['financialReports'] });
     },
   });
 };
@@ -46,6 +50,8 @@ export const useDeleteGeneralExpense = () => {
     mutationFn: deleteGeneralExpense,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [EXPENSES_QUERY_KEY] });
+      // Invalidar también reportes financieros para sincronizar cálculos
+      queryClient.invalidateQueries({ queryKey: ['financialReports'] });
     },
   });
 };

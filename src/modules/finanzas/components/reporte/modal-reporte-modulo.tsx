@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FiX, FiDownload, FiBarChart, FiFilter } from 'react-icons/fi';
+import { FiX, FiDownload, FiBarChart, FiFilter, FiCalendar } from 'react-icons/fi';
+import { useFetchModules } from '../../../modules/hook/useModules';
 
 interface ReporteData {
   id: number;
@@ -27,18 +28,46 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
 }) => {
   const [selectedModulo, setSelectedModulo] = useState<string>('');
   const [filtrados, setFiltrados] = useState<ReporteData[]>([]);
+  const [fechaInicio, setFechaInicio] = useState<string>('');
+  const [fechaFin, setFechaFin] = useState<string>('');
+
+  // Obtener módulos desde la base de datos
+  const { data: modules = [], isLoading: modulesLoading } = useFetchModules();
 
   useEffect(() => {
+    let reportesFiltrados = reportes;
+
+    // Filtrar por módulo
     if (selectedModulo) {
-      setFiltrados(reportes.filter(r => r.modulo === selectedModulo));
-    } else {
-      setFiltrados([]);
+      reportesFiltrados = reportesFiltrados.filter(r => r.modulo === selectedModulo);
     }
-  }, [selectedModulo, reportes]);
+
+    // Filtrar por fecha inicio
+    if (fechaInicio) {
+      reportesFiltrados = reportesFiltrados.filter(r => {
+        const fechaInicioReporte = new Date(r.fechaInicio);
+        const fechaInicioFiltro = new Date(fechaInicio);
+        return fechaInicioReporte >= fechaInicioFiltro;
+      });
+    }
+
+    // Filtrar por fecha fin
+    if (fechaFin) {
+      reportesFiltrados = reportesFiltrados.filter(r => {
+        if (!r.fechaFin) return false; // Excluir reportes en proceso si hay filtro de fecha fin
+        const fechaFinReporte = new Date(r.fechaFin);
+        const fechaFinFiltro = new Date(fechaFin);
+        return fechaFinReporte <= fechaFinFiltro;
+      });
+    }
+
+    setFiltrados(reportesFiltrados);
+  }, [selectedModulo, fechaInicio, fechaFin, reportes]);
 
   if (!isOpen) return null;
 
-  const modulosUnicos = Array.from(new Set(reportes.map(r => r.modulo)));
+  // En lugar de usar módulos únicos de reportes, usar todos los módulos disponibles
+  const modulosDisponibles = modules.map(module => module.name);
 
   // Calcular totales
   const calcularTotales = () => {
@@ -62,11 +91,40 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
   const totales = calcularTotales();
 
   const getModuloIcon = (modulo: string) => {
-    switch (modulo) {
-      case 'Inventario': return '📦';
-      case 'Producción': return '⚙️';
-      case 'Ventas': return '💼';
-      default: return '📊';
+    const moduloLower = modulo.toLowerCase();
+    switch (moduloLower) {
+      case 'inventario':
+      case 'inventory': 
+        return '📦';
+      case 'producción':
+      case 'production':
+        return '⚙️';
+      case 'ventas':
+      case 'sales':
+        return '💼';
+      case 'finanzas':
+      case 'finance':
+        return '💰';
+      case 'usuario':
+      case 'user':
+      case 'usuarios':
+      case 'users':
+        return '👥';
+      case 'roles':
+      case 'role':
+        return '🔐';
+      case 'alquileres':
+      case 'rentals':
+      case 'rental':
+        return '🏠';
+      case 'museo':
+      case 'museum':
+        return '🏛️';
+      case 'monasterio':
+      case 'monastery':
+        return '⛪';
+      default: 
+        return '📊';
     }
   };
 
@@ -110,15 +168,52 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
               <select
                 value={selectedModulo}
                 onChange={e => setSelectedModulo(e.target.value)}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-gray-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 hover:border-gray-300 bg-white"
+                disabled={modulesLoading}
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-gray-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 hover:border-gray-300 bg-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <option value="">-- Selecciona un módulo para analizar --</option>
-                {modulosUnicos.map(m => (
-                  <option key={m} value={m}>
-                    {getModuloIcon(m)} {m}
+                <option value="">
+                  {modulesLoading ? "Cargando módulos..." : "-- Selecciona un módulo para analizar --"}
+                </option>
+                {modulosDisponibles.map((modulo: string) => (
+                  <option key={modulo} value={modulo}>
+                    {getModuloIcon(modulo)} {modulo}
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Filtros de fecha */}
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5 border border-blue-200">
+              <div className="flex items-center gap-2 mb-3">
+                <FiCalendar className="text-blue-600" />
+                <label className="text-sm font-semibold text-gray-700">
+                  Filtrar por Fechas
+                </label>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Fecha Inicio
+                  </label>
+                  <input
+                    type="date"
+                    value={fechaInicio}
+                    onChange={(e) => setFechaInicio(e.target.value)}
+                    className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-gray-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 hover:border-gray-300 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Fecha Fin
+                  </label>
+                  <input
+                    type="date"
+                    value={fechaFin}
+                    onChange={(e) => setFechaFin(e.target.value)}
+                    className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-gray-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 hover:border-gray-300 bg-white"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Resumen de totales */}

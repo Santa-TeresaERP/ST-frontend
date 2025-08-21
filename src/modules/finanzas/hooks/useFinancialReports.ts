@@ -36,6 +36,9 @@ export const useCreateFinancialReport = () => {
     onSuccess: () => {
       // Invalida la lista de reportes para que se actualice automáticamente
       queryClient.invalidateQueries({ queryKey: [REPORTS_QUERY_KEY] });
+      // Invalidar también ingresos y gastos para sincronizar cálculos
+      queryClient.invalidateQueries({ queryKey: ['generalIncomes'] });
+      queryClient.invalidateQueries({ queryKey: ['generalExpenses'] });
     },
   });
 };
@@ -47,6 +50,9 @@ export const useUpdateFinancialReport = () => {
     mutationFn: ({ id, payload }) => updateFinancialReport(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [REPORTS_QUERY_KEY] });
+      // Invalidar también ingresos y gastos para sincronizar cálculos
+      queryClient.invalidateQueries({ queryKey: ['generalIncomes'] });
+      queryClient.invalidateQueries({ queryKey: ['generalExpenses'] });
     },
   });
 };
@@ -58,6 +64,9 @@ export const useDeleteFinancialReport = () => {
     mutationFn: deleteFinancialReport,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [REPORTS_QUERY_KEY] });
+      // Invalidar también ingresos y gastos para sincronizar cálculos
+      queryClient.invalidateQueries({ queryKey: ['generalIncomes'] });
+      queryClient.invalidateQueries({ queryKey: ['generalExpenses'] });
     },
   });
 };

@@ -15,7 +15,7 @@ type DeleteUserModalProps = {
   isOpen: boolean;
   onClose: () => void;
   user: User | null;
-  onDelete: (userId: string) => void;
+  onDelete: (userId: string) => Promise<void>;
 };
 
 const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
@@ -25,6 +25,23 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
   onDelete,
 }) => {
   if (!user) return null;
+
+  const handleDelete = async () => {
+    if (!user?.id) return;
+    
+    try {
+      await onDelete(user.id);
+    } catch (error: unknown) {
+      // Si es error de permisos silencioso, no hacer nada (el componente padre maneja el modal)
+      const errorObj = error as { isPermissionError?: boolean; silent?: boolean };
+      if (errorObj?.isPermissionError && errorObj?.silent) {
+        // Error silencioso, no hacer nada aquí
+        return;
+      }
+      // Para otros errores, mostrar en consola
+      console.error('Error deleting user:', error);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -63,7 +80,7 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
             </Button>
             <Button
               type="button"
-              onClick={() => onDelete(user.id)}
+              onClick={handleDelete}
               className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-xl flex items-center gap-2"
             >
               <Trash2 className="w-5 h-5" />

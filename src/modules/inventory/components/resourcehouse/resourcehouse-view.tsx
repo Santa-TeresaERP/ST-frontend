@@ -8,6 +8,10 @@ import ModalDeleteResource from './resource/modal-delete-resource-resourcehouse'
 import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button';
 
+// 🔥 IMPORTAR SISTEMA DE PERMISOS OPTIMIZADO
+import { useModulePermissions } from '@/core/utils/permission-hooks';
+import { MODULE_NAMES } from '@/core/utils/useModulesMap';
+
 // Función para obtener las fechas de los últimos 3 días
 const getInitialDateFilters = () => {
   const today = new Date();
@@ -25,10 +29,14 @@ const ResourcesView: React.FC = () => {
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [resourceToEdit, setResourceToEdit] = useState<BuysResourceWithResource | null>(null);
+  const [resourceToDelete, setResourceToDelete] = useState<BuysResourceWithResource | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [startDate, setStartDate] = useState<string>(initialDates.startDate);
   const [endDate, setEndDate] = useState<string>(initialDates.endDate);
   const [supplierFilter, setSupplierFilter] = useState('');
+
+  // 🔥 USAR HOOK OPTIMIZADO DE PERMISOS - UNA SOLA LLAMADA
+  const { canCreate, canEdit, canDelete, isAdmin } = useModulePermissions(MODULE_NAMES.INVENTORY);
 
   const { data: resources = [], isLoading, error } = useFetchResourcesWithBuys();
 
@@ -75,6 +83,19 @@ const ResourcesView: React.FC = () => {
 
   const handleEdit = (resource: BuysResourceWithResource) => {
     setResourceToEdit(resource);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!resourceToDelete?.id) return;
+    try {
+      await deleteResourceMutation.mutateAsync({
+        id: resourceToDelete.id,
+        status: false, // Desactivar en lugar de eliminar completamente
+      });
+      setResourceToDelete(null);
+    } catch (err) {
+      console.error('Error deleting resource:', err);
+    }
   };
 
   const handleToggleStatus = async (r: BuysResourceWithResource) => {
@@ -124,17 +145,35 @@ const ResourcesView: React.FC = () => {
         <h2 className="text-4xl font-semibold text-yellow-500">Recursos</h2>
       </div>
 
+      {/* 🔥 INDICADOR DE PERMISOS EN DESARROLLO */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            <strong>Debug Permisos:</strong> 
+            Módulo: {MODULE_NAMES.INVENTORY} | 
+            Crear: {canCreate ? '✅' : '❌'} | 
+            Editar: {canEdit ? '✅' : '❌'} | 
+            Eliminar: {canDelete ? '✅' : '❌'} |
+            Admin: {isAdmin ? '✅' : '❌'}
+          </p>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center space-x-2">
           <FileText size={24} className="text-yellow-500" />
           <span className="text-lg font-medium text-gray-800">Gestión de Recursos</span>
         </div>
-        <Button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="bg-red-700 hover:bg-red-800 text-white w-full md:w-auto"
-        >
-          <Plus className="mr-2 h-4 w-4" /> Agregar Recurso
-        </Button>
+        
+        {/* 🔥 BOTÓN DE CREAR - SOLO SI TIENE PERMISOS */}
+        {(canCreate || isAdmin) && (
+          <Button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="bg-red-700 hover:bg-red-800 text-white w-full md:w-auto"
+          >
+            <Plus className="mr-2 h-4 w-4" /> Agregar Recurso
+          </Button>
+        )}
       </div>
 
       <div className="relative">
@@ -309,24 +348,36 @@ const ResourcesView: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-4 py-2 text-left space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(r)}
-                        className="text-blue-600 hover:text-blue-800"
-                        title="Editar"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleToggleStatus(r)}
-                        className={r.status ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800'}
-                        title={r.status ? 'Desactivar' : 'Activar'}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {/* 🔥 BOTÓN DE EDITAR - SOLO SI TIENE PERMISOS DE EDITAR */}
+                      {(canEdit || isAdmin) && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEdit(r)}
+                          className="text-blue-600 hover:text-blue-800"
+                          title="Editar"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                      
+                      {/* 🔥 BOTÓN DE TOGGLE STATUS - SOLO SI TIENE PERMISOS DE ELIMINAR */}
+                      {(canDelete || isAdmin) && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleToggleStatus(r)}
+                          className={r.status ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800'}
+                          title={r.status ? 'Desactivar' : 'Activar'}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                      
+                      {/* 🔥 MENSAJE CUANDO NO HAY PERMISOS */}
+                      {!canEdit && !canDelete && !isAdmin && (
+                        <span className="text-gray-400 text-sm">Sin permisos</span>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -336,7 +387,8 @@ const ResourcesView: React.FC = () => {
         </div>
       )}
 
-      {isCreateModalOpen && (
+      {/* 🔥 MODAL DE CREAR - SOLO SI TIENE PERMISOS */}
+      {isCreateModalOpen && (canCreate || isAdmin) && (
         <ModalNuevoRecurso
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
@@ -345,13 +397,25 @@ const ResourcesView: React.FC = () => {
         />
       )}
 
-      {resourceToEdit && (
+      {/* 🔥 MODAL DE EDITAR - SOLO SI TIENE PERMISOS */}
+      {resourceToEdit && (canEdit || isAdmin) && (
         <ModalEditResource
           isOpen={!!resourceToEdit}
           recurso={resourceToEdit}
           onClose={() => setResourceToEdit(null)}
           onUpdate={handleUpdateResource}
           isUpdating={updateResourceMutation.isPending}
+        />
+      )}
+
+      {/* 🔥 MODAL DE ELIMINAR - SOLO SI TIENE PERMISOS */}
+      {resourceToDelete && (canDelete || isAdmin) && (
+        <ModalDeleteResource
+          isOpen={!!resourceToDelete}
+          onClose={() => setResourceToDelete(null)}
+          onConfirm={handleConfirmDelete}
+          resourceName={resourceToDelete.resource?.name}
+          isDeleting={deleteResourceMutation.isPending}
         />
       )}
     </div>
