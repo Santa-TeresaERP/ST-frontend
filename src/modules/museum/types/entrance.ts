@@ -3,6 +3,7 @@ export interface Entrance {
   user_id: string;
   type_person_id: string;
   sale_date: string;
+  cantidad: number;
   sale_number: string;
   sale_channel: string;
   total_sale: number;

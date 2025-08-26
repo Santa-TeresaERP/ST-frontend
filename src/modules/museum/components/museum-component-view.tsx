@@ -135,6 +135,7 @@ const MuseumComponentView: React.FC = () => {
               <th className="px-4 py-2">Usuario</th>
               <th className="px-4 py-2">Tipo de Ticket</th>
               <th className="px-4 py-2">Fecha</th>
+              <th className="px-4 py-2">Cantidad</th>
               <th className="px-4 py-2">Canal</th>
               <th className="px-4 py-2">Total</th>
               <th className="px-4 py-2">Pago</th>
@@ -158,6 +159,7 @@ const MuseumComponentView: React.FC = () => {
                     )}
                   </td>
                   <td className="px-4 py-2">{e.sale_date}</td>
+                  <td className="px-4 py-2">{e.cantidad}</td>
                   <td className="px-4 py-2">{e.sales_channel?.name || e.sale_channel}</td>
                   <td className="px-4 py-2">S/ {e.total_sale.toFixed(2)}</td>
                   <td className="px-4 py-2">{e.payment_method_obj?.name || e.payment_method}</td>
