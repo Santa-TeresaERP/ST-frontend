@@ -49,7 +49,6 @@ export default function ModalGenerateSalePdf({
   }, [])
 
   const dateLabel = `${formatLabel(from)} - ${formatLabel(to)}`
-
   const canSubmit = storeId && from && to && filenameBase && storeName
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -86,18 +85,11 @@ export default function ModalGenerateSalePdf({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 p-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium">Tienda (ID)</label>
-              <input
-                className="w-full rounded-lg border px-3 py-2"
-                value={storeId}
-                onChange={(e) => setStoreId(e.target.value)}
-                placeholder="UUID de la tienda"
-                required
-              />
-            </div>
+          {/* Mantener el storeId en el form sin mostrarlo */}
+          <input type="hidden" name="storeId" value={storeId} readOnly />
 
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {/* Campo de ID de tienda eliminado de la UI */}
             <div>
               <label className="mb-1 block text-sm font-medium">Nombre de la tienda</label>
               <input
