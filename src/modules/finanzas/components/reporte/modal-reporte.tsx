@@ -58,12 +58,14 @@ const ModalReporte: React.FC<ModalReporteProps> = ({
 
   // Calcular totales de ingresos y gastos sin report_id asignado
   const totalIngresos = incomes
-    .filter(income => !income.report_id)
-    .reduce((sum, income) => sum + income.amount, 0);
+  .filter(income => !income.report_id)
+  // Asegurar suma numérica: amount puede venir como string "12.00"
+  .reduce((sum, income) => sum + Number(income.amount ?? 0), 0);
 
   const totalGastos = expenses
-    .filter(expense => !expense.report_id)
-    .reduce((sum, expense) => sum + expense.amount, 0);
+  .filter(expense => !expense.report_id)
+  // Asegurar suma numérica: amount puede venir como string
+  .reduce((sum, expense) => sum + Number(expense.amount ?? 0), 0);
 
   const gananciaNeta = totalIngresos - totalGastos;
 
@@ -183,19 +185,19 @@ const ModalReporte: React.FC<ModalReporteProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-green-600">
-                      S/. {totalIngresos.toLocaleString()}
+                      S/. {totalIngresos.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     <div className="text-sm text-green-700">Ingresos Totales</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-red-600">
-                      S/. {totalGastos.toLocaleString()}
+                      S/. {totalGastos.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     <div className="text-sm text-red-700">Gastos Totales</div>
                   </div>
                   <div className="text-center">
                     <div className={`text-2xl font-bold ${gananciaNeta >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                      S/. {gananciaNeta.toLocaleString()}
+                      S/. {gananciaNeta.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     <div className="text-sm text-gray-700">Ganancia Neta</div>
                   </div>

@@ -6,10 +6,11 @@ import {
   FiMail,
   FiCreditCard,
   FiEdit2,
-  FiTrash2,
+  FiToggleLeft,
+  FiToggleRight,
 } from "react-icons/fi";
 import { Rental } from "../../types/rentals";
-import { useFetchAllRentals } from "../../hook/useRentals";
+import { useFetchAllRentals, useDeleteRental } from "../../hook/useRentals";
 import { useFetchUsers } from "../../../user-creations/hook/useUsers";
 import { useFetchCustomers } from "../../hook/useCustomers";
 
@@ -28,6 +29,7 @@ const RentalHistoryView: React.FC<RentalHistoryViewProps> = ({
   const { data: rentals = [], isLoading, isError } = useFetchAllRentals();
   const { data: users = [] } = useFetchUsers();
   const { data: customers = [] } = useFetchCustomers();
+  const deleteRentalMutation = useDeleteRental();
 
   // Filtrar alquileres por el lugar específico
   const placeRentals = rentals.filter(rental => 
@@ -39,6 +41,10 @@ const RentalHistoryView: React.FC<RentalHistoryViewProps> = ({
   
   const handleRentalSelect = (rental: Rental) => {
     setSelectedRental(rental);
+  };
+
+  const handleToggleStatus = (rental: Rental) => {
+    deleteRentalMutation.mutate(rental.id);
   };
 
   const formatDate = (date: Date | string) => {
@@ -96,7 +102,7 @@ const RentalHistoryView: React.FC<RentalHistoryViewProps> = ({
                     {customerMap.get(rental.customer_id)?.full_name || 'Customer no encontrado'}
                   </div>
                   <div className="text-center text-gray-700 font-medium">
-                    {rental.place_id}
+                    {placeName}
                   </div>
                   <div className="text-center text-gray-700 font-medium">
                     {userMap.get(rental.user_id) || "Usuario desconocido"}
@@ -111,16 +117,28 @@ const RentalHistoryView: React.FC<RentalHistoryViewProps> = ({
                     S/. {Number(rental.amount).toFixed(2)}
                   </div>
                   <div className="flex justify-center">
-                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
-                      Activo
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium ${
+                        rental.status
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {rental.status ? 'Activo' : 'Inactivo'}
                     </span>
                   </div>
                   <div className="flex justify-center gap-2">
                     <button className="text-blue-600 hover:text-blue-800">
                       <FiEdit2 size={16} />
                     </button>
-                    <button className="text-red-600 hover:text-red-800">
-                      <FiTrash2 size={16} />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleStatus(rental);
+                      }}
+                      className={rental.status ? "text-green-600 hover:text-green-800" : "text-gray-600 hover:text-gray-800"}
+                    >
+                      {rental.status ? <FiToggleRight size={20} /> : <FiToggleLeft size={20} />}
                     </button>
                   </div>
                 </div>

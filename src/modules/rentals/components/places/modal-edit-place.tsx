@@ -10,9 +10,10 @@ interface ModalEditPlaceProps {
   place: Place;
   onClose: () => void;
   onUpdated?: () => void;
+  onSubmit?: (updatedPlace: Partial<Place>) => void;
 }
 
-const ModalEditPlace: React.FC<ModalEditPlaceProps> = ({ place, onClose, onUpdated }) => {
+const ModalEditPlace: React.FC<ModalEditPlaceProps> = ({ place, onClose, onUpdated, onSubmit }) => {
   const [formData, setFormData] = useState({
     name: place.name,
     area: place.area,
@@ -79,6 +80,10 @@ const ModalEditPlace: React.FC<ModalEditPlaceProps> = ({ place, onClose, onUpdat
         onSuccess: () => {
 
           queryClient.invalidateQueries({ queryKey: ['places'] });
+          // Notificar al padre con los datos actualizados si lo requiere
+          if (onSubmit) {
+            onSubmit(formData);
+          }
           onClose();
           if (onUpdated) {
             onUpdated();

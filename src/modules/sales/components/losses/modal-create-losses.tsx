@@ -161,15 +161,19 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
     }
     
     try {
-      const newLoss: Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt'> = {
+      if (!selectedStoreId) {
+        setLocalError("No se ha seleccionado una tienda válida.");
+        return;
+      }
+      const newLoss: Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt' | 'price'> = {
         productId,
+        storeId: selectedStoreId,
         salesId: salesId || undefined,
         reason: reason || (salesId ? "Devolución de venta" : "Pérdida de inventario"),
         observations: observations || (salesId 
           ? `Pérdida registrada desde venta` 
           : `Pérdida registrada directamente de inventario`),
         quantity,
-        price: 0,
       };
       
       await mutateAsync(newLoss);
@@ -404,8 +408,13 @@ const ModalCreateLoss: React.FC<ModalCreateLossProps> = ({
                 <option value="">Selecciona una razón</option>
                 <option value="transporte">Transporte</option>
                 <option value="caducado">Caducado</option>
-                <option value="devuelto">Devuelto</option>
+                {/* Solo mostrar 'devuelto' si hay venta seleccionada */}
+                {salesId && <option value="devuelto">Devuelto</option>}
               </select>
+              {/* Mensaje si intenta seleccionar devuelto sin venta */}
+              {!salesId && reason === 'devuelto' && (
+                <p className="text-xs text-red-600 mt-1">No es posible seleccionar la razón Devuelto sin asociar una venta.</p>
+              )}
             </div>
 
             {/* Observaciones */}

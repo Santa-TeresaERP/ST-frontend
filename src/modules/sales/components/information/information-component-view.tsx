@@ -147,6 +147,12 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
   const { data: sessionDetails, isLoading: loadingDetails } =
     useFetchCashSessionDetails(filteredActiveCashSession?.id);
 
+  React.useEffect(() => {
+    if (sessionDetails && !loadingDetails) {
+      console.log('✅ Datos de sesión cargados desde el backend:', sessionDetails);
+    }
+  }, [sessionDetails, loadingDetails]);
+
   // Obtener todas las ventas para calcular los totales por tienda (mantenemos para historial)
   const { data: allSales = [] } = useFetchSales();
 
@@ -274,55 +280,45 @@ const InformationComponentView: React.FC<InformationComponentViewProps> = ({
     selectedStore,
   ]);
 
-  // Usar las pérdidas calculadas desde el backend para la sesión activa
-  const currentSessionReturns = React.useMemo(() => {
-    // Si tenemos detalles de la sesión desde el backend, usar esos valores
-    if (sessionDetails && !loadingDetails) {
-      return sessionDetails.totalReturns || 0;
-    }
+// Usar las pérdidas calculadas desde el backend para la sesión activa
+const currentSessionReturns = React.useMemo(() => {
+  // Si tenemos detalles de la sesión desde el backend, usar esos valores
+  if (sessionDetails && !loadingDetails) {
+    console.log("📉 Usando devoluciones del backend:", sessionDetails);
+    return sessionDetails.totalReturns || 0;
+  }
 
-    // Fallback: calcular en el frontend si no hay datos del backend
-    if (
-      !filteredActiveCashSession ||
-      !allReturns.length ||
-      !allSales.length ||
-      !selectedStore
-    )
-      return 0;
+  // Fallback: calcular en el frontend si no hay datos del backend
+  if (!filteredActiveCashSession || !allReturns.length || !selectedStore) {
+    return 0;
+  }
 
-    const sessionStartDate = new Date(filteredActiveCashSession.started_at);
+  const sessionStartDate = new Date(filteredActiveCashSession.started_at);
 
-    const activeSales = allSales.filter((sale) => {
-      const saleDate = new Date(sale.income_date);
-      return sale.store_id === selectedStore.id && saleDate >= sessionStartDate;
-    });
+  // Filtrar devoluciones de la tienda seleccionada y dentro de la sesión
+  const activeReturns = allReturns.filter((returnItem) => {
+    const sale = allSales.find((s) => s.id === returnItem.salesId);
+    if (!sale) return false;
 
-    const activeSalesIds = activeSales.map((sale) => sale.id);
+    const saleDate = new Date(sale.income_date);
+    return sale.store_id === selectedStore.id && saleDate >= sessionStartDate;
+  });
 
-    const activeReturns = allReturns.filter((returnItem) =>
-      activeSalesIds.includes(returnItem.salesId)
-    );
+  // Sumar el total de ingresos de las ventas relacionadas con las devoluciones
+  const totalReturnsValue = activeReturns.reduce((sum, returnItem) => {
+    const relatedSale = allSales.find((sale) => sale.id === returnItem.salesId);
+    return sum + Number(relatedSale?.total_income || 0);
+  }, 0);
 
-    let totalReturnsValue = 0;
-
-    activeReturns.forEach((returnItem) => {
-      const relatedSale = activeSales.find(
-        (sale) => sale.id === returnItem.salesId
-      );
-      if (relatedSale) {
-        totalReturnsValue += Number(relatedSale.total_income || 0);
-      }
-    });
-
-    return totalReturnsValue;
-  }, [
-    sessionDetails,
-    loadingDetails,
-    filteredActiveCashSession,
-    allReturns,
-    allSales,
-    selectedStore,
-  ]);
+  return totalReturnsValue;
+}, [
+  sessionDetails,
+  loadingDetails,
+  filteredActiveCashSession,
+  allReturns,
+  allSales,
+  selectedStore,
+]);
 
   // Determinar si necesitamos configuración inicial
   React.useEffect(() => {
