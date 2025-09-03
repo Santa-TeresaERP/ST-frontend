@@ -61,3 +61,32 @@ export const useDeleteOverhead = () => {
     },
   });
 };
+
+// Hook consolidado al estilo del módulo de museo
+export const useMonasteryOverheads = () => {
+  const query = useFetchOverheads();
+  const updateMut = useUpdateOverhead();
+  const deleteMut = useDeleteOverhead();
+  const createMut = useCreateOverhead();
+  const createMonMut = useCreateMonasterioOverhead();
+
+  const arrayData = Array.isArray(query.data)
+    ? (query.data as Overhead[])
+    : query.data
+    ? ([query.data] as Overhead[])
+    : ([] as Overhead[]);
+
+  return {
+    data: arrayData,
+    loading: query.isLoading,
+    error: query.error ? query.error.message : null,
+    update: (id: string, payload: Partial<UpdateOverheadPayload>) =>
+      updateMut.mutateAsync({ id, payload }),
+    remove: (id: string) => deleteMut.mutateAsync(id),
+  deleting: deleteMut.isPending,
+    create: (payload: CreateOverheadPayload) => createMut.mutateAsync(payload),
+    createMonasterio: (payload: Omit<CreateOverheadPayload, 'type'>) =>
+      createMonMut.mutateAsync(payload),
+    refetch: query.refetch,
+  };
+};

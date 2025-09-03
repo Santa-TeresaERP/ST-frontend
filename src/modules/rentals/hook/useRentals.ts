@@ -35,7 +35,13 @@ export const useUpdateRental = () => {
   const queryClient = useQueryClient();
   return useMutation<Rental, Error, { id: string; payload: UpdateRentalPayload }>({
     mutationFn: ({ id, payload }) => updateRental(id, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rentals'] }),
+    onSuccess: () => {
+      console.log("Mutation successful, invalidating queries...");
+      queryClient.invalidateQueries({ queryKey: ['rentals'] });
+    },
+    onError: (error) => {
+      console.error("Error updating rental:", error);
+    },
   });
 };
 

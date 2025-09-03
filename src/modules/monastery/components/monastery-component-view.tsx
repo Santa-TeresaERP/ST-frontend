@@ -1,10 +1,10 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { PlusCircle, Filter, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 
 // 1. IMPORTAR HOOKS Y TIPOS NECESARIOS
-import { useFetchOverheads, useDeleteOverhead } from '@/modules/monastery/hooks/useOverheads';
+import { useMonasteryOverheads } from '@/modules/monastery/hooks/useOverheads';
 import { Overhead } from '@/modules/monastery/types/overheads';
 
 // Importar los modales que crearemos
@@ -13,35 +13,30 @@ import ModalEditMonasteryExpense from './overhead/modal-edit-monastery-expense';
 import ModalDeleteMonasteryExpense from './overhead/modal-delete-monastery-expense';
 
 const MonasteryComponentView: React.FC = () => {
-  // 2. OBTENER DATOS Y MUTACIONES CON REACT QUERY
-  const { data: allOverheads = [], isLoading, error } = useFetchOverheads();
-  const { mutate: deleteOverhead, isPending: isDeleting } = useDeleteOverhead();
+  // 2. OBTENER DATOS Y MUTACIONES AL ESTILO MUSEO
+  const { data, loading, error, remove, deleting } = useMonasteryOverheads();
 
   // 3. ESTADO LOCAL PARA LA UI
-  const [dateFilter, setDateFilter] = useState('all'); // Para el filtro de fecha
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedOverhead, setSelectedOverhead] = useState<Overhead | null>(null);
 
-  // 4. LÓGICA DE FILTRADO OPTIMIZADA
-  const filteredMonasteryExpenses = useMemo(() => {
-    // Primero, filtramos solo los de tipo 'monasterio'
-    const monasteryExpenses = allOverheads.filter(o => o.type === 'monasterio' && o.status === true);
+  // 4. DATOS SIN FILTROS
+  const rows = useMemo(() => (Array.isArray(data) ? data : []), [data]);
 
-    // Luego, aplicamos el filtro de fecha
-    if (dateFilter === 'all') {
-      return monasteryExpenses;
+  // Logs de depuración para verificar los datos recibidos y renderizados
+  useEffect(() => {
+    console.log('[Monastery] raw data from hook:', data);
+    console.log('[Monastery] rows used in table:', rows);
+  }, [data, rows]);
+
+  useEffect(() => {
+    if (error) {
+      console.error('[Monastery] error from hook:', error);
     }
-    const now = new Date();
-    const filterDate = new Date();
-    
-    if (dateFilter === 'last3days') filterDate.setDate(now.getDate() - 3);
-    if (dateFilter === 'last7days') filterDate.setDate(now.getDate() - 7);
-    if (dateFilter === 'last30days') filterDate.setDate(now.getDate() - 30);
+  }, [error]);
 
-    return monasteryExpenses.filter(o => new Date(o.date) >= filterDate);
-  }, [allOverheads, dateFilter]);
 
   // 5. MANEJADORES DE EVENTOS PARA MODALES
   const handleOpenEditModal = (overhead: Overhead) => {
@@ -54,11 +49,10 @@ const MonasteryComponentView: React.FC = () => {
     setDeleteModalOpen(true);
   };
   
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!selectedOverhead) return;
-    deleteOverhead(selectedOverhead.id, {
-      onSuccess: () => setDeleteModalOpen(false),
-    });
+    await remove(selectedOverhead.id);
+    setDeleteModalOpen(false);
   };
 
   return (
@@ -85,19 +79,7 @@ const MonasteryComponentView: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex items-center mb-4 gap-2">
-        <label className="text-gray-700 font-semibold flex items-center gap-1"><Filter size={16} /> Mostrar:</label>
-        <select
-          value={dateFilter}
-          onChange={(e) => setDateFilter(e.target.value)}
-          className="px-3 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-        >
-          <option value="last3days">Últimos 3 días</option>
-          <option value="last7days">Últimos 7 días</option>
-          <option value="last30days">Últimos 30 días</option>
-          <option value="all">Todos</option>
-        </select>
-      </div>
+  {/* Filtros removidos intencionalmente */}
       
       <div className="overflow-x-auto bg-white rounded shadow">
         <table className="min-w-full text-gray-700">
@@ -111,17 +93,17 @@ const MonasteryComponentView: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {isLoading && <tr><td colSpan={5} className="text-center p-4">Cargando...</td></tr>}
-            {error && <tr><td colSpan={5} className="text-center p-4 text-red-500">{error.message}</td></tr>}
-            {!isLoading && !error && filteredMonasteryExpenses.length === 0 && (
+    {loading && <tr><td colSpan={5} className="text-center p-4">Cargando...</td></tr>}
+    {error && <tr><td colSpan={5} className="text-center p-4 text-red-500">{error}</td></tr>}
+  {!loading && !error && rows.length === 0 && (
               <tr><td colSpan={5} className="text-center p-4">No hay gastos que mostrar para el período seleccionado.</td></tr>
             )}
-            {!isLoading && !error && filteredMonasteryExpenses.map(gasto => (
+  {!loading && !error && rows.map(gasto => (
               <tr key={gasto.id} className="border-b hover:bg-gray-50">
                 <td className="px-4 py-2 font-medium">{gasto.name}</td>
                 <td className="px-4 py-2">{gasto.description || '-'}</td>
-                <td className="px-4 py-2">S/ {Number(gasto.amount).toFixed(2)}</td>
-                <td className="px-4 py-2">{new Date(gasto.date).toLocaleDateString()}</td>
+        <td className="px-4 py-2">S/ {Number(gasto.amount).toFixed(2)}</td>
+        <td className="px-4 py-2">{new Date(gasto.date).toLocaleDateString()}</td>
                 <td className="px-4 py-2 flex items-center space-x-2">
                   <button onClick={() => handleOpenEditModal(gasto)} className="text-blue-600 hover:text-blue-800"><Edit size={16}/></button>
                   <button onClick={() => handleOpenDeleteModal(gasto)} className="text-red-600 hover:text-red-800"><Trash2 size={16}/></button>
@@ -142,11 +124,11 @@ const MonasteryComponentView: React.FC = () => {
         onClose={() => setEditModalOpen(false)}
         overheadToEdit={selectedOverhead}
       />
-      <ModalDeleteMonasteryExpense
+  <ModalDeleteMonasteryExpense
         isOpen={isDeleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
         onConfirm={handleDeleteConfirm}
-        isPending={isDeleting}
+  isPending={deleting}
         overheadName={selectedOverhead?.name || ''}
       />
     </div>

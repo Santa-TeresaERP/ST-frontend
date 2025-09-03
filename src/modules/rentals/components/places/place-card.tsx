@@ -3,12 +3,14 @@ import { FaUser } from "react-icons/fa";
 import ModalEditPlace from "./modal-edit-place";
 import NewRentalModal from "../modals/new-rental-modal";
 import { Place } from "../../types";
+import Modal from "@/core/components/ui/Modal";
 import { useCreateRental } from "../../hook/useRentals";
-import { useFetchCustomers } from "../../hook/useCustomers";
 import { useAuthStore } from "@/core/store/auth";
+import { Customer } from "../../types/customer";
 
 interface PlaceCardProps {
   place: Place;
+  customers: Customer[];
   onEdit: (placeId: string, updatedPlace: Partial<Place>) => void;
   onDelete: (placeId: string) => void;
   onViewRentals: (place: Place) => void;
@@ -16,16 +18,19 @@ interface PlaceCardProps {
 
 const PlaceCard: React.FC<PlaceCardProps> = ({
   place,
+  customers,
   onEdit,
-  onDelete,
   onViewRentals,
 }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isNewRentalModalOpen, setIsNewRentalModalOpen] = useState(false);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createModalMessage, setCreateModalMessage] = useState("");
 
   // Hooks
   const createRentalMutation = useCreateRental();
-  const { data: customers = [] } = useFetchCustomers();
   const { user } = useAuthStore();
 
   console.log("🔍 PlaceCard - Usuario autenticado:", {
@@ -38,12 +43,10 @@ const PlaceCard: React.FC<PlaceCardProps> = ({
   const handleEdit = () => setIsEditModalOpen(true);
   const handleAlquilar = () => setIsNewRentalModalOpen(true);
   const handleViewRentals = () => onViewRentals(place);
-
   const handleEditSubmit = (updatedPlace: Partial<Place>) => {
     if (place.id) {
       onEdit(place.id, updatedPlace);
     }
-    setIsEditModalOpen(false);
   };
 
   const handleNewRentalSubmit = async (rentalData: {
@@ -54,9 +57,14 @@ const PlaceCard: React.FC<PlaceCardProps> = ({
     monto: number;
   }) => {
     try {
+      // Mostrar modal informativo inmediatamente al intentar crear
+      setIsCreateModalOpen(true);
+      setCreateModalMessage("Procesando creación del alquiler...");
+
       // Verificar que el usuario esté autenticado
       if (!user || !user.id) {
         console.error("❌ Usuario no autenticado");
+        setIsCreateModalOpen(false);
         alert("Debes estar autenticado para crear un alquiler");
         return;
       }
@@ -91,16 +99,25 @@ const PlaceCard: React.FC<PlaceCardProps> = ({
 
       console.log("🎉 ¡Alquiler creado exitosamente!");
       setIsNewRentalModalOpen(false);
-    } catch (error) {
+      setCreateModalMessage("¡Alquiler creado exitosamente!");
+    } catch (error: unknown) {
       console.error("❌ Error al crear alquiler:", error);
+      type ApiError = { response?: { data?: { error?: string } } };
+      const err = error as ApiError;
+      const apiError = err.response?.data?.error || "Ocurrió un error inesperado.";
+      
+      if (apiError.includes("ya existe un alquiler activo")) {
+        setIsCreateModalOpen(false);
+        setErrorMessage(apiError);
+        setIsErrorModalOpen(true);
+      } else {
+        setIsCreateModalOpen(false);
+        setErrorMessage(apiError);
+        setIsErrorModalOpen(true);
+      }
     }
   };
 
-  const handleDelete = () => {
-    if (place.id) {
-      onDelete(place.id);
-    }
-  };
 
   return (
     <>
@@ -150,6 +167,7 @@ const PlaceCard: React.FC<PlaceCardProps> = ({
         <ModalEditPlace
           place={place}
           onClose={() => setIsEditModalOpen(false)}
+          onUpdated={() => setIsEditModalOpen(false)}
           onSubmit={handleEditSubmit}
         />
       )}
@@ -160,6 +178,35 @@ const PlaceCard: React.FC<PlaceCardProps> = ({
           onSubmit={handleNewRentalSubmit}
         />
       )}
+
+      <Modal
+        isOpen={isErrorModalOpen}
+        onClose={() => setIsErrorModalOpen(false)}
+        title="Error al Crear Alquiler"
+      >
+        <p>{errorMessage}</p>
+        <button 
+          onClick={() => setIsErrorModalOpen(false)}
+          className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+        >
+          Cerrar
+        </button>
+      </Modal>
+
+      {/* Modal informativo durante/tras creación */}
+      <Modal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        title="Creación de Alquiler"
+      >
+        <p>{createModalMessage}</p>
+        <button
+          onClick={() => setIsCreateModalOpen(false)}
+          className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+        >
+          Cerrar
+        </button>
+      </Modal>
     </>
   );
 };

@@ -39,6 +39,7 @@ export const useCreateReturn = () => {
     mutationFn: createReturn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['returns'] })
+      queryClient.invalidateQueries({ queryKey: ['warehouseStoreItems'] })
     },
   })
 }

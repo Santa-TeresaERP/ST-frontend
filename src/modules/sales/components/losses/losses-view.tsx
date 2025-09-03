@@ -11,12 +11,12 @@ import {
   useDeleteReturn,
 } from "@/modules/sales/hooks/useReturns";
 import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
-import { useFetchSales } from "@/modules/sales/hooks/useSales";
 import { useCheckStoreActiveSession } from "@/modules/sales/hooks/useCashSession";
 import { isStoreOperational, getStoreOperationalMessage } from "@/modules/sales/utils/store-status";
 import { returnsAttributes } from "@/modules/sales/types/returns";
 import { useModulePermissions } from "@/core/utils/permission-hooks";
 import { MODULE_NAMES } from "@/core/utils/useModulesMap";
+import { useFetchStores } from "../../hooks/useStore";
 
 interface LossesComponentViewProps {
   selectedStoreId?: string;
@@ -27,7 +27,8 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
 }) => {
   const { data: losses = [], isLoading: isLoadingLosses } = useFetchReturns();
   const { data: products = [] } = useFetchProducts();
-  const { data: sales = [], isLoading: isLoadingSales } = useFetchSales();
+  const { data: storesResponse } = useFetchStores(1, 200);
+  const stores = storesResponse?.stores || [];
   
   // Hook para verificar si la tienda tiene una sesión de caja activa
   const { data: storeSessionData, isLoading: isLoadingSessionData } = useCheckStoreActiveSession(selectedStoreId);
@@ -44,17 +45,9 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentLoss, setCurrentLoss] = useState<returnsAttributes | null>(null);
 
-  // Show all losses for the selected store, including those without salesId
-  const filteredLosses = selectedStoreId && !isLoadingSales
-    ? losses.filter((loss) => {
-        // If there's a salesId, check if it belongs to the selected store
-        if (loss.salesId) {
-          const relatedSale = sales.find((s) => s.id === loss.salesId);
-          return relatedSale?.store_id === selectedStoreId;
-        }
-        // If no salesId, include it in the list (will show empty store name)
-        return true;
-      })
+  // Show all losses for the selected store
+  const filteredLosses = selectedStoreId
+    ? losses.filter((loss) => loss.storeId === selectedStoreId)
     : [];
 
   const handleCreateLoss = async (
@@ -87,11 +80,10 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
     return product ? product.name : `Producto ${productId.slice(0, 6)}...`;
   };
 
-  const getStoreName = (salesId?: string) => {
-    if (!salesId) return ""; // Return empty string for missing salesId
-    const rawSale = sales.find((s) => s.id === salesId);
-    const store_name = (rawSale as { store?: { store_name?: string } })?.store?.store_name;
-    return store_name || "";
+  const getStoreName = (storeId: string) => {
+    if (!storeId) return "No asignada";
+    const store = stores.find((s) => s.id === storeId);
+    return store ? store.store_name : `Tienda no encontrada`;
   };
 
   return (
@@ -196,7 +188,7 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
       </div>
 
       {/* Estado de carga o mensajes según el contexto */}
-      {isLoadingLosses || isLoadingSales || isLoadingSessionData ? (
+      {isLoadingLosses || isLoadingSessionData ? (
         <div className="text-center text-gray-500 italic">
           Cargando datos...
         </div>
@@ -236,7 +228,7 @@ const LossesComponentView: React.FC<LossesComponentViewProps> = ({
                     {getProductName(item.productId)}
                   </td>
                   <td className="px-4 py-2 text-center">
-                    {getStoreName(item.salesId)}
+                    {getStoreName(item.storeId)}
                   </td>
                   <td className="px-4 py-2 text-center">{item.quantity}</td>
                   <td className="px-4 py-2 text-center">

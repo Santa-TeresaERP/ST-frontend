@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Place } from '../../types/places.d';
 import { useFetchPlaces, useDeletePlace } from '../../hook/usePlaces';
+import { useFetchCustomers } from '../../hook/useCustomers';
 import { useQueryClient } from '@tanstack/react-query';
 import ModalCreatePlace from './modal-create-place';
 import ModalEditPlace from './modal-edit-place';
 import PlaceCard from './place-card';
 
 const Places: React.FC = () => {
-  const { data: places = [], isLoading, isError } = useFetchPlaces();
+  const { data: places = [], isLoading: isLoadingPlaces, isError: isErrorPlaces } = useFetchPlaces();
+  const { data: customers = [], isLoading: isLoadingCustomers, isError: isErrorCustomers } = useFetchCustomers();
   const deletePlace = useDeletePlace();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingPlace, setEditingPlace] = useState<Place | null>(null);
@@ -48,14 +50,17 @@ const Places: React.FC = () => {
         </button>
       </div>
 
-      {isLoading && <p>Cargando lugares...</p>}
-      {isError && <p>Error al cargar lugares.</p>}
+      {isLoadingPlaces && <p>Cargando lugares...</p>}
+      {isErrorPlaces && <p>Error al cargar lugares.</p>}
+      {isLoadingCustomers && <p>Cargando clientes...</p>}
+      {isErrorCustomers && <p>Error al cargar clientes.</p>}
 
       <div className="flex flex-wrap gap-4">
         {places.map((place) => (
           <PlaceCard
             key={place.id}
             place={place}
+            customers={customers}
             onEdit={() => setEditingPlace(place)}
             onDelete={handleDelete}
             onViewRentals={handleViewRentals}

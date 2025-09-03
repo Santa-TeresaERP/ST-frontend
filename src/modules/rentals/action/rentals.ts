@@ -112,5 +112,5 @@ export const updateRental = async (id: string, payload: UpdateRentalPayload): Pr
 };
 
 export const deleteRental = async (id: string): Promise<void> => {
-  await api.delete(`/rentals/${id}`);
+  await api.put(`/rentals/${id}`);
 };

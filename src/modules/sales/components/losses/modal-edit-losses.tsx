@@ -108,7 +108,7 @@ const ModalEditLoss: React.FC<ModalEditLossProps> = ({
       return;
     }
 
-    onSave({ productId, salesId, reason, observations, quantity });
+    onSave({ productId, salesId, storeId: selectedStoreId || "", reason, observations, quantity });
     onClose();
   };
 
