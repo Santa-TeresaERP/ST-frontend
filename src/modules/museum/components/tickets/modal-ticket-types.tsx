@@ -1,9 +1,11 @@
 // components/ticket/modal-ticket-types.tsx
 import React, { useState } from 'react'
-import { X, Plus, Trash2, Pencil, Check } from 'lucide-react'
+import { X, Plus, Trash2, Pencil, Check, ShieldAlert } from 'lucide-react'
 import { useTypePerson } from '../../hook/useTypePerson'
 import { useEntrance } from '../../hook/useEntrance'
 import type { TypePerson } from '../../types/typePerson'
+import { useModulePermission, MODULE_NAMES } from '@/core/utils/useModulesMap'
+import AccessDeniedModal from '@/core/utils/AccessDeniedModal'
 
 interface ModalTicketTypesProps {
   isOpen: boolean
@@ -12,6 +14,10 @@ interface ModalTicketTypesProps {
 }
 
 const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose, onCreated }) => {
+  const { hasPermission: canView } = useModulePermission(MODULE_NAMES.MUSEUM, 'canRead')
+  const { hasPermission: canCreate } = useModulePermission(MODULE_NAMES.MUSEUM, 'canWrite')
+  const { hasPermission: canEdit } = useModulePermission(MODULE_NAMES.MUSEUM, 'canEdit')
+  const { hasPermission: canDelete } = useModulePermission(MODULE_NAMES.MUSEUM, 'canDelete')
   const { data: tiposPersona = [], loading, error, create, update, remove } = useTypePerson()
   const { data: entrances = [] } = useEntrance()
   
@@ -20,8 +26,39 @@ const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose, on
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editType, setEditType] = useState('')
   const [editPrice, setEditPrice] = useState('')
+  const [showAccessDenied, setShowAccessDenied] = useState(false)
+  const [accessDeniedAction, setAccessDeniedAction] = useState('')
+
+  // Si no tiene permisos de lectura, mostrar mensaje de acceso denegado
+  if (!canView) {
+    return isOpen ? (
+      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 text-center">
+          <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-700 mb-2">Acceso Restringido</h2>
+          <p className="text-gray-600 mb-4">
+            No tienes permisos para gestionar los tipos de tickets.
+          </p>
+          <p className="text-sm text-gray-500 mb-6">
+            Contacta al administrador para obtener acceso.
+          </p>
+          <button 
+            onClick={onClose}
+            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    ) : null
+  }
 
   const handleRequestEdit = (tipo: TypePerson) => {
+    if (!canEdit) {
+      setAccessDeniedAction('editar tipos de tickets')
+      setShowAccessDenied(true)
+      return
+    }
     setEditingId(tipo.id || null)
     setEditType(tipo.name)
     setEditPrice(tipo.base_price.toString())
@@ -45,8 +82,15 @@ const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose, on
       setEditType('')
       setEditPrice('')
       if (onCreated) onCreated();
-    } catch (err) {
-      console.error('Error al actualizar:', err)
+    } catch (error: unknown) {
+      // Si es error de permisos, mostrar modal de acceso denegado sin loggear
+      const errorObj = error as { isPermissionError?: boolean; silent?: boolean; message?: string };
+      if (errorObj?.isPermissionError && errorObj?.silent) {
+        setAccessDeniedAction('editar tipos de tickets (permisos revocados)');
+        setShowAccessDenied(true);
+      } else {
+        console.error('Error al actualizar:', error);
+      }
     }
   }
 
@@ -55,6 +99,12 @@ const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose, on
   }
 
   const handleRemove = async (id: string) => {
+    if (!canDelete) {
+      setAccessDeniedAction('eliminar tipos de tickets')
+      setShowAccessDenied(true)
+      return
+    }
+
     if (isTypePersonUsed(id)) {
       alert('No se puede eliminar este tipo de ticket porque está asociado a entradas existentes.')
       return
@@ -62,13 +112,26 @@ const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose, on
     
     try {
       await remove(id)
-    } catch (err) {
-      console.error('Error al eliminar:', err)
+      if (onCreated) onCreated();
+    } catch (error: unknown) {
+      // Si es error de permisos, mostrar modal de acceso denegado sin loggear
+      const errorObj = error as { isPermissionError?: boolean; silent?: boolean; message?: string };
+      if (errorObj?.isPermissionError && errorObj?.silent) {
+        setAccessDeniedAction('eliminar tipos de tickets (permisos revocados)');
+        setShowAccessDenied(true);
+      } else {
+        console.error('Error al eliminar:', error);
+      }
     }
-    if (onCreated) onCreated();
   }
 
   const handleAddTicket = async () => {
+    if (!canCreate) {
+      setAccessDeniedAction('crear tipos de tickets')
+      setShowAccessDenied(true)
+      return
+    }
+
     if (!newType.trim() || !newPrice.trim()) return
     
     const payload = { name: newType.trim(), base_price: parseFloat(newPrice) }
@@ -77,8 +140,15 @@ const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose, on
       setNewType('')
       setNewPrice('')
       if (onCreated) onCreated();
-    } catch (err) {
-      console.error('Error creando tipo:', err)
+    } catch (error: unknown) {
+      // Si es error de permisos, mostrar modal de acceso denegado sin loggear
+      const errorObj = error as { isPermissionError?: boolean; silent?: boolean; message?: string };
+      if (errorObj?.isPermissionError && errorObj?.silent) {
+        setAccessDeniedAction('crear tipos de tickets (permisos revocados)');
+        setShowAccessDenied(true);
+      } else {
+        console.error('Error creando tipo:', error);
+      }
     }
   }
 
@@ -97,29 +167,41 @@ const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose, on
         </div>
 
         <div className="p-4 md:p-6">
-          {/* Nuevo */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-6">
-            <input
-              type="text"
-              placeholder="Tipo de Ticket"
-              value={newType}
-              onChange={e => setNewType(e.target.value)}
-              className="flex-1 border rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-            />
-            <input
-              type="number"
-              placeholder="Precio"
-              value={newPrice}
-              onChange={e => setNewPrice(e.target.value)}
-              className="w-full sm:w-32 border rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-            />
-            <button
-              onClick={handleAddTicket}
-              className="flex items-center justify-center bg-red-600 text-white px-4 py-2 rounded-lg"
-            >
-              <Plus size={16} className="mr-1" /> Agregar
-            </button>
-          </div>
+          {/* Nuevo - Solo mostrar si tiene permisos de creación */}
+          {canCreate && (
+            <div className="flex flex-col sm:flex-row gap-3 mb-6">
+              <input
+                type="text"
+                placeholder="Tipo de Ticket"
+                value={newType}
+                onChange={e => setNewType(e.target.value)}
+                className="flex-1 border rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+              />
+              <input
+                type="number"
+                placeholder="Precio"
+                value={newPrice}
+                onChange={e => setNewPrice(e.target.value)}
+                className="w-full sm:w-32 border rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
+              />
+              <button
+                onClick={handleAddTicket}
+                className="flex items-center justify-center bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+              >
+                <Plus size={16} className="mr-1" /> Agregar
+              </button>
+            </div>
+          )}
+
+          {/* Mensaje si no tiene permisos de creación */}
+          {!canCreate && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+              <p className="text-yellow-800 text-sm">
+                <ShieldAlert className="inline w-4 h-4 mr-2" />
+                No tienes permisos para crear nuevos tipos de tickets.
+              </p>
+            </div>
+          )}
 
           {/* Lista */}
           {loading && <p>Cargando...</p>}
@@ -162,17 +244,24 @@ const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose, on
                       <p className="text-red-700">S/. {tp.base_price ? tp.base_price.toFixed(2) : '0.00'}</p>
                     </div>
                     <div className="flex gap-2 mt-2 sm:mt-0">
-                      <button onClick={() => handleRequestEdit(tp)} className="text-blue-600 hover:text-blue-800 transition">
-                        <Pencil size={18} />
-                      </button>
-                      <button
-                        onClick={() => tp.id && handleRemove(tp.id)}
-                        className={`${isTypePersonUsed(tp.id || '') ? 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:text-red-800'}`}
-                        disabled={isTypePersonUsed(tp.id || '')}
-                        title={isTypePersonUsed(tp.id || '') ? 'No se puede eliminar porque está en uso' : 'Eliminar tipo de ticket'}
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                      {canEdit && (
+                        <button onClick={() => handleRequestEdit(tp)} className="text-blue-600 hover:text-blue-800 transition">
+                          <Pencil size={18} />
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button
+                          onClick={() => tp.id && handleRemove(tp.id)}
+                          className={`${isTypePersonUsed(tp.id || '') ? 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:text-red-800'}`}
+                          disabled={isTypePersonUsed(tp.id || '')}
+                          title={isTypePersonUsed(tp.id || '') ? 'No se puede eliminar porque está en uso' : 'Eliminar tipo de ticket'}
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
+                      {(!canEdit && !canDelete) && (
+                        <span className="text-gray-400 text-xs">Sin permisos</span>
+                      )}
                     </div>
                   </>
                 )}
@@ -181,6 +270,16 @@ const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose, on
           </div>
         </div>
       </div>
+
+      {/* Modal de acceso denegado */}
+      <AccessDeniedModal
+        isOpen={showAccessDenied}
+        onClose={() => setShowAccessDenied(false)}
+        title="Permisos Insuficientes"
+        message="No tienes permisos para realizar esta acción en la gestión de tipos de tickets."
+        action={accessDeniedAction}
+        module="Tipos de Tickets"
+      />
     </div>
   )
 }

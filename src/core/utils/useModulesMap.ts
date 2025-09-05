@@ -17,9 +17,19 @@ export const useModulesMap = () => {
   const { userWithPermissions } = useAuthStore();
 
   // 🔥 VERIFICAR SI EL USUARIO TIENE ACCESO BÁSICO A MÓDULOS
-  const hasModuleAccess = userWithPermissions?.Role?.Permissions?.some(
-    permission => permission.canRead === true
-  ) ?? false;
+  const hasModuleAccess = useMemo(() => {
+    // Si no hay usuario, no hay acceso
+    if (!userWithPermissions?.Role?.Permissions) {
+      return false;
+    }
+    
+    // Verificar si tiene al menos un permiso de lectura
+    const hasAnyReadPermission = userWithPermissions.Role.Permissions.some(
+      permission => permission.canRead === true
+    );
+    
+    return hasAnyReadPermission;
+  }, [userWithPermissions]);
   
   // Crear mapas de nombre → ID y ID → nombre
   const modulesMap = useMemo(() => {
@@ -100,9 +110,9 @@ export const MODULE_NAMES = {
   INVENTORY: 'inventario',
   PRODUCTION: 'Produccion',
   SALES: 'Ventas', // 🔥 HABILITADO PARA MÓDULO DE VENTAS
+  MUSEUM: 'Museo', // 🔥 HABILITADO PARA MÓDULO DE MUSEO
   
   // 🚧 Futuros módulos - agregar según vayas creando en backend
-  // MUSEUM: 'museo',
   // RENTALS: 'alquileres', 
   // FINANZAS: 'finanzas',
 } as const;
