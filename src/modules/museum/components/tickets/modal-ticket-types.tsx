@@ -10,10 +10,10 @@ import AccessDeniedModal from '@/core/utils/AccessDeniedModal'
 interface ModalTicketTypesProps {
   isOpen: boolean
   onClose: () => void
-  onCreated?: () => void
+  onDataChanged?: () => void // ✅ Callback para notificar cambios en los datos
 }
 
-const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose, onCreated }) => {
+const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose, onDataChanged }) => {
   const { hasPermission: canView } = useModulePermission(MODULE_NAMES.MUSEUM, 'canRead')
   const { hasPermission: canCreate } = useModulePermission(MODULE_NAMES.MUSEUM, 'canWrite')
   const { hasPermission: canEdit } = useModulePermission(MODULE_NAMES.MUSEUM, 'canEdit')
@@ -81,7 +81,8 @@ const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose, on
       setEditingId(null)
       setEditType('')
       setEditPrice('')
-      if (onCreated) onCreated();
+      // ✅ Notificar cambios al componente padre
+      if (onDataChanged) onDataChanged()
     } catch (error: unknown) {
       // Si es error de permisos, mostrar modal de acceso denegado sin loggear
       const errorObj = error as { isPermissionError?: boolean; silent?: boolean; message?: string };
@@ -112,7 +113,8 @@ const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose, on
     
     try {
       await remove(id)
-      if (onCreated) onCreated();
+      // ✅ Notificar cambios al componente padre
+      if (onDataChanged) onDataChanged()
     } catch (error: unknown) {
       // Si es error de permisos, mostrar modal de acceso denegado sin loggear
       const errorObj = error as { isPermissionError?: boolean; silent?: boolean; message?: string };
@@ -139,7 +141,19 @@ const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose, on
       await create(payload)
       setNewType('')
       setNewPrice('')
-      if (onCreated) onCreated();
+      
+      // ✅ Múltiples estrategias para asegurar actualización
+      console.log('Ticket creado, notificando cambios...')
+      if (onDataChanged) {
+        onDataChanged()
+        console.log('onDataChanged ejecutado')
+      }
+      
+      // ✅ Forzar re-render con delay
+      setTimeout(() => {
+        if (onDataChanged) onDataChanged()
+      }, 500)
+      
     } catch (error: unknown) {
       // Si es error de permisos, mostrar modal de acceso denegado sin loggear
       const errorObj = error as { isPermissionError?: boolean; silent?: boolean; message?: string };
@@ -163,7 +177,7 @@ const ModalTicketTypes: React.FC<ModalTicketTypesProps> = ({ isOpen, onClose, on
             <h2 className="text-xl md:text-2xl font-bold">Tipos de Ticket</h2>
             <p className="text-sm md:text-base text-red-100">Administra los tipos de ticket disponibles</p>
           </div>
-          <button onClick={() => { onClose(); window.location.reload(); }}><X size={24} /></button>
+          <button onClick={onClose}><X size={24} /></button>
         </div>
 
         <div className="p-4 md:p-6">

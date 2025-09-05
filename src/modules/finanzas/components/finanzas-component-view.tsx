@@ -1,11 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
-import { FileText, ListChecks } from 'lucide-react';
+import { FileText, ListChecks, ShieldAlert, Loader2 } from 'lucide-react';
 import DetalleReporte from './detalleReporte/detalle-reporte-view';
 import ReporteComponentView from './reporte/reporte-view';
 import { useFetchFinancialReports } from '../../finanzas/hooks/useFinancialReports'; // Ajusta ruta si es necesario
 import { FinancialReport } from '../../finanzas/types/financialReport'; // Ajusta ruta si es necesario
+import { useModulePermissions } from '@/core/utils/permission-hooks';
+import { MODULE_NAMES } from '@/core/utils/useModulesMap';
 
 const FinanzasComponentView: React.FC = () => {
+  // 🔥 HOOK DE PERMISOS
+  const { canView, canCreate, canEdit, canDelete, isLoading, isAdmin } = useModulePermissions(MODULE_NAMES.FINANZAS);
+  
   const [selectedView, setSelectedView] = useState<'general' | 'detalle'>('general');
 
   // Fetch reportes para poder seleccionar uno y pasarlo a DetalleReporte
@@ -20,6 +26,13 @@ const FinanzasComponentView: React.FC = () => {
       setSelectedReportId(reportes[0].id);
     }
   }, [reportes, selectedReportId]);
+
+  // 🔥 Si no tiene permisos de creación, forzar vista de detalle
+  useEffect(() => {
+    if (!canCreate && !isAdmin && selectedView === 'general') {
+      setSelectedView('detalle');
+    }
+  }, [canCreate, isAdmin, selectedView]);
 
   // Encuentro el reporte completo a pasar a DetalleReporte y hago el mapeo de campos
   const selectedReporteFull: FinancialReport | undefined = reportes.find(r => r.id === selectedReportId);
@@ -38,37 +51,101 @@ const FinanzasComponentView: React.FC = () => {
 
   const detalleProp = mapToDetalleReporteProp(selectedReporteFull);
 
+  // 🔥 VERIFICACIÓN DE PERMISOS DE LECTURA
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-red-600" />
+          <p className="text-gray-600">Verificando permisos...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canView) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 text-center">
+          <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-700 mb-2">Acceso Restringido</h2>
+          <p className="text-gray-600 mb-4">
+            No tienes permisos para acceder al módulo de Finanzas.
+          </p>
+          <p className="text-sm text-gray-500 mb-6">
+            Contacta al administrador para obtener acceso.
+          </p>
+          <button 
+            onClick={() => window.history.back()}
+            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+          >
+            Volver
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-5xl font-bold text-center text-red-700 pb-4">Panel de Finanzas</h1>
         <p className="text-gray-600 text-center">Gestión de reportes generales y detalles</p>
+        
+        {/* 🔥 DEBUG PANEL DE PERMISOS - Temporal */}
+        <div className="mt-4 p-3 bg-gray-100 rounded-lg text-xs text-center">
+          <p className="font-mono">
+            📋 Permisos FINANZAS - 
+            Ver: {canView ? '✅' : '❌'} | 
+            Crear: {canCreate ? '✅' : '❌'} | 
+            Editar: {canEdit ? '✅' : '❌'} | 
+            Eliminar: {canDelete ? '✅' : '❌'} | 
+            Admin: {isAdmin ? '✅' : '❌'}
+          </p>
+        </div>
       </div>
 
       {/* Navigation */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 p-6">
-        {/* Reporte General */}
-        <button
-          onClick={() => setSelectedView('general')}
-          className={`p-6 rounded-xl shadow-sm transition-all transform hover:scale-105 ${
-            selectedView === 'general'
-              ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
-              : 'bg-white border border-gray-200 hover:border-blue-400'
-          }`}
-        >
-          <div className="flex items-center space-x-4">
-            <div className={`p-3 rounded-lg ${selectedView === 'general' ? 'bg-blue-400' : 'bg-blue-100 text-blue-600'}`}>
-              <FileText size={24} />
+        {/* Reporte General - Solo visible si tiene permisos de creación */}
+        {(canCreate || isAdmin) && (
+          <button
+            onClick={() => setSelectedView('general')}
+            className={`p-6 rounded-xl shadow-sm transition-all transform hover:scale-105 ${
+              selectedView === 'general'
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
+                : 'bg-white border border-gray-200 hover:border-blue-400'
+            }`}
+          >
+            <div className="flex items-center space-x-4">
+              <div className={`p-3 rounded-lg ${selectedView === 'general' ? 'bg-blue-400' : 'bg-blue-100 text-blue-600'}`}>
+                <FileText size={24} />
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold">Reporte General</h3>
+                <p className="text-sm opacity-80">Almacén y Recursos</p>
+              </div>
             </div>
-            <div className="text-left">
-              <h3 className="font-semibold">Reporte General</h3>
-              <p className="text-sm opacity-80">Almacén y Recursos</p>
+          </button>
+        )}
+
+        {/* Mensaje informativo si no tiene permisos de creación */}
+        {!canCreate && !isAdmin && (
+          <div className="p-6 rounded-xl bg-yellow-50 border border-yellow-200">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 rounded-lg bg-yellow-100 text-yellow-600">
+                <ShieldAlert size={24} />
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold text-yellow-800">Acceso Limitado</h3>
+                <p className="text-sm text-yellow-700">No tienes permisos para crear reportes generales</p>
+              </div>
             </div>
           </div>
-        </button>
+        )}
 
-        {/* Detalle de Reporte */}
+        {/* Detalle de Reporte - Siempre visible si tiene permisos de lectura */}
         <button
           onClick={() => setSelectedView('detalle')}
           className={`p-6 rounded-xl shadow-sm transition-all transform hover:scale-105 ${
@@ -105,7 +182,12 @@ const FinanzasComponentView: React.FC = () => {
               {loadingReportes ? (
                 <div className="text-sm text-gray-500">Cargando reportes...</div>
               ) : reportes.length === 0 ? (
-                <div className="text-sm text-gray-500">No hay reportes disponibles. Crea uno en "Reporte General".</div>
+                <div className="text-sm text-gray-500">
+                  {(canCreate || isAdmin) 
+                    ? 'No hay reportes disponibles. Crea uno en "Reporte General".'
+                    : 'No hay reportes disponibles. Contacta al administrador para crear reportes.'
+                  }
+                </div>
               ) : (
                 <>
                   <label className="text-sm font-medium text-gray-700">Seleccionar reporte:</label>

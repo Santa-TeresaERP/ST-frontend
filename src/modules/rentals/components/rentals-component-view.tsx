@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { FiMapPin, FiHome, FiBarChart2, FiCheckCircle, FiChevronLeft, FiChevronRight, FiX, FiUser } from 'react-icons/fi';
 import { MdLocationOn } from 'react-icons/md';
+import { ShieldAlert, Loader2 } from 'lucide-react';
 import ModalCreateLocation from './information location/modal-create-location';
 import ModalEditLocation from './information location/modal-edit-location';
 import ModalCreatePlace from './places/modal-create-place';
@@ -12,6 +13,10 @@ import { useFetchLocations } from '../hook/useLocations';
 import { useFetchPlacesByLocation, useDeletePlace } from '../hook/usePlaces';
 import { useFetchCustomers } from '../hook/useCustomers';
 import { useQueryClient } from '@tanstack/react-query';
+
+// 🔥 IMPORTAR SISTEMA DE PERMISOS OPTIMIZADO
+import { useModulePermissions } from '@/core/utils/permission-hooks';
+import { MODULE_NAMES } from '@/core/utils/useModulesMap';
 
 const RentalsComponentView = () => {
   const [isCreateLocationModalOpen, setIsCreateLocationModalOpen] = useState(false);
@@ -27,6 +32,9 @@ const RentalsComponentView = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const placesPerPage = 20;
+
+  // 🔥 USAR HOOK OPTIMIZADO DE PERMISOS - UNA SOLA LLAMADA
+  const { canView, canCreate, canEdit, canDelete, isLoading, isAdmin } = useModulePermissions(MODULE_NAMES.RENTALS);
 
   const { data: locations = [], isLoading: locationsLoading, error: locationsError } = useFetchLocations();
   const { data: places = [], isLoading: placesLoading, error: placesError } = useFetchPlacesByLocation(selectedLocation?.id || null, forceRefetchKey);
@@ -93,6 +101,11 @@ const RentalsComponentView = () => {
   };
 
   const handleDeletePlace = React.useCallback((placeId: string) => {
+    // 🔥 SOLO EJECUTAR SI TIENE PERMISOS - NO ALERT
+    if (!canDelete && !isAdmin) {
+      return;
+    }
+
     const confirmDelete = window.confirm(
       "¿Estás seguro que deseas eliminar este lugar?"
     );
@@ -107,7 +120,20 @@ const RentalsComponentView = () => {
         },
       });
     }
-  }, [deletePlace]);
+  }, [deletePlace, canDelete, isAdmin]);
+
+  // 🔥 FUNCIONES SIMPLIFICADAS SIN VERIFICACIÓN DE PERMISOS (LOS BOTONES SE OCULTAN)
+  const handleCreateLocationClick = () => {
+    setIsCreateLocationModalOpen(true);
+  };
+
+  const handleEditLocationClick = () => {
+    setIsEditLocationModalOpen(true);
+  };
+
+  const handleCreatePlaceClick = () => {
+    setIsCreatePlaceModalOpen(true);
+  };
 
   const handleViewRentals = (place: Place) => {
     setSelectedPlaceForRentals(place);
@@ -118,6 +144,36 @@ const RentalsComponentView = () => {
     setCurrentView("main");
     setSelectedPlaceForRentals(null);
   };
+
+  // 🔥 MOSTRAR LOADING MIENTRAS SE VERIFICAN PERMISOS
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="animate-spin h-12 w-12 text-red-600 mx-auto mb-4" />
+          <p className="text-gray-600">Verificando permisos...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 🔥 VERIFICAR PERMISOS DE ACCESO AL MÓDULO
+  if (!canView && !isAdmin) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
+          <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-700 mb-2">Acceso Restringido</h2>
+          <p className="text-gray-600 mb-4">
+            No tienes permisos para ver el módulo de alquileres.
+          </p>
+          <p className="text-sm text-gray-500">
+            Contacta al administrador para obtener acceso.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (currentView === "rental-history" && selectedPlaceForRentals) {
     return (
@@ -132,6 +188,22 @@ const RentalsComponentView = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <h1 className="text-4xl font-bold text-center text-red-600 pb-6">Alquileres</h1>
+
+      {/* 🔥 INDICADOR DE PERMISOS EN DESARROLLO */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            <strong>Debug Permisos:</strong> 
+            Módulo: {MODULE_NAMES.RENTALS} | 
+            Ver: {canView ? '✅' : '❌'} | 
+            Crear: {canCreate ? '✅' : '❌'} | 
+            Editar: {canEdit ? '✅' : '❌'} | 
+            Eliminar: {canDelete ? '✅' : '❌'} | 
+            Admin: {isAdmin ? '✅' : '❌'} |
+            Loading: {isLoading ? '⏳' : '✅'}
+          </p>
+        </div>
+      )}
 
       {/* Selector de Locaciones */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -192,12 +264,15 @@ const RentalsComponentView = () => {
             })()}
           </div>
 
-          <button
-            className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm"
-            onClick={() => setIsCreateLocationModalOpen(true)}
-          >
-            + Nueva locación
-          </button>
+          {/* 🔥 MOSTRAR BOTÓN SOLO SI TIENE PERMISOS DE CREACIÓN */}
+          {(canCreate || isAdmin) && (
+            <button
+              className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm"
+              onClick={handleCreateLocationClick}
+            >
+              + Nueva locación
+            </button>
+          )}
 
           <button
             className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
@@ -217,12 +292,15 @@ const RentalsComponentView = () => {
               <h2 className="text-xl font-bold text-red-600">Información de Localización</h2>
             </div>
 
-            <button
-              onClick={() => setIsEditLocationModalOpen(true)}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
-            >
-              + Editar locación
-            </button>
+            {/* 🔥 MOSTRAR BOTÓN SOLO SI TIENE PERMISOS DE EDICIÓN */}
+            {(canEdit || isAdmin) && (
+              <button
+                onClick={handleEditLocationClick}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+              >
+                + Editar locación
+              </button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -278,12 +356,15 @@ const RentalsComponentView = () => {
               <h2 className="text-xl font-bold text-red-600">Lugares en {selectedLocation.name}</h2>
             </div>
 
-            <button
-              onClick={() => setIsCreatePlaceModalOpen(true)}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
-            >
-              + Nuevo Lugar
-            </button>
+            {/* 🔥 MOSTRAR BOTÓN SOLO SI TIENE PERMISOS DE CREACIÓN */}
+            {(canCreate || isAdmin) && (
+              <button
+                onClick={handleCreatePlaceClick}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+              >
+                + Nuevo Lugar
+              </button>
+            )}
           </div>
 
           {places.length > 0 ? (
@@ -302,9 +383,15 @@ const RentalsComponentView = () => {
                     <PlaceCard
                       key={`${selectedLocation.id}-${place.id}-${forceRefetchKey}`}
                       place={place}
+                      customers={customers}
                       onEdit={handleEditPlace}
                       onDelete={handleDeletePlace}
                       onViewRentals={handleViewRentals}
+                      // 🔥 PASAR PERMISOS A PLACECARD
+                      canEdit={canEdit}
+                      canDelete={canDelete}
+                      canCreate={canCreate}
+                      isAdmin={isAdmin}
                     />
                   ))}
                 </div>
@@ -362,12 +449,15 @@ const RentalsComponentView = () => {
               <FiHome className="mx-auto text-gray-400 mb-4" size={48} />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No hay lugares en esta locación</h3>
               <p className="text-gray-500 mb-4">Crea el primer lugar para comenzar a gestionar alquileres</p>
-              <button
-                onClick={() => setIsCreatePlaceModalOpen(true)}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
-              >
-                + Crear primer lugar
-              </button>
+              {/* 🔥 MOSTRAR BOTÓN SOLO SI TIENE PERMISOS DE CREACIÓN */}
+              {(canCreate || isAdmin) && (
+                <button
+                  onClick={handleCreatePlaceClick}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                >
+                  + Crear primer lugar
+                </button>
+              )}
             </div>
           )}
         </div>
