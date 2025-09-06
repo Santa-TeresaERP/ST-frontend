@@ -4,7 +4,8 @@ import {
   createOverhead,
   createMonasterioOverhead,
   updateOverhead,
-  deleteOverhead
+  deleteOverhead,
+  fetchMonthlyExpenses
 } from '../action/overheads.actions';
 import { Overhead, CreateOverheadPayload, UpdateOverheadPayload } from '../types/overheads.d';
 
@@ -59,6 +60,14 @@ export const useDeleteOverhead = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [OVERHEADS_QUERY_KEY] });
     },
+  });
+};
+
+// Hook para OBTENER los gastos mensuales
+export const useFetchMonthlyExpenses = () => {
+  return useQuery<Overhead[], Error>({
+    queryKey: ['monthlyExpenses'], // Nueva query key para no mezclar cachés
+    queryFn: fetchMonthlyExpenses,
   });
 };
 

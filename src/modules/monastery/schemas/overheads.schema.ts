@@ -28,7 +28,12 @@ export const overheadFormSchema = z.object({
  */
 export const updateOverheadFormSchema = overheadFormSchema.omit({ type: true }).partial();
 
+export const generalOverheadFormsSchema = overheadFormSchema.extend({
+  moduleName: z.string().optional(), // Nombre del
+});
+
 
 // Tipos inferidos para usar con react-hook-form
 export type OverheadFormData = z.infer<typeof overheadFormSchema>;
 export type UpdateOverheadFormData = z.infer<typeof updateOverheadFormSchema>;
+export type GeneralOverheadFormData = z.infer<typeof generalOverheadFormsSchema>;

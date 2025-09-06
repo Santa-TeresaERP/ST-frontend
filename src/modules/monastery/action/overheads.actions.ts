@@ -64,3 +64,8 @@ export const deleteOverhead = async (id: string): Promise<void> => {
   // Aunque es un borrado, la ruta en el backend es PUT
   await api.put(`${OVERHEADS_ENDPOINT}/${id}`);
 };
+
+export const fetchMonthlyExpenses = async (): Promise<Overhead[]> => {
+  const response = await api.get<Overhead[]>(`${OVERHEADS_ENDPOINT}/monthly`);
+  return response.data;
+};
