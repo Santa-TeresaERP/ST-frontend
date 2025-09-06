@@ -12,6 +12,8 @@ import { useFetchGeneralIncomes } from '../../hooks/useGeneralIncomes';
 import { useFetchGeneralExpenses } from '../../hooks/useGeneralExpenses';
 import { FinancialReport } from '../../types/financialReport';
 
+import ModalListMonthlyExpenses from './modal-list-monthly-expenses';
+
 export default function ReporteComponentView() {
   const { data: reportes = [], isLoading } = useFetchFinancialReports();
   const { data: incomes = [], isLoading: incomesLoading, error: incomesError } = useFetchGeneralIncomes();
@@ -23,6 +25,8 @@ export default function ReporteComponentView() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedReporte, setSelectedReporte] = useState<FinancialReport | undefined>(undefined);
   const [isInformeOpen, setIsInformeOpen] = useState(false);
+
+  const [isMonthlyModalOpen, setMonthlyModalOpen] = useState(false);
 
   // Determinar si es primer reporte o finalización
   const hasReports = reportes.length > 0;
@@ -246,6 +250,15 @@ export default function ReporteComponentView() {
                 <BarChart3 className="w-4 h-4" />
                 Informe por Módulo
               </button>
+
+               <button
+                onClick={() => setMonthlyModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-xl font-medium hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg"
+              >
+                <BarChart3 className="w-4 h-4" /> {/* Puedes usar otro ícono si prefieres */}
+                Gastos Mensuales
+              </button>
+
               <button
                 onClick={handleOpenModal}
                 className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-red-700 transition-all shadow-lg"
@@ -377,6 +390,12 @@ export default function ReporteComponentView() {
         reportes={convertReportsToModuleFormat()}
         onExport={handleExportModule}
       />
+
+      <ModalListMonthlyExpenses
+        isOpen={isMonthlyModalOpen}
+        onClose={() => setMonthlyModalOpen(false)}
+      />
+
     </div>
   );
 }

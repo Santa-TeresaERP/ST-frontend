@@ -20,6 +20,7 @@ export interface CreateOverheadPayload {
   type: 'monasterio' | 'donativo' | 'gasto mensual' | 'otro ingreso' | 'otro egreso';
   amount: number;
   description?: string;
+  moduleName?: string; // Nombre del módulo desde donde se crea el gasto
 }
 
 /**
