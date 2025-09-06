@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiPlus, FiUser } from 'react-icons/fi';
+import { FiPlus, FiUser, FiCheck, FiX } from 'react-icons/fi';
 import { useAuthStore } from "@/core/store/auth";
 import { useFetchCustomers } from '../../hook/useCustomers';
 import { Customer } from '../../types/customer';
@@ -13,6 +13,7 @@ interface NewRentalModalProps {
     fechaInicio: string;
     fechaFin: string;
     monto: number;
+    status: boolean;
   }) => void;
 }
 
@@ -27,7 +28,8 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({
     nombreVendedor: '',
     fechaInicio: '',
     fechaFin: '',
-    monto: ''
+    monto: '',
+    status: true // Default status is true (active)
   });
 
   const [isCreateCustomerModalOpen, setIsCreateCustomerModalOpen] = useState(false);
@@ -74,6 +76,7 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({
         fechaInicio: formData.fechaInicio,
         fechaFin: formData.fechaFin,
         monto: parseFloat(formData.monto),
+        status: formData.status
       });
 
       // Limpiar formulario
@@ -82,7 +85,8 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({
         nombreVendedor: user?.name || '',
         fechaInicio: '',
         fechaFin: '',
-        monto: ''
+        monto: '',
+        status: true // Reset to default
       });
       setCustomerSearchQuery('');
     }
@@ -285,6 +289,37 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({
               placeholder="S/. 200.00"
               required
             />
+          </div>
+
+          {/* Status Switch */}
+          <div className="flex items-center justify-between pt-2">
+            <span className="text-sm font-medium text-gray-700">Estado del alquiler</span>
+            <button
+              type="button"
+              onClick={() => setFormData({...formData, status: !formData.status})}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ${
+                formData.status ? 'bg-green-500' : 'bg-gray-200'
+              }`}
+            >
+              <span className="sr-only">Estado del alquiler</span>
+              <span
+                className={`${
+                  formData.status ? 'translate-x-6' : 'translate-x-1'
+                } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+              >
+                {formData.status ? (
+                  <FiCheck className="h-3 w-3 text-green-500 m-0.5" />
+                ) : (
+                  <FiX className="h-3 w-3 text-gray-500 m-0.5" />
+                )}
+              </span>
+              <span className="sr-only">
+                {formData.status ? 'Activo' : 'Inactivo'}
+              </span>
+            </button>
+          </div>
+          <div className="text-xs text-gray-500 -mt-2">
+            {formData.status ? 'El alquiler estará activo' : 'El alquiler estará inactivo'}
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
