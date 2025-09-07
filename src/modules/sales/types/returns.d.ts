@@ -1,12 +1,12 @@
 export interface returnsAttributes {
-  id: string
+  id?: string
   productId?: string
   salesId?: string
-  storeId: string
+  storeId?: string
   reason: string
-  observations: string
+  observations?: string
   quantity: number
-  price?: number
+  price: number
   createdAt?: Date
   updatedAt?: Date
 }
