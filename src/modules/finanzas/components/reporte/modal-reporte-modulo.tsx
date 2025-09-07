@@ -1,6 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { FiX, FiDownload, FiBarChart, FiFilter, FiCalendar } from 'react-icons/fi';
-import { useFetchModules } from '../../../modules/hook/useModules';
+import React, { useState, useEffect } from "react";
+import {
+  FiX,
+  FiDownload,
+  FiBarChart,
+  FiFilter,
+  FiCalendar,
+} from "react-icons/fi";
+import { useFetchModules } from "../../../modules/hook/useModules";
+import { exportVentasExcel } from "../..//action/exportVentasExcel";
 
 interface ReporteData {
   id: number;
@@ -26,10 +33,10 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
   reportes,
   onExport,
 }) => {
-  const [selectedModulo, setSelectedModulo] = useState<string>('');
+  const [selectedModulo, setSelectedModulo] = useState<string>("");
   const [filtrados, setFiltrados] = useState<ReporteData[]>([]);
-  const [fechaInicio, setFechaInicio] = useState<string>('');
-  const [fechaFin, setFechaFin] = useState<string>('');
+  const [fechaInicio, setFechaInicio] = useState<string>("");
+  const [fechaFin, setFechaFin] = useState<string>("");
 
   // Obtener módulos desde la base de datos
   const { data: modules = [], isLoading: modulesLoading } = useFetchModules();
@@ -39,12 +46,14 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
 
     // Filtrar por módulo
     if (selectedModulo) {
-      reportesFiltrados = reportesFiltrados.filter(r => r.modulo === selectedModulo);
+      reportesFiltrados = reportesFiltrados.filter(
+        (r) => r.modulo === selectedModulo
+      );
     }
 
     // Filtrar por fecha inicio
     if (fechaInicio) {
-      reportesFiltrados = reportesFiltrados.filter(r => {
+      reportesFiltrados = reportesFiltrados.filter((r) => {
         const fechaInicioReporte = new Date(r.fechaInicio);
         const fechaInicioFiltro = new Date(fechaInicio);
         return fechaInicioReporte >= fechaInicioFiltro;
@@ -53,7 +62,7 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
 
     // Filtrar por fecha fin
     if (fechaFin) {
-      reportesFiltrados = reportesFiltrados.filter(r => {
+      reportesFiltrados = reportesFiltrados.filter((r) => {
         if (!r.fechaFin) return false; // Excluir reportes en proceso si hay filtro de fecha fin
         const fechaFinReporte = new Date(r.fechaFin);
         const fechaFinFiltro = new Date(fechaFin);
@@ -67,23 +76,28 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
   if (!isOpen) return null;
 
   // En lugar de usar módulos únicos de reportes, usar todos los módulos disponibles
-  const modulosDisponibles = modules.map(module => module.name);
+  const modulosDisponibles = modules.map((module) => module.name);
 
   // Calcular totales
   const calcularTotales = () => {
     if (filtrados.length === 0) return { ingresos: 0, gastos: 0, ganancia: 0 };
-    
-    const totales = filtrados.reduce((acc, reporte) => {
-      const ingresos = parseFloat(reporte.ingresos.replace(/[^\d.-]/g, '')) || 0;
-      const gastos = parseFloat(reporte.gastos.replace(/[^\d.-]/g, '')) || 0;
-      const ganancia = parseFloat(reporte.ganancia.replace(/[^\d.-]/g, '')) || 0;
-      
-      return {
-        ingresos: acc.ingresos + ingresos,
-        gastos: acc.gastos + gastos,
-        ganancia: acc.ganancia + ganancia
-      };
-    }, { ingresos: 0, gastos: 0, ganancia: 0 });
+
+    const totales = filtrados.reduce(
+      (acc, reporte) => {
+        const ingresos =
+          parseFloat(reporte.ingresos.replace(/[^\d.-]/g, "")) || 0;
+        const gastos = parseFloat(reporte.gastos.replace(/[^\d.-]/g, "")) || 0;
+        const ganancia =
+          parseFloat(reporte.ganancia.replace(/[^\d.-]/g, "")) || 0;
+
+        return {
+          ingresos: acc.ingresos + ingresos,
+          gastos: acc.gastos + gastos,
+          ganancia: acc.ganancia + ganancia,
+        };
+      },
+      { ingresos: 0, gastos: 0, ganancia: 0 }
+    );
 
     return totales;
   };
@@ -93,45 +107,71 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
   const getModuloIcon = (modulo: string) => {
     const moduloLower = modulo.toLowerCase();
     switch (moduloLower) {
-      case 'inventario':
-      case 'inventory': 
-        return '📦';
-      case 'producción':
-      case 'production':
-        return '⚙️';
-      case 'ventas':
-      case 'sales':
-        return '💼';
-      case 'finanzas':
-      case 'finance':
-        return '💰';
-      case 'usuario':
-      case 'user':
-      case 'usuarios':
-      case 'users':
-        return '👥';
-      case 'roles':
-      case 'role':
-        return '🔐';
-      case 'alquileres':
-      case 'rentals':
-      case 'rental':
-        return '🏠';
-      case 'museo':
-      case 'museum':
-        return '🏛️';
-      case 'monasterio':
-      case 'monastery':
-        return '⛪';
-      default: 
-        return '📊';
+      case "inventario":
+      case "inventory":
+        return "📦";
+      case "producción":
+      case "production":
+        return "⚙️";
+      case "ventas":
+      case "sales":
+        return "💼";
+      case "finanzas":
+      case "finance":
+        return "💰";
+      case "usuario":
+      case "user":
+      case "usuarios":
+      case "users":
+        return "👥";
+      case "roles":
+      case "role":
+        return "🔐";
+      case "alquileres":
+      case "rentals":
+      case "rental":
+        return "🏠";
+      case "museo":
+      case "museum":
+        return "🏛️";
+      case "monasterio":
+      case "monastery":
+        return "⛪";
+      default:
+        return "📊";
     }
   };
+  const handleExportExcel = async () => {
+    try {
+      if (!fechaInicio || !fechaFin) {
+        alert("Selecciona un rango de fechas válido");
+        return;
+      }
 
+      // Llamada al backend
+      const blob = await exportVentasExcel(fechaInicio, fechaFin);
+
+      // Crear enlace de descarga
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `reporte_ventas_${fechaInicio}_a_${fechaFin}.xlsx`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error al descargar el Excel:", error);
+      alert("Hubo un error al generar el Excel");
+    }
+  };
   return (
     <div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      onClick={e => e.target === e.currentTarget && onClose()}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl transform transition-all duration-300">
         {/* Header con gradiente */}
@@ -142,10 +182,12 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
               <FiBarChart size={32} className="text-white/90" />
               <div>
                 <h2 className="text-2xl font-bold mb-1">Informe por Módulo</h2>
-                <p className="text-red-100 text-sm">Análisis detallado de reportes por categoría</p>
+                <p className="text-red-100 text-sm">
+                  Análisis detallado de reportes por categoría
+                </p>
               </div>
             </div>
-            <button 
+            <button
               onClick={onClose}
               className="text-white/80 hover:text-white hover:bg-white/20 rounded-full p-2 transition-all duration-200"
             >
@@ -167,12 +209,14 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
               </div>
               <select
                 value={selectedModulo}
-                onChange={e => setSelectedModulo(e.target.value)}
+                onChange={(e) => setSelectedModulo(e.target.value)}
                 disabled={modulesLoading}
                 className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-gray-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 hover:border-gray-300 bg-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">
-                  {modulesLoading ? "Cargando módulos..." : "-- Selecciona un módulo para analizar --"}
+                  {modulesLoading
+                    ? "Cargando módulos..."
+                    : "-- Selecciona un módulo para analizar --"}
                 </option>
                 {modulosDisponibles.map((modulo: string) => (
                   <option key={modulo} value={modulo}>
@@ -215,7 +259,16 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
                 </div>
               </div>
             </div>
-
+            {/* 🚨 Nuevo botón aquí */}
+            <div className="flex justify-center mt-4">
+              <button
+                onClick={handleExportExcel}
+                className="flex items-center gap-2 px-6 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg shadow-md transition-all"
+              >
+                <FiDownload size={18} />
+                Obtener Excel de departamento de ventas
+              </button>
+            </div>
             {/* Resumen de totales */}
             {selectedModulo && filtrados.length > 0 && (
               <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-5 border border-red-200">
@@ -225,7 +278,9 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-600">💰 Ingresos Totales</span>
+                      <span className="text-sm font-medium text-gray-600">
+                        💰 Ingresos Totales
+                      </span>
                       <span className="text-lg font-bold text-green-600">
                         ${totales.ingresos.toLocaleString()}
                       </span>
@@ -233,7 +288,9 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
                   </div>
                   <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-600">💸 Gastos Totales</span>
+                      <span className="text-sm font-medium text-gray-600">
+                        💸 Gastos Totales
+                      </span>
                       <span className="text-lg font-bold text-red-600">
                         ${totales.gastos.toLocaleString()}
                       </span>
@@ -241,7 +298,9 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
                   </div>
                   <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-lg p-4 text-white shadow-md">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-red-100">📈 Ganancia Neta</span>
+                      <span className="text-sm font-medium text-red-100">
+                        📈 Ganancia Neta
+                      </span>
                       <span className="text-lg font-bold">
                         ${totales.ganancia.toLocaleString()}
                       </span>
@@ -249,7 +308,8 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
                   </div>
                 </div>
                 <div className="mt-3 text-sm text-gray-600 text-center">
-                  📊 Basado en {filtrados.length} reporte{filtrados.length !== 1 ? 's' : ''}
+                  📊 Basado en {filtrados.length} reporte
+                  {filtrados.length !== 1 ? "s" : ""}
                 </div>
               </div>
             )}
@@ -262,7 +322,7 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
                     📋 Historial Detallado: {selectedModulo}
                   </h3>
                 </div>
-                
+
                 <div className="overflow-x-auto">
                   <table className="min-w-full">
                     <thead className="bg-gradient-to-r from-red-500 to-red-600 text-white">
@@ -289,17 +349,21 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {filtrados.map((r, index) => (
-                        <tr 
-                          key={r.id} 
+                        <tr
+                          key={r.id}
                           className={`hover:bg-gray-50 transition-colors duration-150 ${
-                            index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                            index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
                           }`}
                         >
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {new Date(r.fechaInicio).toLocaleDateString('es-ES')}
+                            {new Date(r.fechaInicio).toLocaleDateString(
+                              "es-ES"
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                            {r.fechaFin ? new Date(r.fechaFin).toLocaleDateString('es-ES') : (
+                            {r.fechaFin ? (
+                              new Date(r.fechaFin).toLocaleDateString("es-ES")
+                            ) : (
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                                 En proceso
                               </span>
@@ -317,7 +381,9 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
                           <td className="px-6 py-4 text-sm text-gray-700 max-w-xs">
                             <div className="truncate" title={r.observaciones}>
                               {r.observaciones || (
-                                <span className="text-gray-400 italic">Sin observaciones</span>
+                                <span className="text-gray-400 italic">
+                                  Sin observaciones
+                                </span>
                               )}
                             </div>
                           </td>
@@ -328,7 +394,9 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
                           <td colSpan={6} className="px-6 py-12 text-center">
                             <div className="flex flex-col items-center gap-3">
                               <div className="text-4xl text-gray-300">📊</div>
-                              <p className="text-gray-500">No hay reportes disponibles para este módulo.</p>
+                              <p className="text-gray-500">
+                                No hay reportes disponibles para este módulo.
+                              </p>
                             </div>
                           </td>
                         </tr>
