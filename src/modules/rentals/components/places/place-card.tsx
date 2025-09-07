@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { FaUser } from "react-icons/fa";
 import ModalEditPlace from "./modal-edit-place";
 import NewRentalModal from "../modals/new-rental-modal";
-import { Place } from "../../types/places.d";
+import { Place } from "../../types/places";
 import Modal from "@/core/components/ui/Modal";
 import { useCreateRental } from "../../hook/useRentals";
 import { useAuthStore } from "@/core/store/auth";
@@ -14,6 +14,11 @@ interface PlaceCardProps {
   onEdit: (placeId: string, updatedPlace: Partial<Place>) => void;
   onDelete: (params: { id: string, locationId?: string }) => void;
   onViewRentals: (place: Place) => void;
+  // 🔥 NUEVOS PROPS PARA PERMISOS
+  canEdit?: boolean;
+  canDelete?: boolean;
+  canCreate?: boolean;
+  isAdmin?: boolean;
 }
 
 const PlaceCard: React.FC<PlaceCardProps> = ({
@@ -21,6 +26,10 @@ const PlaceCard: React.FC<PlaceCardProps> = ({
   customers,
   onEdit,
   onViewRentals,
+  // 🔥 DESTRUCTURACIÓN DE NUEVOS PROPS DE PERMISOS
+  canEdit = false,
+  canCreate = false,
+  isAdmin = false,
 }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isNewRentalModalOpen, setIsNewRentalModalOpen] = useState(false);
@@ -160,24 +169,24 @@ const PlaceCard: React.FC<PlaceCardProps> = ({
           >
             Alquileres
           </button>
-          <button
-            className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-sm transition-colors"
-            onClick={handleEdit}
-          >
-            Editar
-          </button>
-          <button
-            className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-sm transition-colors"
-            onClick={handleAlquilar}
-          >
-            Alquilar
-          </button>
-          <button
-            className="bg-red-800 hover:bg-red-900 text-white px-2 py-1 rounded text-sm transition-colors"
-            onClick={handleDelete}
-          >
-            Eliminar
-          </button>
+          {/* 🔥 MOSTRAR BOTÓN EDITAR SOLO SI TIENE PERMISOS */}
+          {(canEdit || isAdmin) && (
+            <button
+              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
+              onClick={handleEdit}
+            >
+              Editar
+            </button>
+          )}
+          {/* 🔥 MOSTRAR BOTÓN ALQUILAR SOLO SI TIENE PERMISOS DE CREAR */}
+          {(canCreate || isAdmin) && (
+            <button
+              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
+              onClick={handleAlquilar}
+            >
+              Alquilar
+            </button>
+          )}
         </div>
       </div>
 

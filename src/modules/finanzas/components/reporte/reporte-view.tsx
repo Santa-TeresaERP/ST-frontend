@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Eye, Trash2, FileText, Plus, BarChart3 } from 'lucide-react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState, useEffect } from 'react';
+import { Eye, Trash2, FileText, Plus, BarChart3, ShieldAlert, Loader2 } from 'lucide-react';
 import ModalReporte from './modal-reporte';
 import ModalInformeModulo from './modal-reporte-modulo';
 import {
@@ -11,13 +12,39 @@ import {
 import { useFetchGeneralIncomes } from '../../hooks/useGeneralIncomes';
 import { useFetchGeneralExpenses } from '../../hooks/useGeneralExpenses';
 import { FinancialReport } from '../../types/financialReport';
+import { useModulePermissions } from '@/core/utils/permission-hooks';
+import { MODULE_NAMES } from '@/core/utils/useModulesMap';
+import { suppressAxios403Errors } from '@/core/utils/error-suppressor';
+import { useCurrentUser } from '@/modules/auth/hook/useCurrentUser';
+import { useAuthStore } from '@/core/store/auth';
 
 import ModalListMonthlyExpenses from './modal-list-monthly-expenses';
 
 export default function ReporteComponentView() {
-  const { data: reportes = [], isLoading } = useFetchFinancialReports();
+  // 🔥 HOOKS DE PERMISOS Y AUTENTICACIÓN
+  const {
+    canView: canRead,
+    canCreate,
+    canEdit,
+    canDelete,
+    isLoading: permissionsLoading,
+    isAdmin
+  } = useModulePermissions(MODULE_NAMES.FINANZAS);
+
+  const { data: currentUser } = useCurrentUser();
+  const userWithPermissions = useAuthStore((state) => state.userWithPermissions);
+
+  // 🔥 ESTADO PARA DETECCIÓN DE ERRORES 403
+  const [is403Error, setIs403Error] = useState(false);
+
+  // 🔥 HOOKS DE DATOS
+  const { data: reportes = [], isLoading, error: reportesError } = useFetchFinancialReports();
   const { data: incomes = [], isLoading: incomesLoading, error: incomesError } = useFetchGeneralIncomes();
   const { data: expenses = [], isLoading: expensesLoading, error: expensesError } = useFetchGeneralExpenses();
+
+  // Suprimir errores 403 después de obtener los hooks
+  suppressAxios403Errors();
+
   const createReport = useCreateFinancialReport();
   const updateReport = useUpdateFinancialReport();
   const deleteReport = useDeleteFinancialReport();
@@ -35,19 +62,107 @@ export default function ReporteComponentView() {
   // Calcular totales actuales para el reporte activo con mayor precisión
   const currentTotalIncome = React.useMemo(() => {
     return incomes
-      .filter(income => !income.report_id)
-      .reduce((sum, income) => sum + Number(income.amount || 0), 0);
+      .filter((income: any) => !income.report_id)
+      .reduce((sum: number, income: any) => sum + Number(income.amount || 0), 0);
   }, [incomes]);
 
   const currentTotalExpenses = React.useMemo(() => {
     return expenses
-      .filter(expense => !expense.report_id)
-      .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+      .filter((expense: any) => !expense.report_id)
+      .reduce((sum: number, expense: any) => sum + Number(expense.amount || 0), 0);
   }, [expenses]);
 
   const currentNetProfit = React.useMemo(() => {
     return currentTotalIncome - currentTotalExpenses;
   }, [currentTotalIncome, currentTotalExpenses]);
+
+  // 🔥 VERIFICAR ERRORES 403 Y PERMISOS REVOCADOS
+  const checkFor403Error = (error: unknown) => {
+    return error && (
+      (error as any).message?.includes('403') ||
+      (error as any).response?.status === 403 ||
+      (error as any).status === 403
+    );
+  };
+
+  // 🔥 DETECCIÓN DE PERMISOS REVOCADOS
+  useEffect(() => {
+    const has403 = checkFor403Error(reportesError) || 
+                   checkFor403Error(incomesError) || 
+                   checkFor403Error(expensesError);
+    
+    if (has403 && !is403Error) {
+      console.log('🚨 Permisos revocados detectados en finanzas');
+      setIs403Error(true);
+      
+      // Auto-reload después de 2 segundos
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    }
+  }, [reportesError, incomesError, expensesError, is403Error]);
+
+  // 🔥 PANTALLA DE ACCESO DENEGADO
+  if (permissionsLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Verificando permisos...</h2>
+          <p className="text-gray-600">Cargando acceso al módulo de finanzas</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canRead && !isAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center">
+        <div className="max-w-md w-full text-center p-8">
+          <div className="mb-6">
+            <ShieldAlert className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Acceso Restringido</h2>
+            <p className="text-gray-600">No tienes permisos para acceder al módulo de finanzas</p>
+          </div>
+          <button
+            onClick={() => window.history.back()}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Volver
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (is403Error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center">
+        <div className="max-w-md w-full text-center p-8">
+          <div className="mb-6">
+            <ShieldAlert className="w-16 h-16 text-orange-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Permisos Revocados</h2>
+            <p className="text-gray-600 mb-4">Tus permisos han sido modificados. La página se recargará automáticamente.</p>
+            <Loader2 className="w-6 h-6 animate-spin text-orange-500 mx-auto" />
+          </div>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+            >
+              Recargar Ahora
+            </button>
+            <button
+              onClick={() => window.history.back()}
+              className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Volver
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Debug: Agregar logs para verificar los datos
   console.log('🔍 Debug Estado Reportes:', {
@@ -211,6 +326,42 @@ export default function ReporteComponentView() {
     // Aquí puedes implementar la lógica de exportación
   };
 
+  // 🔥 DEBUG PANEL - Información de permisos para desarrollo
+  console.log('🔍 Debug Panel Finanzas:', {
+    // Información del usuario
+    currentUser: currentUser ? {
+      name: currentUser.name,
+      email: currentUser.email,
+      role: currentUser.Role?.name
+    } : null,
+    
+    // Estado de permisos
+    permissions: {
+      canRead,
+      canCreate,
+      canEdit,
+      canDelete,
+      isAdmin,
+      permissionsLoading
+    },
+    
+    // Estado de errores 403
+    errorState: {
+      is403Error,
+      reportesError: reportesError?.message,
+      incomesError: incomesError?.message,
+      expensesError: expensesError?.message
+    },
+    
+    // Datos del usuario con permisos
+    userPermissions: userWithPermissions ? {
+      userId: userWithPermissions.id,
+      userName: userWithPermissions.name,
+      roleName: userWithPermissions.Role?.name,
+      permissionsCount: userWithPermissions.Role?.Permissions?.length || 0
+    } : null
+  });
+
 
 
   return (
@@ -243,29 +394,24 @@ export default function ReporteComponentView() {
             </div>
 
             <div className="flex gap-3">
-              <button
-                onClick={() => setIsInformeOpen(true)}
-                className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl font-medium hover:from-gray-700 hover:to-gray-800 transition-all shadow-lg"
-              >
-                <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="text-sm sm:text-base">Informe por Módulo</span>
-              </button>
-
-               <button
-                onClick={() => setMonthlyModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-xl font-medium hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg"
-              >
-                <BarChart3 className="w-4 h-4" /> {/* Puedes usar otro ícono si prefieres */}
-                Gastos Mensuales
-              </button>
-
-              <button
-                onClick={handleOpenModal}
-                className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-red-700 transition-all shadow-lg"
-              >
-                <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="text-sm sm:text-base">{hasReports && activeReport ? 'Finalizar Reporte' : 'Nuevo Reporte'}</span>
-              </button>
+              {(canRead || isAdmin) && (
+                <button
+                  onClick={() => setIsInformeOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl font-medium hover:from-gray-700 hover:to-gray-800 transition-all shadow-lg"
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  Informe por Módulo
+                </button>
+              )}
+              {(canCreate || canEdit || isAdmin) && (
+                <button
+                  onClick={handleOpenModal}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-red-700 transition-all shadow-lg"
+                >
+                  <Plus className="w-4 h-4" />
+                  {hasReports && activeReport ? 'Finalizar Reporte' : 'Nuevo Reporte'}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -341,20 +487,24 @@ export default function ReporteComponentView() {
                       </td>
                       <td className="px-3 py-2 sm:px-6 sm:py-4">
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setSelectedReporte(r)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all hover:scale-105"
-                            title="Ver detalles"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(r.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all hover:scale-105"
-                            title="Eliminar"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {(canRead || isAdmin) && (
+                            <button
+                              onClick={() => setSelectedReporte(r)}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all hover:scale-105"
+                              title="Ver detalles"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          )}
+                          {(canDelete || isAdmin) && (
+                            <button
+                              onClick={() => handleDelete(r.id)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all hover:scale-105"
+                              title="Eliminar"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

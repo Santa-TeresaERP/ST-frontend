@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useMemo, useState } from 'react';
 import {
   Plus,
@@ -8,7 +9,9 @@ import {
   DollarSign,
   Calendar,
   ListChecks,
-  Target
+  Target,
+  ShieldAlert,
+  Loader2
 } from 'lucide-react';
 
 import ModalAddEntrada from './modal-create-ingreso-gasto';
@@ -40,6 +43,8 @@ import {
 } from '../../types/generalIncome';
 
 import { useFetchModules } from '../../../modules/hook/useModules'; // Ajusta ruta
+import { useModulePermissions } from '@/core/utils/permission-hooks';
+import { MODULE_NAMES } from '@/core/utils/useModulesMap';
 
 interface DetalleReporteProps {
   reporte: {
@@ -71,6 +76,17 @@ const formatDate = (dateStr: string) => {
   const year = d.getFullYear();
   return `${day}/${month}/${year}`;
 };
+
+export default function DetalleReporte({ reporte }: DetalleReporteProps) {
+  // 🔥 HOOKS DE PERMISOS
+  const {
+    canView: canRead,
+    canCreate,
+    canEdit,
+    canDelete,
+    isLoading: permissionsLoading,
+    isAdmin
+  } = useModulePermissions(MODULE_NAMES.FINANZAS);
 
 export default function DetalleReporte({ reporte, reportId }: DetalleReporteProps) {
   const [tab, setTab] = useState<'ingresos' | 'gastos'>('ingresos');
@@ -137,7 +153,39 @@ export default function DetalleReporte({ reporte, reportId }: DetalleReporteProp
   const formatoMoneda = (valor: number) =>
     `S/. ${valor.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
 
-  
+  // 🔥 VERIFICACIONES DE ACCESO ANTES DE RENDERIZAR
+  if (permissionsLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Verificando permisos...</h2>
+          <p className="text-gray-600">Cargando acceso al detalle de finanzas</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canRead && !isAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="max-w-md w-full text-center p-8">
+          <div className="mb-6">
+            <ShieldAlert className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Acceso Restringido</h2>
+            <p className="text-gray-600">No tienes permisos para ver los detalles de finanzas</p>
+          </div>
+          <button
+            onClick={() => window.history.back()}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Volver
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Guardar nuevo ingreso o gasto
   const handleSave = (
     payload: CreateIncomePayload | CreateExpensePayload
@@ -315,17 +363,19 @@ export default function DetalleReporte({ reporte, reportId }: DetalleReporteProp
                 </button>
               </div>
 
-              <button
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105 shadow-lg ${
-                  tab === 'ingresos'
-                    ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
-                    : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'
-                }`}
-                onClick={() => setIsAddOpen(true)}
-              >
-                <Plus className="w-4 h-4" />
-                Agregar {tab === 'ingresos' ? 'Ingreso' : 'Gasto'}
-              </button>
+              {(canCreate || isAdmin) && (
+                <button
+                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105 shadow-lg ${
+                    tab === 'ingresos'
+                      ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
+                      : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'
+                  }`}
+                  onClick={() => setIsAddOpen(true)}
+                >
+                  <Plus className="w-4 h-4" />
+                  Agregar {tab === 'ingresos' ? 'Ingreso' : 'Gasto'}
+                </button>
+              )}
             </div>
           </div>
 
@@ -422,45 +472,49 @@ export default function DetalleReporte({ reporte, reportId }: DetalleReporteProp
                         </td>
                         <td className="py-4 px-6">
                           <div className="flex justify-center gap-2">
-                            <button
-                              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                              title="Editar"
-                              onClick={() => {
-                                setEntryToEdit({
-                                  id: entry.id,
-                                  module_id: entry.module_id || '',
-                                  income_type:
-                                    tab === 'ingresos'
-                                      ? (entry as GeneralIncome).income_type
-                                      : (entry as GeneralExpense).expense_type,
-                                  amount:
-                                    tab === 'ingresos'
-                                      ? (entry as GeneralIncome).amount
-                                      : (entry as GeneralExpense).amount,
-                                  date:
-                                    tab === 'ingresos'
-                                      ? (entry as GeneralIncome).date
-                                      : (entry as GeneralExpense).date,
-                                  description:
-                                    tab === 'ingresos'
-                                      ? (entry as GeneralIncome).description ?? ''
-                                      : (entry as GeneralExpense).description ?? '',
-                                });
-                                setIsEditOpen(true);
-                              }}
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                            <button
-                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                              title="Eliminar"
-                              onClick={() => {
-                                setEntryToDelete(entry);
-                                setIsDeleteOpen(true);
-                              }}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            {(canEdit || isAdmin) && (
+                              <button
+                                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                                title="Editar"
+                                onClick={() => {
+                                  setEntryToEdit({
+                                    id: entry.id,
+                                    module_id: entry.module_id || '',
+                                    income_type:
+                                      tab === 'ingresos'
+                                        ? (entry as GeneralIncome).income_type
+                                        : (entry as GeneralExpense).expense_type,
+                                    amount:
+                                      tab === 'ingresos'
+                                        ? (entry as GeneralIncome).amount
+                                        : (entry as GeneralExpense).amount,
+                                    date:
+                                      tab === 'ingresos'
+                                        ? (entry as GeneralIncome).date
+                                        : (entry as GeneralExpense).date,
+                                    description:
+                                      tab === 'ingresos'
+                                        ? (entry as GeneralIncome).description ?? ''
+                                        : (entry as GeneralExpense).description ?? '',
+                                  });
+                                  setIsEditOpen(true);
+                                }}
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                            )}
+                            {(canDelete || isAdmin) && (
+                              <button
+                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                                title="Eliminar"
+                                onClick={() => {
+                                  setEntryToDelete(entry);
+                                  setIsDeleteOpen(true);
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
