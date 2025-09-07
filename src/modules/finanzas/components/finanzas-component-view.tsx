@@ -7,18 +7,49 @@ import { useFetchFinancialReports } from '../../finanzas/hooks/useFinancialRepor
 import { FinancialReport } from '../../finanzas/types/financialReport'; // Ajusta ruta si es necesario
 import { useModulePermissions } from '@/core/utils/permission-hooks';
 import { MODULE_NAMES } from '@/core/utils/useModulesMap';
+import { suppressAxios403Errors } from '@/core/utils/error-suppressor';
+import { useCurrentUser } from '@/modules/auth/hook/useCurrentUser';
+import { useAuthStore } from '@/core/store/auth';
 
 const FinanzasComponentView: React.FC = () => {
+  // 🔥 OBTENER USUARIO ACTUAL CON SUS PERMISOS DESDE /auth/me
+  const { user } = useAuthStore();
+  const { data: currentUserWithPermissions, isLoading: usersLoading } = useCurrentUser();
+
   // 🔥 HOOK DE PERMISOS
   const { canView, canCreate, canEdit, canDelete, isLoading, isAdmin } = useModulePermissions(MODULE_NAMES.FINANZAS);
   
   const [selectedView, setSelectedView] = useState<'general' | 'detalle'>('general');
 
   // Fetch reportes para poder seleccionar uno y pasarlo a DetalleReporte
-  const { data: reportes = [], isLoading: loadingReportes } = useFetchFinancialReports();
+  const { data: reportes = [], isLoading: loadingReportes, error } = useFetchFinancialReports();
 
   // id del reporte seleccionado para ver el detalle
   const [selectedReportId, setSelectedReportId] = useState<string | undefined>(undefined);
+
+  // 🔥 VERIFICAR ERROR 403 INMEDIATAMENTE - SIN USAR PERMISOS DINÁMICOS SI HAY ERROR
+  const is403Error = error && (error.message.includes('403') || error.message.includes('Forbidden'));
+
+  // 🔥 ACTIVAR SUPRESOR DE ERRORES 403 EN LA CONSOLA
+  useEffect(() => {
+    suppressAxios403Errors();
+  }, []);
+
+  // 🔥 DEBUG: Ver permisos actuales en desarrollo
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 FinanzasComponent - Análisis de Permisos:', {
+        userId: user?.id,
+        userFound: !!currentUserWithPermissions,
+        roleName: (currentUserWithPermissions as any)?.Role?.name,
+        moduleName: MODULE_NAMES.FINANZAS,
+        permisos: { canView, canCreate, canEdit, canDelete, isAdmin },
+        usersLoading,
+        hasError: !!error,
+        is403Error
+      });
+    }
+  }, [user, currentUserWithPermissions, canView, canCreate, canEdit, canDelete, isAdmin, usersLoading, error, is403Error]);
 
   // Cuando cambian los reportes, selecciono el primero por defecto (si existe)
   useEffect(() => {
@@ -33,6 +64,18 @@ const FinanzasComponentView: React.FC = () => {
       setSelectedView('detalle');
     }
   }, [canCreate, isAdmin, selectedView]);
+
+  // 🔥 DETECTAR CAMBIOS EN PERMISOS Y FORZAR RECARGA SI ES NECESARIO
+  useEffect(() => {
+    // Si detectamos un error 403 después de que el usuario ya estaba autenticado
+    // esto significa que sus permisos fueron revocados
+    if (is403Error && currentUserWithPermissions) {
+      console.warn('⚠️ Permisos revocados detectados en Finanzas - recargando página');
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000); // Dar tiempo para mostrar el mensaje
+    }
+  }, [is403Error, currentUserWithPermissions]);
 
   // Encuentro el reporte completo a pasar a DetalleReporte y hago el mapeo de campos
   const selectedReporteFull: FinancialReport | undefined = reportes.find(r => r.id === selectedReportId);
@@ -51,8 +94,8 @@ const FinanzasComponentView: React.FC = () => {
 
   const detalleProp = mapToDetalleReporteProp(selectedReporteFull);
 
-  // 🔥 VERIFICACIÓN DE PERMISOS DE LECTURA
-  if (isLoading) {
+  // 🔥 VERIFICACIÓN DE CARGA INICIAL (usuarios + permisos)
+  if (isLoading || usersLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -63,6 +106,39 @@ const FinanzasComponentView: React.FC = () => {
     );
   }
 
+  // 🔥 VERIFICAR ERROR 403 INMEDIATAMENTE - NO ESPERAR A PERMISOS
+  if (is403Error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 text-center">
+          <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-700 mb-2">Permisos Revocados</h2>
+          <p className="text-gray-600 mb-4">
+            Tus permisos para acceder al módulo de Finanzas han sido modificados o revocados.
+          </p>
+          <p className="text-sm text-gray-500 mb-6">
+            Contacta al administrador para obtener acceso o la página se recargará automáticamente.
+          </p>
+          <div className="flex gap-2 justify-center">
+            <button 
+              onClick={() => window.location.reload()}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+            >
+              Recargar Ahora
+            </button>
+            <button 
+              onClick={() => window.history.back()}
+              className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+            >
+              Volver
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 🔥 VERIFICACIÓN ADICIONAL DE PERMISOS LOCALES (solo si no hay error 403)
   if (!canView) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -94,16 +170,21 @@ const FinanzasComponentView: React.FC = () => {
         <p className="text-gray-600 text-center">Gestión de reportes generales y detalles</p>
         
         {/* 🔥 DEBUG PANEL DE PERMISOS - Temporal */}
-        <div className="mt-4 p-3 bg-gray-100 rounded-lg text-xs text-center">
-          <p className="font-mono">
-            📋 Permisos FINANZAS - 
-            Ver: {canView ? '✅' : '❌'} | 
-            Crear: {canCreate ? '✅' : '❌'} | 
-            Editar: {canEdit ? '✅' : '❌'} | 
-            Eliminar: {canDelete ? '✅' : '❌'} | 
-            Admin: {isAdmin ? '✅' : '❌'}
-          </p>
-        </div>
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-4 p-3 bg-gray-100 rounded-lg text-xs text-center">
+            <p className="font-mono">
+              📋 Permisos FINANZAS - 
+              Usuario: {(currentUserWithPermissions as any)?.name || 'No encontrado'} | 
+              Rol: {(currentUserWithPermissions as any)?.Role?.name || 'Sin rol'} | 
+              Ver: {canView ? '✅' : '❌'} | 
+              Crear: {canCreate ? '✅' : '❌'} | 
+              Editar: {canEdit ? '✅' : '❌'} | 
+              Eliminar: {canDelete ? '✅' : '❌'} | 
+              Admin: {isAdmin ? '✅' : '❌'} |
+              Error403: {is403Error ? '⚠️' : '✅'}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Navigation */}
@@ -170,6 +251,7 @@ const FinanzasComponentView: React.FC = () => {
       <div className="bg-white rounded-2xl shadow-md overflow-hidden p-6 text-center text-gray-600 min-h-[300px]">
         {selectedView === 'general' && (
           <>
+            {/* 🔥 PASAR PERMISOS AL COMPONENTE DE REPORTE */}
             <ReporteComponentView />
             <div className="my-6" />
           </>
