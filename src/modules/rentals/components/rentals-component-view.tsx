@@ -92,12 +92,12 @@ const RentalsComponentView = () => {
     console.log('Editar place:', placeId, updatedPlace);
   };
 
-  const handleDeletePlace = React.useCallback((placeId: string) => {
+  const handleDeletePlace = React.useCallback((params: { id: string, locationId?: string }) => {
     const confirmDelete = window.confirm(
       "¿Estás seguro que deseas eliminar este lugar?"
     );
     if (confirmDelete) {
-      deletePlace(placeId, {
+      deletePlace(params, {
         onSuccess: () => {
           console.log("Lugar eliminado correctamente");
           setCurrentPage(1);
@@ -279,8 +279,8 @@ const RentalsComponentView = () => {
 
       {/* Lugares en la Localización */}
       {selectedLocation ? (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex justify-between items-center mb-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-3 sm:space-y-0">
             <div className="flex items-center space-x-2">
               <MdLocationOn className="text-red-600" size={24} />
               <h2 className="text-xl font-bold text-red-600">Lugares en {selectedLocation.nombre}</h2>
@@ -293,20 +293,6 @@ const RentalsComponentView = () => {
               + Nuevo Lugar
             </button>
           </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-3 sm:space-y-0">
-             <div className="flex items-center space-x-2">
-               <MdLocationOn className="text-red-600" size={24} />
-               <h2 className="text-xl font-bold text-red-600">Lugares en {selectedLocation.name}</h2>
-             </div>
- 
-             <button
-               onClick={() => setIsCreatePlaceModalOpen(true)}
-               className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
-             >
-               + Nuevo Lugar
-             </button>
-           </div>
 
           {places.length > 0 ? (
             <>
