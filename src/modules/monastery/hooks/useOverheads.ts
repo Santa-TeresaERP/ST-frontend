@@ -25,7 +25,9 @@ export const useCreateOverhead = () => {
   return useMutation<Overhead, Error, CreateOverheadPayload>({
     mutationFn: createOverhead,
     onSuccess: () => {
+      // Invalidate both the main overheads query and the monthly expenses query
       queryClient.invalidateQueries({ queryKey: [OVERHEADS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: ['monthlyExpenses'] });
     },
   });
 };
@@ -36,7 +38,9 @@ export const useCreateMonasterioOverhead = () => {
   return useMutation<Overhead, Error, Omit<CreateOverheadPayload, 'type'>>({
     mutationFn: createMonasterioOverhead,
     onSuccess: () => {
+      // Invalidate both the main overheads query and the monthly expenses query
       queryClient.invalidateQueries({ queryKey: [OVERHEADS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: ['monthlyExpenses'] });
     },
   });
 };

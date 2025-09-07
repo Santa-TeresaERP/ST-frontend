@@ -26,9 +26,9 @@ const Places: React.FC = () => {
     setEditingPlace(null);
   };
 
-  const handleDelete = async (placeId: string) => {
+  const handleDelete = async ({ id, locationId }: { id: string, locationId?: string }) => {
     try {
-      await deletePlace.mutateAsync(placeId);
+      await deletePlace.mutateAsync({ id, locationId });
     } catch (error) {
       console.error('Error eliminando lugar:', error);
     }
