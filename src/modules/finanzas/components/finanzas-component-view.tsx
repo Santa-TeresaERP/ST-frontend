@@ -14,10 +14,17 @@ const FinanzasComponentView: React.FC = () => {
   // id del reporte seleccionado para ver el detalle
   const [selectedReportId, setSelectedReportId] = useState<string | undefined>(undefined);
 
-  // Cuando cambian los reportes, selecciono el primero por defecto (si existe)
+  // Cuando cambian los reportes, selecciono el que está en proceso por defecto.
   useEffect(() => {
     if (reportes.length > 0 && !selectedReportId) {
-      setSelectedReportId(reportes[0].id);
+      const inProcessReport = reportes.find(r => !r.end_date);
+      if (inProcessReport) {
+        setSelectedReportId(inProcessReport.id);
+      } else if (reportes.length > 0) {
+        // Fallback si no hay ninguno en proceso, selecciona el más reciente
+        const sortedReports = [...reportes].sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
+        setSelectedReportId(sortedReports[0].id);
+      }
     }
   }, [reportes, selectedReportId]);
 
@@ -105,7 +112,7 @@ const FinanzasComponentView: React.FC = () => {
               {loadingReportes ? (
                 <div className="text-sm text-gray-500">Cargando reportes...</div>
               ) : reportes.length === 0 ? (
-                <div className="text-sm text-gray-500">No hay reportes disponibles. Crea uno en "Reporte General".</div>
+                <div className="text-sm text-gray-500">No hay reportes disponibles. Crea uno en Reporte General.</div>
               ) : (
                 <>
                   <label className="text-sm font-medium text-gray-700">Seleccionar reporte:</label>
@@ -114,11 +121,15 @@ const FinanzasComponentView: React.FC = () => {
                     value={selectedReportId ?? ''}
                     onChange={(e) => setSelectedReportId(e.target.value)}
                   >
-                    {reportes.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        { (r as any).name ?? `${new Date(r.start_date).toLocaleDateString('es-PE')} (${r.id.slice(0,6)})` }
-                      </option>
-                    ))}
+                    {reportes.map((r) => {
+                      const startDate = new Date(r.start_date).toLocaleDateString('es-PE');
+                      const endDate = r.end_date ? new Date(r.end_date).toLocaleDateString('es-PE') : '...';
+                      return (
+                        <option key={r.id} value={r.id}>
+                          {`(${startDate} - ${endDate})`}
+                        </option>
+                      );
+                    })}
                   </select>
                 </>
               )}
@@ -126,7 +137,7 @@ const FinanzasComponentView: React.FC = () => {
 
             {/* Si hay un reporte seleccionado, lo pasamos como prop */}
             {detalleProp ? (
-              <DetalleReporte reporte={detalleProp} />
+              <DetalleReporte reporte={detalleProp} reportId={selectedReportId} />
             ) : (
               <div className="text-sm text-gray-500">Selecciona un reporte para ver su detalle</div>
             )}

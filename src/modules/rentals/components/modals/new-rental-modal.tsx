@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FiPlus, FiUser, FiCheck, FiX } from 'react-icons/fi';
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/core/store/auth";
 import { useFetchCustomers } from '../../hook/useCustomers';
 import { Customer } from '../../types/customer';
@@ -22,6 +23,7 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({
   onSubmit,
 }) => {
   const { user } = useAuthStore();
+  const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
     customerId: '',
@@ -36,9 +38,10 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState('');
+  const [isCustomerLoading, setIsCustomerLoading] = useState(false);
 
   // Hook para obtener customers
-  const { data: customers = [] } = useFetchCustomers();
+  const { data: customers = [], refetch: refetchCustomers } = useFetchCustomers();
 
   // Filtrar customers basado en la búsqueda
   const filteredCustomers = customers.filter((customer: Customer) =>
@@ -124,10 +127,18 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({
   };
 
   const handleCustomerCreated = (newCustomer: Customer) => {
-    setFormData(prev => ({ ...prev, customerId: newCustomer.id }));
-    setCustomerSearchQuery(newCustomer.full_name);
+    setIsCustomerLoading(true);
     setIsCreateCustomerModalOpen(false);
     setNewCustomerName('');
+
+    // Invalidate and refetch customers
+    queryClient.invalidateQueries({ queryKey: ['customers'] }).then(() => {
+      refetchCustomers().then(() => {
+        setFormData(prev => ({ ...prev, customerId: newCustomer.id }));
+        setCustomerSearchQuery(newCustomer.full_name);
+        setIsCustomerLoading(false);
+      });
+    });
   };
 
   return (
@@ -157,8 +168,15 @@ const NewRentalModal: React.FC<NewRentalModalProps> = ({
                 className="w-full p-2 border-2 border-orange-400 rounded text-gray-700 focus:outline-none focus:border-red-500"
                 placeholder="Buscar cliente..."
                 required
+                disabled={isCustomerLoading}
               />
               
+              {isCustomerLoading && (
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-500"></div>
+                </div>
+              )}
+
               {/* Dropdown de customers */}
               {showCustomerDropdown && filteredCustomers.length > 0 && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">

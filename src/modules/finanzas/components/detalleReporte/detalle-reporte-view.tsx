@@ -49,6 +49,7 @@ interface DetalleReporteProps {
     fechaFin?: string;
     observaciones?: string;
   };
+  reportId?: string;
 }
 
 type EditEntry = {
@@ -71,7 +72,7 @@ const formatDate = (dateStr: string) => {
   return `${day}/${month}/${year}`;
 };
 
-export default function DetalleReporte({ reporte }: DetalleReporteProps) {
+export default function DetalleReporte({ reporte, reportId }: DetalleReporteProps) {
   const [tab, setTab] = useState<'ingresos' | 'gastos'>('ingresos');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -82,17 +83,46 @@ export default function DetalleReporte({ reporte }: DetalleReporteProps) {
   const { data: modules = [] } = useFetchModules();
 
   // Hooks para ingresos
-  const { data: ingresos = [], isLoading: loadingIngresos } = useFetchGeneralIncomes();
+  const { data: allIngresos = [], isLoading: loadingIngresos } = useFetchGeneralIncomes();
   const createIngreso = useCreateGeneralIncome();
   const updateIngreso = useUpdateGeneralIncome();
   const deleteIngreso = useDeleteGeneralIncome();
 
   // Hooks para gastos
-  const { data: gastos = [], isLoading: loadingGastos } = useFetchGeneralExpenses();
+  const { data: allGastos = [], isLoading: loadingGastos } = useFetchGeneralExpenses();
   const createGasto = useCreateGeneralExpense();
   const updateGasto = useUpdateGeneralExpense();
   const deleteGasto = useDeleteGeneralExpense();
 
+  const ingresos = useMemo(() => {
+    const isInProcess = reporte && !reporte.fechaFin;
+
+    if (isInProcess) {
+      // Si el reporte está en proceso, muestra los de este reporte Y los que no tienen reporte
+      return allIngresos.filter(i => i.report_id === reportId || i.report_id === null);
+    }
+    
+    if (reportId) {
+      // Si es un reporte cerrado, muestra solo los de ese reporte
+      return allIngresos.filter(i => i.report_id === reportId);
+    }
+    
+    return []; // Si no hay reporte seleccionado, no muestra nada
+  }, [allIngresos, reportId, reporte]);
+
+  const gastos = useMemo(() => {
+    const isInProcess = reporte && !reporte.fechaFin;
+
+    if (isInProcess) {
+      return allGastos.filter(g => g.report_id === reportId || g.report_id === null);
+    }
+    
+    if (reportId) {
+      return allGastos.filter(g => g.report_id === reportId);
+    }
+
+    return [];
+  }, [allGastos, reportId, reporte]);
   // Totales y formato
   // <-- corrección: convertir explícitamente a Number para evitar concatenación de strings
   const ingresosTotales = useMemo(
