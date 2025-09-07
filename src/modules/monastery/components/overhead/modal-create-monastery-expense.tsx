@@ -58,14 +58,20 @@ const ModalCreateMonasteryExpense: React.FC<Props> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-        <div className="flex justify-between items-center p-4 border-b">
-          <h3 className="text-xl font-semibold text-gray-800">Registrar Nuevo Gasto</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X size={24} />
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-center p-4">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md mx-4 sm:mx-auto overflow-hidden">
+        {/* Encabezado rojo — estilo actualizado para coincidir con otros modales */}
+        <div className="bg-gradient-to-r from-red-700 to-red-600 text-white p-4 sm:p-5 rounded-t-2xl flex items-center justify-center relative">
+          <button
+            onClick={onClose}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:opacity-90"
+            aria-label="Cerrar"
+          >
+            <X size={22} />
           </button>
+          <h3 className="text-lg sm:text-xl font-semibold">Registrar Nuevo Gasto</h3>
         </div>
+
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="p-4 space-y-4">
             {/* Campo Nombre */}
