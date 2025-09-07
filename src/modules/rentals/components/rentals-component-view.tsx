@@ -130,13 +130,13 @@ const RentalsComponentView = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 max-w-md sm:max-w-3xl lg:max-w-5xl mx-auto">
       <h1 className="text-4xl font-bold text-center text-red-600 pb-6">Alquileres</h1>
 
       {/* Selector de Locaciones */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex-1">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-3 sm:space-y-0">
+           <div className="flex-1">
             {(() => {
               if (locationsLoading) {
                 return (
@@ -193,14 +193,14 @@ const RentalsComponentView = () => {
           </div>
 
           <button
-            className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm"
+            className="mt-3 sm:mt-0 sm:ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm"
             onClick={() => setIsCreateLocationModalOpen(true)}
           >
             + Nueva locación
           </button>
 
           <button
-            className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+            className="mt-3 sm:mt-0 sm:ml-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
             onClick={() => setIsCustomerPanelOpen(true)}
           >
             👥 Ver clientes
@@ -210,7 +210,7 @@ const RentalsComponentView = () => {
 
       {/* Información de la Localización */}
       {selectedLocation ? (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center space-x-2">
               <MdLocationOn className="text-red-600" size={24} />
@@ -271,20 +271,20 @@ const RentalsComponentView = () => {
 
       {/* Lugares en la Localización */}
       {selectedLocation ? (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center space-x-2">
-              <MdLocationOn className="text-red-600" size={24} />
-              <h2 className="text-xl font-bold text-red-600">Lugares en {selectedLocation.name}</h2>
-            </div>
-
-            <button
-              onClick={() => setIsCreatePlaceModalOpen(true)}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
-            >
-              + Nuevo Lugar
-            </button>
-          </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-3 sm:space-y-0">
+             <div className="flex items-center space-x-2">
+               <MdLocationOn className="text-red-600" size={24} />
+               <h2 className="text-xl font-bold text-red-600">Lugares en {selectedLocation.name}</h2>
+             </div>
+ 
+             <button
+               onClick={() => setIsCreatePlaceModalOpen(true)}
+               className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+             >
+               + Nuevo Lugar
+             </button>
+           </div>
 
           {places.length > 0 ? (
             <>
@@ -401,8 +401,8 @@ const RentalsComponentView = () => {
       {/* Panel lateral de clientes */}
       {isCustomerPanelOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50">
-          <div className="fixed right-0 top-0 h-full w-96 bg-white shadow-xl transform transition-transform duration-300 ease-in-out overflow-y-auto">
-            <div className="p-6">
+          <div className="fixed right-0 top-0 h-full w-full sm:w-96 bg-white shadow-xl transform transition-transform duration-300 ease-in-out overflow-y-auto">
+            <div className="p-4 sm:p-6">
               {/* Header del panel */}
               <div className="flex justify-between items-center mb-6 border-b pb-4">
                 <h2 className="text-xl font-bold text-gray-800 flex items-center space-x-2">
