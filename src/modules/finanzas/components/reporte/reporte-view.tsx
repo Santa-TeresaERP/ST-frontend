@@ -213,42 +213,42 @@ export default function ReporteComponentView() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 p-4 sm:p-8">
       <div className="max-w-3xl sm:max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-center gap-2 sm:gap-4 mb-6 sm:mb-8">
           <div className="p-2 sm:p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl shadow-lg">
             <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-xl sm:text-3xl md:text-4xl font-bold bg-blue-600 bg-clip-text text-transparent">
               Reportes Financieros Generales
             </h1>
-            <p className="text-gray-500 mt-1 text-left text-sm sm:text-base">Gestiona y analiza tus reportes financieros</p>
+            <p className="text-gray-500 mt-1 text-left text-xs sm:text-base">Gestiona y analiza tus reportes financieros</p>
           </div>
         </div>
 
         {/* Actions Bar */}
-        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 mb-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-center gap-3">
+        <div className="bg-white rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100 mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="p-2 bg-gradient-to-r from-red-500 to-red-600 rounded-xl">
                 <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
-              <h2 className="text-lg sm:text-xl font-bold text-gray-800">Reportes Activos</h2>
-              <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs sm:text-sm font-medium rounded-full">
+              <h2 className="text-base sm:text-xl font-bold text-gray-800">Reportes Activos</h2>
+              <span className="px-2 py-1 sm:px-3 sm:py-1 bg-gray-100 text-gray-600 text-xs sm:text-sm font-medium rounded-full">
                 {reportes.length} reportes
               </span>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2 sm:gap-3 mt-2 sm:mt-0">
               <button
                 onClick={() => setIsInformeOpen(true)}
-                className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl font-medium hover:from-gray-700 hover:to-gray-800 transition-all shadow-lg"
+                className="flex items-center gap-2 justify-center px-3 py-2 sm:px-4 sm:py-2.5 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl font-medium hover:from-gray-700 hover:to-gray-800 transition-all shadow-lg w-full sm:w-auto"
               >
                 <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="text-sm sm:text-base">Informe por Módulo</span>
               </button>
               <button
                 onClick={handleOpenModal}
-                className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-red-700 transition-all shadow-lg"
+                className="flex items-center gap-2 justify-center px-3 py-2 sm:px-4 sm:py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-red-700 transition-all shadow-lg w-full sm:w-auto"
               >
                 <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="text-sm sm:text-base">{hasReports && activeReport ? 'Finalizar Reporte' : 'Nuevo Reporte'}</span>

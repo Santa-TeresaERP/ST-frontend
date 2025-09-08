@@ -180,8 +180,8 @@ const ModalNuevoRecurso: React.FC<ModalNuevoRecursoProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg relative">
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-end sm:items-center justify-center p-4 z-50">
+      <div className="bg-white w-full max-w-md sm:max-w-lg mx-4 sm:mx-auto rounded-t-2xl sm:rounded-2xl shadow-xl relative">
         <div className="bg-gradient-to-r from-red-600 to-red-700 text-white p-5 rounded-t-2xl flex items-center justify-between">
           <h2 className="text-xl font-semibold">Nuevo Recurso</h2>
           <Button

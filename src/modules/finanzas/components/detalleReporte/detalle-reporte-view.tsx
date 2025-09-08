@@ -301,17 +301,17 @@ export default function DetalleReporte({ reporte }: DetalleReporteProps) {
 
           {/* Tabla */}
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[600px] sm:min-w-0 text-xs sm:text-sm">
               <thead>
                 <tr className="bg-gradient-to-r from-gray-700 to-gray-700 border-b border-gray-200">
-                  <th className="text-center py-4 px-6 font-semibold text-white">Módulo</th>
-                  <th className="text-center py-4 px-6 font-semibold text-white">
+                  <th className="text-center py-3 px-2 sm:py-4 sm:px-6 font-semibold text-white whitespace-nowrap">Módulo</th>
+                  <th className="text-center py-3 px-2 sm:py-4 sm:px-6 font-semibold text-white whitespace-nowrap">
                     Tipo de {tab === 'ingresos' ? 'Ingreso' : 'Gasto'}
                   </th>
-                  <th className="text-center py-4 px-6 font-semibold text-white">Monto</th>
-                  <th className="text-center py-4 px-6 font-semibold text-white">Fecha</th>
-                  <th className="text-center py-4 px-6 font-semibold text-white">Observaciones</th>
-                  <th className="text-center py-4 px-6 font-semibold text-white">Acciones</th>
+                  <th className="text-center py-3 px-2 sm:py-4 sm:px-6 font-semibold text-white whitespace-nowrap">Monto</th>
+                  <th className="text-center py-3 px-2 sm:py-4 sm:px-6 font-semibold text-white whitespace-nowrap">Fecha</th>
+                  <th className="text-center py-3 px-2 sm:py-4 sm:px-6 font-semibold text-white whitespace-nowrap">Observaciones</th>
+                  <th className="text-center py-3 px-2 sm:py-4 sm:px-6 font-semibold text-white whitespace-nowrap">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -348,7 +348,7 @@ export default function DetalleReporte({ reporte }: DetalleReporteProps) {
                         key={entry.id}
                         className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150 bg-white"
                       >
-                        <td className="py-4 px-6">
+                        <td className="py-3 px-2 sm:py-4 sm:px-6">
                           <div className="flex items-center gap-3">
                             <div className="flex items-center gap-3">
                               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -356,7 +356,7 @@ export default function DetalleReporte({ reporte }: DetalleReporteProps) {
                             </div>
                           </div>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-3 px-2 sm:py-4 sm:px-6">
                           <span
                             className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${
                               tab === 'ingresos' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
@@ -368,29 +368,29 @@ export default function DetalleReporte({ reporte }: DetalleReporteProps) {
                               : (entry as GeneralExpense).expense_type}
                           </span>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-3 px-2 sm:py-4 sm:px-6">
                           <span
-                            className={`font-bold text-lg ${
+                            className={`font-bold text-base sm:text-lg ${
                               tab === 'ingresos' ? 'text-green-600' : 'text-red-600'
                             }`}
                           >
                             S/. {isNaN(amount) ? '0.00' : amount.toFixed(2)}
                           </span>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-3 px-2 sm:py-4 sm:px-6">
                           <div className="flex items-center gap-2 text-gray-600">
                             <Calendar className="w-4 h-4" />
                             <span>{fechaFormateada}</span>
                           </div>
                         </td>
-                        <td className="py-4 px-6">
-                          <span className="text-gray-600 text-sm max-w-xs truncate block">
+                        <td className="py-3 px-2 sm:py-4 sm:px-6">
+                          <span className="text-gray-600 text-xs sm:text-sm max-w-[120px] sm:max-w-xs truncate block">
                             {tab === 'ingresos'
                               ? (entry as GeneralIncome).description ?? ''
                               : (entry as GeneralExpense).description ?? ''}
                           </span>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-3 px-2 sm:py-4 sm:px-6">
                           <div className="flex justify-center gap-2">
                             <button
                               className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
