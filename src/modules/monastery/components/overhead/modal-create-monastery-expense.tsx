@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,6 +21,7 @@ interface Props {
 }
 
 const ModalCreateMonasteryExpense: React.FC<Props> = ({ isOpen, onClose }) => {
+  const queryClient = useQueryClient();
   // 3. INICIALIZAR EL HOOK DE MUTACIÓN DE REACT QUERY
   const { mutate: createMonasteryOverhead, isPending } = useCreateMonasterioOverhead();
 
@@ -44,7 +45,9 @@ const ModalCreateMonasteryExpense: React.FC<Props> = ({ isOpen, onClose }) => {
   const onSubmit: SubmitHandler<CreateMonasteryExpenseData> = (data) => {
     createMonasteryOverhead(data, {
       onSuccess: () => {
-        // Lógica post-éxito: Limpiar formulario y cerrar modal
+        // Lógica post-éxito: Invalidar lista específica de Monasterio y genérica
+        queryClient.invalidateQueries({ queryKey: ['overhead-monastery'] });
+        queryClient.invalidateQueries({ queryKey: ['overhead'] });
         reset();
         onClose();
       },

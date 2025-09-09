@@ -10,6 +10,7 @@ import { MODULE_NAMES } from '@/core/utils/useModulesMap';
 import { suppressAxios403Errors } from '@/core/utils/error-suppressor';
 import { useCurrentUser } from '@/modules/auth/hook/useCurrentUser';
 import { useAuthStore } from '@/core/store/auth';
+import ModalListMonthlyExpenses from './reporte/modal-list-monthly-expenses';
 
 const FinanzasComponentView: React.FC = () => {
   // 🔥 OBTENER USUARIO ACTUAL CON SUS PERMISOS DESDE /auth/me
@@ -20,6 +21,7 @@ const FinanzasComponentView: React.FC = () => {
   const { canView, canCreate, canEdit, canDelete, isLoading, isAdmin } = useModulePermissions(MODULE_NAMES.FINANZAS);
   
   const [selectedView, setSelectedView] = useState<'general' | 'detalle'>('general');
+  const [isMonthlyModalOpen, setMonthlyModalOpen] = useState(false);
 
   // Fetch reportes para poder seleccionar uno y pasarlo a DetalleReporte
   const { data: reportes = [], isLoading: loadingReportes, error } = useFetchFinancialReports();
@@ -65,12 +67,7 @@ const FinanzasComponentView: React.FC = () => {
     }
   }, [reportes, selectedReportId]);
 
-  // 🔥 Si no tiene permisos de creación, forzar vista de detalle
-  useEffect(() => {
-    if (!canCreate && !isAdmin && selectedView === 'general') {
-      setSelectedView('detalle');
-    }
-  }, [canCreate, isAdmin, selectedView]);
+  // Mantener vista inicial en 'general' independientemente de permisos
 
   // 🔥 DETECTAR CAMBIOS EN PERMISOS Y FORZAR RECARGA SI ES NECESARIO
   useEffect(() => {
@@ -258,6 +255,15 @@ const FinanzasComponentView: React.FC = () => {
       <div className="bg-white rounded-2xl shadow-md overflow-hidden p-6 text-center text-gray-600 min-h-[300px]">
         {selectedView === 'general' && (
           <>
+            {/* Botón para abrir vista de Gastos Mensuales */}
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={() => setMonthlyModalOpen(true)}
+                className="bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Ver Gastos Mensuales
+              </button>
+            </div>
             {/* 🔥 PASAR PERMISOS AL COMPONENTE DE REPORTE */}
             <ReporteComponentView />
             <div className="my-6" />
@@ -310,6 +316,12 @@ const FinanzasComponentView: React.FC = () => {
           </>
         )}
       </div>
+
+      {/* Modal: Lista de Gastos Mensuales */}
+      <ModalListMonthlyExpenses
+        isOpen={isMonthlyModalOpen}
+        onClose={() => setMonthlyModalOpen(false)}
+      />
     </div>
   );
 };

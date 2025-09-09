@@ -4,8 +4,8 @@
 
 import React, { useState } from 'react';
 import { X, PlusCircle, AlertCircle } from 'lucide-react';
-// Importamos el hook desde el módulo 'monastery' como planeamos
-import { useFetchMonthlyExpenses } from '@/modules/monastery/hooks/useOverheads';
+// Usamos el hook existente del módulo 'monastery'
+import { useFetchMonasterioOverheads } from '@/modules/monastery/hooks/useOverheads';
 // Importamos el segundo modal que crearemos a continuación
 import ModalCreateGeneralOverhead from './modal-create-general-overhead';
 
@@ -18,8 +18,8 @@ const ModalListMonthlyExpenses: React.FC<Props> = ({ isOpen, onClose }) => {
   // Estado para controlar el segundo modal (el de creación)
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
 
-  // Usamos el hook para obtener los datos
-  const { data: monthlyExpenses = [], isLoading, isError, error } = useFetchMonthlyExpenses();
+  // Usamos el hook para obtener los gastos de Monasterio
+  const { data: monthlyExpenses = [], isLoading, isError, error } = useFetchMonasterioOverheads();
 
   if (!isOpen) return null;
 

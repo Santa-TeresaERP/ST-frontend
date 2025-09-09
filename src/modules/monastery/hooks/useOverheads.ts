@@ -1,13 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  fetchOverheads,
-  createOverhead,
-  createMonasterioOverhead,
-  updateOverhead,
-  deleteOverhead,
-  fetchMonthlyExpenses
-} from '../action/overheads.actions';
+
 import { Overhead, CreateOverheadPayload, UpdateOverheadPayload } from '../types/overheads.d';
+import { createMonasterioOverhead, createOverhead, deleteOverhead, fetchMonasterioOverheads, fetchOverheads, updateOverhead } from '../action/overheads.actions';
 
 const OVERHEADS_QUERY_KEY = 'overhead';
 
@@ -19,15 +13,22 @@ export const useFetchOverheads = () => {
   });
 };
 
+export const useFetchMonasterioOverheads = () => {
+  return useQuery<Overhead[], Error>({
+    queryKey: [`${OVERHEADS_QUERY_KEY}-monastery`],
+    queryFn: fetchMonasterioOverheads,
+  });
+}
+
 // Hook para CREAR un gasto general (genérico)
 export const useCreateOverhead = () => {
   const queryClient = useQueryClient();
   return useMutation<Overhead, Error, CreateOverheadPayload>({
     mutationFn: createOverhead,
     onSuccess: () => {
-      // Invalidate both the main overheads query and the monthly expenses query
-      queryClient.invalidateQueries({ queryKey: [OVERHEADS_QUERY_KEY] });
-      queryClient.invalidateQueries({ queryKey: ['monthlyExpenses'] });
+  // Invalidate generic and monastery-specific lists
+  queryClient.invalidateQueries({ queryKey: [OVERHEADS_QUERY_KEY] });
+  queryClient.invalidateQueries({ queryKey: [`${OVERHEADS_QUERY_KEY}-monastery`] });
     },
   });
 };
@@ -38,9 +39,9 @@ export const useCreateMonasterioOverhead = () => {
   return useMutation<Overhead, Error, Omit<CreateOverheadPayload, 'type'>>({
     mutationFn: createMonasterioOverhead,
     onSuccess: () => {
-      // Invalidate both the main overheads query and the monthly expenses query
-      queryClient.invalidateQueries({ queryKey: [OVERHEADS_QUERY_KEY] });
-      queryClient.invalidateQueries({ queryKey: ['monthlyExpenses'] });
+  // Invalidate monastery-specific list primarily, plus generic as safety
+  queryClient.invalidateQueries({ queryKey: [`${OVERHEADS_QUERY_KEY}-monastery`] });
+  queryClient.invalidateQueries({ queryKey: [OVERHEADS_QUERY_KEY] });
     },
   });
 };
@@ -51,7 +52,8 @@ export const useUpdateOverhead = () => {
   return useMutation<Overhead, Error, { id: string; payload: UpdateOverheadPayload }>({
     mutationFn: ({ id, payload }) => updateOverhead(id, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [OVERHEADS_QUERY_KEY] });
+  queryClient.invalidateQueries({ queryKey: [OVERHEADS_QUERY_KEY] });
+  queryClient.invalidateQueries({ queryKey: [`${OVERHEADS_QUERY_KEY}-monastery`] });
     },
   });
 };
@@ -62,22 +64,16 @@ export const useDeleteOverhead = () => {
   return useMutation<void, Error, string>({
     mutationFn: deleteOverhead,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [OVERHEADS_QUERY_KEY] });
+  queryClient.invalidateQueries({ queryKey: [OVERHEADS_QUERY_KEY] });
+  queryClient.invalidateQueries({ queryKey: [`${OVERHEADS_QUERY_KEY}-monastery`] });
     },
-  });
-};
-
-// Hook para OBTENER los gastos mensuales
-export const useFetchMonthlyExpenses = () => {
-  return useQuery<Overhead[], Error>({
-    queryKey: ['monthlyExpenses'], // Nueva query key para no mezclar cachés
-    queryFn: fetchMonthlyExpenses,
   });
 };
 
 // Hook consolidado al estilo del módulo de museo
 export const useMonasteryOverheads = () => {
-  const query = useFetchOverheads();
+  // Use the monastery-specific endpoint for this consolidated hook
+  const query = useFetchMonasterioOverheads();
   const updateMut = useUpdateOverhead();
   const deleteMut = useDeleteOverhead();
   const createMut = useCreateOverhead();

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { FiMapPin, FiHome, FiBarChart2, FiCheckCircle, FiChevronLeft, FiChevronRight, FiX, FiUser } from 'react-icons/fi';
 import { MdLocationOn } from 'react-icons/md';
 import { ShieldAlert, Loader2 } from 'lucide-react';
+import RentalHistoryView from './rental-history/rental-history-view';
 import ModalCreateLocation from './information location/modal-create-location';
 import ModalEditLocation from './information location/modal-edit-location';
 import ModalCreatePlace from './places/modal-create-place';
@@ -394,10 +395,9 @@ const RentalsComponentView = () => {
                       onEdit={handleEditPlace}
                       onDelete={handleDeletePlace}
                       onViewRentals={handleViewRentals}
-                      // 🔥 PASAR PERMISOS A PLACECARD
-                      canEdit={canEdit}
-                      canDelete={canDelete}
-                      canCreate={canCreate}
+                      canEdit={canEdit || isAdmin}
+                      canDelete={canDelete || isAdmin}
+                      canCreate={canCreate || isAdmin}
                       isAdmin={isAdmin}
                     />
                   ))}

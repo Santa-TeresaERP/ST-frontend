@@ -16,6 +16,13 @@ export const fetchOverheads = async (): Promise<Overhead[]> => {
   return response.data;
 };
 
+export const fetchMonasterioOverheads = async (): Promise<Overhead[]> => {
+  const response = await api.get<Overhead[]>(
+    `${OVERHEADS_ENDPOINT}/monastery`
+  );
+  return response.data;
+}
+
 /**
  * Llama a: POST /overheads
  * Crea un nuevo gasto general (para tipos diferentes a 'monasterio').
@@ -63,9 +70,4 @@ export const updateOverhead = async (
 export const deleteOverhead = async (id: string): Promise<void> => {
   // Aunque es un borrado, la ruta en el backend es PUT
   await api.put(`${OVERHEADS_ENDPOINT}/${id}`);
-};
-
-export const fetchMonthlyExpenses = async (): Promise<Overhead[]> => {
-  const response = await api.get<Overhead[]>(`${OVERHEADS_ENDPOINT}/monthly`);
-  return response.data;
 };

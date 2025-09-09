@@ -77,7 +77,7 @@ const formatDate = (dateStr: string) => {
   return `${day}/${month}/${year}`;
 };
 
-export default function DetalleReporte({ reporte }: DetalleReporteProps) {
+export default function DetalleReporte({ reporte, reportId }: DetalleReporteProps) {
   // 🔥 HOOKS DE PERMISOS
   const {
     canView: canRead,
@@ -87,8 +87,6 @@ export default function DetalleReporte({ reporte }: DetalleReporteProps) {
     isLoading: permissionsLoading,
     isAdmin
   } = useModulePermissions(MODULE_NAMES.FINANZAS);
-
-export default function DetalleReporte({ reporte, reportId }: DetalleReporteProps) {
   const [tab, setTab] = useState<'ingresos' | 'gastos'>('ingresos');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
