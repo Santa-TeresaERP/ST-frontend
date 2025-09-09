@@ -491,34 +491,37 @@ const ModalEditProducto: React.FC<ModalEditProductoProps> = ({ isOpen, onClose, 
                 ) : (
                   <div className="space-y-3">
                     {recipes.map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between py-2 px-3 bg-white rounded-lg shadow-sm">
-                        <span className="flex-1 font-medium">{item.resource?.name || 'Recurso no encontrado'}</span>
-                        <div className="flex items-center space-x-6">
-                          <span className="w-20 text-center">{item.unit}</span>
-                          <span className="w-16 text-center font-semibold">{item.quantity_required}</span>
-                          <div className="flex space-x-2">
-                            <button
-                              type="button"
-                              className="text-blue-600 hover:text-blue-800 text-sm px-2 py-1 rounded hover:bg-blue-50"
-                              onClick={() => {
-                                setRecipe({
-                                  resource_id: item.resource_id,
-                                  unit: item.unit,
-                                  quantity_required: item.quantity_required,
-                                });
-                                setEditRecipe(item);
-                              }}
-                            >
-                              Editar
-                            </button>
-                            <button
-                              type="button"
-                              className="text-red-500 hover:text-red-700 text-sm px-2 py-1 rounded hover:bg-red-50"
-                              onClick={() => handleEliminarIngrediente(item)}
-                            >
-                              Eliminar
-                            </button>
-                          </div>
+                      <div
+                        key={idx}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between py-2 px-3 bg-white rounded-lg shadow-sm"
+                      >
+                        <div className="flex-1 font-medium flex flex-col sm:flex-row sm:items-center gap-1">
+                          <span>{item.resource?.name || 'Recurso no encontrado'}</span>
+                          <span className="sm:ml-4">{item.unit}</span>
+                          <span className="sm:ml-4 font-semibold">{item.quantity_required}</span>
+                        </div>
+                        <div className="flex gap-2 mt-2 sm:mt-0">
+                          <button
+                            type="button"
+                            className="text-blue-600 hover:text-blue-800 text-sm px-2 py-1 rounded hover:bg-blue-50"
+                            onClick={() => {
+                              setRecipe({
+                                resource_id: item.resource_id,
+                                unit: item.unit,
+                                quantity_required: item.quantity_required,
+                              });
+                              setEditRecipe(item);
+                            }}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            className="text-red-500 hover:text-red-700 text-sm px-2 py-1 rounded hover:bg-red-50"
+                            onClick={() => handleEliminarIngrediente(item)}
+                          >
+                            Eliminar
+                          </button>
                         </div>
                       </div>
                     ))}
