@@ -6,6 +6,7 @@ import { CreateLostPayload, Lost } from '@/modules/production/types/lost';
 import { toast } from 'react-toastify';
 import { useFetchProductions } from '../../hook/useProductions';
 import { useFetchProducts } from '../../hook/useProducts';
+import { formatDateLocal } from '../../../../core/utils/dateUtils';
 
 // 🔥 IMPORTAR SISTEMA DE PERMISOS OPTIMIZADO
 import { useModulePermissions } from '@/core/utils/permission-hooks';
@@ -57,7 +58,7 @@ const LostComponentView: React.FC = () => {
       const product = productsData.find(p => p.id === production.productId);
       if (product) {
         const prodDate = production.productionDate 
-          ? new Date(production.productionDate).toLocaleDateString() 
+          ? formatDateLocal(production.productionDate)
           : 'Sin fecha';
         const key = `${product.name} ${prodDate}`;
         
@@ -380,7 +381,7 @@ const LostComponentView: React.FC = () => {
                     {lost.observations || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {lost.created_at ? new Date(lost.created_at).toLocaleDateString() : 'N/A'}
+                    {formatDateLocal(lost.created_at)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-xl font-medium">
                     <div className="flex space-x-2 justify-center">
@@ -475,7 +476,7 @@ const LostComponentView: React.FC = () => {
                       const product = productsData.find(p => p.id === prod.productId);
                       const productName = product ? product.name : 'Producto Desconocido';
                       const prodDate = prod.productionDate
-                        ? new Date(prod.productionDate).toLocaleDateString()
+                        ? formatDateLocal(prod.productionDate)
                         : 'Sin fecha';
                       return (
                         <option key={prod.id} value={prod.id}>
@@ -592,7 +593,7 @@ const LostComponentView: React.FC = () => {
                     const product = productsData.find(p => p.id === prod.productId);
                     const productName = product ? product.name : 'Producto Desconocido';
                     const prodDate = prod.productionDate
-                      ? new Date(prod.productionDate).toLocaleDateString()
+                      ? formatDateLocal(prod.productionDate)
                       : 'Sin fecha';
                     return (
                       <option key={prod.id} value={prod.id}>
@@ -641,7 +642,7 @@ const LostComponentView: React.FC = () => {
                 <label className="text-base font-bold text-gray-700">Fecha de Registro</label>
                 <input
                   type="text"
-                  value={editingLostItem.created_at ? new Date(editingLostItem.created_at).toLocaleDateString() : 'N/A'}
+                  value={formatDateLocal(editingLostItem.created_at)}
                   disabled
                   className="w-full mt-1 px-3 py-2 border border-gray-200 bg-gray-100 rounded-lg"
                 />

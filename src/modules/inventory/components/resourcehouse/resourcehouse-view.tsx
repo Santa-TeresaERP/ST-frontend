@@ -7,32 +7,19 @@ import ModalEditResource from './resource/modal-edit-resource-resourcehouse';
 import ModalDeleteResource from './resource/modal-delete-resource-resourcehouse';
 import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button';
+import { formatDateLocal } from '../../../../core/utils/dateUtils';
 
 // 🔥 IMPORTAR SISTEMA DE PERMISOS OPTIMIZADO
 import { useModulePermissions } from '@/core/utils/permission-hooks';
 import { MODULE_NAMES } from '@/core/utils/useModulesMap';
 
-// Función para obtener las fechas de los últimos 3 días
-const getInitialDateFilters = () => {
-  const today = new Date();
-  const threeDaysAgo = new Date(today);
-  threeDaysAgo.setDate(today.getDate() - 2);
-
-  return {
-    startDate: threeDaysAgo.toISOString().split('T')[0],
-    endDate: today.toISOString().split('T')[0],
-  };
-};
-
 const ResourcesView: React.FC = () => {
-  const initialDates = getInitialDateFilters();
-
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [resourceToEdit, setResourceToEdit] = useState<BuysResourceWithResource | null>(null);
   const [resourceToDelete, setResourceToDelete] = useState<BuysResourceWithResource | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [startDate, setStartDate] = useState<string>(initialDates.startDate);
-  const [endDate, setEndDate] = useState<string>(initialDates.endDate);
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
   const [supplierFilter, setSupplierFilter] = useState('');
 
   // 🔥 USAR HOOK OPTIMIZADO DE PERMISOS - UNA SOLA LLAMADA
@@ -133,9 +120,8 @@ const ResourcesView: React.FC = () => {
 
   const clearAllFilters = () => {
     setSearchTerm('');
-    const newInitialDates = getInitialDateFilters();
-    setStartDate(newInitialDates.startDate);
-    setEndDate(newInitialDates.endDate);
+    setStartDate("");
+    setEndDate("");
     setSupplierFilter('');
   };
 
@@ -250,18 +236,18 @@ const ResourcesView: React.FC = () => {
           </div>
         </div>
 
-        {(searchTerm || (startDate !== initialDates.startDate) || (endDate !== initialDates.endDate) || supplierFilter) && (
+        {(searchTerm || startDate || endDate || supplierFilter) && (
           <div className="mt-4 pt-3 border-t border-gray-200">
             <div className="flex flex-wrap gap-2">
               <span className="text-sm text-gray-600">Filtros activos:</span>
               {startDate && (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                  Desde: {new Date(startDate).toLocaleDateString()}
+                  Desde: {formatDateLocal(startDate)}
                 </span>
               )}
               {endDate && (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                  Hasta: {new Date(endDate).toLocaleDateString()}
+                  Hasta: {formatDateLocal(endDate)}
                 </span>
               )}
               {supplierFilter && (
@@ -308,7 +294,7 @@ const ResourcesView: React.FC = () => {
               {filteredResources.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="text-center py-4 text-gray-500">
-                    {searchTerm || (startDate !== initialDates.startDate) || (endDate !== initialDates.endDate) || supplierFilter
+                    {searchTerm || startDate || endDate || supplierFilter
                       ? "No se encontraron recursos que coincidan con los filtros"
                       : "No hay recursos para mostrar."}
                   </td>
@@ -334,7 +320,7 @@ const ResourcesView: React.FC = () => {
                     </td>
                     <td className="px-4 py-2 text-left">{r.supplier?.suplier_name || 'N/A'}</td>
                     <td className="px-4 py-2 text-left">{r.quantity}</td>
-                    <td className="px-4 py-2 text-left">{r.entry_date ? new Date(r.entry_date).toLocaleDateString() : '-'}</td>
+                    <td className="px-4 py-2 text-left">{formatDateLocal(r.entry_date)}</td>
                     <td className="px-4 py-2 text-left">
                       {r.resource?.observation ? (
                         <span className="text-xs bg-gray-100 px-2 py-1 rounded">

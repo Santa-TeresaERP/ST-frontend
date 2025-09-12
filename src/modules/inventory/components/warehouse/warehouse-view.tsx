@@ -12,7 +12,8 @@ import {
 import { useFetchWarehouseProducts } from "@/modules/inventory/hook/useWarehouseProducts";
 import { useFetchWarehouses } from "@/modules/inventory/hook/useWarehouses";
 import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
-import ModalCreateProductWarehouse from './product/modal-create-product-warehouse'; 
+import ModalCreateProductWarehouse from './product/modal-create-product-warehouse';
+import { formatDateLocal } from '../../../../core/utils/dateUtils'; 
 import ModalEditProductWarehouse from './product/modal-edit-product-warehouse';
 import { useDeleteWarehouseProduct } from "@/modules/inventory/hook/useWarehouseProducts";
 import ModalWarehouses from './warehouses/modal-warehouses';
@@ -21,22 +22,7 @@ import ModalWarehouses from './warehouses/modal-warehouses';
 import { useModulePermissions } from '@/core/utils/permission-hooks';
 import { MODULE_NAMES } from '@/core/utils/useModulesMap';
 
-// Función para obtener las fechas de los últimos 3 días
-const getInitialDateFilters = () => {
-  const today = new Date();
-  const threeDaysAgo = new Date(today);
-  threeDaysAgo.setDate(today.getDate() - 2);
-
-  return {
-    startDate: threeDaysAgo.toISOString().split('T')[0],
-    endDate: today.toISOString().split('T')[0],
-  };
-};
-
 const WarehouseView: React.FC = () => {
-  // Obtener las fechas iniciales
-  const initialDates = getInitialDateFilters();
-
   const { data: warehouseProducts, isLoading, error  } = useFetchWarehouseProducts();
   const { data: warehouses } = useFetchWarehouses();
   const { data: products } = useFetchProducts();
@@ -46,10 +32,10 @@ const WarehouseView: React.FC = () => {
   const [editingProduct, setEditingProduct] = useState<React.Key | null>(null);
   const [showWarehouses, setShowWarehouses] = useState(false);
 
-  // Estados para los filtros, inicializados con las fechas
+  // Estados para los filtros SIN valores por defecto
   const [productFilter, setProductFilter] = useState("");
-  const [startDate, setStartDate] = useState<string>(initialDates.startDate);
-  const [endDate, setEndDate] = useState<string>(initialDates.endDate);
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
 
   const { mutate: toggleStatus } = useDeleteWarehouseProduct();
 
@@ -82,7 +68,7 @@ const WarehouseView: React.FC = () => {
         warehouseName.includes(searchLower) ||
         productName.includes(searchLower) ||
         product.quantity.toString().includes(searchLower) ||
-        new Date(product.entry_date).toLocaleDateString().toLowerCase().includes(searchLower);
+        formatDateLocal(product.entry_date).toLowerCase().includes(searchLower);
 
       // Filtro por producto (dropdown)
       const matchesProduct = productFilter
@@ -113,8 +99,8 @@ const WarehouseView: React.FC = () => {
   const clearAllFilters = () => {
     setSearchTerm("");
     setProductFilter("");
-    setStartDate(initialDates.startDate);
-    setEndDate(initialDates.endDate);
+    setStartDate("");
+    setEndDate("");
   };
 
   if (isLoading) {
@@ -249,7 +235,7 @@ const WarehouseView: React.FC = () => {
         </div>
 
         {/* Filtros activos */}
-        {(productFilter || (startDate !== initialDates.startDate) || (endDate !== initialDates.endDate)) && (
+        {(productFilter || startDate || endDate) && (
           <div className="mt-4 pt-3 border-t border-gray-200">
             <div className="flex flex-wrap gap-2">
               <span className="text-sm text-gray-600">Filtros activos:</span>
@@ -260,12 +246,12 @@ const WarehouseView: React.FC = () => {
               )}
               {startDate && (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                  Desde: {new Date(startDate).toLocaleDateString()}
+                  Desde: {formatDateLocal(startDate)}
                 </span>
               )}
               {endDate && (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                  Hasta: {new Date(endDate).toLocaleDateString()}
+                  Hasta: {formatDateLocal(endDate)}
                 </span>
               )}
             </div>
@@ -297,7 +283,7 @@ const WarehouseView: React.FC = () => {
                     {products?.find((p) => p.id === product.product_id)?.name || "Desconocido"}
                   </td>
                   <td className="px-4 py-2 text-center">{product.quantity}</td>
-                  <td className="px-4 py-2 text-center">{new Date(product.entry_date).toLocaleDateString()}</td>
+                  <td className="px-4 py-2 text-center">{formatDateLocal(product.entry_date)}</td>
                   <td className="px-4 py-2 text-center">
                     {product.status ? (
                       <span className="text-green-600 font-semibold">Activo</span>
@@ -334,7 +320,7 @@ const WarehouseView: React.FC = () => {
             ) : (
               <tr>
                 <td colSpan={5} className="text-center py-4 text-gray-500">
-                  {searchTerm || (startDate !== initialDates.startDate) || (endDate !== initialDates.endDate) || productFilter ? "No se encontraron productos que coincidan con los filtros" : "No hay productos registrados"}
+                  {searchTerm || startDate || endDate || productFilter ? "No se encontraron productos que coincidan con los filtros" : "No hay productos registrados"}
                 </td>
               </tr>
             )}

@@ -9,6 +9,7 @@ import { Production } from '../../types/productions';
 import { useFetchProducts } from '../../hook/useProducts';
 import { useFetchPlants } from '../../hook/usePlants';
 import { toggleProduction } from '../../action/productions';
+import { formatDateLocal } from '../../../../core/utils/dateUtils';
 
 // 🔥 IMPORTAR SISTEMA DE PERMISOS OPTIMIZADO
 import { useModulePermissions } from '@/core/utils/permission-hooks';
@@ -208,11 +209,7 @@ const ProductionView = () => {
                   </td>
                   <td className="px-6 py-4">{getPlantName(production.plant_id)}</td>
                   <td className="px-6 py-4">
-                    {new Date(production.productionDate).toLocaleDateString('es-ES', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                    })}
+                    {formatDateLocal(production.productionDate)}
                   </td>
                   <td className="px-6 py-4">
                     {production.isActive
