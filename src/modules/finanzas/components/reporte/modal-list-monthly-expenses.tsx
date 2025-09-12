@@ -3,11 +3,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, PlusCircle, AlertCircle } from 'lucide-react';
+import { X, PlusCircle, AlertCircle, Edit, Trash2 } from 'lucide-react';
 // Usamos el hook existente del módulo 'monastery'
-import { useFetchMonasterioOverheads } from '@/modules/monastery/hooks/useOverheads';
+import { useFetchMonthlyOverheads } from '@/modules/monastery/hooks/useOverheads';
 // Importamos el segundo modal que crearemos a continuación
 import ModalCreateGeneralOverhead from './modal-create-general-overhead';
+import ModalEditMonthlyExpense from './modal-edit-monthly-expense';
+import ModalDeleteMonthlyExpense from './modal-delete-monthly-expense';
+import type { Overhead } from '@/modules/monastery/types/overheads';
 
 interface Props {
   isOpen: boolean;
@@ -17,9 +20,12 @@ interface Props {
 const ModalListMonthlyExpenses: React.FC<Props> = ({ isOpen, onClose }) => {
   // Estado para controlar el segundo modal (el de creación)
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<Overhead | null>(null);
 
   // Usamos el hook para obtener los gastos de Monasterio
-  const { data: monthlyExpenses = [], isLoading, isError, error } = useFetchMonasterioOverheads();
+  const { data: monthlyExpenses = [], isLoading, isError, error } = useFetchMonthlyOverheads();
 
   if (!isOpen) return null;
 
@@ -55,6 +61,8 @@ const ModalListMonthlyExpenses: React.FC<Props> = ({ isOpen, onClose }) => {
                     <th className="px-4 py-2 text-left">Nombre</th>
                     <th className="px-4 py-2 text-left">Monto</th>
                     <th className="px-4 py-2 text-left">Fecha</th>
+                    <th className="px-4 py-2 text-left">Estado</th>
+                    <th className="px-4 py-2 text-left">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -73,10 +81,37 @@ const ModalListMonthlyExpenses: React.FC<Props> = ({ isOpen, onClose }) => {
                     <tr><td colSpan={3} className="text-center p-4">No hay gastos mensuales para mostrar.</td></tr>
                   )}
                   {!isLoading && !isError && monthlyExpenses.map(gasto => (
-                    <tr key={gasto.id} className="border-b hover:bg-gray-50">
+                    <tr key={gasto.id} className={`border-b hover:bg-gray-50 ${gasto.status ? '' : 'opacity-60'}`}>
                       <td className="px-4 py-2 font-medium">{gasto.name}</td>
                       <td className="px-4 py-2">S/ {Number(gasto.amount).toFixed(2)}</td>
                       <td className="px-4 py-2">{new Date(gasto.date).toLocaleDateString()}</td>
+                      <td className="px-4 py-2">
+                        {gasto.status ? (
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">Activo</span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gray-200 text-gray-700">Inactivo</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            title="Editar"
+                            className="text-blue-600 hover:text-blue-800"
+                            onClick={() => { setSelectedExpense(gasto as Overhead); setEditModalOpen(true); }}
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            title={gasto.status ? 'Deshabilitar' : 'Habilitar'}
+                            className="text-red-600 hover:text-red-800"
+                            onClick={() => { setSelectedExpense(gasto as Overhead); setDeleteModalOpen(true); }}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -90,6 +125,20 @@ const ModalListMonthlyExpenses: React.FC<Props> = ({ isOpen, onClose }) => {
       <ModalCreateGeneralOverhead 
         isOpen={isCreateModalOpen}
         onClose={() => setCreateModalOpen(false)}
+      />
+
+      {/* Modal de edición */}
+      <ModalEditMonthlyExpense
+        isOpen={isEditModalOpen}
+        onClose={() => { setEditModalOpen(false); setSelectedExpense(null); }}
+        expense={selectedExpense}
+      />
+
+      {/* Modal de eliminación */}
+      <ModalDeleteMonthlyExpense
+        isOpen={isDeleteModalOpen}
+        onClose={() => { setDeleteModalOpen(false); setSelectedExpense(null); }}
+        expense={selectedExpense}
       />
     </>
   );

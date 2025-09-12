@@ -9,12 +9,18 @@ const OVERHEADS_ENDPOINT = "/overhead";
 
 /**
  * Llama a: GET /overheads
- * Obtiene todos los gastos generales activos.
+ * Obtiene todos los gastos generales activos.w
  */
 export const fetchOverheads = async (): Promise<Overhead[]> => {
   const response = await api.get<Overhead[]>(OVERHEADS_ENDPOINT);
   return response.data;
 };
+export const fetchMonthlyOverheads = async (): Promise<Overhead[]> => {
+  const response = await api.get<Overhead[]>(
+    `${OVERHEADS_ENDPOINT}/monthly`
+  );
+  return response.data;
+}
 
 export const fetchMonasterioOverheads = async (): Promise<Overhead[]> => {
   const response = await api.get<Overhead[]>(
