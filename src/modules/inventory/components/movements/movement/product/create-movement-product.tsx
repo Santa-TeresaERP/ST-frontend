@@ -83,7 +83,7 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
       product_id: form.product_id.trim(),
       movement_type: form.movement_type,
       quantity: Number(form.quantity),
-      movement_date: new Date(form.movement_date),
+      movement_date: form.movement_date, // Enviar como string en formato ISO
       observations: form.observations?.trim() || undefined,
     };
 
@@ -103,7 +103,7 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
       product_id: parsed.data.product_id,
       movement_type: parsed.data.movement_type,
       quantity: parsed.data.quantity,
-      movement_date: parsed.data.movement_date,
+      movement_date: form.movement_date, // Enviar como string sin conversión
       store_id: parsed.data.store_id, // Incluir siempre (puede ser null)
       ...(parsed.data.observations && { observations: parsed.data.observations }), // Solo incluir si no es undefined
     };

@@ -69,10 +69,9 @@ type EditEntry = {
 // Función para formatear fecha a dd/mm/yyyy
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '';
-  const d = new Date(dateStr);
-  const day = d.getDate().toString().padStart(2, '0');
-  const month = (d.getMonth() + 1).toString().padStart(2, '0');
-  const year = d.getFullYear();
+  // Usar la misma lógica que en inventory - obtener fecha sin zona horaria
+  const isoDate = new Date(dateStr).toISOString().split('T')[0];
+  const [year, month, day] = isoDate.split('-');
   return `${day}/${month}/${year}`;
 };
 

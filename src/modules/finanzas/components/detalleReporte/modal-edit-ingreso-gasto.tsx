@@ -6,7 +6,7 @@ import { UpdateExpensePayload } from '../../types/generalExpense';
 import { UpdateIncomePayload } from '../../types/generalIncome';
 import { useFetchModules } from '../../../modules/hook/useModules'; // Ajusta ruta
 
-interface EditEntry {
+interface EditEntry {   
   id: string;
   module_id: string;
   income_type?: string;    // solo para ingreso
@@ -25,11 +25,8 @@ interface ModalEditEntradaProps {
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '';
-  const d = new Date(dateStr);
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
+  // Usar la misma lógica que en inventory para evitar problemas de zona horaria
+  return new Date(dateStr).toISOString().split('T')[0];
 };
 
 export default function ModalEditEntrada({ tipo, data, onClose }: ModalEditEntradaProps) {

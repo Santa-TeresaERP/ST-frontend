@@ -8,7 +8,8 @@ export const overheadFormSchema = z.object({
     .min(1, 'El nombre es obligatorio.')
     .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, { message: 'El nombre solo puede contener letras.' }),
   
-  date: z.string().min(1, 'La fecha es obligatoria.'),
+  date: z.string().min(1, 'La fecha es obligatoria.')
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha debe estar en formato YYYY-MM-DD'),
   
   type: z.enum(
     ['monasterio', 'donativo', 'gasto mensual', 'otro ingreso', 'otro egreso'],

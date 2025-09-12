@@ -273,7 +273,7 @@ export default function ReporteComponentView() {
       // Crear primer reporte
       createReport.mutate(
         {
-          start_date: data.start_date,
+          start_date: data.start_date || '',
           observations: data.observations || '',
         },
         { onSuccess: () => setIsModalOpen(false) }
@@ -297,10 +297,9 @@ export default function ReporteComponentView() {
     deleteReport.mutate(id);
   };
 
-  const formatDateLocal = (dateString: string) => {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Fecha inválida';
-    return date.toLocaleDateString('es-PE');
+  const formatDateLocal = (date: string | Date) => {
+    // Usar la misma lógica que en inventory para evitar problemas de zona horaria
+    return new Date(date).toISOString().split('T')[0];
   }
 
   // Convertir datos de reportes al formato que espera el modal de módulo
@@ -308,8 +307,8 @@ export default function ReporteComponentView() {
     return reportes.map((reporte, index) => ({
       id: index + 1,
       modulo: 'Finanzas', // Por ahora todos son del módulo de finanzas
-      fechaInicio: reporte.start_date,
-      fechaFin: reporte.end_date || undefined,
+      fechaInicio: new Date(reporte.start_date).toISOString().split('T')[0],
+      fechaFin: reporte.end_date ? new Date(reporte.end_date).toISOString().split('T')[0] : undefined,
       observaciones: reporte.observations || undefined,
       ingresos: `S/. ${formatCurrency(reporte.total_income)}`,
       gastos: `S/. ${formatCurrency(reporte.total_expenses)}`,

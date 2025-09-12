@@ -37,6 +37,15 @@ const ModalReporte: React.FC<ModalReporteProps> = ({
 
   const formatDateForInput = (date?: string | Date | null) => {
     if (!date) return '';
+    // Si ya es un string en formato YYYY-MM-DD, lo devolvemos tal como está
+    if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return date;
+    }
+    // Si es un string de fecha diferente, lo convertimos
+    if (typeof date === 'string') {
+      return date.split('T')[0];
+    }
+    // Si es un objeto Date, lo convertimos
     const d = new Date(date);
     if (isNaN(d.getTime())) return '';
     return d.toISOString().split('T')[0]; // yyyy-MM-dd
@@ -170,7 +179,7 @@ const ModalReporte: React.FC<ModalReporteProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <span className="font-medium text-gray-700">Fecha de Inicio:</span>
-                    <div className="text-gray-900">{formatDateForInput(initialData?.start_date) ? new Date(initialData!.start_date).toLocaleDateString('es-PE') : 'No definida'}</div>
+                    <div className="text-gray-900">{initialData?.start_date ? new Date(initialData.start_date).toISOString().split('T')[0] : 'No definida'}</div>
                   </div>
                   <div>
                     <span className="font-medium text-gray-700">Descripción Actual:</span>
