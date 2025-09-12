@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { FiMapPin } from 'react-icons/fi';
 import { Save, X } from 'lucide-react';
 import { useCreateLocation } from '../../hook/useLocations';
-
 import { Location } from '../../types/location';
 
 interface ModalCreateLocationProps {
@@ -10,7 +9,7 @@ interface ModalCreateLocationProps {
   onCreated?: (data: Location) => void;
 }
 
-const ModalCreateLocation: React.FC<ModalCreateLocationProps> = ({ handleClose, onCreated }) => {
+const ModalCreateLocation: React.FC<ModalCreateLocationProps> = ({ handleClose }) => {
   const [nombre, setNombre] = useState('');
   const [direccion, setDireccion] = useState('');
   const [capacidad, setCapacidad] = useState('');

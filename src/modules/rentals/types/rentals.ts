@@ -17,18 +17,18 @@ export interface CreateRentalPayload {
   customer_id: string;
   place_id: string;
   user_id: string;
-  start_date: Date;
-  end_date: Date;
+  start_date: Date; // 
+  end_date: Date;   // 
   amount: number;
-  status: boolean; // Made required with default value of true
+  status?: boolean;
 }
 
 export interface UpdateRentalPayload {
   customer_id?: string;
   place_id?: string;
   user_id?: string;
-  start_date?: Date;
-  end_date?: Date;
+  start_date?: Date; // 
+  end_date?: Date;   // 
   amount?: number;
   status?: boolean;
 }

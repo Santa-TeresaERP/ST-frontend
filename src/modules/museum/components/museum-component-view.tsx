@@ -1,7 +1,7 @@
 // MuseumComponentView.tsx
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import Image from 'next/image'
-import { PlusCircle, Pencil, Trash2, CheckCircle, XCircle, Filter } from 'lucide-react'
+import { PlusCircle, Pencil, Trash2, CheckCircle, XCircle, Filter, ShieldAlert, ShieldCheck } from 'lucide-react'
 import { useEntrance } from '../hook/useEntrance'
 import ModalEditEntrance from './visitor/modal-edit-visitor'
 import ModalDeleteEntrance from './visitor/modal-delete-visitor'
@@ -9,8 +9,16 @@ import ModalTicketTypes from './tickets/modal-ticket-types'
 import { Entrance } from '../types/entrance'
 import ModalCreateVisitor from './visitor/modal-create-visitor'
 import { toast } from 'react-toastify'
+import { useQueryClient } from '@tanstack/react-query'
+import { useModulePermission, MODULE_NAMES } from '@/core/utils/useModulesMap'
+import AccessDeniedModal from '@/core/utils/AccessDeniedModal'
 
 const MuseumComponentView: React.FC = () => {
+  const queryClient = useQueryClient()
+  const { hasPermission: canView } = useModulePermission(MODULE_NAMES.MUSEUM, 'canRead')
+  const { hasPermission: canCreate } = useModulePermission(MODULE_NAMES.MUSEUM, 'canWrite')
+  const { hasPermission: canEdit } = useModulePermission(MODULE_NAMES.MUSEUM, 'canEdit')
+  const { hasPermission: canDelete } = useModulePermission(MODULE_NAMES.MUSEUM, 'canDelete')
   const { data, loading, error, update, remove, refetch } = useEntrance()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
@@ -18,30 +26,15 @@ const MuseumComponentView: React.FC = () => {
   const [selected, setSelected] = useState<Entrance | null>(null)
   const [isTicketOpen, setIsTicketOpen] = useState(false)
   const [dateFilter, setDateFilter] = useState<'last3days' | 'last7days' | 'last30days' | 'all'>('last3days')
+  const [showAccessDenied, setShowAccessDenied] = useState(false)
+  const [accessDeniedAction, setAccessDeniedAction] = useState('')
 
-  const handleEdit = async (payload: Partial<Omit<Entrance, 'id'>>) => {
-    if (!selected?.id) return
-    try {
-      await update(selected.id, payload)
-      setIsEditOpen(false)
-      toast.success('Entrada actualizada exitosamente')
-    } catch (error) {
-      console.error('Error al actualizar entrada:', error)
-      toast.error('Error al actualizar la entrada. Por favor, intente nuevamente.')
+  // Limpiar cache cuando no hay permisos
+  useEffect(() => {
+    if (!canView) {
+      queryClient.removeQueries({ queryKey: ['entrances'] })
     }
-  };
-
-  const handleDelete = async () => {
-    if (!selected?.id) return;
-    try {
-      await remove(selected.id);
-      setIsDeleteOpen(false);
-      toast.success('Entrada eliminada exitosamente');
-    } catch (error) {
-      console.error('Error al eliminar entrada:', error);
-      toast.error('Error al eliminar la entrada. Por favor, intente nuevamente.');
-    }
-  };
+  }, [canView, queryClient])
 
   const filteredData = useMemo(() => {
     if (!data) return [];
@@ -73,6 +66,136 @@ const MuseumComponentView: React.FC = () => {
     });
   }, [data, dateFilter]);
 
+  // Si no tiene permisos de lectura, mostrar mensaje de acceso denegado
+  if (!canView) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
+          <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-700 mb-2">Acceso Restringido</h2>
+          <p className="text-gray-600 mb-4">
+            No tienes permisos para ver el panel de visitantes del museo.
+          </p>
+          <p className="text-sm text-gray-500">
+            Contacta al administrador para obtener acceso.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  const handleCreateClick = () => {
+    if (!canCreate) {
+      setAccessDeniedAction('crear visitantes')
+      setShowAccessDenied(true)
+      return
+    }
+    setIsCreateOpen(true)
+  }
+
+  const handleEditClick = (entrance: Entrance) => {
+    if (!canEdit) {
+      setAccessDeniedAction('editar visitantes')
+      setShowAccessDenied(true)
+      return
+    }
+    setSelected(entrance)
+    setIsEditOpen(true)
+  }
+
+  const handleDeleteClick = (entrance: Entrance) => {
+    if (!canDelete) {
+      setAccessDeniedAction('eliminar visitantes')
+      setShowAccessDenied(true)
+      return
+    }
+    setSelected(entrance)
+    setIsDeleteOpen(true)
+  }
+
+  const handleTicketTypesClick = () => {
+    if (!canEdit) {
+      setAccessDeniedAction('gestionar tipos de tickets')
+      setShowAccessDenied(true)
+      return
+    }
+    setIsTicketOpen(true)
+  }
+
+  const handleEdit = async (payload: Partial<Omit<Entrance, 'id'>>) => {
+    if (!selected?.id) return
+    try {
+      await update(selected.id, payload)
+      setIsEditOpen(false)
+      toast.success('Entrada actualizada exitosamente')
+    } catch (error: unknown) {
+      // Si es error de permisos, mostrar modal de acceso denegado sin loggear
+      const errorObj = error as { isPermissionError?: boolean; silent?: boolean; message?: string };
+      if (errorObj?.isPermissionError && errorObj?.silent) {
+        setAccessDeniedAction('editar visitantes (permisos revocados)');
+        setShowAccessDenied(true);
+      } else {
+        console.error('Error al actualizar entrada:', error);
+        toast.error('Error al actualizar la entrada. Por favor, intente nuevamente.');
+      }
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selected?.id) return;
+    try {
+      await remove(selected.id);
+      setIsDeleteOpen(false);
+      toast.success('Entrada eliminada exitosamente');
+    } catch (error: unknown) {
+      // Si es error de permisos, mostrar modal de acceso denegado sin loggear
+      const errorObj = error as { isPermissionError?: boolean; silent?: boolean; message?: string };
+      if (errorObj?.isPermissionError && errorObj?.silent) {
+        setAccessDeniedAction('eliminar visitantes (permisos revocados)');
+        setShowAccessDenied(true);
+      } else {
+        console.error('Error al eliminar entrada:', error);
+        toast.error('Error al eliminar la entrada. Por favor, intente nuevamente.');
+      }
+    }
+  };
+
+  // Solo mostrar loading si tiene permisos
+  if (canView && loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen text-gray-600">
+        <ShieldCheck className="h-10 w-10 text-green-600 mb-4" />
+        <p className="text-lg">Cargando visitantes...</p>
+      </div>
+    );
+  }
+
+  // Solo mostrar error si tiene permisos y hay un error (que no sea 403)
+  if (canView && error) {
+    console.error('Error fetching entrances:', error);
+    const isPermissionError = error.includes('403') || error.includes('Forbidden');
+    
+    if (isPermissionError) {
+      // Si es error 403, redirigir al mensaje de acceso denegado
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
+            <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-700 mb-2">Acceso Restringido</h2>
+            <p className="text-gray-600 mb-4">
+              No tienes permisos para ver el panel de visitantes del museo.
+            </p>
+            <p className="text-sm text-gray-500">
+              Contacta al administrador para obtener acceso.
+            </p>
+          </div>
+        </div>
+      );
+    }
+    
+    return <div className="text-center text-red-800 font-semibold">Error cargando visitantes: {error}</div>;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       {/* Header */}
@@ -93,18 +216,22 @@ const MuseumComponentView: React.FC = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
         <h2 className="text-3xl font-semibold text-red-700 mb-2 sm:mb-0">Lista de Visitantes</h2>
         <div className="flex flex-col sm:flex-row justify-end gap-2 w-full sm:w-auto">
-          <button
-            onClick={() => setIsCreateOpen(true)}
-            className="flex items-center justify-center bg-red-700 text-white px-4 py-2 rounded-3xl whitespace-nowrap"
-          >
-            <PlusCircle className="mr-2" /> Nuevo Visitante
-          </button>
-          <button
-            onClick={() => setIsTicketOpen(true)}
-            className="flex items-center justify-center bg-red-700 text-white px-4 py-2 rounded-3xl whitespace-nowrap"
-          >
-            <PlusCircle className="mr-2" /> Tipos de Tickets
-          </button>
+          {canCreate && (
+            <button
+              onClick={handleCreateClick}
+              className="flex items-center justify-center bg-red-700 text-white px-4 py-2 rounded-3xl whitespace-nowrap"
+            >
+              <PlusCircle className="mr-2" /> Nuevo Visitante
+            </button>
+          )}
+          {canEdit && (
+            <button
+              onClick={handleTicketTypesClick}
+              className="flex items-center justify-center bg-red-700 text-white px-4 py-2 rounded-3xl whitespace-nowrap"
+            >
+              <PlusCircle className="mr-2" /> Tipos de Tickets
+            </button>
+          )}
         </div>
       </div>
       
@@ -169,18 +296,22 @@ const MuseumComponentView: React.FC = () => {
                       : <XCircle className="inline text-red-500" />}
                   </td>
                   <td className="px-4 py-2 space-x-2">
-                    <button onClick={() => { setSelected(e); setIsEditOpen(true); }} className="p-1 rounded-full hover:bg-gray-200 transition-colors">
-                      <Pencil className="text-blue-600" size={18} />
-                    </button>
-                    <button onClick={() => { setSelected(e); setIsDeleteOpen(true); }} className="p-1 rounded-full hover:bg-gray-200 transition-colors">
-                      <Trash2 className="text-red-600" size={18} />
-                    </button>
+                    {canEdit && (
+                      <button onClick={() => handleEditClick(e)} className="p-1 rounded-full hover:bg-gray-200 transition-colors">
+                        <Pencil className="text-blue-600" size={18} />
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button onClick={() => handleDeleteClick(e)} className="p-1 rounded-full hover:bg-gray-200 transition-colors">
+                        <Trash2 className="text-red-600" size={18} />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={8} className="px-4 py-4 text-center text-gray-500">
+                <td colSpan={9} className="px-4 py-4 text-center text-gray-500">
                   No hay visitantes registrados en este periodo.
                 </td>
               </tr>
@@ -215,6 +346,16 @@ const MuseumComponentView: React.FC = () => {
       <ModalTicketTypes
         isOpen={isTicketOpen}
         onClose={() => setIsTicketOpen(false)}
+      />
+
+      {/* Modal de acceso denegado */}
+      <AccessDeniedModal
+        isOpen={showAccessDenied}
+        onClose={() => setShowAccessDenied(false)}
+        title="Permisos Insuficientes"
+        message="No tienes permisos para realizar esta acción en el panel de visitantes del museo."
+        action={accessDeniedAction}
+        module="Panel de Visitantes"
       />
     </div>
   );

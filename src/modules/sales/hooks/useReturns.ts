@@ -13,9 +13,9 @@ export const useFetchReturns = () => {
   return useQuery<returnsAttributes[], Error>({
     queryKey: ['returns'],
     queryFn: fetchReturns,
-    refetchInterval: 3000, // Refrescar cada 3 segundos
+    refetchInterval: 3000, // refresca cada 3 segundos
     refetchOnWindowFocus: true,
-    staleTime: 1000, // Considerar datos obsoletos después de 1 segundo
+    staleTime: 1000,
   })
 }
 
@@ -34,12 +34,11 @@ export const useCreateReturn = () => {
   return useMutation<
     returnsAttributes,
     Error,
-    Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt' | 'price'>
+    Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt'>
   >({
     mutationFn: createReturn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['returns'] })
-      queryClient.invalidateQueries({ queryKey: ['warehouseStoreItems'] })
     },
   })
 }
@@ -50,10 +49,7 @@ export const useUpdateReturn = () => {
   return useMutation<
     returnsAttributes,
     Error,
-    {
-      id: string
-      payload: Partial<Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt' | 'price'>>
-    }
+    { id: string; payload: Partial<Omit<returnsAttributes, 'id' | 'createdAt' | 'updatedAt'>> }
   >({
     mutationFn: ({ id, payload }) => updateReturn(id, payload),
     onSuccess: () => {

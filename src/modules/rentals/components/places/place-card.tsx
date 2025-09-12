@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { FaUser } from "react-icons/fa";
 import ModalEditPlace from "./modal-edit-place";
 import NewRentalModal from "../modals/new-rental-modal";
-import { Place } from "../../types";
+import { Place } from "../../types/places";
 import Modal from "@/core/components/ui/Modal";
 import { useCreateRental } from "../../hook/useRentals";
 import { useAuthStore } from "@/core/store/auth";
@@ -12,8 +12,13 @@ interface PlaceCardProps {
   place: Place;
   customers: Customer[];
   onEdit: (placeId: string, updatedPlace: Partial<Place>) => void;
-  onDelete: (placeId: string) => void;
+  onDelete: (params: { id: string, locationId?: string }) => void;
   onViewRentals: (place: Place) => void;
+  // 🔥 NUEVOS PROPS PARA PERMISOS
+  canEdit?: boolean;
+  canDelete?: boolean;
+  canCreate?: boolean;
+  isAdmin?: boolean;
 }
 
 const PlaceCard: React.FC<PlaceCardProps> = ({
@@ -21,6 +26,10 @@ const PlaceCard: React.FC<PlaceCardProps> = ({
   customers,
   onEdit,
   onViewRentals,
+  // 🔥 DESTRUCTURACIÓN DE NUEVOS PROPS DE PERMISOS
+  canEdit = false,
+  canCreate = false,
+  isAdmin = false,
 }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isNewRentalModalOpen, setIsNewRentalModalOpen] = useState(false);
@@ -49,12 +58,23 @@ const PlaceCard: React.FC<PlaceCardProps> = ({
     }
   };
 
+  const handleDelete = () => {
+    if (confirm('¿Estás seguro de eliminar este lugar?')) {
+      // @ts-expect-error - We know onDelete is passed as a prop
+      onDelete?.({ 
+        id: place.id, 
+        locationId: place.location_id 
+      });
+    }
+  };
+
   const handleNewRentalSubmit = async (rentalData: {
     customerId: string;
     nombreVendedor: string;
     fechaInicio: string;
     fechaFin: string;
     monto: number;
+    status: boolean;
   }) => {
     try {
       // Mostrar modal informativo inmediatamente al intentar crear
@@ -88,6 +108,7 @@ const PlaceCard: React.FC<PlaceCardProps> = ({
         start_date: new Date(`${rentalData.fechaInicio}T10:00:00.000Z`), // Date object
         end_date: new Date(`${rentalData.fechaFin}T18:00:00.000Z`), // Date object
         amount: Number(rentalData.monto), // Number
+        status: rentalData.status || true, // Default to active
       };
 
       console.log("✅ Usuario autenticado:", user);
@@ -141,25 +162,31 @@ const PlaceCard: React.FC<PlaceCardProps> = ({
         </div>
 
         {/* Botones de acción */}
-        <div className="flex justify-between mt-4">
+        <div className="grid grid-cols-2 gap-2 mt-4">
           <button
-            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
+            className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-sm transition-colors"
             onClick={handleViewRentals}
           >
             Alquileres
           </button>
-          <button
-            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
-            onClick={handleEdit}
-          >
-            Editar
-          </button>
-          <button
-            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
-            onClick={handleAlquilar}
-          >
-            Alquilar
-          </button>
+          {/* 🔥 MOSTRAR BOTÓN EDITAR SOLO SI TIENE PERMISOS */}
+          {(canEdit || isAdmin) && (
+            <button
+              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
+              onClick={handleEdit}
+            >
+              Editar
+            </button>
+          )}
+          {/* 🔥 MOSTRAR BOTÓN ALQUILAR SOLO SI TIENE PERMISOS DE CREAR */}
+          {(canCreate || isAdmin) && (
+            <button
+              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
+              onClick={handleAlquilar}
+            >
+              Alquilar
+            </button>
+          )}
         </div>
       </div>
 

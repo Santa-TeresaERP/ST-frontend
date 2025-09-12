@@ -6,7 +6,8 @@ import {
   DialogTitle,
 } from '@/app/components/ui/dialog';
 import { Button } from '@/app/components/ui/button';
-import { ShieldAlert, Lock } from 'lucide-react';
+import { ShieldAlert, Lock, RefreshCw } from 'lucide-react';
+import { useAutoPermissionSync } from './useAutoPermissionSync';
 
 /**
  * Modal que se muestra cuando el usuario no tiene permisos para una acción
@@ -29,6 +30,21 @@ const AccessDeniedModal: React.FC<AccessDeniedModalProps> = ({
   action = 'esta acción',
   module = 'este módulo'
 }) => {
+  const { 
+    isAutoSyncing, 
+    showRetryButton, 
+    forceSync, 
+    needsPermissionSync 
+  } = useAutoPermissionSync();
+
+  const handleRetryPermissions = async () => {
+    await forceSync();
+    // Dar tiempo para que se actualicen los permisos antes de cerrar
+    setTimeout(() => {
+      onClose();
+    }, 1500);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-full max-w-[90%] sm:max-w-[425px] px-4 py-6 mx-auto rounded-xl shadow-lg border-0">
@@ -73,16 +89,48 @@ const AccessDeniedModal: React.FC<AccessDeniedModalProps> = ({
                   💡 Sugerencia: Recarga la página para actualizar tus permisos
                 </p>
               )}
+              {/* Estado de sincronización automática */}
+              {isAutoSyncing && (
+                <p className="text-blue-600 font-medium mt-1 flex items-center gap-1">
+                  <RefreshCw className="h-3 w-3 animate-spin" />
+                  Verificando permisos automáticamente...
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Botón para cerrar el modal */}
-          <Button
-            onClick={onClose}
-            className="w-full bg-red-600 hover:bg-red-700 text-white rounded-3xl mt-4"
-          >
-            Entendido
-          </Button>
+          {/* Botones de acción */}
+          <div className="flex gap-2 w-full">
+            {/* Botón para cerrar el modal */}
+            <Button
+              onClick={onClose}
+              variant="outline"
+              className="flex-1 rounded-3xl"
+            >
+              Entendido
+            </Button>
+            
+            {/* Botón de reintento si hay problemas de sincronización */}
+            {(showRetryButton || needsPermissionSync) && (
+              <Button
+                onClick={handleRetryPermissions}
+                disabled={isAutoSyncing}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-3xl flex items-center gap-2"
+              >
+                {isAutoSyncing ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    Verificando...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4" />
+                    Reintentar
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
