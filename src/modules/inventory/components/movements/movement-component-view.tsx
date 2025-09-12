@@ -24,19 +24,11 @@ import { useModulePermissions } from '@/core/utils/permission-hooks';
 import { MODULE_NAMES } from '@/core/utils/useModulesMap';
 
 const MovementComponentView: React.FC = () => {
-  // Se inicializa el estado de los filtros con las fechas de los últimos 3 días
-  const getInitialFilters = () => {
-    const today = new Date();
-    const threeDaysAgo = new Date(today);
-    threeDaysAgo.setDate(today.getDate() - 2);
-
-    return {
-      start_date: threeDaysAgo.toISOString().split('T')[0],
-      end_date: today.toISOString().split('T')[0],
-    };
-  };
-
-  const [filters, setFilters] = useState<any>(getInitialFilters);
+  // Estado de filtros SIN valores por defecto
+  const [filters, setFilters] = useState<any>({
+    start_date: "",
+    end_date: "",
+  });
 
   // Productos
   const { data: movements = [], isLoading: loading, error, refetch: fetchMovements } = useFetchMovements(filters);
