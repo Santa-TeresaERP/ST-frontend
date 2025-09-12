@@ -8,6 +8,7 @@ import {
 } from "react-icons/fi";
 import { useFetchModules } from "../../../modules/hook/useModules";
 import { exportVentasExcel } from "../..//action/exportVentasExcel";
+import { exportRentalsExcel } from "../../action/exportRentalsExcel";
 
 interface ReporteData {
   id: number;
@@ -168,6 +169,34 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
       alert("Hubo un error al generar el Excel");
     }
   };
+  const handleExportExcelRentals = async () => {
+    try {
+      if (!fechaInicio || !fechaFin) {
+        alert("Selecciona un rango de fechas válido");
+        return;
+      }
+
+      // Llamada al backend
+      const blob = await exportRentalsExcel(fechaInicio, fechaFin);
+
+      // Crear enlace de descarga
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `reporte_alquileres_${fechaInicio}_a_${fechaFin}.xlsx`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error al descargar el Excel de alquileres:", error);
+      alert("Hubo un error al generar el Excel de alquileres");
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
@@ -259,14 +288,22 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
                 </div>
               </div>
             </div>
-            {/* 🚨 Nuevo botón aquí */}
-            <div className="flex justify-center mt-4">
+            {/* 🚨 Nuevo bloque con 2 botones */}
+            <div className="flex justify-center gap-4 mt-4">
               <button
                 onClick={handleExportExcel}
                 className="flex items-center gap-2 px-6 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg shadow-md transition-all"
               >
                 <FiDownload size={18} />
                 Obtener Excel de departamento de ventas
+              </button>
+
+              <button
+                onClick={handleExportExcelRentals}
+                className="flex items-center gap-2 px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition-all"
+              >
+                <FiDownload size={18} />
+                Obtener Excel de departamento de alquileres
               </button>
             </div>
             {/* Resumen de totales */}
