@@ -70,7 +70,7 @@ const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
     const parsed = warehouseMovementResourceSchema.safeParse({
       ...form,
       quantity: Number(form.quantity),
-      movement_date: new Date(form.movement_date).toISOString(), // Convertir a ISO string
+      movement_date: form.movement_date, // Enviar como string en formato ISO
     });
     
     // Debug: Mostrar resultado de validación

@@ -5,10 +5,12 @@ import { z } from 'zod';
  * Valida el rango de fechas que el usuario selecciona.
  */
 export const createReportFormSchema = z.object({
-  start_date: z.string().min(1, { message: 'La fecha de inicio es obligatoria.' }),
-  end_date: z.string().min(1, { message: 'La fecha de fin es obligatoria.' }),
+  start_date: z.string().min(1, { message: 'La fecha de inicio es obligatoria.' })
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha debe estar en formato YYYY-MM-DD'),
+  end_date: z.string().min(1, { message: 'La fecha de fin es obligatoria.' })
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha debe estar en formato YYYY-MM-DD'),
   observations: z.string().optional(),
-}).refine(data => new Date(data.start_date) <= new Date(data.end_date), {
+}).refine(data => data.start_date <= data.end_date, {
   message: "La fecha de fin no puede ser anterior a la fecha de inicio.",
   path: ["end_date"], // Asocia el error al campo de fecha de fin
 });

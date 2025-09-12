@@ -356,14 +356,10 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
                           }`}
                         >
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {new Date(r.fechaInicio).toLocaleDateString(
-                              "es-ES"
-                            )}
+                            {new Date(r.fechaInicio).toISOString().split('T')[0]}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                            {r.fechaFin ? (
-                              new Date(r.fechaFin).toLocaleDateString("es-ES")
-                            ) : (
+                            {r.fechaFin ? new Date(r.fechaFin).toISOString().split('T')[0] : (
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                                 En proceso
                               </span>

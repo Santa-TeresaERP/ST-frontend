@@ -178,7 +178,7 @@ const MonasteryComponentView: React.FC = () => {
                 <td className="px-4 py-2 font-medium">{gasto.name}</td>
                 <td className="px-4 py-2">{gasto.description || '-'}</td>
         <td className="px-4 py-2">S/ {Number(gasto.amount).toFixed(2)}</td>
-        <td className="px-4 py-2">{new Date(gasto.date).toLocaleDateString()}</td>
+        <td className="px-4 py-2">{new Date(gasto.date).toISOString().split('T')[0]}</td>
                 <td className="px-4 py-2">
                   <div className="flex items-center space-x-2">
                     {/* 🔥 BOTÓN EDITAR SOLO SI TIENE PERMISOS */}
