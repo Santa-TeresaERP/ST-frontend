@@ -3,11 +3,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 
+
 // 1. IMPORTAR HOOKS Y TIPOS NECESARIOS
 import { useMonasteryOverheads } from '@/modules/monastery/hooks/useOverheads';
 import { Overhead } from '@/modules/monastery/types/overheads';
 
-// Importar los modales que crearemos
+// Importar los modales de monasterio
 import ModalCreateMonasteryExpense from './overhead/modal-create-monastery-expense';
 import ModalEditMonasteryExpense from './overhead/modal-edit-monastery-expense';
 import ModalDeleteMonasteryExpense from './overhead/modal-delete-monastery-expense';
@@ -21,6 +22,14 @@ const MonasteryComponentView: React.FC = () => {
   const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedOverhead, setSelectedOverhead] = useState<Overhead | null>(null);
+  
+  // NUEVO: ESTADO LOCAL PARA LA UI - REGISTRO GENERAL
+  const [isViewGeneralModalOpen, setViewGeneralModalOpen] = useState(false);
+  const [isDeleteGeneralModalOpen, setDeleteGeneralModalOpen] = useState(false);
+  const [selectedGeneralRegistry, setSelectedGeneralRegistry] = useState<GeneralRegistry | null>(null);
+  
+  // NUEVO: Estado para controlar qué vista mostrar
+  const [activeView, setActiveView] = useState<'general' | 'monastery'>('monastery');
 
   // 4. DATOS SIN FILTROS
   const rows = useMemo(() => (Array.isArray(data) ? data : []), [data]);
@@ -38,7 +47,14 @@ const MonasteryComponentView: React.FC = () => {
   }, [error]);
 
 
-  // 5. MANEJADORES DE EVENTOS PARA MODALES
+
+  useEffect(() => {
+    if (error) {
+      console.error('[Monastery] error from hook:', error);
+    }
+  }, [error]);
+
+  // 5. MANEJADORES DE EVENTOS PARA MODALES DE MONASTERIO
   const handleOpenEditModal = (overhead: Overhead) => {
     setSelectedOverhead(overhead);
     setEditModalOpen(true);
@@ -57,28 +73,34 @@ const MonasteryComponentView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-      {/* ... (Header e Imagen se mantienen igual) ... */}
-       <div className="flex justify-center mt-4 mb-6 md:mt-6 md:mb-8">
-              <Image
-  src="/santa teresa.jpg"
-  alt="Santa Teresa"
-  width={1900}
-  height={500}
-  className="rounded-xl shadow-md object-cover object-[center_60%] h-48 md:h-64 w-full"
-/>
-            </div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-        <h2 className="text-3xl font-semibold text-red-700 mb-2 sm:mb-0">Lista de Gastos</h2>
-        <div className="flex flex-col sm:flex-row justify-end gap-2 w-full sm:w-auto">
-          <button
-            onClick={() => setCreateModalOpen(true)}
-            className="flex items-center justify-center bg-red-700 text-white px-4 py-2 rounded-3xl whitespace-nowrap"
-          >
-            <PlusCircle className="mr-2" /> Registrar Gastos
-          </button>
+      {/* Switch de navegación con tema rojo degradado */}
+      <div className="flex justify-center mb-6">
+        <div className="bg-white rounded-full p-1 shadow-lg border border-gray-200">
+          <div className="flex">
+            <button
+              onClick={() => setActiveView('general')}
+              className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
+                activeView === 'general'
+                  ? 'bg-gradient-to-r from-red-500 to-red-700 text-white shadow-md transform scale-105'
+                  : 'text-red-600 hover:bg-red-50'
+              }`}
+            >
+              Registro General
+            </button>
+            <button
+              onClick={() => setActiveView('monastery')}
+              className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
+                activeView === 'monastery'
+                  ? 'bg-gradient-to-r from-red-500 to-red-700 text-white shadow-md transform scale-105'
+                  : 'text-red-600 hover:bg-red-50'
+              }`}
+            >
+              Gastos de Monasterio
+            </button>
+          </div>
         </div>
       </div>
-
+ 
   {/* Filtros removidos intencionalmente */}
       
       <div className="overflow-x-auto bg-white rounded shadow">
@@ -124,13 +146,14 @@ const MonasteryComponentView: React.FC = () => {
         onClose={() => setEditModalOpen(false)}
         overheadToEdit={selectedOverhead}
       />
-  <ModalDeleteMonasteryExpense
+      <ModalDeleteMonasteryExpense
         isOpen={isDeleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
         onConfirm={handleDeleteConfirm}
-  isPending={deleting}
+        isPending={deleting}
         overheadName={selectedOverhead?.name || ''}
       />
+
     </div>
   );
 };
