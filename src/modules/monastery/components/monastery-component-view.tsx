@@ -26,7 +26,15 @@ const MonasteryComponentView: React.FC = () => {
   // NUEVO: ESTADO LOCAL PARA LA UI - REGISTRO GENERAL
   const [isViewGeneralModalOpen, setViewGeneralModalOpen] = useState(false);
   const [isDeleteGeneralModalOpen, setDeleteGeneralModalOpen] = useState(false);
-  const [selectedGeneralRegistry, setSelectedGeneralRegistry] = useState<GeneralRegistry | null>(null);
+  // Importa el tipo GeneralRegistry si existe, o define un placeholder temporal
+  // import { GeneralRegistry } from '@/modules/monastery/types/generalRegistry';
+  type GeneralRegistry = {
+    id: string;
+    name: string;
+    // Agrega aquí las propiedades necesarias según tu modelo real
+  };
+  
+    const [selectedGeneralRegistry, setSelectedGeneralRegistry] = useState<GeneralRegistry | null>(null);
   
   // NUEVO: Estado para controlar qué vista mostrar
   const [activeView, setActiveView] = useState<'general' | 'monastery'>('monastery');
@@ -144,8 +152,9 @@ const MonasteryComponentView: React.FC = () => {
       <ModalEditMonasteryExpense
         isOpen={isEditModalOpen}
         onClose={() => setEditModalOpen(false)}
-        overheadToEdit={selectedOverhead}
-      />
+        overheadToEdit={selectedOverhead} onConfirm={function (): void {
+          throw new Error('Function not implemented.');
+        } } isPending={false} overheadName={''}      />
       <ModalDeleteMonasteryExpense
         isOpen={isDeleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
