@@ -6,6 +6,7 @@ import { Button } from "../../../app/components/ui/button";
 import { Input } from "../../../app/components/ui/input";
 import { Label } from "../../../app/components/ui/label";
 import { ChangePasswordRequest } from '@/modules/user-creations/types/user';
+import { useChangePassword } from '@/modules/user-creations/hook/useUsers';
 
 interface ChangePasswordFormProps {
   isOpen: boolean;
@@ -17,30 +18,48 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ isOpen, onClose
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  const { mutate: changePasswordMutation, isPending } = useChangePassword();
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
+    
     const payload: ChangePasswordRequest = {
       userId: user.id,
       currentPassword,
       newPassword,
     };
 
-    try {
-      console.log('Changing password with payload:', payload);
-      // await changePassword(payload);
-      onClose();
-    } catch (error: unknown) {
-      // Si es error de permisos silencioso, no hacer nada
-      const errorObj = error as { isPermissionError?: boolean; silent?: boolean };
-      if (errorObj?.isPermissionError && errorObj?.silent) {
-        // Error silencioso, no hacer nada aquí
-        return;
+    changePasswordMutation(payload, {
+      onSuccess: () => {
+        console.log('Password changed successfully');
+        setCurrentPassword('');
+        setNewPassword('');
+        onClose();
+      },
+      onError: (error: unknown) => {
+        // Si es error de permisos silencioso, no hacer nada
+        const errorObj = error as { isPermissionError?: boolean; silent?: boolean };
+        if (errorObj?.isPermissionError && errorObj?.silent) {
+          // Error silencioso, no hacer nada aquí
+          return;
+        }
+        
+        // Extraer el mensaje específico del error del backend
+        const axiosError = error as { response?: { data?: { error?: string; message?: string } } };
+        let errorMessage = 'Error al cambiar la contraseña';
+        
+        if (axiosError?.response?.data?.error) {
+          errorMessage = axiosError.response.data.error;
+        } else if (axiosError?.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        }
+        
+        console.error('Error changing password:', error);
+        setErrors({ submit: errorMessage });
       }
-      // Para otros errores, mostrar en consola
-      console.error('Error changing password:', error);
-      setErrors({ submit: 'Error changing password' });
-    }
+    });
   };
 
   return (
@@ -102,9 +121,10 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ isOpen, onClose
             </Button>
             <Button
               type="submit"
-              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white"
+              disabled={isPending}
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
             >
-              Cambiar Contraseña
+              {isPending ? 'Cambiando...' : 'Cambiar Contraseña'}
             </Button>
           </DialogFooter>
         </form>

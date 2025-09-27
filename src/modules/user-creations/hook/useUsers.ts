@@ -1,6 +1,6 @@
-import { CreateUserPayload, UpdateUserPayload, User } from '@/modules/user-creations/types/user';
+import { CreateUserPayload, UpdateUserPayload, User, ChangePasswordRequest } from '@/modules/user-creations/types/user';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { deleteUser, getUser, updateUser, createUser } from '../action/user';
+import { deleteUser, getUser, updateUser, createUser, changePassword } from '../action/user';
 import { fetchUsers } from '@/modules/user-creations/action/user';
 import { useModulePermission, MODULE_NAMES } from '@/core/utils/useModulesMap';
 
@@ -167,5 +167,40 @@ export const useDeleteUser = () => {
       return failureCount < 3; // Reintentar otros errores máximo 3 veces
     },
     retryDelay: 0, // Sin delay entre reintentos
+  });
+};
+
+export const useChangePassword = () => {
+  const { hasPermission: canEdit } = useModulePermission(MODULE_NAMES.USERS, 'canEdit');
+  
+  return useMutation<void, Error, ChangePasswordRequest>({
+    mutationFn: async (payload: ChangePasswordRequest) => {
+      if (!canEdit) {
+        throw { isPermissionError: true, silent: true, message: 'No tienes permisos para cambiar contraseñas' };
+      }
+      try {
+        return await changePassword(payload);
+      } catch (error: unknown) {
+        const axiosError = error as AxiosError;
+        if (axiosError?.response?.status === 403) {
+          throw { isPermissionError: true, silent: true, message: 'Permisos revocados para cambiar contraseñas' };
+        }
+        throw error;
+      }
+    },
+    onError: (error: unknown) => {
+      const errorObj = error as { silent?: boolean; isPermissionError?: boolean };
+      if (!errorObj?.silent && !errorObj?.isPermissionError) {
+        console.error('Error changing password:', error);
+      }
+    },
+    retry: (failureCount, error: unknown) => {
+      const errorObj = error as { isPermissionError?: boolean };
+      if (errorObj?.isPermissionError) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    retryDelay: 0,
   });
 };

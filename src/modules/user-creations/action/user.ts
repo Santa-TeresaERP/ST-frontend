@@ -25,3 +25,10 @@ export const updateUser = async (id: string, payload: UpdateUserPayload): Promis
 export const deleteUser = async (id: string): Promise<void> => {
   await api.put(`/users/${id}`);
 };
+
+export const changePassword = async (payload: { userId: string; currentPassword: string; newPassword: string }): Promise<void> => {
+  await api.patch(`/users/changes/${payload.userId}`, {
+    currentPassword: payload.currentPassword,
+    newPassword: payload.newPassword
+  });
+};
