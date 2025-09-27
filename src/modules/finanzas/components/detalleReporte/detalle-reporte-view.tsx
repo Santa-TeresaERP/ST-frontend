@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useMemo, useState } from 'react';
 import {
   Plus,
@@ -8,7 +9,9 @@ import {
   DollarSign,
   Calendar,
   ListChecks,
-  Target
+  Target,
+  ShieldAlert,
+  Loader2
 } from 'lucide-react';
 
 import ModalAddEntrada from './modal-create-ingreso-gasto';
@@ -40,6 +43,8 @@ import {
 } from '../../types/generalIncome';
 
 import { useFetchModules } from '../../../modules/hook/useModules'; // Ajusta ruta
+import { useModulePermissions } from '@/core/utils/permission-hooks';
+import { MODULE_NAMES } from '@/core/utils/useModulesMap';
 
 interface DetalleReporteProps {
   reporte: {
@@ -49,6 +54,7 @@ interface DetalleReporteProps {
     fechaFin?: string;
     observaciones?: string;
   };
+  reportId?: string;
 }
 
 type EditEntry = {
@@ -64,14 +70,22 @@ type EditEntry = {
 // Función para formatear fecha a dd/mm/yyyy
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '';
-  const d = new Date(dateStr);
-  const day = d.getDate().toString().padStart(2, '0');
-  const month = (d.getMonth() + 1).toString().padStart(2, '0');
-  const year = d.getFullYear();
+  // Usar la misma lógica que en inventory - obtener fecha sin zona horaria
+  const isoDate = new Date(dateStr).toISOString().split('T')[0];
+  const [year, month, day] = isoDate.split('-');
   return `${day}/${month}/${year}`;
 };
 
-export default function DetalleReporte({ reporte }: DetalleReporteProps) {
+export default function DetalleReporte({ reporte, reportId }: DetalleReporteProps) {
+  // 🔥 HOOKS DE PERMISOS
+  const {
+    canView: canRead,
+    canCreate,
+    canEdit,
+    canDelete,
+    isLoading: permissionsLoading,
+    isAdmin
+  } = useModulePermissions(MODULE_NAMES.FINANZAS);
   const [tab, setTab] = useState<'ingresos' | 'gastos'>('ingresos');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -82,17 +96,46 @@ export default function DetalleReporte({ reporte }: DetalleReporteProps) {
   const { data: modules = [] } = useFetchModules();
 
   // Hooks para ingresos
-  const { data: ingresos = [], isLoading: loadingIngresos } = useFetchGeneralIncomes();
+  const { data: allIngresos = [], isLoading: loadingIngresos } = useFetchGeneralIncomes();
   const createIngreso = useCreateGeneralIncome();
   const updateIngreso = useUpdateGeneralIncome();
   const deleteIngreso = useDeleteGeneralIncome();
 
   // Hooks para gastos
-  const { data: gastos = [], isLoading: loadingGastos } = useFetchGeneralExpenses();
+  const { data: allGastos = [], isLoading: loadingGastos } = useFetchGeneralExpenses();
   const createGasto = useCreateGeneralExpense();
   const updateGasto = useUpdateGeneralExpense();
   const deleteGasto = useDeleteGeneralExpense();
 
+  const ingresos = useMemo(() => {
+    const isInProcess = reporte && !reporte.fechaFin;
+
+    if (isInProcess) {
+      // Si el reporte está en proceso, muestra los de este reporte Y los que no tienen reporte
+      return allIngresos.filter(i => i.report_id === reportId || i.report_id === null);
+    }
+    
+    if (reportId) {
+      // Si es un reporte cerrado, muestra solo los de ese reporte
+      return allIngresos.filter(i => i.report_id === reportId);
+    }
+    
+    return []; // Si no hay reporte seleccionado, no muestra nada
+  }, [allIngresos, reportId, reporte]);
+
+  const gastos = useMemo(() => {
+    const isInProcess = reporte && !reporte.fechaFin;
+
+    if (isInProcess) {
+      return allGastos.filter(g => g.report_id === reportId || g.report_id === null);
+    }
+    
+    if (reportId) {
+      return allGastos.filter(g => g.report_id === reportId);
+    }
+
+    return [];
+  }, [allGastos, reportId, reporte]);
   // Totales y formato
   // <-- corrección: convertir explícitamente a Number para evitar concatenación de strings
   const ingresosTotales = useMemo(
@@ -107,7 +150,39 @@ export default function DetalleReporte({ reporte }: DetalleReporteProps) {
   const formatoMoneda = (valor: number) =>
     `S/. ${valor.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
 
-  
+  // 🔥 VERIFICACIONES DE ACCESO ANTES DE RENDERIZAR
+  if (permissionsLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Verificando permisos...</h2>
+          <p className="text-gray-600">Cargando acceso al detalle de finanzas</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canRead && !isAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="max-w-md w-full text-center p-8">
+          <div className="mb-6">
+            <ShieldAlert className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Acceso Restringido</h2>
+            <p className="text-gray-600">No tienes permisos para ver los detalles de finanzas</p>
+          </div>
+          <button
+            onClick={() => window.history.back()}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Volver
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Guardar nuevo ingreso o gasto
   const handleSave = (
     payload: CreateIncomePayload | CreateExpensePayload
@@ -285,33 +360,35 @@ export default function DetalleReporte({ reporte }: DetalleReporteProps) {
                 </button>
               </div>
 
-              <button
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105 shadow-lg ${
-                  tab === 'ingresos'
-                    ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
-                    : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'
-                }`}
-                onClick={() => setIsAddOpen(true)}
-              >
-                <Plus className="w-4 h-4" />
-                Agregar {tab === 'ingresos' ? 'Ingreso' : 'Gasto'}
-              </button>
+              {(canCreate || isAdmin) && (
+                <button
+                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105 shadow-lg ${
+                    tab === 'ingresos'
+                      ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
+                      : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'
+                  }`}
+                  onClick={() => setIsAddOpen(true)}
+                >
+                  <Plus className="w-4 h-4" />
+                  Agregar {tab === 'ingresos' ? 'Ingreso' : 'Gasto'}
+                </button>
+              )}
             </div>
           </div>
 
           {/* Tabla */}
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[600px] sm:min-w-0 text-xs sm:text-sm">
               <thead>
                 <tr className="bg-gradient-to-r from-gray-700 to-gray-700 border-b border-gray-200">
-                  <th className="text-center py-4 px-6 font-semibold text-white">Módulo</th>
-                  <th className="text-center py-4 px-6 font-semibold text-white">
+                  <th className="text-center py-3 px-2 sm:py-4 sm:px-6 font-semibold text-white whitespace-nowrap">Módulo</th>
+                  <th className="text-center py-3 px-2 sm:py-4 sm:px-6 font-semibold text-white whitespace-nowrap">
                     Tipo de {tab === 'ingresos' ? 'Ingreso' : 'Gasto'}
                   </th>
-                  <th className="text-center py-4 px-6 font-semibold text-white">Monto</th>
-                  <th className="text-center py-4 px-6 font-semibold text-white">Fecha</th>
-                  <th className="text-center py-4 px-6 font-semibold text-white">Observaciones</th>
-                  <th className="text-center py-4 px-6 font-semibold text-white">Acciones</th>
+                  <th className="text-center py-3 px-2 sm:py-4 sm:px-6 font-semibold text-white whitespace-nowrap">Monto</th>
+                  <th className="text-center py-3 px-2 sm:py-4 sm:px-6 font-semibold text-white whitespace-nowrap">Fecha</th>
+                  <th className="text-center py-3 px-2 sm:py-4 sm:px-6 font-semibold text-white whitespace-nowrap">Observaciones</th>
+                  <th className="text-center py-3 px-2 sm:py-4 sm:px-6 font-semibold text-white whitespace-nowrap">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -348,7 +425,7 @@ export default function DetalleReporte({ reporte }: DetalleReporteProps) {
                         key={entry.id}
                         className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150 bg-white"
                       >
-                        <td className="py-4 px-6">
+                        <td className="py-3 px-2 sm:py-4 sm:px-6">
                           <div className="flex items-center gap-3">
                             <div className="flex items-center gap-3">
                               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -356,7 +433,7 @@ export default function DetalleReporte({ reporte }: DetalleReporteProps) {
                             </div>
                           </div>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-3 px-2 sm:py-4 sm:px-6">
                           <span
                             className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${
                               tab === 'ingresos' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
@@ -368,69 +445,73 @@ export default function DetalleReporte({ reporte }: DetalleReporteProps) {
                               : (entry as GeneralExpense).expense_type}
                           </span>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-3 px-2 sm:py-4 sm:px-6">
                           <span
-                            className={`font-bold text-lg ${
+                            className={`font-bold text-base sm:text-lg ${
                               tab === 'ingresos' ? 'text-green-600' : 'text-red-600'
                             }`}
                           >
                             S/. {isNaN(amount) ? '0.00' : amount.toFixed(2)}
                           </span>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-3 px-2 sm:py-4 sm:px-6">
                           <div className="flex items-center gap-2 text-gray-600">
                             <Calendar className="w-4 h-4" />
                             <span>{fechaFormateada}</span>
                           </div>
                         </td>
-                        <td className="py-4 px-6">
-                          <span className="text-gray-600 text-sm max-w-xs truncate block">
+                        <td className="py-3 px-2 sm:py-4 sm:px-6">
+                          <span className="text-gray-600 text-xs sm:text-sm max-w-[120px] sm:max-w-xs truncate block">
                             {tab === 'ingresos'
                               ? (entry as GeneralIncome).description ?? ''
                               : (entry as GeneralExpense).description ?? ''}
                           </span>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-3 px-2 sm:py-4 sm:px-6">
                           <div className="flex justify-center gap-2">
-                            <button
-                              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                              title="Editar"
-                              onClick={() => {
-                                setEntryToEdit({
-                                  id: entry.id,
-                                  module_id: entry.module_id || '',
-                                  income_type:
-                                    tab === 'ingresos'
-                                      ? (entry as GeneralIncome).income_type
-                                      : (entry as GeneralExpense).expense_type,
-                                  amount:
-                                    tab === 'ingresos'
-                                      ? (entry as GeneralIncome).amount
-                                      : (entry as GeneralExpense).amount,
-                                  date:
-                                    tab === 'ingresos'
-                                      ? (entry as GeneralIncome).date
-                                      : (entry as GeneralExpense).date,
-                                  description:
-                                    tab === 'ingresos'
-                                      ? (entry as GeneralIncome).description ?? ''
-                                      : (entry as GeneralExpense).description ?? '',
-                                });
-                                setIsEditOpen(true);
-                              }}
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                            <button
-                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                              title="Eliminar"
-                              onClick={() => {
-                                setEntryToDelete(entry);
-                                setIsDeleteOpen(true);
-                              }}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            {(canEdit || isAdmin) && (
+                              <button
+                                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                                title="Editar"
+                                onClick={() => {
+                                  setEntryToEdit({
+                                    id: entry.id,
+                                    module_id: entry.module_id || '',
+                                    income_type:
+                                      tab === 'ingresos'
+                                        ? (entry as GeneralIncome).income_type
+                                        : (entry as GeneralExpense).expense_type,
+                                    amount:
+                                      tab === 'ingresos'
+                                        ? (entry as GeneralIncome).amount
+                                        : (entry as GeneralExpense).amount,
+                                    date:
+                                      tab === 'ingresos'
+                                        ? (entry as GeneralIncome).date
+                                        : (entry as GeneralExpense).date,
+                                    description:
+                                      tab === 'ingresos'
+                                        ? (entry as GeneralIncome).description ?? ''
+                                        : (entry as GeneralExpense).description ?? '',
+                                  });
+                                  setIsEditOpen(true);
+                                }}
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                            )}
+                            {(canDelete || isAdmin) && (
+                              <button
+                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                                title="Eliminar"
+                                onClick={() => {
+                                  setEntryToDelete(entry);
+                                  setIsDeleteOpen(true);
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

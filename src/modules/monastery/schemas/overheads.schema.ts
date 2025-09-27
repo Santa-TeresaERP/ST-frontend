@@ -8,7 +8,8 @@ export const overheadFormSchema = z.object({
     .min(1, 'El nombre es obligatorio.')
     .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, { message: 'El nombre solo puede contener letras.' }),
   
-  date: z.string().min(1, 'La fecha es obligatoria.'),
+  date: z.string().min(1, 'La fecha es obligatoria.')
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha debe estar en formato YYYY-MM-DD'),
   
   type: z.enum(
     ['monasterio', 'donativo', 'gasto mensual', 'otro ingreso', 'otro egreso'],
@@ -28,7 +29,12 @@ export const overheadFormSchema = z.object({
  */
 export const updateOverheadFormSchema = overheadFormSchema.omit({ type: true }).partial();
 
+export const generalOverheadFormsSchema = overheadFormSchema.extend({
+  moduleName: z.string().optional(), // Nombre del
+});
+
 
 // Tipos inferidos para usar con react-hook-form
 export type OverheadFormData = z.infer<typeof overheadFormSchema>;
 export type UpdateOverheadFormData = z.infer<typeof updateOverheadFormSchema>;
+export type GeneralOverheadFormData = z.infer<typeof generalOverheadFormsSchema>;

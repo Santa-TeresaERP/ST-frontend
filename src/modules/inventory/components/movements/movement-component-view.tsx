@@ -24,19 +24,11 @@ import { useModulePermissions } from '@/core/utils/permission-hooks';
 import { MODULE_NAMES } from '@/core/utils/useModulesMap';
 
 const MovementComponentView: React.FC = () => {
-  // Se inicializa el estado de los filtros con las fechas de los últimos 3 días
-  const getInitialFilters = () => {
-    const today = new Date();
-    const threeDaysAgo = new Date(today);
-    threeDaysAgo.setDate(today.getDate() - 2);
-
-    return {
-      start_date: threeDaysAgo.toISOString().split('T')[0],
-      end_date: today.toISOString().split('T')[0],
-    };
-  };
-
-  const [filters, setFilters] = useState<any>(getInitialFilters);
+  // Estado de filtros SIN valores por defecto
+  const [filters, setFilters] = useState<any>({
+    start_date: "",
+    end_date: "",
+  });
 
   // Productos
   const { data: movements = [], isLoading: loading, error, refetch: fetchMovements } = useFetchMovements(filters);
@@ -87,8 +79,8 @@ const MovementComponentView: React.FC = () => {
       (filters.product_id ? mov.product_id === filters.product_id : true) &&
       (filters.store_id ? mov.store_id?.toLowerCase().includes(filters.store_id.toLowerCase()) : true) &&
       (filters.movement_type ? mov.movement_type === filters.movement_type : true) &&
-      (filters.start_date ? new Date(mov.movement_date) >= new Date(filters.start_date) : true) &&
-      (filters.end_date ? new Date(mov.movement_date) <= new Date(filters.end_date) : true) &&
+      (filters.start_date ? new Date(mov.movement_date).toISOString().split('T')[0] >= filters.start_date : true) &&
+      (filters.end_date ? new Date(mov.movement_date).toISOString().split('T')[0] <= filters.end_date : true) &&
       (searchTerm
         ? getProductName(mov.product_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
           getWarehouseName(mov.warehouse_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -101,8 +93,8 @@ const MovementComponentView: React.FC = () => {
     (mov) =>
       (filters.resource_id ? mov.resource_id === filters.resource_id : true) &&
       (filters.movement_type ? mov.movement_type === filters.movement_type : true) &&
-      (filters.start_date ? new Date(mov.movement_date) >= new Date(filters.start_date) : true) &&
-      (filters.end_date ? new Date(mov.movement_date) <= new Date(filters.end_date) : true) &&
+      (filters.start_date ? new Date(mov.movement_date).toISOString().split('T')[0] >= filters.start_date : true) &&
+      (filters.end_date ? new Date(mov.movement_date).toISOString().split('T')[0] <= filters.end_date : true) &&
       (searchTerm
         ? getResourceName(mov.resource_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
           getWarehouseName(mov.warehouse_id).toLowerCase().includes(searchTerm.toLowerCase())
@@ -243,7 +235,7 @@ const MovementComponentView: React.FC = () => {
                       <td className="px-4 py-2 text-center capitalize">{mov.movement_type}</td>
                       <td className="px-4 py-2 text-center">{mov.quantity}</td>
                       <td className="px-4 py-2 text-center">
-                        {new Date(mov.movement_date).toLocaleDateString()}
+                        {new Date(mov.movement_date).toISOString().split('T')[0]}
                       </td>
                       <td className="px-4 py-2 text-center">{mov.observations || '-'}</td>
                       <td className="px-4 py-2 text-center">
@@ -339,7 +331,7 @@ const MovementComponentView: React.FC = () => {
                       <td className="px-4 py-2 text-center capitalize">{mov.movement_type}</td>
                       <td className="px-4 py-2 text-center">{mov.quantity}</td>
                       <td className="px-4 py-2 text-center">
-                        {new Date(mov.movement_date).toLocaleDateString()}
+                        {new Date(mov.movement_date).toISOString().split('T')[0]}
                       </td>
                       <td className="px-4 py-2 text-center">{mov.observations || '-'}</td>
                       <td className="px-4 py-2 text-center">

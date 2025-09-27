@@ -67,8 +67,8 @@ const RentalHistoryView: React.FC<RentalHistoryViewProps> = ({
           </h1>
         </div>
 
-        {/* Tabla Header */}
-        <div className="grid grid-cols-8 gap-4 p-3 bg-red-600 text-white rounded-t-lg font-medium">
+        {/* Tabla Header (visible solo en pantallas grandes) */}
+        <div className="hidden md:grid md:grid-cols-8 gap-4 p-3 bg-red-600 text-white rounded-t-lg font-medium">
           <div className="text-center">Comprador</div>
           <div className="text-center">Lugar</div>
           <div className="text-center">Vendedor</div>
@@ -87,36 +87,50 @@ const RentalHistoryView: React.FC<RentalHistoryViewProps> = ({
         ) : placeRentals.length === 0 ? (
           <p className="text-center text-gray-500 p-8">No hay alquileres para este lugar</p>
         ) : (
-          <div className="space-y-0">
+          <div className="space-y-4 md:space-y-0">
             {placeRentals.map((rental) => (
               <React.Fragment key={rental.id}>
                 <div
-                  className={`grid grid-cols-8 gap-4 p-3 rounded-lg border cursor-pointer transition-colors ${
+                  className={`flex flex-col md:grid md:grid-cols-8 gap-y-2 md:gap-4 p-4 md:p-3 rounded-lg border cursor-pointer transition-colors ${
                     selectedRental?.id === rental.id
                       ? "bg-red-50 border-red-200"
-                      : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                      : "bg-white border-gray-200 hover:bg-gray-100"
                   }`}
                   onClick={() => handleRentalSelect(rental)}
                 >
-                  <div className="text-center text-gray-700 font-medium">
+                  {/* Comprador */}
+                  <div className="text-gray-700 font-medium md:text-center">
+                    <span className="block md:hidden font-bold text-red-600">Comprador:</span>
                     {customerMap.get(rental.customer_id)?.full_name || 'Customer no encontrado'}
                   </div>
-                  <div className="text-center text-gray-700 font-medium">
+                  {/* Lugar */}
+                  <div className="text-gray-700 font-medium md:text-center">
+                    <span className="block md:hidden font-bold text-red-600">Lugar:</span>
                     {placeName}
                   </div>
-                  <div className="text-center text-gray-700 font-medium">
+                  {/* Vendedor */}
+                  <div className="text-gray-700 font-medium md:text-center">
+                    <span className="block md:hidden font-bold text-red-600">Vendedor:</span>
                     {userMap.get(rental.user_id) || "Usuario desconocido"}
                   </div>
-                  <div className="text-center text-gray-700 font-medium">
+                  {/* Fecha Inicio */}
+                  <div className="text-gray-700 font-medium md:text-center">
+                    <span className="block md:hidden font-bold text-red-600">Fecha Inicio:</span>
                     {formatDate(rental.start_date)}
                   </div>
-                  <div className="text-center text-gray-700 font-medium">
+                  {/* Fecha Fin */}
+                  <div className="text-gray-700 font-medium md:text-center">
+                    <span className="block md:hidden font-bold text-red-600">Fecha Fin:</span>
                     {formatDate(rental.end_date)}
                   </div>
-                  <div className="text-center text-gray-700 font-medium">
+                  {/* Monto */}
+                  <div className="text-gray-700 font-medium md:text-center">
+                    <span className="block md:hidden font-bold text-red-600">Monto:</span>
                     S/. {Number(rental.amount).toFixed(2)}
                   </div>
-                  <div className="flex justify-center">
+                  {/* Estado */}
+                  <div className="flex justify-start md:justify-center items-center">
+                    <span className="block md:hidden font-bold text-red-600 mr-2">Estado:</span>
                     <span
                       className={`px-2 py-1 rounded text-xs font-medium ${
                         rental.status
@@ -127,7 +141,9 @@ const RentalHistoryView: React.FC<RentalHistoryViewProps> = ({
                       {rental.status ? 'Activo' : 'Inactivo'}
                     </span>
                   </div>
-                  <div className="flex justify-center gap-2">
+                  {/* Acciones */}
+                  <div className="flex justify-start md:justify-center gap-2">
+                    <span className="block md:hidden font-bold text-red-600">Acciones:</span>
                     <button className="text-blue-600 hover:text-blue-800">
                       <FiEdit2 size={16} />
                     </button>
@@ -145,7 +161,7 @@ const RentalHistoryView: React.FC<RentalHistoryViewProps> = ({
 
                 {/* Detalles expandidos */}
                 {selectedRental?.id === rental.id && (
-                  <div className="bg-white border border-red-200 rounded-lg p-6 mx-4 mb-4">
+                  <div className="bg-white border border-red-200 rounded-lg p-6 mx-0 md:mx-4 mb-4">
                     <h3 className="text-lg font-semibold text-red-600 mb-4 text-center">
                       DATOS DEL COMPRADOR
                     </h3>

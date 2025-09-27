@@ -37,6 +37,15 @@ const ModalReporte: React.FC<ModalReporteProps> = ({
 
   const formatDateForInput = (date?: string | Date | null) => {
     if (!date) return '';
+    // Si ya es un string en formato YYYY-MM-DD, lo devolvemos tal como está
+    if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return date;
+    }
+    // Si es un string de fecha diferente, lo convertimos
+    if (typeof date === 'string') {
+      return date.split('T')[0];
+    }
+    // Si es un objeto Date, lo convertimos
     const d = new Date(date);
     if (isNaN(d.getTime())) return '';
     return d.toISOString().split('T')[0]; // yyyy-MM-dd
@@ -107,14 +116,14 @@ const ModalReporte: React.FC<ModalReporteProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-4 sm:p-0"
       onClick={e => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl max-h-[90vh]">
-        <div className="bg-gradient-to-r from-red-700 to-red-600 text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md sm:max-w-xl max-h-[90vh] mx-4 sm:mx-auto overflow-hidden">
+        <div className="bg-gradient-to-r from-red-700 to-red-600 text-white p-4 sm:p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
           <FiX
             size={24}
-            className="absolute left-5 top-1/2 transform -translate-y-1/2 cursor-pointer hover:opacity-75"
+            className="absolute left-4 top-1/2 transform -translate-y-1/2 cursor-pointer hover:opacity-75"
             onClick={onClose}
           />
           <h2 className="text-lg font-bold">
@@ -122,7 +131,7 @@ const ModalReporte: React.FC<ModalReporteProps> = ({
           </h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 p-6 overflow-y-auto max-h-[70vh]">
+        <form onSubmit={handleSubmit} className="space-y-4 p-4 sm:p-6 overflow-y-auto max-h-[70vh]">
           {!isFinalizacion ? (
             // MODO 1: Primer reporte
             <>
@@ -170,7 +179,7 @@ const ModalReporte: React.FC<ModalReporteProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <span className="font-medium text-gray-700">Fecha de Inicio:</span>
-                    <div className="text-gray-900">{formatDateForInput(initialData?.start_date) ? new Date(initialData!.start_date).toLocaleDateString('es-PE') : 'No definida'}</div>
+                    <div className="text-gray-900">{initialData?.start_date ? new Date(initialData.start_date).toISOString().split('T')[0] : 'No definida'}</div>
                   </div>
                   <div>
                     <span className="font-medium text-gray-700">Descripción Actual:</span>
@@ -235,18 +244,18 @@ const ModalReporte: React.FC<ModalReporteProps> = ({
           )}
 
           {/* Botones */}
-          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+              className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors w-full sm:w-auto"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isCreating || isUpdating}
-              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
             >
               {(isCreating || isUpdating) ? 'Procesando...' : (isFinalizacion ? 'Finalizar Reporte' : 'Crear Reporte')}
             </button>

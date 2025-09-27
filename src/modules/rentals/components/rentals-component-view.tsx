@@ -1,17 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { FiMapPin, FiHome, FiBarChart2, FiCheckCircle, FiChevronLeft, FiChevronRight, FiX, FiUser } from 'react-icons/fi';
 import { MdLocationOn } from 'react-icons/md';
+import { ShieldAlert, Loader2 } from 'lucide-react';
+import RentalHistoryView from './rental-history/rental-history-view';
 import ModalCreateLocation from './information location/modal-create-location';
 import ModalEditLocation from './information location/modal-edit-location';
 import ModalCreatePlace from './places/modal-create-place';
 import PlaceCard from './places/place-card';
-import RentalHistoryView from './rental-history/rental-history-view';
+import { Location } from '../types';
 import { Place } from '../types/places.d';
-import { Location } from '../types/location';
 import { useFetchLocations } from '../hook/useLocations';
 import { useFetchPlacesByLocation, useDeletePlace } from '../hook/usePlaces';
 import { useFetchCustomers } from '../hook/useCustomers';
 import { useQueryClient } from '@tanstack/react-query';
+
+// 🔥 IMPORTAR SISTEMA DE PERMISOS OPTIMIZADO
+import { useModulePermissions } from '@/core/utils/permission-hooks';
+import { MODULE_NAMES } from '@/core/utils/useModulesMap';
 
 const RentalsComponentView = () => {
   const [isCreateLocationModalOpen, setIsCreateLocationModalOpen] = useState(false);
@@ -27,6 +32,9 @@ const RentalsComponentView = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const placesPerPage = 20;
+
+  // 🔥 USAR HOOK OPTIMIZADO DE PERMISOS - UNA SOLA LLAMADA
+  const { canView, canCreate, canEdit, canDelete, isLoading, isAdmin } = useModulePermissions(MODULE_NAMES.RENTALS);
 
   const { data: locations = [], isLoading: locationsLoading, error: locationsError } = useFetchLocations();
   const { data: places = [], isLoading: placesLoading, error: placesError } = useFetchPlacesByLocation(selectedLocation?.id || null, forceRefetchKey);
@@ -93,6 +101,11 @@ const RentalsComponentView = () => {
   };
 
   const handleDeletePlace = React.useCallback((placeId: string) => {
+    // 🔥 SOLO EJECUTAR SI TIENE PERMISOS - NO ALERT
+    if (!canDelete && !isAdmin) {
+      return;
+    }
+
     const confirmDelete = window.confirm(
       "¿Estás seguro que deseas eliminar este lugar?"
     );
@@ -107,7 +120,20 @@ const RentalsComponentView = () => {
         },
       });
     }
-  }, [deletePlace]);
+  }, [deletePlace, canDelete, isAdmin]);
+
+  // 🔥 FUNCIONES SIMPLIFICADAS SIN VERIFICACIÓN DE PERMISOS (LOS BOTONES SE OCULTAN)
+  const handleCreateLocationClick = () => {
+    setIsCreateLocationModalOpen(true);
+  };
+
+  const handleEditLocationClick = () => {
+    setIsEditLocationModalOpen(true);
+  };
+
+  const handleCreatePlaceClick = () => {
+    setIsCreatePlaceModalOpen(true);
+  };
 
   const handleViewRentals = (place: Place) => {
     setSelectedPlaceForRentals(place);
@@ -118,6 +144,36 @@ const RentalsComponentView = () => {
     setCurrentView("main");
     setSelectedPlaceForRentals(null);
   };
+
+  // 🔥 MOSTRAR LOADING MIENTRAS SE VERIFICAN PERMISOS
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="animate-spin h-12 w-12 text-red-600 mx-auto mb-4" />
+          <p className="text-gray-600">Verificando permisos...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 🔥 VERIFICAR PERMISOS DE ACCESO AL MÓDULO
+  if (!canView && !isAdmin) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
+          <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-700 mb-2">Acceso Restringido</h2>
+          <p className="text-gray-600 mb-4">
+            No tienes permisos para ver el módulo de alquileres.
+          </p>
+          <p className="text-sm text-gray-500">
+            Contacta al administrador para obtener acceso.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (currentView === "rental-history" && selectedPlaceForRentals) {
     return (
@@ -130,13 +186,29 @@ const RentalsComponentView = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 max-w-md sm:max-w-3xl lg:max-w-5xl mx-auto">
       <h1 className="text-4xl font-bold text-center text-red-600 pb-6">Alquileres</h1>
 
+      {/* 🔥 INDICADOR DE PERMISOS EN DESARROLLO */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            <strong>Debug Permisos:</strong> 
+            Módulo: {MODULE_NAMES.RENTALS} | 
+            Ver: {canView ? '✅' : '❌'} | 
+            Crear: {canCreate ? '✅' : '❌'} | 
+            Editar: {canEdit ? '✅' : '❌'} | 
+            Eliminar: {canDelete ? '✅' : '❌'} | 
+            Admin: {isAdmin ? '✅' : '❌'} |
+            Loading: {isLoading ? '⏳' : '✅'}
+          </p>
+        </div>
+      )}
+
       {/* Selector de Locaciones */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex-1">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-3 sm:space-y-0">
+           <div className="flex-1">
             {(() => {
               if (locationsLoading) {
                 return (
@@ -176,7 +248,15 @@ const RentalsComponentView = () => {
                   onChange={(e) => {
                     const location = locations.find(loc => loc.id === e.target.value);
                     if (location) {
-                      handleSelectLocation(location);
+                      // Map API response to Location type
+                      const mappedLocation: Location = {
+                        id: location.id,
+                        nombre: location.name,
+                        direccion: location.address,
+                        capacidad: location.capacity,
+                        estado: location.status,
+                      };
+                      handleSelectLocation(mappedLocation);
                     }
                   }}
                   className="w-full p-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white text-gray-900"
@@ -192,15 +272,18 @@ const RentalsComponentView = () => {
             })()}
           </div>
 
-          <button
-            className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm"
-            onClick={() => setIsCreateLocationModalOpen(true)}
-          >
-            + Nueva locación
-          </button>
+          {/* 🔥 MOSTRAR BOTÓN SOLO SI TIENE PERMISOS DE CREACIÓN */}
+          {(canCreate || isAdmin) && (
+            <button
+              className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm"
+              onClick={handleCreateLocationClick}
+            >
+              + Nueva locación
+            </button>
+          )}
 
           <button
-            className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+            className="mt-3 sm:mt-0 sm:ml-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
             onClick={() => setIsCustomerPanelOpen(true)}
           >
             👥 Ver clientes
@@ -210,19 +293,22 @@ const RentalsComponentView = () => {
 
       {/* Información de la Localización */}
       {selectedLocation ? (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center space-x-2">
               <MdLocationOn className="text-red-600" size={24} />
               <h2 className="text-xl font-bold text-red-600">Información de Localización</h2>
             </div>
 
-            <button
-              onClick={() => setIsEditLocationModalOpen(true)}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
-            >
-              + Editar locación
-            </button>
+            {/* 🔥 MOSTRAR BOTÓN SOLO SI TIENE PERMISOS DE EDICIÓN */}
+            {(canEdit || isAdmin) && (
+              <button
+                onClick={handleEditLocationClick}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+              >
+                + Editar locación
+              </button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -231,7 +317,7 @@ const RentalsComponentView = () => {
                 <FiHome className="text-red-500" size={20} />
                 <span className="font-semibold text-gray-900">Nombre de la Locación</span>
               </div>
-              <p className="text-gray-700 ml-7">{selectedLocation.name}</p>
+              <p className="text-gray-700 ml-7">{selectedLocation.nombre}</p>
             </div>
 
             <div className="space-y-2">
@@ -239,7 +325,7 @@ const RentalsComponentView = () => {
                 <FiMapPin className="text-red-500" size={20} />
                 <span className="font-semibold text-gray-900">Dirección de la Localización</span>
               </div>
-              <p className="text-gray-700 ml-7">{selectedLocation.address}</p>
+              <p className="text-gray-700 ml-7">{selectedLocation.direccion}</p>
             </div>
 
             <div className="space-y-2">
@@ -247,7 +333,7 @@ const RentalsComponentView = () => {
                 <FiBarChart2 className="text-red-500" size={20} />
                 <span className="font-semibold text-gray-900">Capacidad</span>
               </div>
-              <p className="text-gray-700 ml-7">{selectedLocation.capacity}</p>
+              <p className="text-gray-700 ml-7">{selectedLocation.capacidad}</p>
             </div>
 
             <div className="space-y-2">
@@ -255,7 +341,7 @@ const RentalsComponentView = () => {
                 <FiCheckCircle className="text-red-500" size={20} />
                 <span className="font-semibold text-gray-900">Estado</span>
               </div>
-              <p className="text-green-600 font-medium ml-7">{selectedLocation.status}</p>
+              <p className="text-green-600 font-medium ml-7">{selectedLocation.estado}</p>
             </div>
           </div>
         </div>
@@ -271,30 +357,33 @@ const RentalsComponentView = () => {
 
       {/* Lugares en la Localización */}
       {selectedLocation ? (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex justify-between items-center mb-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-3 sm:space-y-0">
             <div className="flex items-center space-x-2">
               <MdLocationOn className="text-red-600" size={24} />
-              <h2 className="text-xl font-bold text-red-600">Lugares en {selectedLocation.name}</h2>
+              <h2 className="text-xl font-bold text-red-600">Lugares en {selectedLocation.nombre}</h2>
             </div>
 
-            <button
-              onClick={() => setIsCreatePlaceModalOpen(true)}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
-            >
-              + Nuevo Lugar
-            </button>
+            {/* 🔥 MOSTRAR BOTÓN SOLO SI TIENE PERMISOS DE CREACIÓN */}
+            {(canCreate || isAdmin) && (
+              <button
+                onClick={handleCreatePlaceClick}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+              >
+                + Nuevo Lugar
+              </button>
+            )}
           </div>
 
           {places.length > 0 ? (
             <>
-              {placesLoading ? (
+              {placesLoading || customersLoading ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">Cargando lugares...</p>
+                  <p className="text-gray-500">Cargando...</p>
                 </div>
-              ) : placesError ? (
+              ) : placesError || customersError ? (
                 <div className="text-center py-8">
-                  <p className="text-red-500">Error al cargar lugares: {placesError.message}</p>
+                  <p className="text-red-500">Error al cargar datos: {placesError?.message || customersError?.message}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -302,9 +391,14 @@ const RentalsComponentView = () => {
                     <PlaceCard
                       key={`${selectedLocation.id}-${place.id}-${forceRefetchKey}`}
                       place={place}
+                      customers={customers}
                       onEdit={handleEditPlace}
                       onDelete={handleDeletePlace}
                       onViewRentals={handleViewRentals}
+                      canEdit={canEdit || isAdmin}
+                      canDelete={canDelete || isAdmin}
+                      canCreate={canCreate || isAdmin}
+                      isAdmin={isAdmin}
                     />
                   ))}
                 </div>
@@ -362,12 +456,15 @@ const RentalsComponentView = () => {
               <FiHome className="mx-auto text-gray-400 mb-4" size={48} />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No hay lugares en esta locación</h3>
               <p className="text-gray-500 mb-4">Crea el primer lugar para comenzar a gestionar alquileres</p>
-              <button
-                onClick={() => setIsCreatePlaceModalOpen(true)}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
-              >
-                + Crear primer lugar
-              </button>
+              {/* 🔥 MOSTRAR BOTÓN SOLO SI TIENE PERMISOS DE CREACIÓN */}
+              {(canCreate || isAdmin) && (
+                <button
+                  onClick={handleCreatePlaceClick}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                >
+                  + Crear primer lugar
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -380,10 +477,16 @@ const RentalsComponentView = () => {
         />
       )}
 
-      {isEditLocationModalOpen && selectedLocation && (
+      {isEditLocationModalOpen && selectedLocation && selectedLocation.id && (
         <ModalEditLocation 
           handleClose={() => setIsEditLocationModalOpen(false)} 
-          locationData={selectedLocation}
+          locationData={{
+            id: selectedLocation.id,
+            name: selectedLocation.nombre,
+            address: selectedLocation.direccion,
+            capacity: selectedLocation.capacidad,
+            status: selectedLocation.estado
+          }}
         />
       )}
 
@@ -401,8 +504,8 @@ const RentalsComponentView = () => {
       {/* Panel lateral de clientes */}
       {isCustomerPanelOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50">
-          <div className="fixed right-0 top-0 h-full w-96 bg-white shadow-xl transform transition-transform duration-300 ease-in-out overflow-y-auto">
-            <div className="p-6">
+          <div className="fixed right-0 top-0 h-full w-full sm:w-96 bg-white shadow-xl transform transition-transform duration-300 ease-in-out overflow-y-auto">
+            <div className="p-4 sm:p-6">
               {/* Header del panel */}
               <div className="flex justify-between items-center mb-6 border-b pb-4">
                 <h2 className="text-xl font-bold text-gray-800 flex items-center space-x-2">
