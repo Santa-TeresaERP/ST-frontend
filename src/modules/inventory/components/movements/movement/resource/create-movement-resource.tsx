@@ -108,8 +108,8 @@ const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md relative">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center p-4 z-50">
+      <div className="bg-white w-full max-w-md sm:max-w-lg mx-4 sm:mx-auto rounded-t-2xl sm:rounded-2xl shadow-xl relative">
         <div className="bg-orange-500 text-white p-5 rounded-t-2xl flex items-center justify-center relative">
           <h2 className="text-lg font-semibold text-center">Nuevo Movimiento de Recurso</h2>
           {onClose && (
@@ -198,7 +198,7 @@ const CreateMovementResource: React.FC<Props> = ({ onCreated, onClose }) => {
               <option value="salida">Salida</option>
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-gray-700 mb-1 font-medium">Cantidad<span className="text-red-500">*</span></label>
               <input

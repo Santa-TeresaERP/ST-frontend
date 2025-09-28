@@ -6,6 +6,8 @@ import { PlusCircle, Edit, Trash2, Eye, Filter, Calendar, Search, DollarSign } f
 // 1. IMPORTAR HOOKS Y TIPOS NECESARIOS
 import { useMonasteryOverheads } from '@/modules/monastery/hooks/useOverheads';
 import { Overhead } from '@/modules/monastery/types/overheads';
+import { useModulePermissions } from '@/core/utils/permission-hooks';
+import { MODULE_NAMES } from '@/core/utils/useModulesMap';
 
 // Importar los modales de monasterio
 import ModalCreateMonasteryExpense from './overhead/modal-create-monastery-expense';
@@ -27,6 +29,9 @@ interface GeneralRegistry {
 }
 
 const MonasteryComponentView: React.FC = () => {
+  // 🔥 HOOK DE PERMISOS
+  const { canView, canCreate, canEdit, canDelete, isLoading, isAdmin } = useModulePermissions(MODULE_NAMES.MONASTERIO);
+
   // 2. OBTENER DATOS Y MUTACIONES AL ESTILO MUSEO
   const { data, loading, error, remove, deleting } = useMonasteryOverheads();
 
@@ -213,18 +218,31 @@ const MonasteryComponentView: React.FC = () => {
   }, [error]);
 
   // 5. MANEJADORES DE EVENTOS PARA MODALES DE MONASTERIO
+
   const handleOpenEditModal = (overhead: Overhead) => {
+    // 🔥 VERIFICAR PERMISOS ANTES DE ABRIR MODAL
+    if (!canEdit && !isAdmin) {
+      return;
+    }
     setSelectedOverhead(overhead);
     setEditModalOpen(true);
   };
 
   const handleOpenDeleteModal = (overhead: Overhead) => {
+    // 🔥 VERIFICAR PERMISOS ANTES DE ABRIR MODAL
+    if (!canDelete && !isAdmin) {
+      return;
+    }
     setSelectedOverhead(overhead);
     setDeleteModalOpen(true);
   };
   
   const handleDeleteConfirm = async () => {
     if (!selectedOverhead) return;
+    // 🔥 VERIFICACIÓN ADICIONAL DE PERMISOS
+    if (!canDelete && !isAdmin) {
+      return;
+    }
     await remove(selectedOverhead.id);
     setDeleteModalOpen(false);
   };
