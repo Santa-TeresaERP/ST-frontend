@@ -47,7 +47,7 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
   // Hook para obtener los canales de venta
   const { data: canalesVenta, loading: loadingCanales, error: errorCanales, create: createCanalVenta } = useSalesChannel();
   // Hook para obtener los tipos de persona
-  const { data: tiposPersona, loading: loadingTipos, error: errorTipos, refetch } = useTypePerson();
+  const { data: tiposPersona, loading: loadingTipos, error: errorTipos, refetch: refetchTipos } = useTypePerson();
   // Hook para obtener los métodos de pago
   const { data: metodosPago, loading: loadingPagos, error: errorPagos, create: createMetodoPago } = usePaymentMethod();
 
@@ -253,14 +253,28 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
                     </option>
                   ))}
                 </select>
-                <button
-                  type="button"
-                  onClick={() => setMiniOpen('ticket')}
-                  className="px-3 py-2 bg-gray-100 rounded-lg border border-gray-300 hover:bg-gray-200 transition"
-                  title="Administrar tipos de ticket"
-                >
-                  <Settings size={18} />
-                </button>
+                {/* 🔧 BOTONES VERTICALES PARA ADMINISTRAR TIPOS */}
+                <div className="flex flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setMiniOpen('ticket')}
+                    className="px-2 py-1 bg-gray-100 rounded-md border border-gray-300 hover:bg-gray-200 transition text-xs"
+                    title="Administrar tipos de ticket"
+                  >
+                    <Settings size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      console.log('Refrescando tipos manualmente...')
+                      refetchTipos()
+                    }}
+                    className="px-2 py-1 bg-blue-100 rounded-md border border-blue-300 hover:bg-blue-200 transition text-xs"
+                    title="Refrescar lista de tipos"
+                  >
+                    🔄
+                  </button>
+                </div>
               </div>
               {loadingTipos && (
                 <p className="text-xs text-gray-500 mt-1">Cargando tipos de persona...</p>
@@ -528,8 +542,19 @@ const ModalCreateVisitor: React.FC<ModalCreateVisitorProps> = ({ isOpen, onClose
       {/* Modal de administración de tipos de ticket */}
       <ModalTicketTypes
         isOpen={miniOpen === 'ticket'}
-        onClose={() => setMiniOpen('none')}
-        onCreated={refetch}
+        onClose={() => {
+          console.log('Cerrando modal de tipos, refrescando...')
+          setMiniOpen('none')
+          // ✅ Refrescar tipos cuando se cierre el modal
+          setTimeout(() => {
+            console.log('Ejecutando refetch retrasado...')
+            refetchTipos()
+          }, 100)
+        }}
+        onDataChanged={() => {
+          console.log('onDataChanged ejecutado en modal-create-visitor')
+          refetchTipos()
+        }}
       />
     </div>
   );

@@ -4,6 +4,7 @@ import React from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X, UserPlus, Save } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Importamos la lógica desde el módulo 'monastery' como planeamos
 import { useCreateOverhead } from '@/modules/monastery/hooks/useOverheads';
@@ -17,6 +18,7 @@ interface Props {
 }
 
 const ModalCreateGeneralOverhead: React.FC<Props> = ({ isOpen, onClose }) => {
+  const queryClient = useQueryClient();
   // Hook para la mutación de creación
   const { mutate: createOverhead, isPending } = useCreateOverhead();
   // Hook para obtener la lista de módulos para el dropdown
@@ -36,6 +38,7 @@ const ModalCreateGeneralOverhead: React.FC<Props> = ({ isOpen, onClose }) => {
   const onSubmit: SubmitHandler<GeneralOverheadFormData> = (data) => {
     createOverhead(data, {
       onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['monthlyExpenses'] });
         reset();
         onClose();
       },

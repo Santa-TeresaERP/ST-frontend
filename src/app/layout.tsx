@@ -5,6 +5,7 @@ import "./globals.css";
 import ReactQueryProvider from "../core/provider/react-query-provider";
 import HeaderClient from "./components/components-header/HeaderClient";
 import { AuthInitializer } from "../core/components/AuthInitializer";
+import PermissionAutoSyncProvider from "../core/components/PermissionAutoSyncProvider";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -28,7 +29,9 @@ export default function RootLayout({
       <HeaderClient />
       <ReactQueryProvider>
         <AuthInitializer />
-        {children}
+        <PermissionAutoSyncProvider>
+          {children}
+        </PermissionAutoSyncProvider>
       </ReactQueryProvider>
       </body>
     </html>

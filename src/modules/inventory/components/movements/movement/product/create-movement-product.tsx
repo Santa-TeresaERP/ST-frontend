@@ -137,8 +137,8 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md relative">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md sm:max-w-lg mx-4 sm:mx-auto relative">
         <div className="bg-gradient-to-r from-red-600 to-red-700 text-white p-5 rounded-t-2xl flex items-center justify-center relative">
           <h2 className="text-lg font-semibold text-center">Nuevo Movimiento de Producto</h2>
           {onClose && (
@@ -217,7 +217,7 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-gray-700 mb-1 font-medium">Tipo de Movimiento<span className="text-red-500">*</span></label>
               <select
@@ -281,7 +281,7 @@ const CreateMovementProduct: React.FC<Props> = ({ onCreated, onClose }) => {
             )}
             <button
               type="submit"
-              className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-6700 text-white transition flex items-center justify-center space-x-2"
+              className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition flex items-center justify-center space-x-2"
               disabled={loading}
             >
               <Save size={18} /> {loading ? 'Guardando...' : 'Aceptar'}
