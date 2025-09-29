@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Overhead, CreateOverheadPayload, UpdateOverheadPayload } from '../types/overheads.d';
-import { createMonasterioOverhead, createOverhead, deleteOverhead, fetchMonasterioOverheads, fetchOverheads, updateOverhead } from '../action/overheads.actions';
+import { createMonasterioOverhead, createOverhead, deleteOverhead, fetchMonasterioOverheads, fetchOverheads, updateOverhead } from '../action/overheads';
 
 const OVERHEADS_QUERY_KEY = 'overhead';
 
