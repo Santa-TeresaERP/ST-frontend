@@ -8,6 +8,8 @@ export interface Overhead {
   status: boolean;
   createdAt: string;
   updatedAt: string;
+  // Relación con gastos del monasterio
+  monasteryExpenses?: import('./monasteryexpense.d').MonasteryExpense[];
 }
 
 /**
@@ -28,3 +30,17 @@ export interface CreateOverheadPayload {
  * Es parcial porque el usuario puede actualizar solo algunos campos.
  */
 export type UpdateOverheadPayload = Partial<Omit<CreateOverheadPayload, 'type'>>;
+
+/**
+ * Overhead con relaciones incluidas
+ */
+export interface OverheadWithRelations extends Overhead {
+  monasteryExpenses?: import('./monasteryexpense.d').MonasteryExpense[];
+}
+
+/**
+ * Response types para APIs que incluyen relaciones
+ */
+export interface OverheadApiResponse extends Overhead {
+  monasteryExpenses?: import('./monasteryexpense.d').MonasteryExpense[];
+}

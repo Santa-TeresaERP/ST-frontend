@@ -14,10 +14,23 @@ export const useFetchOverheads = () => {
 };
 
 export const useFetchMonasterioOverheads = () => {
-  return useQuery<Overhead[], Error>({
-    queryKey: [`${OVERHEADS_QUERY_KEY}-monastery`],
-    queryFn: fetchMonasterioOverheads,
+  const query = useQuery<Overhead[], Error>({
+    queryKey: [`${OVERHEADS_QUERY_KEY}-monastery-debug`], // Cambiar key para evitar cache corrupto
+    queryFn: fetchMonasterioOverheads, // Volver a usar fetchMonasterioOverheads
+    staleTime: 0, // Forzar que siempre sea stale
+    gcTime: 0, // No mantener en cache
+    retry: false, // No reintentar automáticamente
   });
+  
+  console.log('🔍 useFetchMonasterioOverheads state:', {
+    data: query.data,
+    isLoading: query.isLoading,
+    error: query.error,
+    status: query.status,
+    dataLength: query.data?.length
+  });
+  
+  return query;
 }
 
 // Hook para CREAR un gasto general (genérico)
