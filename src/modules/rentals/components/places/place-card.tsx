@@ -12,7 +12,7 @@ interface PlaceCardProps {
   place: Place;
   customers: Customer[];
   onEdit: (placeId: string, updatedPlace: Partial<Place>) => void;
-  onDelete: (placeId: string) => void;
+  onDelete: (params: { id: string, locationId?: string }) => void;
   onViewRentals: (place: Place) => void;
   // 🔥 NUEVOS PROPS PARA PERMISOS
   canEdit?: boolean;
@@ -58,12 +58,23 @@ const PlaceCard: React.FC<PlaceCardProps> = ({
     }
   };
 
+  const handleDelete = () => {
+    if (confirm('¿Estás seguro de eliminar este lugar?')) {
+      // @ts-expect-error - We know onDelete is passed as a prop
+      onDelete?.({ 
+        id: place.id, 
+        locationId: place.location_id 
+      });
+    }
+  };
+
   const handleNewRentalSubmit = async (rentalData: {
     customerId: string;
     nombreVendedor: string;
     fechaInicio: string;
     fechaFin: string;
     monto: number;
+    status: boolean;
   }) => {
     try {
       // Mostrar modal informativo inmediatamente al intentar crear
@@ -97,6 +108,7 @@ const PlaceCard: React.FC<PlaceCardProps> = ({
         start_date: new Date(`${rentalData.fechaInicio}T10:00:00.000Z`), // Date object
         end_date: new Date(`${rentalData.fechaFin}T18:00:00.000Z`), // Date object
         amount: Number(rentalData.monto), // Number
+        status: rentalData.status || true, // Default to active
       };
 
       console.log("✅ Usuario autenticado:", user);
@@ -150,9 +162,9 @@ const PlaceCard: React.FC<PlaceCardProps> = ({
         </div>
 
         {/* Botones de acción */}
-        <div className="flex justify-between mt-4">
+        <div className="grid grid-cols-2 gap-2 mt-4">
           <button
-            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
+            className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-sm transition-colors"
             onClick={handleViewRentals}
           >
             Alquileres

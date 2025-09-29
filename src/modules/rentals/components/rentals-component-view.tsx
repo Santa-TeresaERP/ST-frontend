@@ -2,13 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { FiMapPin, FiHome, FiBarChart2, FiCheckCircle, FiChevronLeft, FiChevronRight, FiX, FiUser } from 'react-icons/fi';
 import { MdLocationOn } from 'react-icons/md';
 import { ShieldAlert, Loader2 } from 'lucide-react';
+import RentalHistoryView from './rental-history/rental-history-view';
 import ModalCreateLocation from './information location/modal-create-location';
 import ModalEditLocation from './information location/modal-edit-location';
 import ModalCreatePlace from './places/modal-create-place';
 import PlaceCard from './places/place-card';
-import RentalHistoryView from './rental-history/rental-history-view';
+import { Location } from '../types';
 import { Place } from '../types/places.d';
-import { Location } from '../types/location';
 import { useFetchLocations } from '../hook/useLocations';
 import { useFetchPlacesByLocation, useDeletePlace } from '../hook/usePlaces';
 import { useFetchCustomers } from '../hook/useCustomers';
@@ -186,7 +186,7 @@ const RentalsComponentView = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 max-w-md sm:max-w-3xl lg:max-w-5xl mx-auto">
       <h1 className="text-4xl font-bold text-center text-red-600 pb-6">Alquileres</h1>
 
       {/* 🔥 INDICADOR DE PERMISOS EN DESARROLLO */}
@@ -206,9 +206,9 @@ const RentalsComponentView = () => {
       )}
 
       {/* Selector de Locaciones */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex-1">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-3 sm:space-y-0">
+           <div className="flex-1">
             {(() => {
               if (locationsLoading) {
                 return (
@@ -248,7 +248,15 @@ const RentalsComponentView = () => {
                   onChange={(e) => {
                     const location = locations.find(loc => loc.id === e.target.value);
                     if (location) {
-                      handleSelectLocation(location);
+                      // Map API response to Location type
+                      const mappedLocation: Location = {
+                        id: location.id,
+                        nombre: location.name,
+                        direccion: location.address,
+                        capacidad: location.capacity,
+                        estado: location.status,
+                      };
+                      handleSelectLocation(mappedLocation);
                     }
                   }}
                   className="w-full p-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white text-gray-900"
@@ -275,7 +283,7 @@ const RentalsComponentView = () => {
           )}
 
           <button
-            className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+            className="mt-3 sm:mt-0 sm:ml-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
             onClick={() => setIsCustomerPanelOpen(true)}
           >
             👥 Ver clientes
@@ -285,7 +293,7 @@ const RentalsComponentView = () => {
 
       {/* Información de la Localización */}
       {selectedLocation ? (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center space-x-2">
               <MdLocationOn className="text-red-600" size={24} />
@@ -309,7 +317,7 @@ const RentalsComponentView = () => {
                 <FiHome className="text-red-500" size={20} />
                 <span className="font-semibold text-gray-900">Nombre de la Locación</span>
               </div>
-              <p className="text-gray-700 ml-7">{selectedLocation.name}</p>
+              <p className="text-gray-700 ml-7">{selectedLocation.nombre}</p>
             </div>
 
             <div className="space-y-2">
@@ -317,7 +325,7 @@ const RentalsComponentView = () => {
                 <FiMapPin className="text-red-500" size={20} />
                 <span className="font-semibold text-gray-900">Dirección de la Localización</span>
               </div>
-              <p className="text-gray-700 ml-7">{selectedLocation.address}</p>
+              <p className="text-gray-700 ml-7">{selectedLocation.direccion}</p>
             </div>
 
             <div className="space-y-2">
@@ -325,7 +333,7 @@ const RentalsComponentView = () => {
                 <FiBarChart2 className="text-red-500" size={20} />
                 <span className="font-semibold text-gray-900">Capacidad</span>
               </div>
-              <p className="text-gray-700 ml-7">{selectedLocation.capacity}</p>
+              <p className="text-gray-700 ml-7">{selectedLocation.capacidad}</p>
             </div>
 
             <div className="space-y-2">
@@ -333,7 +341,7 @@ const RentalsComponentView = () => {
                 <FiCheckCircle className="text-red-500" size={20} />
                 <span className="font-semibold text-gray-900">Estado</span>
               </div>
-              <p className="text-green-600 font-medium ml-7">{selectedLocation.status}</p>
+              <p className="text-green-600 font-medium ml-7">{selectedLocation.estado}</p>
             </div>
           </div>
         </div>
@@ -349,11 +357,11 @@ const RentalsComponentView = () => {
 
       {/* Lugares en la Localización */}
       {selectedLocation ? (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex justify-between items-center mb-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-3 sm:space-y-0">
             <div className="flex items-center space-x-2">
               <MdLocationOn className="text-red-600" size={24} />
-              <h2 className="text-xl font-bold text-red-600">Lugares en {selectedLocation.name}</h2>
+              <h2 className="text-xl font-bold text-red-600">Lugares en {selectedLocation.nombre}</h2>
             </div>
 
             {/* 🔥 MOSTRAR BOTÓN SOLO SI TIENE PERMISOS DE CREACIÓN */}
@@ -369,13 +377,13 @@ const RentalsComponentView = () => {
 
           {places.length > 0 ? (
             <>
-              {placesLoading ? (
+              {placesLoading || customersLoading ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">Cargando lugares...</p>
+                  <p className="text-gray-500">Cargando...</p>
                 </div>
-              ) : placesError ? (
+              ) : placesError || customersError ? (
                 <div className="text-center py-8">
-                  <p className="text-red-500">Error al cargar lugares: {placesError.message}</p>
+                  <p className="text-red-500">Error al cargar datos: {placesError?.message || customersError?.message}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -387,10 +395,9 @@ const RentalsComponentView = () => {
                       onEdit={handleEditPlace}
                       onDelete={handleDeletePlace}
                       onViewRentals={handleViewRentals}
-                      // 🔥 PASAR PERMISOS A PLACECARD
-                      canEdit={canEdit}
-                      canDelete={canDelete}
-                      canCreate={canCreate}
+                      canEdit={canEdit || isAdmin}
+                      canDelete={canDelete || isAdmin}
+                      canCreate={canCreate || isAdmin}
                       isAdmin={isAdmin}
                     />
                   ))}
@@ -470,10 +477,16 @@ const RentalsComponentView = () => {
         />
       )}
 
-      {isEditLocationModalOpen && selectedLocation && (
+      {isEditLocationModalOpen && selectedLocation && selectedLocation.id && (
         <ModalEditLocation 
           handleClose={() => setIsEditLocationModalOpen(false)} 
-          locationData={selectedLocation}
+          locationData={{
+            id: selectedLocation.id,
+            name: selectedLocation.nombre,
+            address: selectedLocation.direccion,
+            capacity: selectedLocation.capacidad,
+            status: selectedLocation.estado
+          }}
         />
       )}
 
@@ -491,8 +504,8 @@ const RentalsComponentView = () => {
       {/* Panel lateral de clientes */}
       {isCustomerPanelOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50">
-          <div className="fixed right-0 top-0 h-full w-96 bg-white shadow-xl transform transition-transform duration-300 ease-in-out overflow-y-auto">
-            <div className="p-6">
+          <div className="fixed right-0 top-0 h-full w-full sm:w-96 bg-white shadow-xl transform transition-transform duration-300 ease-in-out overflow-y-auto">
+            <div className="p-4 sm:p-6">
               {/* Header del panel */}
               <div className="flex justify-between items-center mb-6 border-b pb-4">
                 <h2 className="text-xl font-bold text-gray-800 flex items-center space-x-2">

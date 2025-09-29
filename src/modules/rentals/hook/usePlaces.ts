@@ -56,8 +56,17 @@ export const useCreatePlace = () => {
 
   return useMutation<Place, Error, CreatePlacePayload>({
     mutationFn: createPlace,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Invalidate all places queries and filtered queries
       queryClient.invalidateQueries({ queryKey: ['places'] });
+      queryClient.invalidateQueries({ queryKey: ['places', 'filtered'] });
+      
+      // Also invalidate any location-specific queries
+      if (data?.location_id) {
+        queryClient.invalidateQueries({ 
+          queryKey: ['places', 'filtered', data.location_id] 
+        });
+      }
     },
     onError: (error) => {
       console.error('❌ Error creando place:', error);
@@ -71,8 +80,17 @@ export const useUpdatePlace = () => {
 
   return useMutation<Place, Error, { id: string; payload: UpdatePlacePayload }>({
     mutationFn: ({ id, payload }) => updatePlace(id, payload),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Invalidate all places queries and filtered queries
       queryClient.invalidateQueries({ queryKey: ['places'] });
+      queryClient.invalidateQueries({ queryKey: ['places', 'filtered'] });
+      
+      // Also invalidate any location-specific queries
+      if (data?.location_id) {
+        queryClient.invalidateQueries({ 
+          queryKey: ['places', 'filtered', data.location_id] 
+        });
+      }
     },
     onError: (error) => {
       console.error('❌ Error actualizando place:', error);
@@ -84,10 +102,19 @@ export const useUpdatePlace = () => {
 export const useDeletePlace = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<void, Error, string>({
-    mutationFn: deletePlace,
-    onSuccess: () => {
+  return useMutation<void, Error, {id: string, locationId?: string}>({
+    mutationFn: ({ id }) => deletePlace(id),
+    onSuccess: (_, variables) => {
+      // Invalidate all places queries and filtered queries
       queryClient.invalidateQueries({ queryKey: ['places'] });
+      queryClient.invalidateQueries({ queryKey: ['places', 'filtered'] });
+      
+      // Also invalidate the specific location's places if locationId is provided
+      if (variables.locationId) {
+        queryClient.invalidateQueries({ 
+          queryKey: ['places', 'filtered', variables.locationId] 
+        });
+      }
     },
     onError: (error) => {
       console.error('❌ Error eliminando place:', error);

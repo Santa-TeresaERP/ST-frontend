@@ -10,6 +10,7 @@ import { MODULE_NAMES } from '@/core/utils/useModulesMap';
 import { suppressAxios403Errors } from '@/core/utils/error-suppressor';
 import { useCurrentUser } from '@/modules/auth/hook/useCurrentUser';
 import { useAuthStore } from '@/core/store/auth';
+import ModalListMonthlyExpenses from './reporte/modal-list-monthly-expenses';
 
 const FinanzasComponentView: React.FC = () => {
   // 🔥 OBTENER USUARIO ACTUAL CON SUS PERMISOS DESDE /auth/me
@@ -20,6 +21,7 @@ const FinanzasComponentView: React.FC = () => {
   const { canView, canCreate, canEdit, canDelete, isLoading, isAdmin } = useModulePermissions(MODULE_NAMES.FINANZAS);
   
   const [selectedView, setSelectedView] = useState<'general' | 'detalle'>('general');
+  const [isMonthlyModalOpen, setMonthlyModalOpen] = useState(false);
 
   // Fetch reportes para poder seleccionar uno y pasarlo a DetalleReporte
   const { data: reportes = [], isLoading: loadingReportes, error } = useFetchFinancialReports();
@@ -54,16 +56,18 @@ const FinanzasComponentView: React.FC = () => {
   // Cuando cambian los reportes, selecciono el primero por defecto (si existe)
   useEffect(() => {
     if (reportes.length > 0 && !selectedReportId) {
-      setSelectedReportId(reportes[0].id);
+      const inProcessReport = reportes.find(r => !r.end_date);
+      if (inProcessReport) {
+        setSelectedReportId(inProcessReport.id);
+      } else if (reportes.length > 0) {
+        // Fallback si no hay ninguno en proceso, selecciona el más reciente
+        const sortedReports = [...reportes].sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
+        setSelectedReportId(sortedReports[0].id);
+      }
     }
   }, [reportes, selectedReportId]);
 
-  // 🔥 Si no tiene permisos de creación, forzar vista de detalle
-  useEffect(() => {
-    if (!canCreate && !isAdmin && selectedView === 'general') {
-      setSelectedView('detalle');
-    }
-  }, [canCreate, isAdmin, selectedView]);
+  // Mantener vista inicial en 'general' independientemente de permisos
 
   // 🔥 DETECTAR CAMBIOS EN PERMISOS Y FORZAR RECARGA SI ES NECESARIO
   useEffect(() => {
@@ -251,6 +255,15 @@ const FinanzasComponentView: React.FC = () => {
       <div className="bg-white rounded-2xl shadow-md overflow-hidden p-6 text-center text-gray-600 min-h-[300px]">
         {selectedView === 'general' && (
           <>
+            {/* Botón para abrir vista de Gastos Mensuales */}
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={() => setMonthlyModalOpen(true)}
+                className="bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Ver Gastos Mensuales
+              </button>
+            </div>
             {/* 🔥 PASAR PERMISOS AL COMPONENTE DE REPORTE */}
             <ReporteComponentView />
             <div className="my-6" />
@@ -278,11 +291,15 @@ const FinanzasComponentView: React.FC = () => {
                     value={selectedReportId ?? ''}
                     onChange={(e) => setSelectedReportId(e.target.value)}
                   >
-                    {reportes.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        { (r as any).name ?? `${new Date(r.start_date).toISOString().split('T')[0]} (${r.id.slice(0,6)})` }
-                      </option>
-                    ))}
+                    {reportes.map((r) => {
+                      const startDate = new Date(r.start_date).toLocaleDateString('es-PE');
+                      const endDate = r.end_date ? new Date(r.end_date).toLocaleDateString('es-PE') : '...';
+                      return (
+                        <option key={r.id} value={r.id}>
+                          {`(${startDate} - ${endDate})`}
+                        </option>
+                      );
+                    })}
                   </select>
                 </>
               )}
@@ -290,7 +307,7 @@ const FinanzasComponentView: React.FC = () => {
 
             {/* Si hay un reporte seleccionado, lo pasamos como prop */}
             {detalleProp ? (
-              <DetalleReporte reporte={detalleProp} />
+              <DetalleReporte reporte={detalleProp} reportId={selectedReportId} />
             ) : (
               <div className="text-sm text-gray-500">Selecciona un reporte para ver su detalle</div>
             )}
@@ -299,6 +316,12 @@ const FinanzasComponentView: React.FC = () => {
           </>
         )}
       </div>
+
+      {/* Modal: Lista de Gastos Mensuales */}
+      <ModalListMonthlyExpenses
+        isOpen={isMonthlyModalOpen}
+        onClose={() => setMonthlyModalOpen(false)}
+      />
     </div>
   );
 };

@@ -18,6 +18,8 @@ import { suppressAxios403Errors } from '@/core/utils/error-suppressor';
 import { useCurrentUser } from '@/modules/auth/hook/useCurrentUser';
 import { useAuthStore } from '@/core/store/auth';
 
+import ModalListMonthlyExpenses from './modal-list-monthly-expenses';
+
 export default function ReporteComponentView() {
   // 🔥 HOOKS DE PERMISOS Y AUTENTICACIÓN
   const {
@@ -50,6 +52,8 @@ export default function ReporteComponentView() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedReporte, setSelectedReporte] = useState<FinancialReport | undefined>(undefined);
   const [isInformeOpen, setIsInformeOpen] = useState(false);
+
+  const [isMonthlyModalOpen, setMonthlyModalOpen] = useState(false);
 
   // Determinar si es primer reporte o finalización
   const hasReports = reportes.length > 0;
@@ -360,53 +364,49 @@ export default function ReporteComponentView() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 p-4 sm:p-8">
+      <div className="max-w-3xl sm:max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <div className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl shadow-lg">
-            <FileText className="w-8 h-8 text-white" />
+        <div className="flex items-center gap-2 sm:gap-4 mb-6 sm:mb-8">
+          <div className="p-2 sm:p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl shadow-lg">
+            <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
           </div>
           <div>
-            <h1 className="text-4xl font-bold bg-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-xl sm:text-3xl md:text-4xl font-bold bg-blue-600 bg-clip-text text-transparent">
               Reportes Financieros Generales
             </h1>
-            <p className="text-gray-500 mt-1 text-left">Gestiona y analiza tus reportes financieros</p>
+            <p className="text-gray-500 mt-1 text-left text-xs sm:text-base">Gestiona y analiza tus reportes financieros</p>
           </div>
         </div>
 
         {/* Actions Bar */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 mb-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-center gap-3">
+        <div className="bg-white rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-100 mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="p-2 bg-gradient-to-r from-red-500 to-red-600 rounded-xl">
-                <BarChart3 className="w-5 h-5 text-white" />
+                <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
-              <h2 className="text-xl font-bold text-gray-800">Reportes Activos</h2>
-              <span className="px-3 py-1 bg-gray-100 text-gray-600 text-sm font-medium rounded-full">
+              <h2 className="text-base sm:text-xl font-bold text-gray-800">Reportes Activos</h2>
+              <span className="px-2 py-1 sm:px-3 sm:py-1 bg-gray-100 text-gray-600 text-xs sm:text-sm font-medium rounded-full">
                 {reportes.length} reportes
               </span>
             </div>
 
-            <div className="flex gap-3">
-              {(canRead || isAdmin) && (
-                <button
-                  onClick={() => setIsInformeOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl font-medium hover:from-gray-700 hover:to-gray-800 transition-all shadow-lg"
-                >
-                  <BarChart3 className="w-4 h-4" />
-                  Informe por Módulo
-                </button>
-              )}
-              {(canCreate || canEdit || isAdmin) && (
-                <button
-                  onClick={handleOpenModal}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-red-700 transition-all shadow-lg"
-                >
-                  <Plus className="w-4 h-4" />
-                  {hasReports && activeReport ? 'Finalizar Reporte' : 'Nuevo Reporte'}
-                </button>
-              )}
+            <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2 sm:gap-3 mt-2 sm:mt-0">
+              <button
+                onClick={() => setIsInformeOpen(true)}
+                className="flex items-center gap-2 justify-center px-3 py-2 sm:px-4 sm:py-2.5 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl font-medium hover:from-gray-700 hover:to-gray-800 transition-all shadow-lg w-full sm:w-auto"
+              >
+                <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="text-sm sm:text-base">Informe por Módulo</span>
+              </button>
+              <button
+                onClick={handleOpenModal}
+                className="flex items-center gap-2 justify-center px-3 py-2 sm:px-4 sm:py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-red-700 transition-all shadow-lg w-full sm:w-auto"
+              >
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="text-sm sm:text-base">{hasReports && activeReport ? 'Finalizar Reporte' : 'Nuevo Reporte'}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -414,7 +414,7 @@ export default function ReporteComponentView() {
         {/* Table */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
+            <table className="min-w-full text-xs sm:text-sm">
               <thead>
                 <tr className="bg-gradient-to-r from-gray-800 to-gray-700">
                   {[
@@ -427,8 +427,8 @@ export default function ReporteComponentView() {
                     { label: 'Observaciones' },
                     { label: 'Acciones' },
                   ].map((h) => (
-                    <th key={h.label} className="px-6 py-4 text-left">
-                      <div className="flex items-center gap-2 text-white font-medium text-sm">
+                    <th key={h.label} className="px-3 py-2 sm:px-6 sm:py-4 text-left">
+                      <div className="flex items-center gap-2 text-white font-medium text-xs sm:text-sm">
                         {h.label}
                       </div>
                     </th>
@@ -445,9 +445,9 @@ export default function ReporteComponentView() {
                 ) : (
                   reportes.map((r) => (
                     <tr key={r.id} className="hover:bg-gray-50 transition-colors group">
-                      <td className="px-6 py-4 text-gray-600">{formatDateLocal(r.start_date)}</td>
-                      <td className="px-6 py-4 text-gray-600">{r.end_date ? formatDateLocal(r.end_date) : '–'}</td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-2 sm:px-6 sm:py-4 text-gray-600">{formatDateLocal(r.start_date)}</td>
+                      <td className="px-3 py-2 sm:px-6 sm:py-4 text-gray-600">{r.end_date ? formatDateLocal(r.end_date) : '–'}</td>
+                      <td className="px-3 py-2 sm:px-6 sm:py-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                           isActiveReport(r) 
                             ? 'bg-orange-100 text-orange-800' 
@@ -456,17 +456,17 @@ export default function ReporteComponentView() {
                           {isActiveReport(r) ? 'En proceso' : 'Finalizado'}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-2 sm:px-6 sm:py-4">
                         <span className={`font-semibold ${isActiveReport(r) ? 'text-orange-600' : 'text-green-600'}`}>
                           {displayIncome(r)}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-2 sm:px-6 sm:py-4">
                         <span className={`font-semibold ${isActiveReport(r) ? 'text-orange-600' : 'text-red-600'}`}>
                           {displayExpenses(r)}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-2 sm:px-6 sm:py-4">
                         <span className={`font-semibold ${
                           isActiveReport(r) 
                             ? 'text-orange-600' 
@@ -477,10 +477,10 @@ export default function ReporteComponentView() {
                           {displayNetProfit(r)}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-2 sm:px-6 sm:py-4">
                         <span className="text-gray-600 text-sm">{r.observations || '–'}</span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-2 sm:px-6 sm:py-4">
                         <div className="flex items-center gap-2">
                           {(canRead || isAdmin) && (
                             <button
@@ -535,6 +535,12 @@ export default function ReporteComponentView() {
         reportes={convertReportsToModuleFormat()}
         onExport={handleExportModule}
       />
+
+      <ModalListMonthlyExpenses
+        isOpen={isMonthlyModalOpen}
+        onClose={() => setMonthlyModalOpen(false)}
+      />
+
     </div>
   );
 }
