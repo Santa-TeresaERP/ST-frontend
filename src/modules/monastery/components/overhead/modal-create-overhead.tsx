@@ -45,8 +45,8 @@ const ModalCreateOverhead: React.FC<Props> = ({ isOpen, onClose }) => {
   const onSubmit: SubmitHandler<CreateOverheadData> = (data) => {
     createMonasteryOverhead(data, {
       onSuccess: () => {
-        // Lógica post-éxito: Invalidar lista específica de Monasterio y genérica
-        queryClient.invalidateQueries({ queryKey: ['overhead-monastery'] });
+        // Lógica post-éxito: Invalidar las query keys correctas
+        queryClient.invalidateQueries({ queryKey: ['overhead-monastery-debug'] });
         queryClient.invalidateQueries({ queryKey: ['overhead'] });
         reset();
         onClose();

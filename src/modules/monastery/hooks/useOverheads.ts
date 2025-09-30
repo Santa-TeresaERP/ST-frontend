@@ -41,7 +41,7 @@ export const useCreateOverhead = () => {
     onSuccess: () => {
   // Invalidate generic and monastery-specific lists
   queryClient.invalidateQueries({ queryKey: [OVERHEADS_QUERY_KEY] });
-  queryClient.invalidateQueries({ queryKey: [`${OVERHEADS_QUERY_KEY}-monastery`] });
+  queryClient.invalidateQueries({ queryKey: [`${OVERHEADS_QUERY_KEY}-monastery-debug`] });
     },
   });
 };
@@ -53,7 +53,7 @@ export const useCreateMonasterioOverhead = () => {
     mutationFn: createMonasterioOverhead,
     onSuccess: () => {
   // Invalidate monastery-specific list primarily, plus generic as safety
-  queryClient.invalidateQueries({ queryKey: [`${OVERHEADS_QUERY_KEY}-monastery`] });
+  queryClient.invalidateQueries({ queryKey: [`${OVERHEADS_QUERY_KEY}-monastery-debug`] });
   queryClient.invalidateQueries({ queryKey: [OVERHEADS_QUERY_KEY] });
     },
   });
@@ -66,7 +66,7 @@ export const useUpdateOverhead = () => {
     mutationFn: ({ id, payload }) => updateOverhead(id, payload),
     onSuccess: () => {
   queryClient.invalidateQueries({ queryKey: [OVERHEADS_QUERY_KEY] });
-  queryClient.invalidateQueries({ queryKey: [`${OVERHEADS_QUERY_KEY}-monastery`] });
+  queryClient.invalidateQueries({ queryKey: [`${OVERHEADS_QUERY_KEY}-monastery-debug`] });
     },
   });
 };
@@ -78,7 +78,7 @@ export const useDeleteOverhead = () => {
     mutationFn: deleteOverhead,
     onSuccess: () => {
   queryClient.invalidateQueries({ queryKey: [OVERHEADS_QUERY_KEY] });
-  queryClient.invalidateQueries({ queryKey: [`${OVERHEADS_QUERY_KEY}-monastery`] });
+  queryClient.invalidateQueries({ queryKey: [`${OVERHEADS_QUERY_KEY}-monastery-debug`] });
     },
   });
 };

@@ -31,10 +31,21 @@ export const fetchMonasteryExpenseById = async (id: string): Promise<MonasteryEx
  * Crea un nuevo gasto del monasterio.
  */
 export const createMonasteryExpense = async (
-  payload: CreateMonasteryExpensePayload
+  payload: Omit<CreateMonasteryExpensePayload, 'overheadsId'> // Omitir overheadsId del payload
 ): Promise<MonasteryExpense> => {
-  const response = await api.post<{success: boolean; data: MonasteryExpense}>(MONASTERY_EXPENSES_ENDPOINT, payload);
-  return response.data.data;
+  console.log('🔍 DEBUGGING createMonasteryExpense:');
+  console.log('  - Endpoint:', MONASTERY_EXPENSES_ENDPOINT);
+  console.log('  - Payload (sin overheadsId):', payload);
+  
+  try {
+    const response = await api.post<{success: boolean; data: MonasteryExpense}>(MONASTERY_EXPENSES_ENDPOINT, payload);
+    console.log('  - Response:', response);
+    console.log('  - Response.data:', response.data);
+    return response.data.data;
+  } catch (error: unknown) {
+    console.log('  - ERROR en createMonasteryExpense:', error);
+    throw error;
+  }
 };
 
 /**
@@ -43,13 +54,23 @@ export const createMonasteryExpense = async (
  */
 export const updateMonasteryExpense = async (
   id: string,
-  payload: UpdateMonasteryExpensePayload
+  payload: Omit<UpdateMonasteryExpensePayload, 'overheadsId'> // Omitir overheadsId del payload
 ): Promise<MonasteryExpense> => {
-  const response = await api.patch<{success: boolean; data: MonasteryExpense}>(
-    `${MONASTERY_EXPENSES_ENDPOINT}/${id}`,
-    payload
-  );
-  return response.data.data;
+  console.log('🔍 DEBUGGING updateMonasteryExpense:');
+  console.log('  - ID:', id);
+  console.log('  - Payload (sin overheadsId):', payload);
+  
+  try {
+    const response = await api.patch<{success: boolean; data: MonasteryExpense}>(
+      `${MONASTERY_EXPENSES_ENDPOINT}/${id}`,
+      payload
+    );
+    console.log('  - Response:', response);
+    return response.data.data;
+  } catch (error: unknown) {
+    console.log('  - ERROR en updateMonasteryExpense:', error);
+    throw error;
+  }
 };
 
 /**

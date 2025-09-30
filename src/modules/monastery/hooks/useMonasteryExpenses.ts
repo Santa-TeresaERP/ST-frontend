@@ -35,12 +35,12 @@ export const useFetchMonasteryExpenseById = (id: string) => {
 // Hook para CREAR un gasto del monasterio
 export const useCreateMonasteryExpense = () => {
   const queryClient = useQueryClient();
-  return useMutation<MonasteryExpense, Error, CreateMonasteryExpensePayload>({
+  return useMutation<MonasteryExpense, Error, Omit<CreateMonasteryExpensePayload, 'overheadsId'>>({
     mutationFn: createMonasteryExpense,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [MONASTERY_EXPENSES_QUERY_KEY] });
       // También invalidar los overheads del monasterio si están relacionados
-      queryClient.invalidateQueries({ queryKey: ['overhead-monastery'] });
+      queryClient.invalidateQueries({ queryKey: ['overhead-monastery-debug'] });
     },
   });
 };
@@ -48,13 +48,13 @@ export const useCreateMonasteryExpense = () => {
 // Hook para ACTUALIZAR un gasto del monasterio
 export const useUpdateMonasteryExpense = () => {
   const queryClient = useQueryClient();
-  return useMutation<MonasteryExpense, Error, { id: string; payload: UpdateMonasteryExpensePayload }>({
+  return useMutation<MonasteryExpense, Error, { id: string; payload: Omit<UpdateMonasteryExpensePayload, 'overheadsId'> }>({
     mutationFn: ({ id, payload }) => updateMonasteryExpense(id, payload),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: [MONASTERY_EXPENSES_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [MONASTERY_EXPENSES_QUERY_KEY, variables.id] });
       // También invalidar los overheads del monasterio si están relacionados
-      queryClient.invalidateQueries({ queryKey: ['overhead-monastery'] });
+      queryClient.invalidateQueries({ queryKey: ['overhead-monastery-debug'] });
     },
   });
 };

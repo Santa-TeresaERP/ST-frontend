@@ -19,9 +19,6 @@ export const monasteryExpenseFormSchema = z.object({
   
   descripción: z.string()
     .min(1, 'La descripción es obligatoria.'),
-    
-  overheadsId: z.string()
-    .min(1, 'Debe seleccionar un gasto general asociado.'), // REQUERIDO: No puede estar vacío
 });
 
 /**

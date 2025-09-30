@@ -7,9 +7,13 @@ import { X } from 'lucide-react';
 
 // 1. IMPORTAR HOOKS, SCHEMAS Y TIPOS PARA MONASTERY EXPENSES
 import { useUpdateMonasteryExpense } from '@/modules/monastery/hooks/useMonasteryExpenses';
-import { useFetchMonasterioOverheads } from '@/modules/monastery/hooks/useOverheads';
-import { updateMonasteryExpenseFormSchema, UpdateMonasteryExpenseFormData } from '@/modules/monastery/schemas/monasteryexpense.schema';
 import { MonasteryExpense } from '@/modules/monastery/types/monasteryexpense';
+
+// 2. IMPORTAR SCHEMA Y TIPO DE ZOD
+import { 
+  monasteryExpenseFormSchema, 
+  MonasteryExpenseFormData 
+} from '@/modules/monastery/schemas/monasteryexpense.schema';
 
 interface Props {
   isOpen: boolean;
@@ -18,20 +22,17 @@ interface Props {
 }
 
 const ModalEditMonastery: React.FC<Props> = ({ isOpen, onClose, expenseToEdit }) => {
-  // 2. OBTENER LA LISTA DE OVERHEADS DISPONIBLES
-  const { data: overheads = [], isLoading: overheadsLoading } = useFetchMonasterioOverheads();
-  
-  // 3. INICIALIZAR EL HOOK DE MUTACIÓN
+  // 2. INICIALIZAR EL HOOK DE MUTACIÓN
   const { mutate: updateExpense, isPending } = useUpdateMonasteryExpense();
 
-  // 3. CONFIGURAR REACT-HOOK-FORM
+  // 3. CONFIGURAR REACT-HOOK-FORM CON ZOD RESOLVER
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<UpdateMonasteryExpenseFormData>({
-    resolver: zodResolver(updateMonasteryExpenseFormSchema),
+  } = useForm<Partial<MonasteryExpenseFormData>>({
+    resolver: zodResolver(monasteryExpenseFormSchema.partial()),
   });
 
   // 4. LLENAR EL FORMULARIO CUANDO SE ABRA CON DATOS EXISTENTES
@@ -43,26 +44,32 @@ const ModalEditMonastery: React.FC<Props> = ({ isOpen, onClose, expenseToEdit })
         Name: expenseToEdit.Name,
         date: expenseToEdit.date.split('T')[0], // Convertir fecha a formato YYYY-MM-DD
         descripción: expenseToEdit.descripción,
-        overheadsId: expenseToEdit.overheadsId || '',
+        // Ya no incluimos overheadsId
       });
     }
   }, [isOpen, expenseToEdit, reset]);
 
   // 5. FUNCIÓN PARA MANEJAR EL ENVÍO DEL FORMULARIO
-  const onSubmit: SubmitHandler<UpdateMonasteryExpenseFormData> = async (data) => {
+  const onSubmit: SubmitHandler<Partial<MonasteryExpenseFormData>> = async (data) => {
     if (!expenseToEdit) return;
+
+    console.log('🔍 DEBUGGING: Datos del formulario de edición:', data);
+
+    const payload = {
+      category: data.category,
+      amount: data.amount,
+      Name: data.Name,
+      date: data.date,
+      descripción: data.descripción,
+      // Ya no enviamos overheadsId
+    };
+
+    console.log('🔍 DEBUGGING: Payload de edición (sin overheadsId):', payload);
 
     try {
       await updateExpense({
         id: expenseToEdit.id,
-        payload: {
-          category: data.category,
-          amount: data.amount,
-          Name: data.Name,
-          date: data.date,
-          descripción: data.descripción,
-          overheadsId: data.overheadsId || undefined,
-        },
+        payload: payload,
       });
 
       onClose(); // Cerrar el modal después de actualizar
@@ -135,7 +142,7 @@ const ModalEditMonastery: React.FC<Props> = ({ isOpen, onClose, expenseToEdit })
               id="amount"
               type="number"
               step="0.01"
-              {...register('amount')}
+              {...register('amount', { valueAsNumber: true })}
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 ${
                 errors.amount ? 'border-red-300' : 'border-gray-300'
               }`}
@@ -180,36 +187,6 @@ const ModalEditMonastery: React.FC<Props> = ({ isOpen, onClose, expenseToEdit })
             />
             {errors.descripción && (
               <p className="mt-1 text-sm text-red-600">{errors.descripción.message}</p>
-            )}
-          </div>
-
-          {/* Campo Gasto General Asociado (requerido) */}
-          <div>
-            <label htmlFor="overheadsId" className="block text-sm font-medium text-gray-700 mb-1">
-              Gasto General Asociado *
-            </label>
-            {overheadsLoading ? (
-              <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
-                Cargando gastos generales...
-              </div>
-            ) : (
-              <select
-                id="overheadsId"
-                {...register('overheadsId')}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 ${
-                  errors.overheadsId ? 'border-red-300' : 'border-gray-300'
-                }`}
-              >
-                <option value="">Seleccione un gasto general</option>
-                {overheads.map((overhead) => (
-                  <option key={overhead.id} value={overhead.id}>
-                    {overhead.name} - S/ {overhead.amount} ({new Date(overhead.date).toLocaleDateString()})
-                  </option>
-                ))}
-              </select>
-            )}
-            {errors.overheadsId && (
-              <p className="mt-1 text-sm text-red-600">{errors.overheadsId.message}</p>
             )}
           </div>
 
