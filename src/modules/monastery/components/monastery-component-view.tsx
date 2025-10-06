@@ -1,63 +1,72 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { PlusCircle, Edit, Trash2, Eye, Filter, Calendar, Search, DollarSign } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Filter, Calendar, Search, DollarSign } from 'lucide-react';
 
 // 1. IMPORTAR HOOKS Y TIPOS NECESARIOS
-import { useMonasteryOverheads } from '@/modules/monastery/hooks/useOverheads';
+import { useFetchOverheads, useDeleteOverhead } from '@/modules/monastery/hooks/useOverheads';
 import { Overhead } from '@/modules/monastery/types/overheads';
 import { useModulePermissions } from '@/core/utils/permission-hooks';
 import { MODULE_NAMES } from '@/core/utils/useModulesMap';
 
-// Importar los modales de monasterio
+// NUEVO: Importar hooks y tipos de monastery expenses
+import { 
+  useMonasteryExpenses,
+  useDeleteMonasteryExpense 
+} from '@/modules/monastery/hooks/useMonasteryExpense';
+import { MonasteryExpenses } from '@/modules/monastery/types/monasteryExpenses';
+
+// Importar los modales de monasterio (OVERHEAD = Gastos Generales)
 import ModalCreateMonasteryExpense from './overhead/modal-create-monastery-expense';
 import ModalEditMonasteryExpense from './overhead/modal-edit-monastery-expense';
 import ModalDeleteMonasteryExpense from './overhead/modal-delete-monastery-expense';
 
-// NUEVO: Importar los modales de registro general
-import ModalViewGeneralRegistry from './generalReport/modal-view';
-import ModalDeleteGeneralRegistry from './generalReport/modal.delete';
-
-// NUEVO: Definir tipo para registro general
-interface GeneralRegistry {
-  id: number;
-  name: string;
-  date: string;
-  amount: string;
-  description: string;
-  status: 'pending' | 'completed';
-}
+// NUEVO: Importar los modales de monastery expenses (GASTOS DEL MONASTERIO)
+import ModalCreateExpense from './monastery-expenses/modal-create-monastery-expense';
+import ModalEditExpense from './monastery-expenses/modal-edit-monastery-expense';
+import ModalDeleteExpense from './monastery-expenses/modal-delete-monastery-expense';
 
 const MonasteryComponentView: React.FC = () => {
   // 🔥 HOOK DE PERMISOS
-  const { canView, canCreate, canEdit, canDelete, isLoading, isAdmin } = useModulePermissions(MODULE_NAMES.MONASTERIO);
+  const { canCreate, canEdit, canDelete, isAdmin } = useModulePermissions(MODULE_NAMES.MONASTERIO);
 
-  // 2. OBTENER DATOS Y MUTACIONES AL ESTILO MUSEO
-  const { data, loading, error, remove, deleting } = useMonasteryOverheads();
+  // 1. Estado para controlar qué vista mostrar (DEBE IR ANTES DE LOS HOOKS DE DATOS)
+  const [activeView, setActiveView] = useState<'overheads' | 'expenses'>('expenses');
 
-  // 3. ESTADO LOCAL PARA LA UI - MONASTERIO
-  const [isCreateModalOpen, setCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setEditModalOpen] = useState(false);
-  const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [selectedOverhead, setSelectedOverhead] = useState<Overhead | null>(null);
-  
-  // NUEVO: ESTADO LOCAL PARA LA UI - REGISTRO GENERAL
-  const [isViewGeneralModalOpen, setViewGeneralModalOpen] = useState(false);
-  const [isDeleteGeneralModalOpen, setDeleteGeneralModalOpen] = useState(false);
-  const [selectedGeneralRegistry, setSelectedGeneralRegistry] = useState<GeneralRegistry | null>(null);
-  
-  // NUEVO: Estado para controlar qué vista mostrar
-  const [activeView, setActiveView] = useState<'general' | 'monastery'>('monastery');
+  // 2. OBTENER DATOS Y MUTACIONES - OVERHEADS (gastos generales) - Solo cuando está en vista de overheads
+  const { 
+    data: overheadData, 
+    isLoading: overheadLoading, 
+    error: overheadError,
+    refetch: refetchOverheads  // ✅ Agregar refetch manual
+  } = useFetchOverheads({
+    enabled: activeView === 'overheads' // ✅ SOLO cargar cuando esté en vista de overheads
+  });
+  const deleteOverheadMutation = useDeleteOverhead();
 
-  // NUEVO: Estados para filtros de Registro General
-  const [generalFilters, setGeneralFilters] = useState({
-    searchTerm: '',
-    statusFilter: 'all' as 'all' | 'pending' | 'completed',
-    sortBy: 'date' as 'date' | 'name' | 'amount'
+  // 3. OBTENER DATOS Y MUTACIONES - MONASTERY EXPENSES (gastos específicos del monasterio) - Solo cuando está en vista de expenses
+  const { 
+    data: expenseData, 
+    isLoading: expenseLoading, 
+    error: expenseError 
+  } = useMonasteryExpenses({
+    enabled: activeView === 'expenses' // ✅ SOLO cargar cuando esté en vista de expenses
   });
 
-  // NUEVO: Estados para filtros de Gastos de Monasterio
-  const [monasteryFilters, setMonasteryFilters] = useState({
+  // 4. ESTADO LOCAL PARA LA UI - OVERHEADS
+  const [isCreateOverheadModalOpen, setCreateOverheadModalOpen] = useState(false);
+  const [isEditOverheadModalOpen, setEditOverheadModalOpen] = useState(false);
+  const [isDeleteOverheadModalOpen, setDeleteOverheadModalOpen] = useState(false);
+  const [selectedOverhead, setSelectedOverhead] = useState<Overhead | null>(null);
+  
+  // 5. ESTADO LOCAL PARA LA UI - MONASTERY EXPENSES
+  const [selectedExpense, setSelectedExpense] = useState<MonasteryExpenses | null>(null);
+  const [isCreateExpenseModalOpen, setCreateExpenseModalOpen] = useState(false);
+  const [isEditExpenseModalOpen, setEditExpenseModalOpen] = useState(false);
+  const [isDeleteExpenseModalOpen, setDeleteExpenseModalOpen] = useState(false);
+  
+  // 6. Estados para filtros de Overheads (movido después de activeView)
+  const [overheadFilters, setOverheadFilters] = useState({
     searchTerm: '',
     dateFrom: '',
     dateTo: '',
@@ -66,105 +75,84 @@ const MonasteryComponentView: React.FC = () => {
     sortBy: 'date' as 'date' | 'name' | 'amount'
   });
 
-  // 4. DATOS SIN FILTROS
-  const rows = useMemo(() => (Array.isArray(data) ? data : []), [data]);
+  // 8. Estados para filtros de Gastos de Monasterio
+  const [expenseFilters, setExpenseFilters] = useState({
+    searchTerm: '',
+    category: '',
+    dateFrom: '',
+    dateTo: '',
+    minAmount: '',
+    maxAmount: '',
+    sortBy: 'date' as 'date' | 'name' | 'amount'
+  });
 
-  // NUEVO: Datos de ejemplo para registro general por mes
-  const generalRegistryData: GeneralRegistry[] = [
-    {
-      id: 1,
-      name: "Gasto de Septiembre",
-      date: "En proceso",
-      amount: "En proceso ...",
-      description: "Gastos realizados en el monasterio en el mes de septiembre",
-      status: "pending"
-    },
-    {
-      id: 2,
-      name: "Gasto de Agosto", 
-      date: "30/08/2025",
-      amount: "S/. 20.50",
-      description: "Gastos realizados en el monasterio en el mes de agosto",
-      status: "completed"
-    },
-    {
-      id: 3,
-      name: "Gasto de Julio", 
-      date: "31/07/2025",
-      amount: "S/. 150.75",
-      description: "Gastos realizados en el monasterio en el mes de julio",
-      status: "completed"
+  // 9. DATOS PROCESADOS - OVERHEADS (✅ SOLO cuando está en vista de overheads)
+  const overheadRows = useMemo(() => {
+    // ✅ SI NO está en vista de overheads, devolver array vacío
+    if (activeView !== 'overheads') return [];
+    // ✅ SI NO hay datos de overheads, devolver array vacío
+    if (!overheadData) return [];
+    // ✅ Procesar solo cuando esté en la vista correcta Y tenga datos
+    const processedData = Array.isArray(overheadData) ? overheadData : [];
+    
+    // 🔍 FILTRAR SOLO LOS OVERHEADS ACTIVOS (status: true)
+    const activeOverheads = processedData.filter(overhead => overhead.status === true);
+    
+    console.log('🔍 Total overheads desde API:', processedData.length);
+    console.log('✅ Overheads activos (filtrados):', activeOverheads.length);
+    
+    return activeOverheads;
+  }, [overheadData, activeView]);
+
+  // 10. DATOS PROCESADOS - MONASTERY EXPENSES (✅ SOLO cuando está en vista de expenses)
+  const expenseRows = useMemo(() => {
+    // ✅ SI NO está en vista de expenses, devolver array vacío
+    if (activeView !== 'expenses') return [];
+    // ✅ SI NO hay datos de expenses, devolver array vacío
+    if (!expenseData) return [];
+    
+    // ✅ Procesar solo cuando esté en la vista correcta Y tenga datos
+    // Los datos de expenses vienen en formato {success: true, data: Array}
+    if (expenseData && typeof expenseData === 'object' && 'data' in expenseData) {
+      return Array.isArray(expenseData.data) ? expenseData.data : [];
     }
-  ];
+    return Array.isArray(expenseData) ? expenseData : [];
+  }, [expenseData, activeView]);
 
-  // NUEVO: Filtrar datos del registro general
-  const filteredGeneralData = useMemo(() => {
-    let filtered = generalRegistryData;
+  // 11. FILTRAR DATOS - OVERHEADS (✅ SOLO procesar cuando hay datos de overheads)
+  const filteredOverheadData = useMemo(() => {
+    // ✅ Si no está en vista de overheads O no hay datos, devolver array vacío
+    if (activeView !== 'overheads' || !overheadRows.length) return [];
+    
+    let filtered = overheadRows;
 
     // Filtro por término de búsqueda
-    if (generalFilters.searchTerm) {
+    if (overheadFilters.searchTerm) {
       filtered = filtered.filter(item =>
-        item.name.toLowerCase().includes(generalFilters.searchTerm.toLowerCase()) ||
-        item.description.toLowerCase().includes(generalFilters.searchTerm.toLowerCase())
-      );
-    }
-
-    // Filtro por estado
-    if (generalFilters.statusFilter !== 'all') {
-      filtered = filtered.filter(item => item.status === generalFilters.statusFilter);
-    }
-
-    // Ordenar
-    filtered.sort((a, b) => {
-      switch (generalFilters.sortBy) {
-        case 'name':
-          return a.name.localeCompare(b.name);
-        case 'amount':
-          const amountA = a.status === 'completed' ? parseFloat(a.amount.replace(/[^\d.]/g, '')) : 0;
-          const amountB = b.status === 'completed' ? parseFloat(b.amount.replace(/[^\d.]/g, '')) : 0;
-          return amountB - amountA;
-        case 'date':
-        default:
-          if (a.status === 'pending') return -1;
-          if (b.status === 'pending') return 1;
-          return new Date(b.date.split('/').reverse().join('-')).getTime() - new Date(a.date.split('/').reverse().join('-')).getTime();
-      }
-    });
-
-    return filtered;
-  }, [generalFilters]);
-
-  // NUEVO: Filtrar datos de gastos del monasterio
-  const filteredMonasteryData = useMemo(() => {
-    let filtered = rows;
-
-    // Filtro por término de búsqueda
-    if (monasteryFilters.searchTerm) {
-      filtered = filtered.filter(item =>
-        item.name.toLowerCase().includes(monasteryFilters.searchTerm.toLowerCase()) ||
-        (item.description && item.description.toLowerCase().includes(monasteryFilters.searchTerm.toLowerCase()))
+        item.name.toLowerCase().includes(overheadFilters.searchTerm.toLowerCase()) ||
+        (item.description && item.description.toLowerCase().includes(overheadFilters.searchTerm.toLowerCase()))
       );
     }
 
     // Filtro por rango de fechas
-    if (monasteryFilters.dateFrom) {
-      filtered = filtered.filter(item => new Date(item.date) >= new Date(monasteryFilters.dateFrom));
+    if (overheadFilters.dateFrom) {
+      filtered = filtered.filter(item => new Date(item.date) >= new Date(overheadFilters.dateFrom));
     }
-    if (monasteryFilters.dateTo) {
-      filtered = filtered.filter(item => new Date(item.date) <= new Date(monasteryFilters.dateTo));
+    if (overheadFilters.dateTo) {
+      filtered = filtered.filter(item => new Date(item.date) <= new Date(overheadFilters.dateTo));
     }
 
     // Filtro por rango de montos
-    if (monasteryFilters.minAmount) {
-      filtered = filtered.filter(item => Number(item.amount) >= Number(monasteryFilters.minAmount));
+    if (overheadFilters.minAmount) {
+      filtered = filtered.filter(item => Number(item.amount) >= Number(overheadFilters.minAmount));
     }
-    if (monasteryFilters.maxAmount) {
-      filtered = filtered.filter(item => Number(item.amount) <= Number(monasteryFilters.maxAmount));
+    if (overheadFilters.maxAmount) {
+      filtered = filtered.filter(item => Number(item.amount) <= Number(overheadFilters.maxAmount));
     }
 
     // Ordenar
     filtered.sort((a, b) => {
-      switch (monasteryFilters.sortBy) {
+      switch (overheadFilters.sortBy) {
         case 'name':
           return a.name.localeCompare(b.name);
         case 'amount':
@@ -176,164 +164,195 @@ const MonasteryComponentView: React.FC = () => {
     });
 
     return filtered;
-  }, [rows, monasteryFilters]);
+  }, [overheadRows, overheadFilters, activeView]);
 
-  // NUEVO: Estadísticas para registro general
-  const generalStats = useMemo(() => {
-    const completed = generalRegistryData.filter(item => item.status === 'completed');
-    const totalAmount = completed.reduce((sum, item) => {
-      return sum + parseFloat(item.amount.replace(/[^\d.]/g, ''));
-    }, 0);
+  // 12. FILTRAR DATOS - MONASTERY EXPENSES (✅ SOLO procesar cuando hay datos de expenses)
+  const filteredExpenseData = useMemo(() => {
+    // ✅ Si no está en vista de expenses O no hay datos, devolver array vacío
+    if (activeView !== 'expenses' || !expenseRows.length) return [];
+    
+    let filtered = expenseRows;
+
+    // Filtro por término de búsqueda
+    if (expenseFilters.searchTerm) {
+      filtered = filtered.filter(item =>
+        item.Name.toLowerCase().includes(expenseFilters.searchTerm.toLowerCase()) ||
+        item.descripción.toLowerCase().includes(expenseFilters.searchTerm.toLowerCase())
+      );
+    }
+
+    // Filtro por categoría
+    if (expenseFilters.category) {
+      filtered = filtered.filter(item => item.category === expenseFilters.category);
+    }
+
+    // Filtro por rango de fechas
+    if (expenseFilters.dateFrom) {
+      filtered = filtered.filter(item => new Date(item.date) >= new Date(expenseFilters.dateFrom));
+    }
+    if (expenseFilters.dateTo) {
+      filtered = filtered.filter(item => new Date(item.date) <= new Date(expenseFilters.dateTo));
+    }
+
+    // Filtro por rango de montos
+    if (expenseFilters.minAmount) {
+      filtered = filtered.filter(item => Number(item.amount) >= Number(expenseFilters.minAmount));
+    }
+    if (expenseFilters.maxAmount) {
+      filtered = filtered.filter(item => Number(item.amount) <= Number(expenseFilters.maxAmount));
+    }
+
+    // Ordenar
+    filtered.sort((a, b) => {
+      switch (expenseFilters.sortBy) {
+        case 'name':
+          return a.Name.localeCompare(b.Name);
+        case 'amount':
+          return Number(b.amount) - Number(a.amount);
+        case 'date':
+        default:
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+      }
+    });
+
+    return filtered;
+  }, [expenseRows, expenseFilters, activeView]);
+
+  // 13. ESTADÍSTICAS - OVERHEADS
+  const overheadStats = useMemo(() => {
+    const totalAmount = filteredOverheadData.reduce((sum, item) => sum + Number(item.amount), 0);
+    const avgAmount = filteredOverheadData.length > 0 ? totalAmount / filteredOverheadData.length : 0;
 
     return {
-      total: generalRegistryData.length,
-      completed: completed.length,
-      pending: generalRegistryData.filter(item => item.status === 'pending').length,
-      totalAmount: totalAmount
-    };
-  }, []);
-
-  // NUEVO: Estadísticas para gastos del monasterio
-  const monasteryStats = useMemo(() => {
-    const totalAmount = filteredMonasteryData.reduce((sum, item) => sum + Number(item.amount), 0);
-    const avgAmount = filteredMonasteryData.length > 0 ? totalAmount / filteredMonasteryData.length : 0;
-
-    return {
-      total: filteredMonasteryData.length,
+      total: filteredOverheadData.length,
       totalAmount: totalAmount,
       avgAmount: avgAmount
     };
-  }, [filteredMonasteryData]);
+  }, [filteredOverheadData]);
 
-  // Logs de depuración para verificar los datos recibidos y renderizados
+  // 14. ESTADÍSTICAS - MONASTERY EXPENSES
+  const expenseStats = useMemo(() => {
+    const totalAmount = filteredExpenseData.reduce((sum, item) => sum + Number(item.amount), 0);
+    const avgAmount = filteredExpenseData.length > 0 ? totalAmount / filteredExpenseData.length : 0;
+
+    return {
+      total: filteredExpenseData.length,
+      totalAmount: totalAmount,
+      avgAmount: avgAmount
+    };
+  }, [filteredExpenseData]);
+
+  // 15. LOGS DE DEPURACIÓN (✅ SOLO para la vista activa Y cuando hay datos)
   useEffect(() => {
-    console.log('[Monastery] raw data from hook:', data);
-    console.log('[Monastery] rows used in table:', rows);
-  }, [data, rows]);
+    if (activeView === 'overheads' && overheadData) {
+      console.log('✅ [Monastery] OVERHEADS data RAW (desde API):', overheadData.length, 'registros');
+      console.log('✅ [Monastery] OVERHEADS data ACTIVOS (filtrados):', overheadRows.length, 'registros');
+      
+      // 🔍 Mostrar estado de cada overhead para debug
+      overheadData.forEach((overhead, index) => {
+        const statusIcon = overhead.status ? '✅' : '❌';
+        console.log(`${statusIcon} Overhead ${index + 1}: ${overhead.name} (status: ${overhead.status})`);
+      });
+    }
+    if (activeView === 'expenses' && expenseData) {
+      console.log('✅ [Monastery] EXPENSES data (solo en vista activa):', expenseData);
+    }
+  }, [overheadData, expenseData, activeView, overheadRows]);
 
   useEffect(() => {
-    if (error) {
-      console.error('[Monastery] error from hook:', error);
+    if (overheadError) {
+      console.error('[Monastery] overhead error:', overheadError);
     }
-  }, [error]);
+    if (expenseError) {
+      console.error('[Monastery] expense error:', expenseError);
+    }
+  }, [overheadError, expenseError]);
 
-  // 5. MANEJADORES DE EVENTOS PARA MODALES DE MONASTERIO
-  const handleOpenEditModal = (overhead: Overhead) => {
-    // 🔥 VERIFICAR PERMISOS ANTES DE ABRIR MODAL
-    if (!canEdit && !isAdmin) {
-      return;
-    }
+  // 16. MANEJADORES DE EVENTOS PARA OVERHEADS
+  const handleOpenEditOverheadModal = (overhead: Overhead) => {
+    if (!canEdit && !isAdmin) return;
     setSelectedOverhead(overhead);
-    setEditModalOpen(true);
+    setEditOverheadModalOpen(true);
   };
 
-  const handleOpenDeleteModal = (overhead: Overhead) => {
-    // 🔥 VERIFICAR PERMISOS ANTES DE ABRIR MODAL
-    if (!canDelete && !isAdmin) {
-      return;
-    }
+  const handleOpenDeleteOverheadModal = (overhead: Overhead) => {
+    if (!canDelete && !isAdmin) return;
     setSelectedOverhead(overhead);
-    setDeleteModalOpen(true);
+    setDeleteOverheadModalOpen(true);
   };
   
-  const handleDeleteConfirm = async () => {
+  const handleDeleteOverheadConfirm = async () => {
     if (!selectedOverhead) return;
-    // 🔥 VERIFICACIÓN ADICIONAL DE PERMISOS
-    if (!canDelete && !isAdmin) {
-      return;
-    }
-    await remove(selectedOverhead.id);
-    setDeleteModalOpen(false);
-  };
-
-  // NUEVO: MANEJADORES DE EVENTOS PARA MODALES DE REGISTRO GENERAL
-  const handleOpenViewGeneralModal = (registry: GeneralRegistry) => {
-    setSelectedGeneralRegistry(registry);
-    setViewGeneralModalOpen(true);
-  };
-
-  const handleOpenDeleteGeneralModal = (registry: GeneralRegistry) => {
-    setSelectedGeneralRegistry(registry);
-    setDeleteGeneralModalOpen(true);
-  };
-
-  const handleDeleteGeneralConfirm = async () => {
-    if (!selectedGeneralRegistry) return;
+    if (!canDelete && !isAdmin) return;
     
-    // Aquí implementarías la lógica de eliminación
-    // await removeGeneralRegistry(selectedGeneralRegistry.id);
-    console.log('Eliminar registro general:', selectedGeneralRegistry.id);
-    
-    setDeleteGeneralModalOpen(false);
-    setSelectedGeneralRegistry(null);
-  };
-
-  // NUEVO: Componente de filtros para Registro General
-  const renderGeneralFilters = () => (
-    <div className="bg-white p-6 rounded-lg shadow-md mb-6 border border-gray-200">
-      <div className="flex items-center mb-4">
-        <Filter className="text-red-600 mr-2" size={20} />
-        <h3 className="text-lg font-semibold text-gray-800">Filtros y Estadísticas</h3>
-      </div>
+    try {
+      console.log('🔥 Eliminando overhead ID:', selectedOverhead.id, 'Nombre:', selectedOverhead.name);
       
-      {/* Estadísticas */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-gradient-to-r from-red-50 to-red-100 p-4 rounded-lg border border-red-200">
-          <p className="text-sm text-red-600 font-medium">Total Registros</p>
-          <p className="text-2xl font-bold text-red-700">{generalStats.total}</p>
-        </div>
-        <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
-          <p className="text-sm text-green-600 font-medium">Completados</p>
-          <p className="text-2xl font-bold text-green-700">{generalStats.completed}</p>
-        </div>
-        <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 p-4 rounded-lg border border-yellow-200">
-          <p className="text-sm text-yellow-600 font-medium">Pendientes</p>
-          <p className="text-2xl font-bold text-yellow-700">{generalStats.pending}</p>
-        </div>
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
-          <p className="text-sm text-blue-600 font-medium">Total S/.</p>
-          <p className="text-2xl font-bold text-blue-700">{generalStats.totalAmount.toFixed(2)}</p>
-        </div>
-      </div>
+      await deleteOverheadMutation.mutateAsync(selectedOverhead.id);
+      
+      console.log('✅ Overhead eliminado exitosamente (borrado lógico) - ID:', selectedOverhead.id);
+      console.log('🔄 Los datos se actualizarán automáticamente...');
+      
+      setDeleteOverheadModalOpen(false);
+      setSelectedOverhead(null);
+      
+      // ✅ El refetch manual ya no debería ser necesario con el filtro de status
+      setTimeout(() => {
+        console.log('🔄 Refetch manual como backup...');
+        refetchOverheads();
+      }, 500);
+      
+    } catch (error) {
+      console.error('❌ Error al eliminar overhead:', error);
+      alert('Error al eliminar el gasto general. Por favor, inténtalo de nuevo.');
+    }
+  };
 
-      {/* Filtros */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-          <input
-            type="text"
-            placeholder="Buscar por nombre o descripción..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-            value={generalFilters.searchTerm}
-            onChange={(e) => setGeneralFilters({...generalFilters, searchTerm: e.target.value})}
-          />
-        </div>
-        
-        <select
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-          value={generalFilters.statusFilter}
-          onChange={(e) => setGeneralFilters({...generalFilters, statusFilter: e.target.value as 'all' | 'pending' | 'completed'})}
-        >
-          <option value="all">Todos los estados</option>
-          <option value="pending">Pendientes</option>
-          <option value="completed">Completados</option>
-        </select>
-        
-        <select
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-          value={generalFilters.sortBy}
-          onChange={(e) => setGeneralFilters({...generalFilters, sortBy: e.target.value as 'date' | 'name' | 'amount'})}
-        >
-          <option value="date">Ordenar por fecha</option>
-          <option value="name">Ordenar por nombre</option>
-          <option value="amount">Ordenar por monto</option>
-        </select>
-      </div>
-    </div>
-  );
+  // 17. MANEJADORES DE EVENTOS PARA MONASTERY EXPENSES
+  const handleOpenCreateExpenseModal = () => {
+    if (!canCreate && !isAdmin) return;
+    setCreateExpenseModalOpen(true);
+  };
 
-  // NUEVO: Componente de filtros para Gastos de Monasterio
-  const renderMonasteryFilters = () => (
+  const handleOpenEditExpenseModal = (expense: MonasteryExpenses) => {
+    if (!canEdit && !isAdmin) return;
+    setSelectedExpense(expense);
+    setEditExpenseModalOpen(true);
+  };
+
+  // NUEVO: Hook para eliminar monastery expenses
+  const deleteMonasteryExpenseMutation = useDeleteMonasteryExpense();
+
+  // Función para abrir modal de confirmación de eliminación
+  const handleOpenDeleteExpenseModal = (expense: MonasteryExpenses) => {
+    if (!canDelete && !isAdmin) return;
+    setSelectedExpense(expense);
+    setDeleteExpenseModalOpen(true);
+  };
+
+  // Función para confirmar eliminación de monastery expense
+  const handleDeleteExpenseConfirm = async () => {
+    if (!selectedExpense) return;
+    if (!canDelete && !isAdmin) return;
+    
+    try {
+      console.log('🔥 Eliminando monastery expense ID:', selectedExpense.id, 'Descripción:', selectedExpense.descripción);
+      
+      await deleteMonasteryExpenseMutation.mutateAsync(selectedExpense.id);
+      
+      console.log('✅ Monastery expense eliminado exitosamente:', selectedExpense.descripción);
+      
+      setDeleteExpenseModalOpen(false);
+      setSelectedExpense(null);
+      
+    } catch (error) {
+      console.error('❌ Error al eliminar monastery expense:', error);
+      alert('Error al eliminar el gasto del monasterio. Por favor, inténtalo de nuevo.');
+    }
+  };
+
+  // 18. COMPONENTE DE FILTROS PARA OVERHEADS
+  const renderOverheadFilters = () => (
     <div className="bg-white p-6 rounded-lg shadow-md mb-6 border border-gray-200">
       <div className="flex items-center mb-4">
         <Filter className="text-red-600 mr-2" size={20} />
@@ -344,28 +363,28 @@ const MonasteryComponentView: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-gradient-to-r from-red-50 to-red-100 p-4 rounded-lg border border-red-200">
           <p className="text-sm text-red-600 font-medium">Total Gastos</p>
-          <p className="text-2xl font-bold text-red-700">{monasteryStats.total}</p>
+          <p className="text-2xl font-bold text-red-700">{overheadStats.total}</p>
         </div>
         <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
           <p className="text-sm text-blue-600 font-medium">Monto Total S/.</p>
-          <p className="text-2xl font-bold text-blue-700">{monasteryStats.totalAmount.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-blue-700">{overheadStats.totalAmount.toFixed(2)}</p>
         </div>
         <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
           <p className="text-sm text-green-600 font-medium">Promedio S/.</p>
-          <p className="text-2xl font-bold text-green-700">{monasteryStats.avgAmount.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-green-700">{overheadStats.avgAmount.toFixed(2)}</p>
         </div>
       </div>
 
       {/* Filtros */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="relative md:col-span-2 lg:col-span-1">
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
           <input
             type="text"
             placeholder="Buscar gastos..."
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-            value={monasteryFilters.searchTerm}
-            onChange={(e) => setMonasteryFilters({...monasteryFilters, searchTerm: e.target.value})}
+            value={overheadFilters.searchTerm}
+            onChange={(e) => setOverheadFilters({...overheadFilters, searchTerm: e.target.value})}
           />
         </div>
         
@@ -375,16 +394,16 @@ const MonasteryComponentView: React.FC = () => {
             <input
               type="date"
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
-              value={monasteryFilters.dateFrom}
-              onChange={(e) => setMonasteryFilters({...monasteryFilters, dateFrom: e.target.value})}
+              value={overheadFilters.dateFrom}
+              onChange={(e) => setOverheadFilters({...overheadFilters, dateFrom: e.target.value})}
               title="Fecha desde"
             />
           </div>
           <input
             type="date"
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
-            value={monasteryFilters.dateTo}
-            onChange={(e) => setMonasteryFilters({...monasteryFilters, dateTo: e.target.value})}
+            value={overheadFilters.dateTo}
+            onChange={(e) => setOverheadFilters({...overheadFilters, dateTo: e.target.value})}
             title="Fecha hasta"
           />
         </div>
@@ -396,16 +415,16 @@ const MonasteryComponentView: React.FC = () => {
               type="number"
               placeholder="Monto mín."
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
-              value={monasteryFilters.minAmount}
-              onChange={(e) => setMonasteryFilters({...monasteryFilters, minAmount: e.target.value})}
+              value={overheadFilters.minAmount}
+              onChange={(e) => setOverheadFilters({...overheadFilters, minAmount: e.target.value})}
             />
           </div>
           <input
             type="number"
             placeholder="Monto máx."
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
-            value={monasteryFilters.maxAmount}
-            onChange={(e) => setMonasteryFilters({...monasteryFilters, maxAmount: e.target.value})}
+            value={overheadFilters.maxAmount}
+            onChange={(e) => setOverheadFilters({...overheadFilters, maxAmount: e.target.value})}
           />
         </div>
       </div>
@@ -413,8 +432,8 @@ const MonasteryComponentView: React.FC = () => {
       <div className="mt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <select
           className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-          value={monasteryFilters.sortBy}
-          onChange={(e) => setMonasteryFilters({...monasteryFilters, sortBy: e.target.value as 'date' | 'name' | 'amount'})}
+          value={overheadFilters.sortBy}
+          onChange={(e) => setOverheadFilters({...overheadFilters, sortBy: e.target.value as 'date' | 'name' | 'amount'})}
         >
           <option value="date">Ordenar por fecha</option>
           <option value="name">Ordenar por nombre</option>
@@ -422,7 +441,7 @@ const MonasteryComponentView: React.FC = () => {
         </select>
         
         <button
-          onClick={() => setMonasteryFilters({searchTerm: '', dateFrom: '', dateTo: '', minAmount: '', maxAmount: '', sortBy: 'date'})}
+          onClick={() => setOverheadFilters({searchTerm: '', dateFrom: '', dateTo: '', minAmount: '', maxAmount: '', sortBy: 'date'})}
           className="px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors duration-200"
         >
           Limpiar Filtros
@@ -431,149 +450,264 @@ const MonasteryComponentView: React.FC = () => {
     </div>
   );
 
-  // NUEVO: Componente para renderizar la vista de Registro General
-  const renderGeneralRegistry = () => {
-    return (
-      <div className="overflow-hidden">
-        <h2 className="text-3xl font-semibold text-red-700 mb-6">Registro General por mes</h2>
-        
-        {renderGeneralFilters()}
-
-        <div className="overflow-x-auto bg-white rounded shadow">
-          <table className="min-w-full text-gray-700">
-            <thead className="bg-gray-800 text-white">
-              <tr>
-                <th className="px-4 py-3 text-left font-medium">Nombre</th>
-                <th className="px-4 py-3 text-left font-medium">Fecha</th>
-                <th className="px-4 py-3 text-left font-medium">Gastos</th>
-                <th className="px-4 py-3 text-left font-medium">Estado</th>
-                <th className="px-4 py-3 text-left font-medium">Descripción</th>
-                <th className="px-4 py-3 text-left font-medium">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredGeneralData.map((registro, index) => (
-                <tr key={registro.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors duration-200`}>
-                  <td className="px-4 py-4 text-gray-800 font-medium">
-                    {registro.name}
-                  </td>
-                  <td className="px-4 py-4 text-gray-700">
-                    {registro.date}
-                  </td>
-                  <td className="px-4 py-4 text-gray-700">
-                    {registro.amount}
-                  </td>
-                  <td className="px-4 py-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      registro.status === 'completed' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {registro.status === 'completed' ? 'Completado' : 'Pendiente'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 text-gray-600 text-sm">
-                    {registro.description}
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center space-x-2">
-                      <button 
-                        onClick={() => handleOpenViewGeneralModal(registro)}
-                        className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors duration-200"
-                        title="Ver detalle"
-                      >
-                        <Eye size={16} />
-                      </button>
-                      <button 
-                        onClick={() => handleOpenDeleteGeneralModal(registro)}
-                        className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors duration-200"
-                        title="Eliminar registro"
-                      >
-                        <Trash2 size={16}/>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {filteredGeneralData.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="text-center p-8 text-gray-500">
-                    No se encontraron registros con los filtros aplicados.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+  // 19. COMPONENTE DE FILTROS PARA MONASTERY EXPENSES
+  const renderExpenseFilters = () => (
+    <div className="bg-white p-6 rounded-lg shadow-md mb-6 border border-gray-200">
+      <div className="flex items-center mb-4">
+        <Filter className="text-red-600 mr-2" size={20} />
+        <h3 className="text-lg font-semibold text-gray-800">Filtros y Estadísticas</h3>
+      </div>
+      
+      {/* Estadísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-gradient-to-r from-red-50 to-red-100 p-4 rounded-lg border border-red-200">
+          <p className="text-sm text-red-600 font-medium">Total Gastos</p>
+          <p className="text-2xl font-bold text-red-700">{expenseStats.total}</p>
+        </div>
+        <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
+          <p className="text-sm text-blue-600 font-medium">Monto Total S/.</p>
+          <p className="text-2xl font-bold text-blue-700">{expenseStats.totalAmount.toFixed(2)}</p>
+        </div>
+        <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
+          <p className="text-sm text-green-600 font-medium">Promedio S/.</p>
+          <p className="text-2xl font-bold text-green-700">{expenseStats.avgAmount.toFixed(2)}</p>
         </div>
       </div>
-    );
-  };
 
-  // NUEVO: Componente para renderizar la vista de Gastos de Monasterio
-  const renderMonasteryExpenses = () => {
-    return (
-      <>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <h2 className="text-3xl font-semibold text-red-700">Lista de Gastos</h2>
-          <div className="flex flex-col sm:flex-row justify-end gap-2 w-full sm:w-auto">
-            <button
-              onClick={() => setCreateModalOpen(true)}
-              className="flex items-center justify-center bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white px-4 py-2 rounded-3xl whitespace-nowrap transition-all duration-300 shadow-lg"
-            >
-              <PlusCircle className="mr-2" /> Registrar Gastos
-            </button>
+      {/* Filtros */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+          <input
+            type="text"
+            placeholder="Buscar gastos..."
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            value={expenseFilters.searchTerm}
+            onChange={(e) => setExpenseFilters({...expenseFilters, searchTerm: e.target.value})}
+          />
+        </div>
+
+        <input
+          type="text"
+          placeholder="Categoría..."
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          value={expenseFilters.category}
+          onChange={(e) => setExpenseFilters({...expenseFilters, category: e.target.value})}
+        />
+        
+        <div className="grid grid-cols-2 gap-2">
+          <div className="relative">
+            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+            <input
+              type="date"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+              value={expenseFilters.dateFrom}
+              onChange={(e) => setExpenseFilters({...expenseFilters, dateFrom: e.target.value})}
+              title="Fecha desde"
+            />
           </div>
+          <input
+            type="date"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+            value={expenseFilters.dateTo}
+            onChange={(e) => setExpenseFilters({...expenseFilters, dateTo: e.target.value})}
+            title="Fecha hasta"
+          />
         </div>
         
-        {renderMonasteryFilters()}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="relative">
+            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+            <input
+              type="number"
+              placeholder="Monto mín."
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+              value={expenseFilters.minAmount}
+              onChange={(e) => setExpenseFilters({...expenseFilters, minAmount: e.target.value})}
+            />
+          </div>
+          <input
+            type="number"
+            placeholder="Monto máx."
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+            value={expenseFilters.maxAmount}
+            onChange={(e) => setExpenseFilters({...expenseFilters, maxAmount: e.target.value})}
+          />
+        </div>
+      </div>
+      
+      <div className="mt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <select
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          value={expenseFilters.sortBy}
+          onChange={(e) => setExpenseFilters({...expenseFilters, sortBy: e.target.value as 'date' | 'name' | 'amount'})}
+        >
+          <option value="date">Ordenar por fecha</option>
+          <option value="name">Ordenar por nombre</option>
+          <option value="amount">Ordenar por monto</option>
+        </select>
         
-        <div className="overflow-x-auto bg-white rounded shadow">
-          <table className="min-w-full text-gray-700">
-            <thead className="bg-gradient-to-r from-gray-700 to-gray-900 text-white">
-              <tr>
-                <th className="px-4 py-2">Nombre</th>
-                <th className="px-4 py-2">Descripción</th>
-                <th className="px-4 py-2">Monto</th>
-                <th className="px-4 py-2">Fecha</th>
-                <th className="px-4 py-2">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading && <tr><td colSpan={5} className="text-center p-4">Cargando...</td></tr>}
-              {error && <tr><td colSpan={5} className="text-center p-4 text-red-500">{error}</td></tr>}
-              {!loading && !error && filteredMonasteryData.length === 0 && (
-                <tr><td colSpan={5} className="text-center p-8 text-gray-500">No hay gastos que mostrar con los filtros aplicados.</td></tr>
-              )}
-              {!loading && !error && filteredMonasteryData.map(gasto => (
-                <tr key={gasto.id} className="border-b hover:bg-gray-50 transition-colors duration-200">
-                  <td className="px-4 py-2 font-medium">{gasto.name}</td>
-                  <td className="px-4 py-2">{gasto.description || '-'}</td>
-                  <td className="px-4 py-2">S/ {Number(gasto.amount).toFixed(2)}</td>
-                  <td className="px-4 py-2">{new Date(gasto.date).toLocaleDateString()}</td>
-                  <td className="px-4 py-2">
-                    <div className="flex items-center justify-center space-x-2">
+        <button
+          onClick={() => setExpenseFilters({searchTerm: '', category: '', dateFrom: '', dateTo: '', minAmount: '', maxAmount: '', sortBy: 'date'})}
+          className="px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors duration-200"
+        >
+          Limpiar Filtros
+        </button>
+      </div>
+    </div>
+  );
+
+  // 20. COMPONENTE PARA RENDERIZAR OVERHEADS
+  const renderOverheads = () => (
+    <div className="overflow-hidden">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <h2 className="text-3xl font-semibold text-red-700">Gastos Generales</h2>
+        <div className="flex flex-col sm:flex-row justify-end gap-2 w-full sm:w-auto">
+          {(canCreate || isAdmin) && (
+            <button
+              onClick={() => setCreateOverheadModalOpen(true)}
+              className="flex items-center justify-center bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white px-4 py-2 rounded-3xl whitespace-nowrap transition-all duration-300 shadow-lg"
+            >
+              <PlusCircle className="mr-2" /> Registrar Gasto General
+            </button>
+          )}
+        </div>
+      </div>
+      
+      {renderOverheadFilters()}
+      
+      <div className="overflow-x-auto bg-white rounded shadow">
+        <table className="min-w-full text-gray-700">
+          <thead className="bg-gradient-to-r from-gray-700 to-gray-900 text-white">
+            <tr>
+              <th className="px-4 py-2">Nombre</th>
+              <th className="px-4 py-2">Descripción</th>
+              <th className="px-4 py-2">Monto</th>
+              <th className="px-4 py-2">Fecha</th>
+              <th className="px-4 py-2">Tipo</th>
+              <th className="px-4 py-2">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {overheadLoading && <tr key="overhead-loading"><td colSpan={6} className="text-center p-4">Cargando...</td></tr>}
+            {overheadError && <tr key="overhead-error"><td colSpan={6} className="text-center p-4 text-red-500">Error: {overheadError.message}</td></tr>}
+            {!overheadLoading && !overheadError && filteredOverheadData.length === 0 && (
+              <tr key="overhead-no-data"><td colSpan={6} className="text-center p-8 text-gray-500">No hay gastos que mostrar con los filtros aplicados.</td></tr>
+            )}
+            {!overheadLoading && !overheadError && filteredOverheadData.map(overhead => (
+              <tr key={overhead.id} className="border-b hover:bg-gray-50 transition-colors duration-200">
+                <td className="px-4 py-2 font-medium">{overhead.name}</td>
+                <td className="px-4 py-2">{overhead.description || '-'}</td>
+                <td className="px-4 py-2">S/ {Number(overhead.amount).toFixed(2)}</td>
+                <td className="px-4 py-2">{new Date(overhead.date).toLocaleDateString()}</td>
+                <td className="px-4 py-2">
+                  <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                    {overhead.type}
+                  </span>
+                </td>
+                <td className="px-4 py-2">
+                  <div className="flex items-center justify-center space-x-2">
+                    {(canEdit || isAdmin) && (
                       <button 
-                        onClick={() => handleOpenEditModal(gasto)} 
+                        onClick={() => handleOpenEditOverheadModal(overhead)} 
                         className="text-blue-600 hover:text-blue-800 transition-colors duration-200"
                       >
                         <Edit size={16}/>
                       </button>
+                    )}
+                    {(canDelete || isAdmin) && (
                       <button 
-                        onClick={() => handleOpenDeleteModal(gasto)} 
+                        onClick={() => handleOpenDeleteOverheadModal(overhead)} 
                         className="text-red-600 hover:text-red-800 transition-colors duration-200"
                       >
                         <Trash2 size={16}/>
                       </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  // 21. COMPONENTE PARA RENDERIZAR MONASTERY EXPENSES
+  const renderExpenses = () => (
+    <div className="overflow-hidden">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <h2 className="text-3xl font-semibold text-red-700">Gastos de Monasterio</h2>
+        <div className="flex flex-col sm:flex-row justify-end gap-2 w-full sm:w-auto">
+          {(canCreate || isAdmin) && (
+            <button
+              onClick={handleOpenCreateExpenseModal}
+              className="flex items-center justify-center bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white px-4 py-2 rounded-3xl whitespace-nowrap transition-all duration-300 shadow-lg"
+            >
+              <PlusCircle className="mr-2" /> Registrar Gasto del Monasterio
+            </button>
+          )}
         </div>
-      </>
-    );
-  };
+      </div>
+      
+      {renderExpenseFilters()}
+      
+      <div className="overflow-x-auto bg-white rounded shadow">
+        <table className="min-w-full text-gray-700">
+          <thead className="bg-gradient-to-r from-gray-700 to-gray-900 text-white">
+            <tr>
+              <th className="px-4 py-2">Nombre</th>
+              <th className="px-4 py-2">Categoría</th>
+              <th className="px-4 py-2">Descripción</th>
+              <th className="px-4 py-2">Monto</th>
+              <th className="px-4 py-2">Fecha</th>
+              <th className="px-4 py-2">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {expenseLoading && <tr key="loading"><td colSpan={6} className="text-center p-4">Cargando...</td></tr>}
+            {expenseError && <tr key="error"><td colSpan={6} className="text-center p-4 text-red-500">Error: {expenseError.message}</td></tr>}
+            {!expenseLoading && !expenseError && filteredExpenseData.length === 0 && (
+              <tr key="no-data"><td colSpan={6} className="text-center p-8 text-gray-500">No hay gastos que mostrar con los filtros aplicados.</td></tr>
+            )}
+            {!expenseLoading && !expenseError && filteredExpenseData.map(expense => (
+              <tr key={expense.id} className="border-b hover:bg-gray-50 transition-colors duration-200">
+                <td className="px-4 py-2 font-medium">{expense.Name}</td>
+                <td className="px-4 py-2">
+                  <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                    {expense.category}
+                  </span>
+                </td>
+                <td className="px-4 py-2">{expense.descripción}</td>
+                <td className="px-4 py-2">S/ {Number(expense.amount).toFixed(2)}</td>
+                <td className="px-4 py-2">{new Date(expense.date).toLocaleDateString()}</td>
+                <td className="px-4 py-2">
+                  <div className="flex items-center justify-center space-x-2">
+                    {(canEdit || isAdmin) && (
+                      <button 
+                        onClick={() => handleOpenEditExpenseModal(expense)} 
+                        className="text-blue-600 hover:text-blue-800 transition-colors duration-200"
+                      >
+                        <Edit size={16}/>
+                      </button>
+                    )}
+                    {(canDelete || isAdmin) && (
+                      <button 
+                        onClick={() => handleOpenDeleteExpenseModal(expense)} 
+                        className="text-red-600 hover:text-red-800 transition-colors duration-200"
+                      >
+                        <Trash2 size={16}/>
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
@@ -582,19 +716,19 @@ const MonasteryComponentView: React.FC = () => {
         <div className="bg-white rounded-full p-1 shadow-lg border border-gray-200">
           <div className="flex">
             <button
-              onClick={() => setActiveView('general')}
+              onClick={() => setActiveView('overheads')}
               className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
-                activeView === 'general'
+                activeView === 'overheads'
                   ? 'bg-gradient-to-r from-red-500 to-red-700 text-white shadow-md transform scale-105'
                   : 'text-red-600 hover:bg-red-50'
               }`}
             >
-              Registro General
+              Gastos Generales
             </button>
             <button
-              onClick={() => setActiveView('monastery')}
+              onClick={() => setActiveView('expenses')}
               className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
-                activeView === 'monastery'
+                activeView === 'expenses'
                   ? 'bg-gradient-to-r from-red-500 to-red-700 text-white shadow-md transform scale-105'
                   : 'text-red-600 hover:bg-red-50'
               }`}
@@ -617,43 +751,50 @@ const MonasteryComponentView: React.FC = () => {
       </div>
 
       {/* Renderizado condicional basado en la vista activa */}
-      {activeView === 'general' ? renderGeneralRegistry() : renderMonasteryExpenses()}
+      {activeView === 'overheads' ? renderOverheads() : renderExpenses()}
 
-      {/* MODALES DE MONASTERIO - Solo se muestran en vista de monasterio */}
-      {activeView === 'monastery' && (
+      {/* MODALES DE OVERHEADS (GASTOS GENERALES) - Solo se muestran en vista de overheads */}
+      {activeView === 'overheads' && (
         <>
           <ModalCreateMonasteryExpense
-            isOpen={isCreateModalOpen}
-            onClose={() => setCreateModalOpen(false)}
+            isOpen={isCreateOverheadModalOpen}
+            onClose={() => setCreateOverheadModalOpen(false)}
           />
           <ModalEditMonasteryExpense
-            isOpen={isEditModalOpen}
-            onClose={() => setEditModalOpen(false)}
+            isOpen={isEditOverheadModalOpen}
+            onClose={() => setEditOverheadModalOpen(false)}
             overheadToEdit={selectedOverhead}
           />
           <ModalDeleteMonasteryExpense
-            isOpen={isDeleteModalOpen}
-            onClose={() => setDeleteModalOpen(false)}
-            onConfirm={handleDeleteConfirm}
-            isPending={deleting}
-            overheadName={selectedOverhead?.name || ''} overheadToEdit={null}          />
+            isOpen={isDeleteOverheadModalOpen}
+            onClose={() => setDeleteOverheadModalOpen(false)}
+            onConfirm={handleDeleteOverheadConfirm}
+            isPending={deleteOverheadMutation.isPending}
+            overheadName={selectedOverhead?.name || ''}
+            overheadToEdit={selectedOverhead}
+          />
         </>
       )}
 
-      {/* NUEVO: MODALES DE REGISTRO GENERAL - Solo se muestran en vista general */}
-      {activeView === 'general' && (
+      {/* MODALES DE MONASTERY EXPENSES (GASTOS DEL MONASTERIO) - Solo se muestran en vista de expenses */}
+      {activeView === 'expenses' && (
         <>
-          <ModalViewGeneralRegistry
-            isOpen={isViewGeneralModalOpen}
-            onClose={() => setViewGeneralModalOpen(false)}
-            registryData={selectedGeneralRegistry}
+          <ModalCreateExpense
+            isOpen={isCreateExpenseModalOpen}
+            onClose={() => setCreateExpenseModalOpen(false)}
           />
-          <ModalDeleteGeneralRegistry
-            isOpen={isDeleteGeneralModalOpen}
-            onClose={() => setDeleteGeneralModalOpen(false)}
-            onConfirm={handleDeleteGeneralConfirm}
-            isPending={false} // Aquí deberías usar tu estado de loading para eliminación
-            registryData={selectedGeneralRegistry}
+          <ModalEditExpense
+            isOpen={isEditExpenseModalOpen}
+            onClose={() => setEditExpenseModalOpen(false)}
+            expenseToEdit={selectedExpense}
+          />
+          <ModalDeleteExpense
+            isOpen={isDeleteExpenseModalOpen}
+            onClose={() => setDeleteExpenseModalOpen(false)}
+            onConfirm={handleDeleteExpenseConfirm}
+            isPending={deleteMonasteryExpenseMutation.isPending}
+            expenseName={selectedExpense?.Name || ''}
+            expenseToDelete={selectedExpense}
           />
         </>
       )}
