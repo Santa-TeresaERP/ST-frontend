@@ -2,10 +2,10 @@ import api from '@/core/config/client';
 
 export const exportVentasExcel = async (startDate: string, endDate: string) => {
   const response = await api.post(
-    '/exportVentasExcelRoutes/',
-    { startDate, endDate }, // 👈 se mandan las fechas en el body
-    { responseType: 'blob' } // 👈 necesario para recibir el Excel como archivo
+    '/ventasExcel/report-excel', // 👈 endpoint correcto
+    { startDate, endDate },      // 👈 body con las fechas
+    { responseType: 'blob' }     // 👈 necesario para Excel
   );
 
-  return response.data; // Devuelve un Blob
+  return response.data; // Blob del Excel
 };
