@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import React from "react";
-import { X, AlertTriangle, Trash2, Shield, Info } from "lucide-react";
-import { Overhead } from "../../types/overheads";
+import React from 'react';
+import { X, AlertTriangle, Trash2, Shield, Info } from 'lucide-react';
+import { MonasteryExpenses } from '../../types/monasteryExpenses';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
   isPending: boolean;
-  overheadName: string;
-  overheadToEdit: Overhead | null;
+  expenseName: string;
+  expenseToDelete: MonasteryExpenses | null;
 }
 
 const ModalDeleteMonasteryExpense: React.FC<Props> = ({
@@ -18,7 +18,8 @@ const ModalDeleteMonasteryExpense: React.FC<Props> = ({
   onClose,
   onConfirm,
   isPending,
-  overheadName,
+  expenseName,
+  expenseToDelete,
 }) => {
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget && !isPending) {
@@ -34,13 +35,11 @@ const ModalDeleteMonasteryExpense: React.FC<Props> = ({
       onClick={handleBackdropClick}
     >
       {/* contenedor del modal */}
-      <div
-        className="
+      <div className="
         bg-white rounded-2xl shadow-2xl w-full sm:max-w-md md:max-w-lg 
         max-h-[90vh] overflow-y-auto 
         transform transition-all duration-300 scale-100
-      "
-      >
+      ">
         {/* Header */}
         <div className="bg-gradient-to-r from-red-500 to-red-700 px-3 sm:px-6 py-3 rounded-t-2xl">
           <div className="flex justify-between items-center">
@@ -50,7 +49,7 @@ const ModalDeleteMonasteryExpense: React.FC<Props> = ({
               </div>
               <div>
                 <h3 className="text-base sm:text-xl font-bold text-white">
-                  Eliminar Gasto
+                  Eliminar Gasto del Monasterio
                 </h3>
                 <p className="text-red-100 text-xs sm:text-sm">
                   Confirmar eliminación del registro
@@ -82,9 +81,9 @@ const ModalDeleteMonasteryExpense: React.FC<Props> = ({
               ¿Confirmar eliminación?
             </h4>
             <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
-              Estás a punto de eliminar el gasto{" "}
+              Estás a punto de eliminar el gasto del monasterio{' '}
               <span className="font-semibold text-gray-900 bg-gray-100 px-2 py-0.5 rounded">
-                &quot;{overheadName}&quot;
+                &ldquo;{expenseName}&rdquo;
               </span>
             </p>
           </div>
@@ -93,17 +92,13 @@ const ModalDeleteMonasteryExpense: React.FC<Props> = ({
           <div className="space-y-3 mb-4">
             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3">
               <div className="flex items-start space-x-2">
-                <Shield
-                  className="text-yellow-600 flex-shrink-0 mt-0.5"
-                  size={16}
-                />
+                <Shield className="text-yellow-600 flex-shrink-0 mt-0.5" size={16} />
                 <div>
                   <h5 className="text-xs sm:text-sm font-medium text-yellow-900">
                     Eliminación Segura
                   </h5>
                   <p className="text-xs sm:text-sm text-yellow-800 mt-1">
-                    El registro será marcado como inactivo pero no se eliminará
-                    permanentemente.
+                    El registro será marcado como inactivo pero no se eliminará permanentemente.
                   </p>
                 </div>
               </div>
@@ -111,16 +106,11 @@ const ModalDeleteMonasteryExpense: React.FC<Props> = ({
 
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
               <div className="flex items-start space-x-2">
-                <Info
-                  className="text-blue-600 flex-shrink-0 mt-0.5"
-                  size={16}
-                />
+                <Info className="text-blue-600 flex-shrink-0 mt-0.5" size={16} />
                 <div>
-                  <h5 className="text-xs sm:text-sm font-medium text-blue-900">
-                    ¿Qué sucederá?
-                  </h5>
+                  <h5 className="text-xs sm:text-sm font-medium text-blue-900">¿Qué sucederá?</h5>
                   <ul className="text-xs sm:text-sm text-blue-800 mt-1 space-y-1">
-                    <li>• El gasto desaparecerá de la lista principal</li>
+                    <li>• El gasto del monasterio desaparecerá de la lista principal</li>
                     <li>• Los datos quedarán guardados en el historial</li>
                     <li>• Un administrador puede restaurar el registro</li>
                   </ul>
@@ -130,32 +120,41 @@ const ModalDeleteMonasteryExpense: React.FC<Props> = ({
           </div>
 
           {/* Resumen del gasto */}
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 mb-4">
-            <h5 className="text-xs sm:text-sm font-medium text-gray-700 mb-2 flex items-center">
-              <Trash2 className="mr-1" size={12} />
-              Gasto a eliminar:
-            </h5>
-            <div className="bg-white rounded-lg p-2 border">
-              <p className="font-medium text-gray-900 text-sm sm:text-base">
-                {overheadName}
-              </p>
-              <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                Esta acción se ejecutará inmediatamente
-              </p>
+          {expenseToDelete && (
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 mb-4">
+              <h5 className="text-xs sm:text-sm font-medium text-gray-700 mb-2 flex items-center">
+                <Trash2 className="mr-1" size={12} />
+                Gasto del monasterio a eliminar:
+              </h5>
+              <div className="bg-white rounded-lg p-3 border space-y-2">
+                <div className="flex justify-between items-center">
+                  <p className="font-medium text-gray-900 text-sm sm:text-base">
+                    {expenseToDelete.Name}
+                  </p>
+                  <span className="text-sm font-bold text-red-600">
+                    S/ {Number(expenseToDelete.amount).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-xs text-gray-500">
+                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full">
+                    {expenseToDelete.category}
+                  </span>
+                  <span>{new Date(expenseToDelete.date).toLocaleDateString()}</span>
+                </div>
+                <p className="text-xs text-gray-600 mt-1">
+                  {expenseToDelete.descripción}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Advertencia final */}
           <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
             <div className="flex items-start space-x-1.5">
-              <AlertTriangle
-                className="text-red-600 flex-shrink-0 mt-0.5"
-                size={14}
-              />
+              <AlertTriangle className="text-red-600 flex-shrink-0 mt-0.5" size={14} />
               <p className="text-xs sm:text-sm text-red-800">
-                <strong>Importante:</strong> Aunque la eliminación es
-                reversible, confirma que realmente deseas proceder con esta
-                acción.
+                <strong>Importante:</strong> Aunque la eliminación es reversible,
+                confirma que realmente deseas proceder con esta acción.
               </p>
             </div>
           </div>
