@@ -1,11 +1,10 @@
-import api from '@/core/config/client';
+import api from '@/core/config/client'
 
 export const exportRentalsExcel = async (startDate: string, endDate: string) => {
   const response = await api.post(
-    '/rentalsExcel/by-date/excel',   // 👈 aquí estaba el error
+    '/getAlquileres/export-excel',
     { startDate, endDate },
     { responseType: 'blob' }
-  );
-
-  return response.data;
-};
+  )
+  return response.data
+}
