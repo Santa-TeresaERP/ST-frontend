@@ -186,8 +186,8 @@ const MovementComponentView: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredMovements.map((mov) => (
-                    <tr key={mov.movement_id} className="hover:bg-gray-50 border-t">
+                  {filteredMovements.map((mov, i) => (
+                    <tr key={mov.movement_id ?? `movement-${i}`} className="hover:bg-gray-50 border-t">
                       <td className="px-4 py-2 text-center">{mov.movement_id}</td>
                       <td className="px-4 py-2 text-center">{getWarehouseName(mov.warehouse_id)}</td>
                       <td className="px-4 py-2 text-center">{mov.store_id}</td>
