@@ -10,7 +10,7 @@ import { useFetchModules } from "../../../modules/hook/useModules";
 import { exportVentasExcel } from "../..//action/exportVentasExcel";
 import { exportRentalsExcel } from "../../action/exportRentalsExcel";
 import { exportMonasteriosExcel } from "../../action/exportMonasterioExcel";
-
+import { exportMuseoExcel } from "../../action/exportMuseoExcel";
 interface ReporteData {
   id: number;
   modulo: string;
@@ -238,6 +238,44 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
       alert("Hubo un error al generar el Excel de Monasterios");
     }
   };
+  const handleExportExcelMuseo = async () => {
+    try {
+      if (!fechaInicio || !fechaFin) {
+        alert("Selecciona un rango de fechas válido");
+        return;
+      }
+
+      // Normalizar solo localmente (pero enviar en formato YYYY-MM-DD)
+      const endDateObj = new Date(fechaFin);
+      endDateObj.setHours(23, 59, 59, 999);
+
+      const payload = {
+        startDate: fechaInicio,
+        endDate: fechaFin,
+      };
+
+      console.log("Payload enviado al backend (Museo):", payload);
+
+      // Llamada al backend
+      const blob = await exportMuseoExcel(payload.startDate, payload.endDate);
+
+      // Crear enlace de descarga
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `reporte_museo_${fechaInicio}_a_${fechaFin}.xlsx`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error al descargar el Excel de Museo:", error);
+      alert("Hubo un error al generar el Excel de Museo");
+    }
+  };
 
   return (
     <div
@@ -365,6 +403,17 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
                 >
                   <FiDownload size={18} />
                   Obtener Excel de departamento de Monasterios
+                </button>
+              )}
+              {["museo", "museos", "museum"].includes(
+                selectedModulo.toLowerCase()
+              ) && (
+                <button
+                  onClick={handleExportExcelMuseo}
+                  className="flex items-center gap-2 px-6 py-2 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg shadow-md transition-all"
+                >
+                  <FiDownload size={18} />
+                  Obtener Excel de departamento de Museo
                 </button>
               )}
             </div>
