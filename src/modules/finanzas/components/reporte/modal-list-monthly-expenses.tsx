@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { X, PlusCircle, AlertCircle, Edit, Trash2 } from 'lucide-react';
 // Usamos el hook existente del módulo 'monastery'
 import { useFetchMonthlyOverheads } from '@/modules/monastery/hooks/useOverheads';
@@ -26,6 +26,23 @@ const ModalListMonthlyExpenses: React.FC<Props> = ({ isOpen, onClose }) => {
 
   // Usamos el hook para obtener los gastos de Monasterio
   const { data: monthlyExpenses = [], isLoading, isError, error } = useFetchMonthlyOverheads();
+
+  const normalizedMonthlyExpenses = useMemo<Overhead[]>(() => {
+    if (Array.isArray(monthlyExpenses)) {
+      return monthlyExpenses;
+    }
+
+    const wrappedResponse = monthlyExpenses as unknown as { data?: Overhead[] } | null;
+    if (wrappedResponse && Array.isArray(wrappedResponse.data)) {
+      return wrappedResponse.data;
+    }
+
+    if (monthlyExpenses && typeof monthlyExpenses === 'object' && process.env.NODE_ENV === 'development') {
+      console.warn('modal-list-monthly-expenses: unexpected shape for monthlyExpenses', monthlyExpenses);
+    }
+
+    return [];
+  }, [monthlyExpenses]);
 
   if (!isOpen) return null;
 
@@ -66,10 +83,10 @@ const ModalListMonthlyExpenses: React.FC<Props> = ({ isOpen, onClose }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {isLoading && <tr><td colSpan={3} className="text-center p-4">Cargando...</td></tr>}
+                  {isLoading && <tr><td colSpan={5} className="text-center p-4">Cargando...</td></tr>}
                   {isError && (
                     <tr>
-                      <td colSpan={3} className="text-center p-4 text-red-600">
+                      <td colSpan={5} className="text-center p-4 text-red-600">
                         <div className="flex justify-center items-center gap-2">
                            <AlertCircle size={18} /> 
                            <span>{error?.message || 'No se encontraron gastos mensuales.'}</span>
@@ -77,10 +94,10 @@ const ModalListMonthlyExpenses: React.FC<Props> = ({ isOpen, onClose }) => {
                       </td>
                     </tr>
                   )}
-                  {!isLoading && !isError && monthlyExpenses.length === 0 && (
-                    <tr><td colSpan={3} className="text-center p-4">No hay gastos mensuales para mostrar.</td></tr>
+                  {!isLoading && !isError && normalizedMonthlyExpenses.length === 0 && (
+                    <tr><td colSpan={5} className="text-center p-4">No hay gastos mensuales para mostrar.</td></tr>
                   )}
-                  {!isLoading && !isError && monthlyExpenses.map(gasto => (
+                  {!isLoading && !isError && normalizedMonthlyExpenses.map(gasto => (
                     <tr key={gasto.id} className={`border-b hover:bg-gray-50 ${gasto.status ? '' : 'opacity-60'}`}>
                       <td className="px-4 py-2 font-medium">{gasto.name}</td>
                       <td className="px-4 py-2">S/ {Number(gasto.amount).toFixed(2)}</td>

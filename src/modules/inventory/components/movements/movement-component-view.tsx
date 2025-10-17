@@ -300,64 +300,6 @@ const MovementComponentView: React.FC = () => {
             onCancel={() => setEditingResource(null)}
           />
         )}
-        {/* Tabla de productos */}
-        {selectedType === 'producto' && (
-          <>
-            {loading && <p>Cargando movimientos...</p>}
-            {error && <p className="text-red-500">{error.message}</p>}
-            {!loading && filteredMovements.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">
-                {searchTerm ? 'No se encontraron movimientos que coincidan con la búsqueda' : 'No hay movimientos registrados.'}
-              </div>
-            ) : (
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-800 text-white">
-                  <tr>
-                    <th className="px-4 py-2 text-center">ID</th>
-                    <th className="px-4 py-2 text-center">Almacén</th>
-                    <th className="px-4 py-2 text-center">Tienda</th>
-                    <th className="px-4 py-2 text-center">Producto</th>
-                    <th className="px-4 py-2 text-center">Tipo</th>
-                    <th className="px-4 py-2 text-center">Cantidad</th>
-                    <th className="px-4 py-2 text-center">Fecha</th>
-                    <th className="px-4 py-2 text-center">Observaciones</th>
-                    <th className="px-4 py-2 text-center">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredMovements.map((mov, i) => (
-                    <tr key={mov.movement_id ?? `movement-${i}`} className="hover:bg-gray-50 border-t">
-                      <td className="px-4 py-2 text-center">{mov.movement_id}</td>
-                      <td className="px-4 py-2 text-center">{getWarehouseName(mov.warehouse_id)}</td>
-                      <td className="px-4 py-2 text-center">{mov.store_id}</td>
-                      <td className="px-4 py-2 text-center">{getProductName(mov.product_id)}</td>
-                      <td className="px-4 py-2 text-center capitalize">{mov.movement_type}</td>
-                      <td className="px-4 py-2 text-center">{mov.quantity}</td>
-                      <td className="px-4 py-2 text-center">{new Date(mov.movement_date).toLocaleDateString()}</td>
-                      <td className="px-4 py-2 text-center">{mov.observations || '-'}</td>
-                      <td className="px-4 py-2 flex space-x-2 justify-center">
-                        <button
-                          onClick={() => setEditing(mov)}
-                          className="text-blue-600 hover:text-blue-800"
-                          title="Editar"
-                        >
-                          <Edit size={18} />
-                        </button>
-                        <button
-                          onClick={() => {/* Aquí puedes abrir un modal de confirmación si quieres */}}
-                          className="text-red-600 hover:text-red-800"
-                          title="Eliminar"
-                        >
-                          <DeleteMovementProduct id={mov.movement_id} onDeleted={fetchMovements} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </>
-        )}
         {/* Tabla de recursos */}
         {selectedType === 'recurso' && (
           <>

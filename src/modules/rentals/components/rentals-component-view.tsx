@@ -364,15 +364,23 @@ const RentalsComponentView = () => {
               <h2 className="text-xl font-bold text-red-600">Lugares en {selectedLocation.nombre}</h2>
             </div>
 
-            {/* 🔥 MOSTRAR BOTÓN SOLO SI TIENE PERMISOS DE CREACIÓN */}
-            {(canCreate || isAdmin) && (
+            <div className="flex items-center space-x-2">
               <button
-                onClick={handleCreatePlaceClick}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                onClick={() => queryClient.invalidateQueries({ queryKey: ['places', 'filtered', selectedLocation.id] })}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
               >
-                + Nuevo Lugar
+                Recargar
               </button>
-            )}
+              {/* 🔥 MOSTRAR BOTÓN SOLO SI TIENE PERMISOS DE CREACIÓN */}
+              {(canCreate || isAdmin) && (
+                <button
+                  onClick={handleCreatePlaceClick}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                >
+                  + Nuevo Lugar
+                </button>
+              )}
+            </div>
           </div>
 
           {places.length > 0 ? (
