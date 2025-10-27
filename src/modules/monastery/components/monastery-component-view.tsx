@@ -1,13 +1,11 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { PlusCircle, Edit, Trash2, Filter, Calendar, Search, DollarSign } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Filter, Calendar, Search, DollarSign, ShieldAlert } from 'lucide-react';
 
 // 1. IMPORTAR HOOKS Y TIPOS NECESARIOS
 import { useFetchOverheads, useDeleteOverhead } from '@/modules/monastery/hooks/useOverheads';
 import { Overhead } from '@/modules/monastery/types/overheads';
-import { useModulePermissions } from '@/core/utils/permission-hooks';
-import { MODULE_NAMES } from '@/core/utils/useModulesMap';
 
 // NUEVO: Importar hooks y tipos de monastery expenses
 import { 
@@ -15,6 +13,16 @@ import {
   useDeleteMonasteryExpense 
 } from '@/modules/monastery/hooks/useMonasteryExpense';
 import { MonasteryExpenses } from '@/modules/monastery/types/monasteryExpenses';
+
+// 🔥 IMPORTAR SISTEMA DE PERMISOS Y HOOK DE USUARIO ACTUAL
+import { 
+  AccessDeniedModal,
+} from '@/core/utils';
+import { useModulePermission, MODULE_NAMES } from '@/core/utils/useModulesMap';
+import { useCurrentUser } from '@/modules/auth/hook/useCurrentUser';
+import { useAuthStore } from '@/core/store/auth';
+import { suppressAxios403Errors } from '@/core/utils/error-suppressor';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Importar los modales de monasterio (OVERHEAD = Gastos Generales)
 import ModalCreateMonasteryExpense from './overhead/modal-create-monastery-expense';
@@ -26,9 +34,60 @@ import ModalCreateExpense from './monastery-expenses/modal-create-monastery-expe
 import ModalEditExpense from './monastery-expenses/modal-edit-monastery-expense';
 import ModalDeleteExpense from './monastery-expenses/modal-delete-monastery-expense';
 
+// 🔥 INTERFAZ PARA ERRORES DE AXIOS
+interface AxiosError extends Error {
+  response?: {
+    status: number;
+    data?: unknown;
+  };
+}
+
 const MonasteryComponentView: React.FC = () => {
-  // 🔥 HOOK DE PERMISOS
-  const { canCreate, canEdit, canDelete, isAdmin } = useModulePermissions(MODULE_NAMES.MONASTERIO);
+  // 🔥 SISTEMA DE PERMISOS COMPLETO
+  const queryClient = useQueryClient();
+  
+  // 🔥 OBTENER USUARIO ACTUAL CON SUS PERMISOS DESDE /auth/me
+  const { user } = useAuthStore();
+  const { data: currentUserWithPermissions, isLoading: usersLoading } = useCurrentUser();
+  
+  // 🔥 VERIFICAR PERMISOS USANDO EL SISTEMA DINÁMICO
+  const { 
+    hasPermission: canView, 
+    isLoading: permissionsLoading 
+  } = useModulePermission(MODULE_NAMES.MONASTERIO, 'canRead');
+  
+  const { hasPermission: canEdit } = useModulePermission(MODULE_NAMES.MONASTERIO, 'canEdit');
+  const { hasPermission: canCreate } = useModulePermission(MODULE_NAMES.MONASTERIO, 'canWrite');
+  const { hasPermission: canDelete } = useModulePermission(MODULE_NAMES.MONASTERIO, 'canDelete');
+  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isAdmin = (currentUserWithPermissions as any)?.Role?.name === 'Admin';
+  
+  const [showAccessDenied, setShowAccessDenied] = useState(false);
+  const [accessDeniedAction, setAccessDeniedAction] = useState('');
+
+  // 🔥 ACTIVAR SUPRESOR DE ERRORES 403 EN LA CONSOLA
+  useEffect(() => {
+    suppressAxios403Errors();
+  }, []);
+
+  // 🔥 DEBUG: Ver permisos actuales
+  console.log('🔍 MonasteryComponent - Análisis de Permisos:', {
+    userId: user?.id,
+    userFound: !!currentUserWithPermissions,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    roleName: (currentUserWithPermissions as any)?.Role?.name,
+    moduleName: MODULE_NAMES.MONASTERIO,
+    permisos: { canView, canEdit, canCreate, canDelete, isAdmin },
+    usersLoading,
+    permissionsLoading
+  });
+
+  // 🔥 FUNCIÓN PARA MANEJAR ACCESO DENEGADO
+  const handleAccessDenied = (action: string) => {
+    setAccessDeniedAction(action);
+    setShowAccessDenied(true);
+  };
 
   // 1. Estado para controlar qué vista mostrar (DEBE IR ANTES DE LOS HOOKS DE DATOS)
   const [activeView, setActiveView] = useState<'overheads' | 'expenses'>('expenses');
@@ -52,6 +111,9 @@ const MonasteryComponentView: React.FC = () => {
   } = useMonasteryExpenses({
     enabled: activeView === 'expenses' // ✅ SOLO cargar cuando esté en vista de expenses
   });
+
+  // NUEVO: Hook para eliminar monastery expenses
+  const deleteMonasteryExpenseMutation = useDeleteMonasteryExpense();
 
   // 4. ESTADO LOCAL PARA LA UI - OVERHEADS
   const [isCreateOverheadModalOpen, setCreateOverheadModalOpen] = useState(false);
@@ -268,22 +330,76 @@ const MonasteryComponentView: React.FC = () => {
     }
   }, [overheadError, expenseError]);
 
+  // 🔥 VERIFICAR ERRORES 403 Y PERMISOS DESPUÉS DE TODOS LOS HOOKS
+  const is403ErrorOverheads = overheadError && (overheadError.message.includes('403') || overheadError.message.includes('Forbidden'));
+  const is403ErrorExpenses = expenseError && (expenseError.message.includes('403') || expenseError.message.includes('Forbidden'));
+
+  // 🔥 EARLY RETURNS PARA ESTADOS DE CARGA Y ERRORES
+  if (usersLoading || permissionsLoading) {
+    return <div className="text-center text-red-800 font-semibold">Cargando módulo y permisos...</div>;
+  }
+
+  // 🔥 VERIFICAR ERROR 403 INMEDIATAMENTE - NO ESPERAR A PERMISOS
+  if (is403ErrorOverheads || is403ErrorExpenses) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
+          <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-700 mb-2">Acceso Restringido</h2>
+          <p className="text-gray-600 mb-4">
+            No tienes permisos para ver la gestión del monasterio.
+          </p>
+          <p className="text-sm text-gray-500">
+            Contacta al administrador para obtener acceso.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // 🔥 VERIFICAR SI TIENE PERMISO PARA VER EL MÓDULO (verificación adicional por permisos locales)
+  if (!canView && !isAdmin) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
+          <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-700 mb-2">Acceso Restringido</h2>
+          <p className="text-gray-600 mb-4">
+            No tienes permisos para ver la gestión del monasterio.
+          </p>
+          <p className="text-sm text-gray-500">
+            Contacta al administrador para obtener acceso.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // 16. MANEJADORES DE EVENTOS PARA OVERHEADS
   const handleOpenEditOverheadModal = (overhead: Overhead) => {
-    if (!canEdit && !isAdmin) return;
+    if (!canEdit && !isAdmin) {
+      handleAccessDenied('editar este gasto general');
+      return;
+    }
     setSelectedOverhead(overhead);
     setEditOverheadModalOpen(true);
   };
 
   const handleOpenDeleteOverheadModal = (overhead: Overhead) => {
-    if (!canDelete && !isAdmin) return;
+    if (!canDelete && !isAdmin) {
+      handleAccessDenied('eliminar este gasto general');
+      return;
+    }
     setSelectedOverhead(overhead);
     setDeleteOverheadModalOpen(true);
   };
   
   const handleDeleteOverheadConfirm = async () => {
     if (!selectedOverhead) return;
-    if (!canDelete && !isAdmin) return;
+    if (!canDelete && !isAdmin) {
+      handleAccessDenied('eliminar este gasto general (permisos revocados)');
+      return;
+    }
     
     try {
       console.log('🔥 Eliminando overhead ID:', selectedOverhead.id, 'Nombre:', selectedOverhead.name);
@@ -303,6 +419,21 @@ const MonasteryComponentView: React.FC = () => {
       }, 500);
       
     } catch (error) {
+      // 🔥 VERIFICAR SI ES ERROR 403 SIN MOSTRARLO EN CONSOLA
+      const isPermissionError = (error as AxiosError)?.response?.status === 403 ||
+                               error instanceof Error && (
+                                 error.message.includes('403') || 
+                                 error.message.includes('Forbidden')
+                               );
+
+      if (isPermissionError) {
+        setDeleteOverheadModalOpen(false);
+        setSelectedOverhead(null);
+        handleAccessDenied('eliminar este gasto general (permisos revocados)');
+        queryClient.invalidateQueries({ queryKey: ['users'] });
+        return; // 🔥 SALIR SILENCIOSAMENTE
+      }
+      
       console.error('❌ Error al eliminar overhead:', error);
       alert('Error al eliminar el gasto general. Por favor, inténtalo de nuevo.');
     }
@@ -310,22 +441,28 @@ const MonasteryComponentView: React.FC = () => {
 
   // 17. MANEJADORES DE EVENTOS PARA MONASTERY EXPENSES
   const handleOpenCreateExpenseModal = () => {
-    if (!canCreate && !isAdmin) return;
+    if (!canCreate && !isAdmin) {
+      handleAccessDenied('crear gastos del monasterio');
+      return;
+    }
     setCreateExpenseModalOpen(true);
   };
 
   const handleOpenEditExpenseModal = (expense: MonasteryExpenses) => {
-    if (!canEdit && !isAdmin) return;
+    if (!canEdit && !isAdmin) {
+      handleAccessDenied('editar este gasto del monasterio');
+      return;
+    }
     setSelectedExpense(expense);
     setEditExpenseModalOpen(true);
   };
 
-  // NUEVO: Hook para eliminar monastery expenses
-  const deleteMonasteryExpenseMutation = useDeleteMonasteryExpense();
-
   // Función para abrir modal de confirmación de eliminación
   const handleOpenDeleteExpenseModal = (expense: MonasteryExpenses) => {
-    if (!canDelete && !isAdmin) return;
+    if (!canDelete && !isAdmin) {
+      handleAccessDenied('eliminar este gasto del monasterio');
+      return;
+    }
     setSelectedExpense(expense);
     setDeleteExpenseModalOpen(true);
   };
@@ -333,7 +470,10 @@ const MonasteryComponentView: React.FC = () => {
   // Función para confirmar eliminación de monastery expense
   const handleDeleteExpenseConfirm = async () => {
     if (!selectedExpense) return;
-    if (!canDelete && !isAdmin) return;
+    if (!canDelete && !isAdmin) {
+      handleAccessDenied('eliminar este gasto del monasterio (permisos revocados)');
+      return;
+    }
     
     try {
       console.log('🔥 Eliminando monastery expense ID:', selectedExpense.id, 'Descripción:', selectedExpense.descripción);
@@ -346,6 +486,21 @@ const MonasteryComponentView: React.FC = () => {
       setSelectedExpense(null);
       
     } catch (error) {
+      // 🔥 VERIFICAR SI ES ERROR 403 SIN MOSTRARLO EN CONSOLA
+      const isPermissionError = (error as AxiosError)?.response?.status === 403 ||
+                               error instanceof Error && (
+                                 error.message.includes('403') || 
+                                 error.message.includes('Forbidden')
+                               );
+
+      if (isPermissionError) {
+        setDeleteExpenseModalOpen(false);
+        setSelectedExpense(null);
+        handleAccessDenied('eliminar este gasto del monasterio (permisos revocados)');
+        queryClient.invalidateQueries({ queryKey: ['users'] });
+        return; // 🔥 SALIR SILENCIOSAMENTE
+      }
+      
       console.error('❌ Error al eliminar monastery expense:', error);
       alert('Error al eliminar el gasto del monasterio. Por favor, inténtalo de nuevo.');
     }
@@ -750,6 +905,23 @@ const MonasteryComponentView: React.FC = () => {
         />
       </div>
 
+      {/* 🔥 INDICADOR DE PERMISOS EN DESARROLLO */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            <strong>Debug Permisos:</strong> 
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            Usuario: {(currentUserWithPermissions as any)?.name || 'No encontrado'} | 
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            Rol: {(currentUserWithPermissions as any)?.Role?.name || 'Sin rol'} | 
+            Ver: {canView ? '✅' : '❌'} | 
+            Editar: {canEdit ? '✅' : '❌'} | 
+            Crear: {canCreate ? '✅' : '❌'} | 
+            Eliminar: {canDelete ? '✅' : '❌'}
+          </p>
+        </div>
+      )}
+
       {/* Renderizado condicional basado en la vista activa */}
       {activeView === 'overheads' ? renderOverheads() : renderExpenses()}
 
@@ -798,6 +970,16 @@ const MonasteryComponentView: React.FC = () => {
           />
         </>
       )}
+
+      {/* 🔥 MODAL DE ACCESO DENEGADO */}
+      <AccessDeniedModal
+        isOpen={showAccessDenied}
+        onClose={() => setShowAccessDenied(false)}
+        title="Permisos Insuficientes"
+        message="No tienes permisos para realizar esta acción en la gestión del monasterio."
+        action={accessDeniedAction}
+        module="Gestión del Monasterio"
+      />
     </div>
   );
 };
