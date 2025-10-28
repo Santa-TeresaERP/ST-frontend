@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { PlusCircle, Edit, Trash2, Filter, Calendar, Search, DollarSign } from 'lucide-react';
 
 // 1. IMPORTAR HOOKS Y TIPOS NECESARIOS
-import { useFetchOverheads, useDeleteOverhead } from '@/modules/monastery/hooks/useOverheads';
+import { useFetchMonasterioOverheads, useDeleteOverhead } from '@/modules/monastery/hooks/useOverheads';
 import { Overhead } from '@/modules/monastery/types/overheads';
 import { useModulePermissions } from '@/core/utils/permission-hooks';
 import { MODULE_NAMES } from '@/core/utils/useModulesMap';
@@ -39,9 +39,7 @@ const MonasteryComponentView: React.FC = () => {
     isLoading: overheadLoading, 
     error: overheadError,
     refetch: refetchOverheads  // ✅ Agregar refetch manual
-  } = useFetchOverheads({
-    enabled: activeView === 'overheads' // ✅ SOLO cargar cuando esté en vista de overheads
-  });
+  } = useFetchMonasterioOverheads();
   const deleteOverheadMutation = useDeleteOverhead();
 
   // 3. OBTENER DATOS Y MUTACIONES - MONASTERY EXPENSES (gastos específicos del monasterio) - Solo cuando está en vista de expenses
