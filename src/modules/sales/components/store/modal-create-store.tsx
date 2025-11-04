@@ -1,145 +1,143 @@
-import React, { useState } from 'react';
-import { X, Save } from 'lucide-react';
-import { FiHome } from 'react-icons/fi';
-import { useCreateStore } from '../../hooks/useStore';
+import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { X } from "lucide-react";
+import { toast } from "react-toastify";
+import { createStoreSchema, CreateStoreFormData } from "../../schemas/store-schema";
+import { useCreateStore } from "../../hooks/useStores";
 
 interface ModalCreateStoreProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-const ModalCreateStore: React.FC<ModalCreateStoreProps> = ({ isOpen, onClose }) => {
-  const [nombre, setNombre] = useState('');
-  const [direccion, setDireccion] = useState('');
-  const [observaciones, setObservaciones] = useState('');
-  const [localError, setLocalError] = useState('');
+const ModalCreateStore: React.FC<ModalCreateStoreProps> = ({
+  isOpen,
+  onClose,
+  onSuccess
+}) => {
+  const { mutate: createStore, isPending } = useCreateStore();
 
-  const createStoreMutation = useCreateStore();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<CreateStoreFormData>({
+    resolver: zodResolver(createStoreSchema),
+  });
 
-  const resetForm = () => {
-    setNombre('');
-    setDireccion('');
-    setObservaciones('');
-    setLocalError('');
+  const onSubmit = (data: CreateStoreFormData) => {
+    console.log('📝 Form data submitted:', data);
+    console.log('🔄 Calling createStore mutation...');
+    
+    createStore(data, {
+      onSuccess: (createdStore) => {
+        console.log('✅ Store created successfully:', createdStore);
+        toast.success("Tienda creada exitosamente");
+        reset();
+        onClose();
+        onSuccess?.();
+      },
+      onError: (error) => {
+        console.error('❌ Error creating store:', error);
+        toast.error(error.message || "Error al crear la tienda");
+      },
+    });
   };
 
   const handleClose = () => {
-    resetForm();
+    reset();
     onClose();
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!nombre.trim() || !direccion.trim()) {
-      setLocalError('Por favor, completa el nombre y la dirección de la tienda.');
-      return;
-    }
-
-    const storeData = {
-      store_name: nombre.trim(),
-      address: direccion.trim(),
-      ...(observaciones.trim() && { observations: observaciones.trim() })
-    };
-
-    try {
-      console.log('Creando tienda con datos:', storeData);
-      await createStoreMutation.mutateAsync(storeData);
-      
-      console.log('Tienda creada exitosamente');
-      
-      // Limpiar formulario y cerrar modal
-      resetForm();
-      onClose();
-    } catch (error) {
-      console.error('Error al crear tienda:', error);
-      
-      // Mostrar error más específico
-      if (error instanceof Error && 'response' in error) {
-        const axiosError = error as { response?: { data?: { message?: string }; status?: number } };
-        const errorMessage = axiosError.response?.data?.message || `Error ${axiosError.response?.status}: No se pudo crear la tienda`;
-        setLocalError(errorMessage);
-      } else {
-        setLocalError('Error al crear la tienda. Intenta nuevamente.');
-      }
-    }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl relative mx-2">
-        <div className="bg-gradient-to-r from-red-700 to-red-900 text-white p-5 rounded-t-2xl flex items-center justify-center relative gap-2">
-          <FiHome size={24} />
-          <h2 className="text-xl font-semibold text-center">Crear Tienda</h2>
-          <button
-            onClick={handleClose}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
-          >
-            <X size={22} />
-          </button>
+    <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="relative bg-gradient-to-r from-blue-600 to-blue-800 rounded-t-xl -m-6 mb-6 p-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-bold text-white">Crear Nueva TiendaSSS</h2>
+              <p className="text-blue-100 mt-1">Agrega una nueva tienda al sistema</p>
+            </div>
+            <button
+              onClick={handleClose}
+              className="p-2 rounded-full hover:bg-blue-700 transition-colors duration-200 text-white"
+            >
+              <X size={24} />
+            </button>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 text-left">
-          {localError && <p className="text-sm text-red-600 font-medium">{localError}</p>}
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-gray-700 mb-1 font-medium">
-                Nombre de la Tienda <span className="text-red-600">*</span>
-              </label>
-              <input
-                type="text"
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="Nombre de la tienda"
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-700 mb-1 font-medium">
-                Dirección <span className="text-red-600">*</span>
-              </label>
-              <input
-                type="text"
-                value={direccion}
-                onChange={(e) => setDireccion(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="Dirección de la tienda"
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-700 mb-1 font-medium">
-                Observaciones <span className="text-red-600">*</span>
-              </label>
-              <textarea
-                value={observaciones}
-                onChange={(e) => setObservaciones(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-600 focus:outline-none"
-                placeholder="Observaciones"
-                rows={3}
-              />
-            </div>
+        {/* Form */}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Nombre */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Nombre de la Tienda *
+            </label>
+            <input
+              {...register("store_name")}
+              type="text"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Ej: Tienda Centro"
+            />
+            {errors.store_name && (
+              <p className="text-red-500 text-sm mt-1">{errors.store_name.message}</p>
+            )}
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4">
+          {/* Dirección */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Dirección *
+            </label>
+            <input
+              {...register("address")}
+              type="text"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Ej: Av. Principal 123, Centro Histórico, Lima"
+            />
+            {errors.address && (
+              <p className="text-red-500 text-sm mt-1">{errors.address.message}</p>
+            )}
+          </div>
+
+          {/* Observaciones */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Observaciones
+            </label>
+            <textarea
+              {...register("observations")}
+              rows={4}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              placeholder="Observaciones adicionales sobre la tienda..."
+            />
+            {errors.observations && (
+              <p className="text-red-500 text-sm mt-1">{errors.observations.message}</p>
+            )}
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-4 pt-4">
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition"
+              className="flex-1 py-3 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              disabled={createStoreMutation.isPending}
-              className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-600 transition flex items-center gap-2 disabled:opacity-50"
+              disabled={isPending}
+              className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Save size={18} /> 
-              {createStoreMutation.isPending ? 'Guardando...' : 'Guardar'}
+              {isPending ? "Creando..." : "Crear Tienda"}
             </button>
           </div>
         </form>
