@@ -8,7 +8,9 @@ import {
 } from "react-icons/fi";
 import { useFetchModules } from "../../../modules/hook/useModules";
 import { exportVentasExcel } from "../..//action/exportVentasExcel";
-
+import { exportRentalsExcel } from "../../action/exportRentalsExcel";
+import { exportMonasteriosExcel } from "../../action/exportMonasterioExcel";
+import { exportMuseoExcel } from "../../action/exportMuseoExcel";
 interface ReporteData {
   id: number;
   modulo: string;
@@ -168,6 +170,113 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
       alert("Hubo un error al generar el Excel");
     }
   };
+  const handleExportExcelRentals = async () => {
+    try {
+      if (!fechaInicio || !fechaFin) {
+        alert("Selecciona un rango de fechas válido");
+        return;
+      }
+
+      // Llamada al backend
+      const blob = await exportRentalsExcel(fechaInicio, fechaFin);
+
+      // Crear enlace de descarga
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `reporte_alquileres_${fechaInicio}_a_${fechaFin}.xlsx`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error al descargar el Excel de alquileres:", error);
+      alert("Hubo un error al generar el Excel de alquileres");
+    }
+  };
+  const handleExportExcelMonasterios = async () => {
+    try {
+      if (!fechaInicio || !fechaFin) {
+        alert("Selecciona un rango de fechas válido");
+        return;
+      }
+
+      // Normalizar solo localmente (pero enviar en formato YYYY-MM-DD)
+      const endDateObj = new Date(fechaFin);
+      endDateObj.setHours(23, 59, 59, 999);
+
+      const payload = {
+        startDate: fechaInicio,
+        endDate: fechaFin,
+      };
+
+      console.log("Payload enviado al backend (Monasterios):", payload);
+
+      // Llamada al backend
+      const blob = await exportMonasteriosExcel(
+        payload.startDate,
+        payload.endDate
+      );
+
+      // Crear enlace de descarga
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `reporte_monasterios_${fechaInicio}_a_${fechaFin}.xlsx`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error al descargar el Excel de Monasterios:", error);
+      alert("Hubo un error al generar el Excel de Monasterios");
+    }
+  };
+  const handleExportExcelMuseo = async () => {
+    try {
+      if (!fechaInicio || !fechaFin) {
+        alert("Selecciona un rango de fechas válido");
+        return;
+      }
+
+      // Normalizar solo localmente (pero enviar en formato YYYY-MM-DD)
+      const endDateObj = new Date(fechaFin);
+      endDateObj.setHours(23, 59, 59, 999);
+
+      const payload = {
+        startDate: fechaInicio,
+        endDate: fechaFin,
+      };
+
+      console.log("Payload enviado al backend (Museo):", payload);
+
+      // Llamada al backend
+      const blob = await exportMuseoExcel(payload.startDate, payload.endDate);
+
+      // Crear enlace de descarga
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `reporte_museo_${fechaInicio}_a_${fechaFin}.xlsx`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error al descargar el Excel de Museo:", error);
+      alert("Hubo un error al generar el Excel de Museo");
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
@@ -259,16 +368,56 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
                 </div>
               </div>
             </div>
-            {/* 🚨 Nuevo botón aquí */}
-            <div className="flex justify-center mt-4">
-              <button
-                onClick={handleExportExcel}
-                className="flex items-center gap-2 px-6 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg shadow-md transition-all"
-              >
-                <FiDownload size={18} />
-                Obtener Excel de departamento de ventas
-              </button>
+            {/* 🚨 Bloque dinámico de botones según el módulo */}
+            <div className="flex justify-center gap-4 mt-4">
+              {["ventas", "inventario", "producción", "production"].includes(
+                selectedModulo.toLowerCase()
+              ) && (
+                <button
+                  onClick={handleExportExcel}
+                  className="flex items-center gap-2 px-6 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg shadow-md transition-all"
+                >
+                  <FiDownload size={18} />
+                  Obtener Excel de departamento de Ventas
+                </button>
+              )}
+
+              {["alquileres", "rentals", "rental"].includes(
+                selectedModulo.toLowerCase()
+              ) && (
+                <button
+                  onClick={handleExportExcelRentals}
+                  className="flex items-center gap-2 px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md transition-all"
+                >
+                  <FiDownload size={18} />
+                  Obtener Excel de departamento de Alquileres
+                </button>
+              )}
+
+              {["monasterio", "monasterios", "monastery"].includes(
+                selectedModulo.toLowerCase()
+              ) && (
+                <button
+                  onClick={handleExportExcelMonasterios}
+                  className="flex items-center gap-2 px-6 py-2 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-lg shadow-md transition-all"
+                >
+                  <FiDownload size={18} />
+                  Obtener Excel de departamento de Monasterios
+                </button>
+              )}
+              {["museo", "museos", "museum"].includes(
+                selectedModulo.toLowerCase()
+              ) && (
+                <button
+                  onClick={handleExportExcelMuseo}
+                  className="flex items-center gap-2 px-6 py-2 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg shadow-md transition-all"
+                >
+                  <FiDownload size={18} />
+                  Obtener Excel de departamento de Museo
+                </button>
+              )}
             </div>
+
             {/* Resumen de totales */}
             {selectedModulo && filtrados.length > 0 && (
               <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-5 border border-red-200">
@@ -356,14 +505,10 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
                           }`}
                         >
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {new Date(r.fechaInicio).toLocaleDateString(
-                              "es-ES"
-                            )}
+                            {new Date(r.fechaInicio).toISOString().split('T')[0]}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                            {r.fechaFin ? (
-                              new Date(r.fechaFin).toLocaleDateString("es-ES")
-                            ) : (
+                            {r.fechaFin ? new Date(r.fechaFin).toISOString().split('T')[0] : (
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                                 En proceso
                               </span>

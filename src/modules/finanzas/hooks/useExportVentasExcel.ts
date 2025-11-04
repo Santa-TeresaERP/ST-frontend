@@ -3,7 +3,8 @@ import { ExportVentasExcelParams } from '../types/exportVentasExcel'
 
 export const useExportVentasExcel = () => {
   const handleExport = async ({ startDate, endDate }: ExportVentasExcelParams) => {
-    const blob = await exportVentasExcel({ startDate, endDate })
+    // 👇 aquí pasamos 2 argumentos separados
+    const blob = await exportVentasExcel(startDate, endDate)
 
     // Crear link para descargar el archivo
     const url = window.URL.createObjectURL(blob)

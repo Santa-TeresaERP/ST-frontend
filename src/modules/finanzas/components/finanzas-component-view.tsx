@@ -90,8 +90,8 @@ const FinanzasComponentView: React.FC = () => {
     return {
       id: r.id,
       name: (r as any).name ?? `Reporte ${r.id}`, // si tu API tiene nombre usa r.name, si no, dejo fallback
-      fechaInicio: r.start_date,
-      fechaFin: r.end_date ?? undefined,
+      fechaInicio: new Date(r.start_date).toISOString().split('T')[0],
+      fechaFin: r.end_date ? new Date(r.end_date).toISOString().split('T')[0] : undefined,
       observaciones: r.observations ?? undefined,
     };
   };
@@ -291,15 +291,11 @@ const FinanzasComponentView: React.FC = () => {
                     value={selectedReportId ?? ''}
                     onChange={(e) => setSelectedReportId(e.target.value)}
                   >
-                    {reportes.map((r) => {
-                      const startDate = new Date(r.start_date).toLocaleDateString('es-PE');
-                      const endDate = r.end_date ? new Date(r.end_date).toLocaleDateString('es-PE') : '...';
-                      return (
-                        <option key={r.id} value={r.id}>
-                          {`(${startDate} - ${endDate})`}
-                        </option>
-                      );
-                    })}
+                    {reportes.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        { (r as any).name ?? `${new Date(r.start_date).toISOString().split('T')[0]} (${r.id.slice(0,6)})` }
+                      </option>
+                    ))}
                   </select>
                 </>
               )}

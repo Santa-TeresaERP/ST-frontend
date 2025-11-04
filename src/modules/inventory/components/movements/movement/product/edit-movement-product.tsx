@@ -35,7 +35,7 @@ const EditMovementProduct: React.FC<Props> = ({ movement, onUpdated, onCancel })
     const parsed = movementProductSchema.safeParse({
       ...form,
       quantity: Number(form.quantity),
-      movement_date: new Date(form.movement_date),
+      movement_date: form.movement_date, // Enviar como string ISO
     });
     if (!parsed.success) {
       setError(parsed.error.errors[0].message);
@@ -43,7 +43,12 @@ const EditMovementProduct: React.FC<Props> = ({ movement, onUpdated, onCancel })
     }
     setLoading(true);
     try {
-      await updateMovement(movement.movement_id, parsed.data);
+      // Crear payload con fecha como string
+      const updatePayload = {
+        ...parsed.data,
+        movement_date: form.movement_date, // Mantener como string
+      };
+      await updateMovement(movement.id, updatePayload);
       onUpdated();
     } catch (err: any) {
       setError(err.message);
@@ -91,7 +96,7 @@ const EditMovementProduct: React.FC<Props> = ({ movement, onUpdated, onCancel })
             <select
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-yellow-600 focus:outline-none"
               name="store_id"
-              value={form.store_id}
+              value={form.store_id || ''}
               onChange={handleChange}
               required
             >

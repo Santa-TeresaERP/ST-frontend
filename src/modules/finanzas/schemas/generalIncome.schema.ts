@@ -11,7 +11,8 @@ export const incomeFormSchema = z.object({
   // Usamos z.coerce.number() para convertir la entrada del formulario (string) a un número
   amount: z.coerce.number({ invalid_type_error: 'El monto debe ser un número.' })
     .positive('El monto debe ser mayor que cero.'),
-  date: z.string().min(1, { message: 'La fecha es obligatoria.' }),
+  date: z.string().min(1, { message: 'La fecha es obligatoria.' })
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha debe estar en formato YYYY-MM-DD'),
   description: z.string().max(500, 'La descripción no puede exceder los 500 caracteres.').optional(),
 });
 

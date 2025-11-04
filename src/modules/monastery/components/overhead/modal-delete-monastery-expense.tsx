@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { X, AlertTriangle, Trash2, Shield, Info } from 'lucide-react';
-import { Overhead } from '../../types/overheads';
+import React from "react";
+import { X, AlertTriangle, Trash2, Shield, Info } from "lucide-react";
+import { Overhead } from "../../types/overheads";
 
 interface Props {
   isOpen: boolean;
@@ -34,11 +34,13 @@ const ModalDeleteMonasteryExpense: React.FC<Props> = ({
       onClick={handleBackdropClick}
     >
       {/* contenedor del modal */}
-      <div className="
+      <div
+        className="
         bg-white rounded-2xl shadow-2xl w-full sm:max-w-md md:max-w-lg 
         max-h-[90vh] overflow-y-auto 
         transform transition-all duration-300 scale-100
-      ">
+      "
+      >
         {/* Header */}
         <div className="bg-gradient-to-r from-red-500 to-red-700 px-3 sm:px-6 py-3 rounded-t-2xl">
           <div className="flex justify-between items-center">
@@ -80,9 +82,9 @@ const ModalDeleteMonasteryExpense: React.FC<Props> = ({
               ¿Confirmar eliminación?
             </h4>
             <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
-              Estás a punto de eliminar el gasto{' '}
+              Estás a punto de eliminar el gasto{" "}
               <span className="font-semibold text-gray-900 bg-gray-100 px-2 py-0.5 rounded">
-                "{overheadName}"
+                &quot;{overheadName}&quot;
               </span>
             </p>
           </div>
@@ -91,13 +93,17 @@ const ModalDeleteMonasteryExpense: React.FC<Props> = ({
           <div className="space-y-3 mb-4">
             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3">
               <div className="flex items-start space-x-2">
-                <Shield className="text-yellow-600 flex-shrink-0 mt-0.5" size={16} />
+                <Shield
+                  className="text-yellow-600 flex-shrink-0 mt-0.5"
+                  size={16}
+                />
                 <div>
                   <h5 className="text-xs sm:text-sm font-medium text-yellow-900">
                     Eliminación Segura
                   </h5>
                   <p className="text-xs sm:text-sm text-yellow-800 mt-1">
-                    El registro será marcado como inactivo pero no se eliminará permanentemente.
+                    El registro será marcado como inactivo pero no se eliminará
+                    permanentemente.
                   </p>
                 </div>
               </div>
@@ -105,9 +111,14 @@ const ModalDeleteMonasteryExpense: React.FC<Props> = ({
 
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
               <div className="flex items-start space-x-2">
-                <Info className="text-blue-600 flex-shrink-0 mt-0.5" size={16} />
+                <Info
+                  className="text-blue-600 flex-shrink-0 mt-0.5"
+                  size={16}
+                />
                 <div>
-                  <h5 className="text-xs sm:text-sm font-medium text-blue-900">¿Qué sucederá?</h5>
+                  <h5 className="text-xs sm:text-sm font-medium text-blue-900">
+                    ¿Qué sucederá?
+                  </h5>
                   <ul className="text-xs sm:text-sm text-blue-800 mt-1 space-y-1">
                     <li>• El gasto desaparecerá de la lista principal</li>
                     <li>• Los datos quedarán guardados en el historial</li>
@@ -137,10 +148,14 @@ const ModalDeleteMonasteryExpense: React.FC<Props> = ({
           {/* Advertencia final */}
           <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
             <div className="flex items-start space-x-1.5">
-              <AlertTriangle className="text-red-600 flex-shrink-0 mt-0.5" size={14} />
+              <AlertTriangle
+                className="text-red-600 flex-shrink-0 mt-0.5"
+                size={14}
+              />
               <p className="text-xs sm:text-sm text-red-800">
-                <strong>Importante:</strong> Aunque la eliminación es reversible,
-                confirma que realmente deseas proceder con esta acción.
+                <strong>Importante:</strong> Aunque la eliminación es
+                reversible, confirma que realmente deseas proceder con esta
+                acción.
               </p>
             </div>
           </div>

@@ -69,87 +69,74 @@ const EditMovementResource: React.FC<Props> = ({ movement, onUpdated, onCancel }
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-5 text-left">
           {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
-          
-          {/* Almacén (solo lectura) */}
+          {/* Campo: Almacén (bloqueado y gris) */}
           <div>
             <label className="block text-gray-700 mb-1 font-medium">Almacén*</label>
             <select
               name="warehouse_id"
               value={form.warehouse_id}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none bg-gray-100 cursor-not-allowed"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-100 text-gray-600 cursor-not-allowed"
               disabled
             >
-              <option value="">Selecciona un almacén</option>
-              {warehouses.map((w: any) => (
-                <option key={w.id} value={w.id}>
-                  {w.name}
-                </option>
-              ))}
+              <option>
+                {warehouses.find((w: any) => w.id === form.warehouse_id)?.name || '—'}
+              </option>
             </select>
           </div>
 
-          {/* Recurso (solo lectura) */}
+          {/* Campo: Recurso (bloqueado y gris) */}
           <div>
             <label className="block text-gray-700 mb-1 font-medium">Recurso*</label>
             <select
               name="resource_id"
               value={form.resource_id}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none bg-gray-100 cursor-not-allowed"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-100 text-gray-600 cursor-not-allowed"
               disabled
             >
-              <option value="">Selecciona un recurso</option>
-              {resources.map((r: any) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
+              <option>
+                {resources.find((r: any) => r.id === form.resource_id)?.name || '—'}
+              </option>
             </select>
           </div>
 
-          {/* Tipo de Movimiento (solo lectura) */}
+          {/* Campo: Tipo de Movimiento (bloqueado y gris) */}
           <div>
             <label className="block text-gray-700 mb-1 font-medium">Tipo de Movimiento*</label>
-            <select
-              name="movement_type"
-              value={form.movement_type}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none bg-gray-100 cursor-not-allowed"
+            <input
+              type="text"
+              value={form.movement_type === 'entrada' ? 'Entrada' : 'Salida'}
               disabled
-            >
-              <option value="entrada">Entrada</option>
-              <option value="salida">Salida</option>
-            </select>
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-100 text-gray-600 cursor-not-allowed"
+            />
           </div>
 
-          {/* Cantidad (solo lectura) */}
+          <div className="grid grid-cols-2 gap-4">
+          {/* Campo: Cantidad (bloqueado y gris) */}
           <div>
             <label className="block text-gray-700 mb-1 font-medium">Cantidad*</label>
             <input
               type="number"
               name="quantity"
+              min={1}
               value={form.quantity}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none bg-gray-100 cursor-not-allowed"
               disabled
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-100 text-gray-600 cursor-not-allowed"
             />
           </div>
 
-          {/* Fecha de Movimiento (editable) */}
-          <div>
-            <label className="block text-gray-700 mb-1 font-medium">Fecha de Movimiento*</label>
-            <input
-              type="date"
-              name="movement_date"
-              value={form.movement_date}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
-              required
-            />
+            <div>
+              <label className="block text-gray-700 mb-1 font-medium">Fecha de Movimiento*</label>
+              <input
+                type="date"
+                name="movement_date"
+                value={form.movement_date}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                required
+              />
+            </div>
           </div>
-
-          {/* Observaciones (editable) */}
+          
           <div>
             <label className="block text-gray-700 mb-1 font-medium">Observaciones</label>
             <input

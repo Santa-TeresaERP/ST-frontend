@@ -1,7 +1,17 @@
-import { Resource, CreateResourcePayload, UpdateResourcePayload } from '../types/resource';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
-import { fetchResources, getResource, createResource, updateResource, deleteResource } from '../action/resources';
+import {
+  Resource,
+  CreateResourcePayload,
+  UpdateResourcePayload,
+} from "../types/resource";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import {
+  fetchResources,
+  getResource,
+  createResource,
+  updateResource,
+  deleteResource,
+} from "../action/resources";
 
 export interface ResourceSearchResult {
   id: string;
@@ -12,14 +22,14 @@ export interface ResourceSearchResult {
 
 export const useFetchResources = () => {
   return useQuery<Resource[], Error>({
-    queryKey: ['resources'],
+    queryKey: ["resources"],
     queryFn: fetchResources,
   });
 };
 
 export const useFetchResource = (id: string) => {
   return useQuery<Resource, Error>({
-    queryKey: ['resource', id],
+    queryKey: ["resource", id],
     queryFn: () => getResource(id),
     enabled: !!id, // Only fetch if id is provided
   });
@@ -29,15 +39,19 @@ export const useCreateResource = () => {
   const queryClient = useQueryClient();
   return useMutation<Resource, Error, CreateResourcePayload>({
     mutationFn: createResource,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['resources'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["resources"] }),
   });
 };
 
 export const useUpdateResource = () => {
   const queryClient = useQueryClient();
-  return useMutation<Resource, Error, { id: string; payload: UpdateResourcePayload }>({
+  return useMutation<
+    Resource,
+    Error,
+    { id: string; payload: UpdateResourcePayload }
+  >({
     mutationFn: ({ id, payload }) => updateResource(id, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['resources'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["resources"] }),
   });
 };
 
@@ -45,17 +59,18 @@ export const useDeleteResource = () => {
   const queryClient = useQueryClient();
   return useMutation<void, Error, string>({
     mutationFn: deleteResource,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['resources'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["resources"] }),
   });
 };
 
 // Hook de búsqueda de recursos con autocompletado
 export const useResourceSearch = () => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [suggestions, setSuggestions] = useState<ResourceSearchResult[]>([]);
-  const [selectedResource, setSelectedResource] = useState<ResourceSearchResult | null>(null);
+  const [selectedResource, setSelectedResource] =
+    useState<ResourceSearchResult | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
-  
+
   const { data: resources, isLoading } = useFetchResources();
   const createResourceMutation = useCreateResource();
 
@@ -66,53 +81,65 @@ export const useResourceSearch = () => {
       return;
     }
 
-    const filtered = resources?.filter((resource: Resource) =>
-      resource.name.toLowerCase().includes(searchTerm.toLowerCase())
-    ).map((resource: Resource) => ({
-      id: resource.id,
-      name: resource.name,
-      observation: resource.observation || null,
-      isExisting: true
-    })) || [];
+    const filtered =
+      resources
+        ?.filter((resource: Resource) =>
+          resource.name.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        .map((resource: Resource) => ({
+          id: resource.id,
+          name: resource.name,
+          observation: resource.observation || null,
+          isExisting: true,
+        })) || [];
 
     // Si no hay coincidencias exactas, sugerir crear un nuevo recurso
-    const hasExactMatch = filtered.some(resource => 
-      resource.name.toLowerCase() === searchTerm.toLowerCase()
+    const hasExactMatch = filtered.some(
+      (resource) => resource.name.toLowerCase() === searchTerm.toLowerCase()
     );
 
     if (!hasExactMatch && searchTerm.trim().length > 2) {
       filtered.push({
-        id: 'new',
+        id: "new",
         name: searchTerm.trim(),
         observation: null,
-        isExisting: false
+        isExisting: false,
       });
     }
 
     setSuggestions(filtered);
   }, [searchTerm, resources]);
 
-  const handleCreateNewResource = async (name: string, observation?: string) => {
+  // dentro de useResourceSearch()
+  const handleCreateNewResource = async (
+    name: string,
+    observation?: string | null
+  ) => {
     setIsCreatingNew(true);
     try {
+      const obs =
+        typeof observation === "string" && observation.trim().length > 0
+          ? observation.trim()
+          : null; // 🔑 vacíos -> null
+
       const newResource = await createResourceMutation.mutateAsync({
         name: name.trim(),
-        observation: observation || null
+        observation: obs,
       });
-      
+
       const resourceResult: ResourceSearchResult = {
         id: newResource.id,
         name: newResource.name,
         observation: newResource.observation || null,
-        isExisting: true
+        isExisting: true,
       };
-      
+
       setSelectedResource(resourceResult);
       setSearchTerm(newResource.name);
       setSuggestions([]);
       return resourceResult;
     } catch (error) {
-      console.error('Error creating new resource:', error);
+      console.error("Error creating new resource:", error);
       throw error;
     } finally {
       setIsCreatingNew(false);
@@ -132,7 +159,7 @@ export const useResourceSearch = () => {
 
   const clearSelection = () => {
     setSelectedResource(null);
-    setSearchTerm('');
+    setSearchTerm("");
     setSuggestions([]);
   };
 
@@ -146,7 +173,6 @@ export const useResourceSearch = () => {
     handleSelectResource,
     handleCreateNewResource,
     clearSelection,
-    createResourceMutation
+    createResourceMutation,
   };
 };
-

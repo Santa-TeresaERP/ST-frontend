@@ -18,7 +18,6 @@ interface Props {
 }
 
 const ModalCreateMonasteryExpense: React.FC<Props> = ({ isOpen, onClose }) => {
-
   const { mutate: createMonasteryOverhead, isPending } = useCreateMonasterioOverhead();
 
   const {

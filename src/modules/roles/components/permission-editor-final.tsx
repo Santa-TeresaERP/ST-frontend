@@ -187,40 +187,43 @@ const PermissionEditor: React.FC<PermissionEditorProps> = ({
                 <X />
               </Button>
             </div>
-            {isLoading ? (
-              <div className="flex justify-center items-center flex-1">
-                <div className="animate-spin h-6 w-6 border-b-2 border-green-600 rounded-full" />
-              </div>
-            ) : hasError ? (
-              <div className="text-red-600 p-4 text-center">Error cargando permisos</div>
-            ) : (
-              modules.map((mod) => {
-                const isSel = mod.id === selectedModule;
-                const hasPerm = Object.values(allPermissions[mod.id] || {}).some((v) => v);
-                return (
-                  <Card
-                    key={mod.id}
-                    className={`mb-2 p-3 cursor-pointer ${
-                      isSel ? "border-green-500 bg-green-50" : "border-gray-200"
-                    }`}
-                    onClick={() => {
-                      setSelectedModule(mod.id);
-                      setIsSidebarOpen(false);
-                    }}
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h4 className={isSel ? "text-green-800" : "text-gray-800"}>{mod.name}</h4>
+            {/* Agrega un contenedor con scroll */}
+            <div className="flex-1 overflow-y-auto" style={{ maxHeight: "calc(90vh - 56px)" }}>
+              {isLoading ? (
+                <div className="flex justify-center items-center flex-1">
+                  <div className="animate-spin h-6 w-6 border-b-2 border-green-600 rounded-full" />
+                </div>
+              ) : hasError ? (
+                <div className="text-red-600 p-4 text-center">Error cargando permisos</div>
+              ) : (
+                modules.map((mod) => {
+                  const isSel = mod.id === selectedModule;
+                  const hasPerm = Object.values(allPermissions[mod.id] || {}).some((v) => v);
+                  return (
+                    <Card
+                      key={mod.id}
+                      className={`mb-2 p-3 cursor-pointer ${
+                        isSel ? "border-green-500 bg-green-50" : "border-gray-200"
+                      }`}
+                      onClick={() => {
+                        setSelectedModule(mod.id);
+                        setIsSidebarOpen(false);
+                      }}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h4 className={isSel ? "text-green-800" : "text-gray-800"}>{mod.name}</h4>
+                        </div>
+                        <div className="flex space-x-1">
+                          {hasPerm && <div className="w-2 h-2 bg-green-500 rounded-full" />}
+                          {modifiedModules.has(mod.id) && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
+                        </div>
                       </div>
-                      <div className="flex space-x-1">
-                        {hasPerm && <div className="w-2 h-2 bg-green-500 rounded-full" />}
-                        {modifiedModules.has(mod.id) && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })
-            )}
+                    </Card>
+                  );
+                })
+              )}
+            </div>
           </div>
 
           {/* Main */}

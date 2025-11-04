@@ -28,7 +28,7 @@ export type CreateMovementProductPayload = {
   quantity: number;               // Número no negativo (>= 0)
   movement_date: string | Date;   // Fecha válida
   observations?: string;
-  status: boolean;   // Estado del movimiento
+  status?: boolean;   // Estado del movimiento (opcional en creación, por defecto true)
 };
 
 export const createMovement = async (
@@ -40,7 +40,7 @@ export const createMovement = async (
 
 export const updateMovement = async (
   id: string,
-  data: Partial<WarehouseMovementProductAttributes>
+  data: Partial<Omit<WarehouseMovementProductAttributes, 'movement_date'>> & { movement_date?: string | Date }
 ): Promise<WarehouseMovementProductAttributes> => {
   const response = await api.patch<WarehouseMovementProductAttributes>(`/warehouseMovementProduct/${id}`, data);
   return response.data;
@@ -48,7 +48,6 @@ export const updateMovement = async (
 
 export const deleteMovement = async ({
   id,
-  status,
 }: {
   id: string;
   status: boolean;
