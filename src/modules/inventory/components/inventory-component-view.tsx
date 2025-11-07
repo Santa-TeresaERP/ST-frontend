@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Repeat, Home, Users, Truck } from 'lucide-react';
+import { Repeat, Home, Users, Truck, ShoppingCart } from 'lucide-react';
 import { ShieldAlert, Loader2 } from 'lucide-react';
 import WarehouseView from './warehouse/warehouse-view';
 import ResourceView from './resourcehouse/resourcehouse-view';
 import SuppliersView from './supplier/supplier.view';
 import MovementComponentView from './movements/movement-component-view';
+import BuysProductView from './buys-product/buys-product-view';
 
 // 🔥 IMPORTAR SISTEMA DE PERMISOS OPTIMIZADO
 import { useModulePermissions } from '@/core/utils/permission-hooks';
@@ -12,7 +13,7 @@ import { MODULE_NAMES } from '@/core/utils/useModulesMap';
 
 
 const InventoryComponentView: React.FC = () => {
-  const [selectedView, setSelectedView] = useState<'movimientos' | 'almacen' | 'recursos' | 'proveedores'>('movimientos');
+  const [selectedView, setSelectedView] = useState<'movimientos' | 'almacen' | 'recursos' | 'proveedores' | 'compras'>('movimientos');
 
   // 🔥 USAR HOOK OPTIMIZADO DE PERMISOS - UNA SOLA LLAMADA
   const { canView, isLoading, isAdmin } = useModulePermissions(MODULE_NAMES.INVENTORY);
@@ -85,7 +86,7 @@ const InventoryComponentView: React.FC = () => {
       )}
 
       {/* Navigation Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 p-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8 p-6">
         {/* Movimientos */}
         <button
           onClick={() => setSelectedView('movimientos')}
@@ -165,6 +166,26 @@ const InventoryComponentView: React.FC = () => {
             </div>
           </div>
         </button>
+
+        {/* Compras de Productos (morado) */}
+        <button
+          onClick={() => setSelectedView('compras')}
+          className={`p-6 rounded-xl shadow-sm transition-all duration-300 transform hover:scale-105 ${
+            selectedView === 'compras'
+              ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white'
+              : 'bg-white border border-gray-200 hover:border-purple-400'
+          }`}
+        >
+          <div className="flex items-center space-x-4">
+            <div className={`p-3 rounded-lg ${selectedView === 'compras' ? 'bg-purple-400' : 'bg-purple-100 text-purple-600'}`}>
+              <ShoppingCart size={24} />
+            </div>
+            <div className="text-left">
+              <h3 className="font-semibold">Compras</h3>
+              <p className="text-sm opacity-80">Registro de entradas</p>
+            </div>
+          </div>
+        </button>
       </div>
 
       {/* Content Area */}
@@ -173,6 +194,7 @@ const InventoryComponentView: React.FC = () => {
         {selectedView === 'almacen' && <WarehouseView />}
         {selectedView === 'recursos' && <ResourceView />}
         {selectedView === 'proveedores' && <SuppliersView />}
+        {selectedView === 'compras' && <BuysProductView />}
       </div>
     </div>
   );
