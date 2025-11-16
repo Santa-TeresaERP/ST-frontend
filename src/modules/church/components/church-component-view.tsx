@@ -1,12 +1,10 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { PlusCircle, Edit, Trash2, Filter, Calendar, Search, DollarSign } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Filter, Calendar, Search, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
 import ModalCreateDonativo from '../components/donativos/modal-create-view';
 import ModalEditDonativo from '../components/donativos/modal-update-view';
 import ModalDeleteDonativo from '../components/donativos/modal-delete-view';
-
-// --- (AQUÍ DEBERÁS IMPORTAR LOS NUEVOS MODALES PARA RESERVAS) ---
 import ModalCreateReserva from '../components/rentas/modal-create-view';
 import ModalEditReserva from '../components/rentas/modal-update-view';
 import ModalDeleteReserva from '../components/rentas/modal-delete-view';
@@ -45,7 +43,7 @@ const ChurchComponentView = () => {
   const [selectedDonativo, setSelectedDonativo] = useState<Donativo | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // NUEVO: Estados para los modales de Reservas
+  // Estados para los modales de Reservas
   const [isCreateReservaModalOpen, setCreateReservaModalOpen] = useState(false);
   const [isEditReservaModalOpen, setEditReservaModalOpen] = useState(false);
   const [isDeleteReservaModalOpen, setDeleteReservaModalOpen] = useState(false);
@@ -242,7 +240,7 @@ const ChurchComponentView = () => {
   }, [filteredDonativos]);
 
   // NUEVO: Estadísticas de reservas (AHORA COMPLETAS)
-const reservasStats = useMemo(() => {
+  const reservasStats = useMemo(() => {
   const total = filteredReservas.reduce((sum, item) => sum + item.precio, 0);
   const avg = filteredReservas.length > 0 ? total / filteredReservas.length : 0;
 
@@ -400,6 +398,34 @@ const reservasStats = useMemo(() => {
     } finally {
       setIsDeletingReserva(false);
     }
+  };
+
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; // Número de elementos por página
+
+  // Calcular elementos para la página actual - Donativos
+  const paginatedDonativos = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredDonativos.slice(startIndex, endIndex);
+  }, [filteredDonativos, currentPage]);
+
+  // Calcular elementos para la página actual - Reservas
+  const paginatedReservas = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredReservas.slice(startIndex, endIndex);
+  }, [filteredReservas, currentPage]);
+
+  // Total de páginas
+  const totalPagesDonativos = Math.ceil(filteredDonativos.length / itemsPerPage);
+  const totalPagesReservas = Math.ceil(filteredReservas.length / itemsPerPage);
+
+  // Función para cambiar de página
+  const paginate = (pageNumber: number) => {
+    if (pageNumber < 1 || pageNumber > (activeTab === 'donativos' ? totalPagesDonativos : totalPagesReservas)) return;
+    setCurrentPage(pageNumber);
   };
 
 
@@ -617,76 +643,51 @@ const reservasStats = useMemo(() => {
         </button>
       </div>
 
-      {renderReservasFilters()} {/* <-- NUEVO: Añade los filtros */}
+      {renderReservasFilters()}
 
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <div className="bg-gray-700 text-white"> {/* <-- CORREGIDO: Estilo de cabecera */}
-          <div className="grid grid-cols-7 gap-4 px-6 py-4"> {/* <-- AJUSTADO: 7 columnas */}
+        <div className="bg-gray-700 text-white">
+          <div className="grid grid-cols-7 gap-4 px-6 py-4">
             <div className="font-semibold text-center">Nombre</div>
             <div className="font-semibold text-center">Precio</div>
             <div className="font-semibold text-center">Tipo</div>
             <div className="font-semibold text-center">Fecha</div>
             <div className="font-semibold text-center">Tiempo de Inicio</div>
             <div className="font-semibold text-center">Tiempo de Fin</div>
-            <div className="font-semibold text-center">Acciones</div> {/* <-- NUEVO: Columna Acciones */}
+            <div className="font-semibold text-center">Acciones</div>
           </div>
         </div>
 
         <div className="divide-y divide-gray-200">
-          {filteredReservas.map((reserva, index) => ( // <-- CORREGIDO: Usa data filtrada
+          {paginatedReservas.map((reserva, index) => (
             <div
               key={reserva.id}
-              className={`
-                grid grid-cols-7 gap-4 px-6 py-5 {/* <-- AJUSTADO: 7 columnas */}
-                transition-colors duration-200
-                ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
-                hover:bg-red-50
-              `}
+              className={`grid grid-cols-7 gap-4 px-6 py-5 transition-colors duration-200 ${
+                index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+              } hover:bg-red-50`}
             >
-              <div className="text-gray-800 font-medium text-center">
-                {reserva.nombre}
-              </div>
-              <div className="text-gray-800 font-medium text-center">
-                S/. {reserva.precio.toFixed(2)}
-              </div>
+              <div className="text-gray-800 font-medium text-center">{reserva.nombre}</div>
+              <div className="text-gray-800 font-medium text-center">S/. {reserva.precio.toFixed(2)}</div>
               <div className="text-gray-700 text-center">{reserva.tipo}</div>
-              <div className="text-gray-700 text-center">
-                {new Date(reserva.fecha).toLocaleDateString('es-PE')}
-              </div>
+              <div className="text-gray-700 text-center">{new Date(reserva.fecha).toLocaleDateString('es-PE')}</div>
               <div className="text-gray-700 text-center">{reserva.tiempoInicio}</div>
               <div className="text-gray-700 text-center">{reserva.tiempoFin}</div>
-              
-              {/* --- NUEVO: Botones de Acciones --- */}
               <div className="flex justify-center items-center gap-3">
                 <button
                   onClick={() => handleEditReserva(reserva)}
-                  className="
-                    p-2 rounded-full 
-                    bg-gray-100 hover:bg-red-100 
-                    text-gray-700 hover:text-red-700
-                    transition-all duration-200
-                    hover:scale-110
-                  "
+                  className="p-2 rounded-full bg-gray-100 hover:bg-red-100 text-gray-700 hover:text-red-700 transition-all duration-200 hover:scale-110"
                   title="Editar"
                 >
                   <Edit className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => handleDeleteReserva(reserva)}
-                  className="
-                    p-2 rounded-full 
-                    bg-red-100 hover:bg-red-600 
-                    text-red-600 hover:text-white
-                    transition-all duration-200
-                    hover:scale-110
-                  "
+                  className="p-2 rounded-full bg-red-100 hover:bg-red-600 text-red-600 hover:text-white transition-all duration-200 hover:scale-110"
                   title="Eliminar"
                 >
                   <Trash2 className="w-5 h-5" />
                 </button>
               </div>
-              {/* --- Fin de Acciones --- */}
-
             </div>
           ))}
         </div>
@@ -776,7 +777,7 @@ const reservasStats = useMemo(() => {
 
               {/* Table Body */}
               <div className="divide-y divide-gray-200">
-                {filteredDonativos.map((donativo, index) => (
+                {paginatedDonativos.map((donativo, index) => (
                   <div
                     key={donativo.id}
                     className={`
@@ -846,6 +847,38 @@ const reservasStats = useMemo(() => {
           renderReservas()
         )}
       </div>
+      {/* Paginación - NUEVO */}
+      <div className="flex justify-center items-center space-x-2 mt-8">
+        <button
+          onClick={() => paginate(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="p-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <ChevronLeft size={20} />
+        </button>
+
+        {Array.from({ length: activeTab === 'donativos' ? totalPagesDonativos : totalPagesReservas }, (_, index) => index + 1).map((number) => (
+          <button
+            key={number}
+            onClick={() => paginate(number)}
+            className={`w-10 h-10 rounded-full text-sm font-semibold transition-colors duration-200 ${
+              number === currentPage
+                ? 'bg-red-600 text-white shadow-md'
+                : 'text-gray-700 bg-gray-200 hover:bg-gray-300'
+            }`}
+          >
+            {number}
+          </button>
+        ))}
+
+        <button
+          onClick={() => paginate(currentPage + 1)}
+          disabled={currentPage === (activeTab === 'donativos' ? totalPagesDonativos : totalPagesReservas)}
+          className="p-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <ChevronRight size={20} />
+        </button>
+      </div>
 
       {/* MODALES DE DONATIVOS */}
       <ModalCreateDonativo
@@ -875,10 +908,7 @@ const reservasStats = useMemo(() => {
         donativoData={selectedDonativo}
       />
 
-      {/* NUEVO: MODALES DE RESERVAS 
-        (Deberás crear estos componentes: ModalCreateReserva, ModalEditReserva, ModalDeleteReserva)
-      */}
-      
+      {/* NUEVO: MODALES DE RESERVAS */}
       <ModalCreateReserva
         isOpen={isCreateReservaModalOpen}
         onClose={() => setCreateReservaModalOpen(false)}
