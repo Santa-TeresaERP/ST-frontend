@@ -114,6 +114,7 @@ export const MODULE_NAMES = {
   RENTALS: 'Alquileres', 
   FINANZAS: 'Finanzas',
   MONASTERIO: 'Monasterio',
+  CHURCH: 'Iglesia',
 } as const;
 
 /**
