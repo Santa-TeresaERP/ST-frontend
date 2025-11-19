@@ -1,36 +1,19 @@
-import React, { useState } from "react";
-import {
-  FiInfo,
-  FiMapPin,
-  FiHome,
-  FiClipboard,
-  FiDollarSign,
-  FiPlus,
-} from "react-icons/fi";
-import { StoreAttributes } from "@/modules/sales/types/store.d";
-import ModalCreateCashRegister from "./modal-create-cashregister";
-import { useQueryClient } from "@tanstack/react-query";
-import {
-  useFetchActiveCashSession,
-  useFetchCashSessionHistory,
-  useFetchCashSessionDetails,
-  useCreateCashSession,
-  useCloseCashSession,
-} from "@/modules/sales/hooks/useCashSession";
-import { useFetchSales } from "@/modules/sales/hooks/useSales";
-import { useFetchReturns } from "@/modules/sales/hooks/useReturns";
-import {
-  CreateCashSessionPayload,
-  CloseCashSessionPayload,
-} from "@/modules/sales/types/cash-session";
-import { invalidateStoreQueries } from "@/modules/sales/utils/cache-helpers";
-import ModalEditStore from "../store/modal-edit-store";
-import { useGenerateSalePdf } from "../../hooks/usePdf";
-import ModalGenerateSalePdf from "../../components/information/ModalGenerateSalePdf";
+import React, { useState } from 'react';
+import { FiInfo, FiMapPin, FiHome, FiClipboard, FiDollarSign, FiPlus } from 'react-icons/fi';
+import { StoreAttributes } from '@/modules/sales/types/store';
+import ModalCreateCashRegister from './modal-create-cashregister';
 
 // 🔥 IMPORTAR SISTEMA DE PERMISOS OPTIMIZADO
 import { useModulePermissions } from '@/core/utils/permission-hooks';
 import { MODULE_NAMES } from '@/core/utils/useModulesMap';
+import { useQueryClient } from '@tanstack/react-query';
+import { useGenerateSalePdf } from '../../hooks/usePdf';
+import { invalidateStoreQueries } from '../../utils/cache-helpers';
+import { useCloseCashSession, useCreateCashSession, useFetchActiveCashSession, useFetchCashSessionDetails, useFetchCashSessionHistory } from '../../hooks/useCashSession';
+import { useFetchSales } from '../../hooks/useSales';
+import { useFetchReturns } from '../../hooks/useReturns';
+import { CloseCashSessionPayload, CreateCashSessionPayload } from '../../types/cash-session';
+import ModalEditStore from '../store/modal-edit-store';
 
 interface InformationComponentViewProps {
   selectedStore?: StoreAttributes | null;

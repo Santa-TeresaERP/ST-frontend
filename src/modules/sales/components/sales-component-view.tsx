@@ -2,18 +2,16 @@ import React, { useState } from 'react';
 import { FiUsers, FiShoppingCart, FiPackage, FiAlertOctagon } from 'react-icons/fi';
 
 import InformationComponentView from '@/modules/sales/components/information/information-component-view';
-import StoreListView from '@/modules/sales/components/store/store-list-view';
-import SalesComponentsView from './\ sales/sale-view';
-import InventoryComponentsView from './\ inventory/inventory-view';
+import StoreListView from './store/store-list-view';
+import SalesComponentsView from './ sales/sale-view';
+import InventoryComponentsView from './ inventory/inventory-view';
 import LossesComponentView from './losses/losses-view';
-import SelectedStoreIndicator from './store/selected-store-indicator';
-import { StoreAttributes } from '@/modules/sales/types/store.d';
+import { StoreAttributes } from '../types/store';
 import { useStoreState } from '@/core/store/store';
-
-// 🔥 IMPORTAR SISTEMA DE PERMISOS OPTIMIZADO
-import { useModulePermissions } from '@/core/utils/permission-hooks';
+import { useModulePermissions } from '@/core/utils';
 import { MODULE_NAMES } from '@/core/utils/useModulesMap';
-import { ShieldAlert, Loader2 } from 'lucide-react';
+import { Loader2, ShieldAlert } from 'lucide-react';
+import SelectedStoreIndicator from './store/selected-store-indicator';
 
 const SalesView: React.FC = () => {
   const [activeTab, setActiveTab] = useState('informacion');
@@ -86,7 +84,7 @@ const SalesView: React.FC = () => {
       {/* Lista de Tiendas */}
       <StoreListView 
         onStoreSelect={handleStoreSelect}
-        selectedStore={selectedStore}
+        selectedStoreId={selectedStore?.id}
       />
 
       {/* Indicador de Tienda Seleccionada */}

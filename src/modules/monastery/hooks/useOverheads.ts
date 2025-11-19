@@ -1,15 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Overhead, CreateOverheadPayload, UpdateOverheadPayload } from '../types/overheads.d';
-import { createMonasterioOverhead, createOverhead, deleteOverhead, fetchMonasterioOverheads, fetchOverheads, updateOverhead } from '../action/overheads.actions';
+import { createMonasterioOverhead, createOverhead, deleteOverhead, fetchMonasterioOverheads, fetchMonthlyOverheads, fetchOverheads, updateOverhead } from '../action/overheads';
 
 const OVERHEADS_QUERY_KEY = 'overhead';
 
 // Hook para OBTENER TODOS los gastos generales
-export const useFetchOverheads = () => {
+export const useFetchOverheads = (options?: { enabled?: boolean }) => {
   return useQuery<Overhead[], Error>({
     queryKey: [OVERHEADS_QUERY_KEY],
     queryFn: fetchOverheads,
+    enabled: options?.enabled ?? true, // Por defecto habilitado
   });
 };
 
@@ -20,6 +21,13 @@ export const useFetchMonasterioOverheads = () => {
   });
 }
 
+export const useFetchMonthlyOverheads = () => {
+  return useQuery<Overhead[], Error>({
+    queryKey: [`${OVERHEADS_QUERY_KEY}-monthly`],
+    queryFn: fetchMonthlyOverheads,
+  });
+};
+
 // Hook para CREAR un gasto general (genérico)
 export const useCreateOverhead = () => {
   const queryClient = useQueryClient();
@@ -29,6 +37,7 @@ export const useCreateOverhead = () => {
   // Invalidate generic and monastery-specific lists
   queryClient.invalidateQueries({ queryKey: [OVERHEADS_QUERY_KEY] });
   queryClient.invalidateQueries({ queryKey: [`${OVERHEADS_QUERY_KEY}-monastery`] });
+  queryClient.invalidateQueries({ queryKey: [`${OVERHEADS_QUERY_KEY}-monthly`] });
     },
   });
 };
@@ -42,6 +51,7 @@ export const useCreateMonasterioOverhead = () => {
   // Invalidate monastery-specific list primarily, plus generic as safety
   queryClient.invalidateQueries({ queryKey: [`${OVERHEADS_QUERY_KEY}-monastery`] });
   queryClient.invalidateQueries({ queryKey: [OVERHEADS_QUERY_KEY] });
+  queryClient.invalidateQueries({ queryKey: [`${OVERHEADS_QUERY_KEY}-monthly`] });
     },
   });
 };
@@ -54,6 +64,7 @@ export const useUpdateOverhead = () => {
     onSuccess: () => {
   queryClient.invalidateQueries({ queryKey: [OVERHEADS_QUERY_KEY] });
   queryClient.invalidateQueries({ queryKey: [`${OVERHEADS_QUERY_KEY}-monastery`] });
+  queryClient.invalidateQueries({ queryKey: [`${OVERHEADS_QUERY_KEY}-monthly`] });
     },
   });
 };
@@ -64,9 +75,25 @@ export const useDeleteOverhead = () => {
   return useMutation<void, Error, string>({
     mutationFn: deleteOverhead,
     onSuccess: () => {
-  queryClient.invalidateQueries({ queryKey: [OVERHEADS_QUERY_KEY] });
-  queryClient.invalidateQueries({ queryKey: [`${OVERHEADS_QUERY_KEY}-monastery`] });
+      // ✅ Invalidación más específica y forzada
+      console.log('🔄 Invalidando queries de overheads después de eliminación...');
+      queryClient.invalidateQueries({ 
+        queryKey: [OVERHEADS_QUERY_KEY],
+        exact: false, // Invalida todas las variaciones de la query
+        refetchType: 'active' // Solo refetch de queries activas
+      });
+      queryClient.invalidateQueries({ queryKey: [`${OVERHEADS_QUERY_KEY}-monastery`] });
+      queryClient.invalidateQueries({ queryKey: [`${OVERHEADS_QUERY_KEY}-monthly`] });
+      
+      // ✅ Forzar refetch inmediato
+      queryClient.refetchQueries({ 
+        queryKey: [OVERHEADS_QUERY_KEY],
+        type: 'active'
+      });
     },
+    onError: (error) => {
+      console.error('❌ Error en eliminación de overhead:', error);
+    }
   });
 };
 

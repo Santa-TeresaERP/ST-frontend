@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useUpdateProduction } from '../../hook/useProductions';
 import { useFetchPlants } from '../../hook/usePlants';
+import { useFetchProducts } from '../../hook/useProducts';
 import { X, Save } from 'lucide-react';
 
 interface ModalEditProductionProps {
@@ -27,6 +28,20 @@ const ModalEditProduction: React.FC<ModalEditProductionProps> = ({ isOpen, onClo
 
   const updateProductionMutation = useUpdateProduction();
   const { data: plantas, isLoading: isLoadingPlantas, error: errorPlantas } = useFetchPlants();
+  const { data: productos, isLoading: isLoadingProducts, error: errorProducts } = useFetchProducts();
+
+  // Función para convertir fecha a formato YYYY-MM-DD para input date
+  const formatDateForInput = (dateString: string): string => {
+    if (!dateString) return '';
+    
+    // Si viene en formato ISO, extraer solo la fecha
+    if (dateString.includes('T')) {
+      return dateString.split('T')[0];
+    }
+    
+    // Si ya está en formato YYYY-MM-DD, devolverlo tal como está
+    return dateString;
+  };
 
   useEffect(() => {
     if (production) {
@@ -34,7 +49,7 @@ const ModalEditProduction: React.FC<ModalEditProductionProps> = ({ isOpen, onClo
       setCantidad(production.quantityProduced.toString());
       setDescripcion(production.observation);
       setPlanta(production.plant_id || '');
-      setFecha(production.productionDate);
+      setFecha(formatDateForInput(production.productionDate));
     }
   }, [production]);
 
@@ -88,14 +103,26 @@ const ModalEditProduction: React.FC<ModalEditProductionProps> = ({ isOpen, onClo
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-gray-700 mb-2">Producto*</label>
-            <input
-              type="text"
-              name="produccion"
-              value={produccion}
-              onChange={(e) => setProduccion(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-              required
-            />
+            {isLoadingProducts ? (
+              <div className="animate-pulse bg-gray-200 h-10 rounded-lg"></div>
+            ) : errorProducts ? (
+              <p className="text-red-500 text-sm">Error al cargar productos</p>
+            ) : (
+              <select
+                name="produccion"
+                value={produccion}
+                onChange={(e) => setProduccion(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                required
+              >
+                <option value="">Seleccione un producto</option>
+                {productos?.map((producto) => (
+                  <option key={producto.id} value={producto.id}>
+                    {producto.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div>

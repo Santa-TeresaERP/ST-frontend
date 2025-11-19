@@ -43,6 +43,12 @@ const Places: React.FC = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Lugares</h1>
         <button
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 ml-4"
+          onClick={() => queryClient.invalidateQueries({ queryKey: ['places'] })}
+        >
+          Recargar
+        </button>
+        <button
           className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
           onClick={() => setIsCreateModalOpen(true)}
         >

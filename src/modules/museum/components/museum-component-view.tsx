@@ -10,15 +10,13 @@ import { Entrance } from '../types/entrance'
 import ModalCreateVisitor from './visitor/modal-create-visitor'
 import { toast } from 'react-toastify'
 import { useQueryClient } from '@tanstack/react-query'
-import { useModulePermission, MODULE_NAMES } from '@/core/utils/useModulesMap'
+import { useModulePermissions } from '@/core/utils/permission-hooks'
+import { MODULE_NAMES } from '@/core/utils/useModulesMap'
 import AccessDeniedModal from '@/core/utils/AccessDeniedModal'
 
 const MuseumComponentView: React.FC = () => {
   const queryClient = useQueryClient()
-  const { hasPermission: canView } = useModulePermission(MODULE_NAMES.MUSEUM, 'canRead')
-  const { hasPermission: canCreate } = useModulePermission(MODULE_NAMES.MUSEUM, 'canWrite')
-  const { hasPermission: canEdit } = useModulePermission(MODULE_NAMES.MUSEUM, 'canEdit')
-  const { hasPermission: canDelete } = useModulePermission(MODULE_NAMES.MUSEUM, 'canDelete')
+  const { canView, canCreate, canEdit, canDelete, isLoading: isPermsLoading, isAdmin } = useModulePermissions(MODULE_NAMES.MUSEUM)
   const { data, loading, error, update, remove, refetch } = useEntrance()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
@@ -31,10 +29,11 @@ const MuseumComponentView: React.FC = () => {
 
   // Limpiar cache cuando no hay permisos
   useEffect(() => {
-    if (!canView) {
+    // Solo limpiar cache si el usuario no puede ver el módulo y no es admin
+    if (!canView && !isAdmin) {
       queryClient.removeQueries({ queryKey: ['entrances'] })
     }
-  }, [canView, queryClient])
+  }, [canView, isAdmin, queryClient])
 
   const filteredData = useMemo(() => {
     if (!data) return [];
@@ -66,8 +65,18 @@ const MuseumComponentView: React.FC = () => {
     });
   }, [data, dateFilter]);
 
-  // Si no tiene permisos de lectura, mostrar mensaje de acceso denegado
-  if (!canView) {
+  // Mostrar loading mientras se verifican permisos
+  if (isPermsLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen text-gray-600">
+        <ShieldCheck className="h-10 w-10 text-green-600 mb-4" />
+        <p className="text-lg">Verificando permisos...</p>
+      </div>
+    )
+  }
+
+  // Si no tiene permisos de lectura y no es admin, mostrar mensaje de acceso denegado
+  if (!canView && !isAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
@@ -160,8 +169,8 @@ const MuseumComponentView: React.FC = () => {
     }
   };
 
-  // Solo mostrar loading si tiene permisos
-  if (canView && loading) {
+  // Solo mostrar loading si tiene permisos o es admin
+  if ((canView || isAdmin) && loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen text-gray-600">
         <ShieldCheck className="h-10 w-10 text-green-600 mb-4" />
@@ -170,8 +179,8 @@ const MuseumComponentView: React.FC = () => {
     );
   }
 
-  // Solo mostrar error si tiene permisos y hay un error (que no sea 403)
-  if (canView && error) {
+  // Solo mostrar error si tiene permisos o es admin y hay un error (que no sea 403)
+  if ((canView || isAdmin) && error) {
     console.error('Error fetching entrances:', error);
     const isPermissionError = error.includes('403') || error.includes('Forbidden');
     
@@ -202,6 +211,20 @@ const MuseumComponentView: React.FC = () => {
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-center text-red-700">Panel de Visitantes</h1>
       </div>
+
+          {/* 🔥 INDICADOR DE PERMISOS EN DESARROLLO */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>Debug Permisos:</strong>
+                    Módulo: {MODULE_NAMES.MUSEUM} | 
+                    Ver: {canView ? '✅' : '❌'} | 
+                    Crear: {canCreate ? '✅' : '❌'} | 
+                    Editar: {canEdit ? '✅' : '❌'} | 
+                    Eliminar: {canDelete ? '✅' : '❌'} 
+                  </p>
+            </div>
+          )}
 
       <div className="flex justify-center mt-4 mb-6 md:mt-6 md:mb-8">
         <Image
@@ -252,8 +275,8 @@ const MuseumComponentView: React.FC = () => {
         </select>
       </div>
 
-      {loading && <p>Cargando visitantes…</p>}
-      {error && <p className="text-red-600">Error: {error}</p>}
+  {(canView || isAdmin) && loading && <p>Cargando visitantes…</p>}
+  {(canView || isAdmin) && error && <p className="text-red-600">Error: {error}</p>}
 
       <div className="overflow-x-auto bg-white rounded shadow">
         <table className="min-w-full text-gray-700">
