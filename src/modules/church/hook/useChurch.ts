@@ -1,6 +1,6 @@
 import { CreateChurchPayload, UpdateChurchPayload, Church } from '@/modules/church/types/church'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { deleteChurch, getChurch, updateChurch, createChurch, fetchChurches, fetchChurchesAll } from '../action/church'
+import { deleteChurch, getChurch, updateChurch, createChurch, fetchChurches, fetchChurchesAll } from '../actions/church'
 import { useModulePermission, MODULE_NAMES } from '@/core/utils/useModulesMap'
 
 interface AxiosError extends Error {

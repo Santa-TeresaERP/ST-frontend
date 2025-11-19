@@ -8,7 +8,7 @@ import { BuysProductResponse } from '@/modules/inventory/types/buysProduct';
 // UUIDs de prueba para pasar la validación de tipado.
 // NOTA: En una aplicación real, estos deben ser seleccionados por el usuario
 // a través de un formulario, usando hooks como useFetchWarehouses y useFetchProducts.
-const MOCK_WAREHOUSE_ID = '91234567-89ab-cdef-0123-456789abcdef';
+const MOCK_WAREHOUSE_ID = 'eb4cf140-21c6-420c-a6c3-a8bc5d1af9c4';
 const MOCK_PRODUCT_ID = '01234567-89ab-cdef-0123-456789abcde0';
 
 type ModalCreateBuysProductProps = {

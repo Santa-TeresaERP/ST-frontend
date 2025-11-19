@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { fetchActiveIncomes } from "../actions/incomeChurch";
-import type { IncomeChurch } from "../types/incomeChurch";
+import { fetchIncomes } from "../../actions/incomeChurch";
+import type { IncomeChurch } from "../../types/incomeChurch";
 
-export default function useFetchActiveIncomes() {
+export default function useFetchIncomes() {
   const [data, setData] = useState<IncomeChurch[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -10,10 +10,10 @@ export default function useFetchActiveIncomes() {
   const load = async () => {
     try {
       setLoading(true);
-      const res = await fetchActiveIncomes();
+      const res = await fetchIncomes();
       setData(res);
     } catch (e: any) {
-      setError(e?.response?.data?.error ?? "Error al cargar ingresos activos");
+      setError(e?.response?.data?.error ?? "Error al cargar ingresos");
     } finally {
       setLoading(false);
     }

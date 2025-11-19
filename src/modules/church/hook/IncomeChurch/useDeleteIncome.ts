@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { deleteIncome } from "../actions/incomeChurch";
+import { deleteIncome } from "../../actions/incomeChurch";
 
 export default function useDeleteIncome() {
   const [loading, setLoading] = useState(false);

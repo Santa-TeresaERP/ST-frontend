@@ -1,5 +1,5 @@
 import api from '@/core/config/client';
-import { RentChurch, CreateRentChurchPayload, UpdateRentChurchPayload } from '../types/rentChurch.d';
+import { RentChurch, CreateRentChurchPayload, UpdateRentChurchPayload } from '../types/rentChurch';
 
 // Obtener todas las reservas de iglesia
 export const fetchRentChurches = async (): Promise<RentChurch[]> => {

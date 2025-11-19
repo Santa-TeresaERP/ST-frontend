@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { createIncome } from "../actions/incomeChurch";
-import type { CreateIncomeDto } from "../types/incomeChurch";
+import { createIncome } from "../../actions/incomeChurch";
+import type { CreateIncomeDto } from "../../types/incomeChurch";
 
 export default function useCreateIncome() {
   const [loading, setLoading] = useState(false);

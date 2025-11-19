@@ -5,12 +5,9 @@ import {
   createRentChurch,
   updateRentChurch,
   deleteRentChurch,
-} from '../action/rentChurch';
-import {
-  RentChurch,
-  CreateRentChurchPayload,
-  UpdateRentChurchPayload,
-} from '../types/rentChurch.d';
+} from '../actions/rentChurch';
+import { CreateRentChurchPayload, RentChurch, UpdateRentChurchPayload } from '../types/rentChurch';
+
 
 // ✅ Obtener todas las reservas de iglesia
 export const useFetchRentChurches = () => {

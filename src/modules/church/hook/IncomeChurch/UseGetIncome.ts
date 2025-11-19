@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { getIncome } from "../actions/incomeChurch";
-import type { IncomeChurch } from "../types/incomeChurch";
+import { getIncome } from "../../actions/incomeChurch";
+import type { IncomeChurch } from "../../types/incomeChurch";
 
 export default function useGetIncome(id: string) {
   const [data, setData] = useState<IncomeChurch | null>(null);
