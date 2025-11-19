@@ -1,73 +1,84 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, AlertCircle } from 'lucide-react';
-import { useCreateBuysProduct } from '../../hook/useBuysProducts';
-import { useFetchWarehouses } from '../../hook/useWarehouses';
-import { useFetchProducts } from '../../hook/useProducts';
-import { useFetchSuppliers } from '../../hook/useSuppliers';
+import { useUpdateBuysProduct } from '../../../hook/useBuysProducts';
+import { useFetchWarehouses } from '../../../hook/useWarehouses';
+import { useFetchProducts } from '../../../hook/useProducts';
+import { useFetchSuppliers } from '../../../hook/useSuppliers';
+import type { BuysProductWithRelations } from '../../../types/buysProduct.d';
 
-type ModalCreateBuysProductProps = {
+type ModalEditBuysProductProps = {
+  buysProduct: BuysProductWithRelations;
   onClose: () => void;
 };
 
-const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose }) => {
-  const [warehouse_id, setWarehouseId] = useState('');
-  const [product_id, setProductId] = useState('');
-  const [supplier_id, setSupplierId] = useState('');
-  const [quantity, setQuantity] = useState<number | ''>('');
-  const [unit_price, setUnitPrice] = useState<number | ''>('');
-  const [total_cost, setTotalCost] = useState<number>(0);
-  const [entry_date, setEntryDate] = useState('');
+const ModalEditBuysProduct: React.FC<ModalEditBuysProductProps> = ({ buysProduct, onClose }) => {
+  const [warehouse_id, setWarehouseId] = useState(buysProduct.warehouse_id);
+  const [product_id, setProductId] = useState(buysProduct.product_id);
+  const [supplier_id, setSupplierId] = useState(buysProduct.supplier_id);
+  const [quantity, setQuantity] = useState<number>(buysProduct.quantity);
+  const [unit_price, setUnitPrice] = useState<number>(buysProduct.unit_price);
+  const [total_cost, setTotalCost] = useState<number>(buysProduct.total_cost);
+  const [entry_date, setEntryDate] = useState(
+    buysProduct.entry_date instanceof Date 
+      ? buysProduct.entry_date.toISOString().split('T')[0]
+      : new Date(buysProduct.entry_date).toISOString().split('T')[0]
+  );
+  const [status, setStatus] = useState(buysProduct.status);
   const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
 
-  const { mutate, status } = useCreateBuysProduct();
+  const { mutate, status: mutationStatus } = useUpdateBuysProduct();
   const { data: warehouses, isLoading: loadingWarehouses } = useFetchWarehouses();
   const { data: products, isLoading: loadingProducts } = useFetchProducts();
   const { data: suppliers, isLoading: loadingSuppliers } = useFetchSuppliers();
 
   // Calcular total_cost automáticamente
   useEffect(() => {
-    if (quantity && unit_price && quantity !== '' && unit_price !== '') {
-      const calculated = Math.round(Number(quantity) * Number(unit_price) * 100) / 100;
-      setTotalCost(calculated);
-    } else {
-      setTotalCost(0);
-    }
+    const calculated = Math.round(quantity * unit_price * 100) / 100;
+    setTotalCost(calculated);
   }, [quantity, unit_price]);
 
-  // Establecer fecha de hoy por defecto
+  // Sincronizar con datos externos si cambian
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
-    setEntryDate(today);
-  }, []);
+    setWarehouseId(buysProduct.warehouse_id);
+    setProductId(buysProduct.product_id);
+    setSupplierId(buysProduct.supplier_id);
+    setQuantity(buysProduct.quantity);
+    setUnitPrice(buysProduct.unit_price);
+    setTotalCost(buysProduct.total_cost);
+    setStatus(buysProduct.status);
+    setEntryDate(
+      buysProduct.entry_date instanceof Date 
+        ? buysProduct.entry_date.toISOString().split('T')[0]
+        : new Date(buysProduct.entry_date).toISOString().split('T')[0]
+    );
+  }, [buysProduct]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setSuccessMessage('');
 
     // Validaciones
-    if (!warehouse_id || warehouse_id.trim() === '' || warehouse_id === 'Seleccione un almacén') {
+    if (!warehouse_id) {
       setError('Debe seleccionar un almacén');
       return;
     }
 
-    if (!product_id || product_id.trim() === '' || product_id === 'Seleccione un producto') {
+    if (!product_id) {
       setError('Debe seleccionar un producto');
       return;
     }
 
-    if (!supplier_id || supplier_id.trim() === '' || supplier_id === 'Seleccione un proveedor') {
+    if (!supplier_id) {
       setError('Debe seleccionar un proveedor');
       return;
     }
 
-    if (quantity === '' || Number(quantity) <= 0) {
+    if (quantity <= 0) {
       setError('La cantidad debe ser mayor a 0');
       return;
     }
 
-    if (unit_price === '' || Number(unit_price) <= 0) {
+    if (unit_price <= 0) {
       setError('El precio unitario debe ser mayor a 0');
       return;
     }
@@ -86,32 +97,29 @@ const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose
       return;
     }
 
+    if (!buysProduct.id) {
+      setError('ID de compra no válido');
+      return;
+    }
+
     mutate(
       {
-        warehouse_id,
-        product_id,
-        supplier_id,
-        quantity: Number(quantity),
-        unit_price: Number(unit_price),
-        total_cost,
-        entry_date,
+        id: buysProduct.id,
+        payload: {
+          warehouse_id,
+          product_id,
+          supplier_id,
+          quantity,
+          unit_price,
+          total_cost,
+          entry_date,
+          status,
+        },
       },
       {
-        onSuccess: (response) => {
-          // Mostrar mensaje según la acción del backend
-          if (response.action === 'updated') {
-            setSuccessMessage(response.message || 'Registro actualizado. Se acumularon las cantidades.');
-          } else {
-            setSuccessMessage('Compra registrada exitosamente');
-          }
-          
-          // Cerrar modal después de 2 segundos
-          setTimeout(() => {
-            onClose();
-          }, 2000);
-        },
-        onError: (err: any) => {
-          const errorMessage = err?.response?.data?.error || err?.message || 'Error al registrar la compra';
+        onSuccess: onClose,
+        onError: (err: Error) => {
+          const errorMessage = err.message || 'Error al actualizar la compra';
           setError(errorMessage);
         },
       }
@@ -123,7 +131,7 @@ const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header con gradiente rojo */}
         <div className="bg-gradient-to-r from-red-600 to-red-700 text-white p-5 rounded-t-2xl flex items-center justify-center relative sticky top-0 z-10">
-          <h2 className="text-lg font-semibold text-center">Nueva Compra de Producto</h2>
+          <h2 className="text-lg font-semibold text-center">Editar Compra de Producto</h2>
           <button
             onClick={onClose}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-200"
@@ -134,17 +142,11 @@ const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose
 
         {/* Formulario */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 text-left">
-          {/* Mensajes de error y éxito */}
+          {/* Mensaje de error */}
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
               <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={18} />
               <p className="text-sm text-red-600 font-medium">{error}</p>
-            </div>
-          )}
-          
-          {successMessage && (
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-sm text-green-600 font-medium">{successMessage}</p>
             </div>
           )}
 
@@ -214,9 +216,8 @@ const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose
                 min={0.01}
                 step={1}
                 value={quantity}
-                onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))}
+                onChange={(e) => setQuantity(Number(e.target.value))}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                placeholder="Ejemplo: 100"
               />
             </div>
 
@@ -230,9 +231,8 @@ const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose
                 min={0.01}
                 step={0.01}
                 value={unit_price}
-                onChange={(e) => setUnitPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                onChange={(e) => setUnitPrice(Number(e.target.value))}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                placeholder="Ejemplo: 15.50"
               />
             </div>
 
@@ -259,14 +259,19 @@ const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose
                 className="w-full border border-gray-300 rounded-lg px-4 py-2"
               />
             </div>
-          </div>
 
-          {/* Nota informativa */}
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-xs text-blue-800">
-              <strong>Nota:</strong> Si ya existe una compra con el mismo almacén y producto, 
-              se acumularán las cantidades en lugar de crear un registro duplicado.
-            </p>
+            {/* Estado */}
+            <div className="md:col-span-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={status}
+                  onChange={(e) => setStatus(e.target.checked)}
+                  className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                />
+                <span className="text-gray-700 font-medium">Activo</span>
+              </label>
+            </div>
           </div>
 
           {/* Botones */}
@@ -280,11 +285,11 @@ const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose
             </button>
             <button
               type="submit"
-              disabled={status === 'pending'}
+              disabled={mutationStatus === 'pending'}
               className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition flex items-center justify-center space-x-2 disabled:opacity-50"
             >
               <Save size={18} />
-              <span>{status === 'pending' ? 'Guardando...' : 'Guardar'}</span>
+              <span>{mutationStatus === 'pending' ? 'Actualizando...' : 'Actualizar'}</span>
             </button>
           </div>
         </form>
@@ -293,4 +298,4 @@ const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose
   );
 };
 
-export default ModalCreateBuysProduct;
+export default ModalEditBuysProduct;

@@ -57,7 +57,8 @@ const BuysProductView: React.FC = () => {
 
   const productsList = useMemo(() => {
     if (!products) return [];
-    return products.filter(p => p.status);
+    // `ProductAttributes` may not declare `status` but the runtime objects can have it; cast to any to access safely.
+    return products.filter((p: any) => p.status);
   }, [products]);
 
   const suppliersList = useMemo(() => {
@@ -443,7 +444,7 @@ const BuysProductView: React.FC = () => {
                     {/* 🔥 BOTÓN DE EDITAR - SOLO SI TIENE PERMISOS */}
                     {(canEdit || isAdmin) && (
                       <button
-                        onClick={() => setEditingId(buysProduct.id)}
+                        onClick={() => setEditingId(buysProduct.id ?? null)}
                         className="text-blue-600 hover:text-blue-800"
                         title="Editar"
                       >
@@ -454,9 +455,10 @@ const BuysProductView: React.FC = () => {
                     {/* 🔥 BOTÓN DE ELIMINAR/REACTIVAR - SOLO SI TIENE PERMISOS */}
                     {(canDelete || isAdmin) && (
                       <button
-                        onClick={() => handleToggleStatus(buysProduct.id, buysProduct.status)}
+                        onClick={() => buysProduct.id ? handleToggleStatus(buysProduct.id, buysProduct.status) : undefined}
                         className={`hover:opacity-80 ${buysProduct.status ? 'text-red-600' : 'text-green-600'}`}
                         title={buysProduct.status ? "Desactivar" : "Reactivar"}
+                        disabled={!buysProduct.id}
                       >
                         {buysProduct.status ? <Trash size={18} /> : <RotateCcw size={18} />}
                       </button>
