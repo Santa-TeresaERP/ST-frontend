@@ -4,7 +4,7 @@ import type {
   CreateBuysProductPayload, 
   UpdateBuysProductPayload,
   BuysProductResponse
-} from '../types/buysProduct.d';
+} from '../types/buysProduct';
 import {
   fetchBuysProducts,
   fetchAllBuysProducts,

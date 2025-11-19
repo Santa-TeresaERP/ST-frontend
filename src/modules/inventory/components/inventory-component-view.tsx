@@ -5,7 +5,7 @@ import WarehouseView from './warehouse/warehouse-view';
 import ResourceView from './resourcehouse/resourcehouse-view';
 import SuppliersView from './supplier/supplier.view';
 import MovementComponentView from './movements/movement-component-view';
-import BuysProductView from './buys-product/buys-product-view';
+import BuysProductView from './resourcehouse/Product/buys-product-view';
 
 // 🔥 IMPORTAR SISTEMA DE PERMISOS OPTIMIZADO
 import { useModulePermissions } from '@/core/utils/permission-hooks';

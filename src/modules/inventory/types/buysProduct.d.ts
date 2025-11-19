@@ -30,6 +30,8 @@ export interface BuysProductWithRelations extends BuysProductAttributes {
 
 // Payload para crear una compra de producto
 export interface CreateBuysProductPayload {
+  name: string; 
+  category: string
   warehouse_id: string;
   product_id: string;
   quantity: number;
