@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, AlertCircle } from 'lucide-react';
 import { useCreateBuysProduct } from '../../../hook/useBuysProducts';
 import { useFetchSuppliers } from '../../../hook/useSuppliers';
+import { useFetchProducts, useCreateProduct } from '../../../hook/useProducts';
+import { useCreateCategory } from '@/modules/production/hook/useCategories';
 import { BuysProductResponse } from '@/modules/inventory/types/buysProduct';
 
 
@@ -27,14 +29,25 @@ const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose
 
   // Estados requeridos por el Payload que asumiremos fijos o preseleccionados temporalmente
   const [warehouse_id] = useState<string>(MOCK_WAREHOUSE_ID);
-  const [product_id] = useState<string>(MOCK_PRODUCT_ID);
+  const [product_id, setProductId] = useState<string>(MOCK_PRODUCT_ID);
 
   // Estados de UI
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [createdProduct, setCreatedProduct] = useState<any | null>(null);
 
   const { mutate, status } = useCreateBuysProduct();
   const { data: suppliers, isLoading: loadingSuppliers } = useFetchSuppliers();
+  const { data: products } = useFetchProducts();
+  const createProductMutation = useCreateProduct();
+  const createCategoryMutation = useCreateCategory();
+
+  const [productSearch, setProductSearch] = useState('');
+  const [productMatches, setProductMatches] = useState<any[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+  const [showCreateProductModal, setShowCreateProductModal] = useState(false);
+  const [newProductName, setNewProductName] = useState('');
+  const [newProductDescription, setNewProductDescription] = useState('');
 
   // Calcular total (Precio Unitario * Cantidad)
   useEffect(() => {
@@ -45,6 +58,22 @@ const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose
       setTotalCost(0);
     }
   }, [quantity, unit_price]);
+
+  // Sincronizar búsqueda de producto con el campo 'name'
+  useEffect(() => {
+    setProductSearch(name);
+  }, [name]);
+
+  // Buscar productos localmente cuando cambie productSearch
+  useEffect(() => {
+    if (!products) return setProductMatches([]);
+    const q = productSearch.trim().toLowerCase();
+    if (!q) return setProductMatches([]);
+    const matches = products.filter((p: any) => p.name.toLowerCase().includes(q));
+    setProductMatches(matches.slice(0, 8));
+  }, [productSearch, products]);
+
+  // (no product search in this modal)
 
   // Fecha por defecto: hoy
   useEffect(() => {
@@ -108,6 +137,10 @@ const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose
         onSuccess: (data: BuysProductResponse) => {
           // Usamos el tipo BuysProductResponse para tener una mejor experiencia de desarrollo
           setSuccessMessage(data.message || 'Compra registrada exitosamente');
+          // Si el backend creó un producto "no producible" adjunto, mostrarlo brevemente
+          if ((data as any)?.product) {
+            setCreatedProduct((data as any).product);
+          }
           setTimeout(() => {
             onClose();
           }, 1800);
@@ -121,7 +154,43 @@ const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose
     );
   };
 
-  return (
+  // Handler para crear producto rápido
+    const handleCreateProduct = () => {
+      setError('');
+      if (!newProductName.trim()) {
+        setError('Debe ingresar el nombre del producto');
+        return;
+      }
+  
+      createProductMutation.mutate(
+        {
+          name: newProductName.trim(),
+          description: newProductDescription,
+          // Agregamos category_id requerido por CreateProductPayload; usamos la categoría del modal o fallback vacío.
+          category_id: category || '',
+          // Proporcionamos un precio mínimo por defecto; el backend puede ajustar la categoría internamente.
+          price: typeof unit_price === 'number' ? unit_price : 0,
+        },
+        {
+          onSuccess: (product: any) => {
+            // Actualizar estado para usar el producto recién creado en la compra
+            setCreatedProduct(product);
+            if (product?.id) {
+              setProductId(product.id);
+            }
+            setShowCreateProductModal(false);
+            setNewProductName('');
+            setNewProductDescription('');
+          },
+          onError: (err: any) => {
+            const errorMessage = err?.response?.data?.error || 'Error al crear el producto';
+            setError(errorMessage);
+          },
+        }
+      );
+    };
+  
+    return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
 
@@ -151,6 +220,18 @@ const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose
               <p className="text-sm text-green-600">{successMessage}</p>
             </div>
           )}
+          {/* Mostrar producto creado automáticamente si existe */}
+          {createdProduct && (
+            <div className="p-3 bg-white border border-gray-200 rounded-lg">
+              <p className="text-sm text-gray-700 font-medium">Producto creado automáticamente:</p>
+              <div className="mt-2 text-sm text-gray-800">
+                <div>Nombre: {(createdProduct.name) || String(createdProduct)}</div>
+                {createdProduct.id && <div>ID: {createdProduct.id}</div>}
+                {createdProduct.category_id && <div>Categoría ID: {createdProduct.category_id}</div>}
+                {createdProduct.price !== undefined && <div>Precio: S/. {Number(createdProduct.price).toFixed(2)}</div>}
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
@@ -166,6 +247,46 @@ const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose
                 placeholder="Ej: Compra de arroz"
                 className="w-full border border-gray-300 rounded-lg px-4 py-2"
               />
+
+              {/* Sugerencias de producto basadas en el nombre de la compra */}
+              {productMatches.length > 0 && name.trim() !== '' && (
+                <ul className="mt-2 max-h-40 overflow-auto border border-gray-200 rounded-md bg-white shadow-sm">
+                  {productMatches.map((p) => (
+                    <li key={p.id} className="p-2 hover:bg-gray-50 flex items-center justify-between">
+                      <div>
+                        <div className="font-medium">{p.name}</div>
+                        <div className="text-xs text-gray-500">S/. {Number(p.price).toFixed(2)}</div>
+                      </div>
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedProduct(p);
+                            setProductId(p.id);
+                            setCreatedProduct(p);
+                          }}
+                          className="text-sm text-blue-600"
+                        >
+                          Usar
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {productMatches.length === 0 && name.trim() !== '' && (
+                <div className="mt-2 text-sm text-gray-600 flex items-center gap-3">
+                  <span>No se encontró ningún producto con este nombre.</span>
+                  <button
+                    type="button"
+                    onClick={() => { setNewProductName(name.trim()); setNewProductDescription(''); setShowCreateProductModal(true); }}
+                    className="text-sm text-green-700"
+                  >
+                    Crear producto
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Proveedor */}
@@ -278,6 +399,67 @@ const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose
           </div>
 
         </form>
+
+        {/* Modal para crear producto rápido */}
+        {showCreateProductModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[80vh] overflow-y-auto">
+
+              {/* Header */}
+              <div className="bg-gradient-to-r from-red-600 to-red-700 text-white p-5 rounded-t-2xl flex items-center justify-center relative">
+                <h3 className="text-lg font-semibold">Crear Producto Rápido</h3>
+                <button
+                  onClick={() => setShowCreateProductModal(false)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-200"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Form */}
+              <form className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Nombre</label>
+                  <input
+                    type="text"
+                    value={newProductName}
+                    onChange={(e) => setNewProductName(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 mt-1"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Descripción</label>
+                  <textarea
+                    value={newProductDescription}
+                    onChange={(e) => setNewProductDescription(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 mt-1 h-28"
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateProductModal(false)}
+                    className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700"
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCreateProduct}
+                    className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white flex items-center space-x-2"
+                  >
+                    <Save size={16} />
+                    <span>Crear</span>
+                  </button>
+                </div>
+              </form>
+
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
