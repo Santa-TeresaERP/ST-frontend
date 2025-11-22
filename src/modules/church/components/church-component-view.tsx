@@ -1,13 +1,23 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { PlusCircle, Edit, Trash2, Filter, Calendar, Search, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { PlusCircle, Edit, Trash2, Filter, Calendar, Search, DollarSign, ChevronLeft, ChevronRight, ShieldAlert, Lock } from 'lucide-react';
 import ModalCreateDonativo from '../components/donativos/modal-create-view';
 import ModalEditDonativo from '../components/donativos/modal-update-view';
 import ModalDeleteDonativo from '../components/donativos/modal-delete-view';
 import ModalCreateReserva from '../components/rentas/modal-create-view';
 import ModalEditReserva from '../components/rentas/modal-update-view';
 import ModalDeleteReserva from '../components/rentas/modal-delete-view';
+
+// 🔥 IMPORTAR SISTEMA DE PERMISOS Y HOOK DE USUARIO ACTUAL
+import { 
+  AccessDeniedModal,
+} from '@/core/utils';
+import { useModulePermission, MODULE_NAMES } from '@/core/utils/useModulesMap';
+import { useCurrentUser } from '@/modules/auth/hook/useCurrentUser';
+import { useAuthStore } from '@/core/store/auth';
+import { suppressAxios403Errors } from '@/core/utils/error-suppressor';
 
 // Tipos
 type Donativo = {
@@ -33,6 +43,50 @@ type Reserva = {
 type TabType = 'donativos' | 'reservas';
 
 const ChurchComponentView = () => {
+  // 🔥 OBTENER USUARIO ACTUAL CON SUS PERMISOS
+  const { user } = useAuthStore();
+  const { data: currentUserWithPermissions, isLoading: usersLoading } = useCurrentUser();
+  
+  // 🔥 VERIFICAR PERMISOS DEL MÓDULO IGLESIA
+  const { 
+    hasPermission: canView, 
+    isLoading: permissionsLoading 
+  } = useModulePermission(MODULE_NAMES.CHURCH, 'canRead');
+  
+  const { hasPermission: canEdit } = useModulePermission(MODULE_NAMES.CHURCH, 'canEdit');
+  const { hasPermission: canCreate } = useModulePermission(MODULE_NAMES.CHURCH, 'canWrite');
+  const { hasPermission: canDelete } = useModulePermission(MODULE_NAMES.CHURCH, 'canDelete');
+  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isAdmin = (currentUserWithPermissions as any)?.Role?.name === 'Admin';
+  
+  // Estados para control de acceso denegado
+  const [showAccessDenied, setShowAccessDenied] = useState(false);
+  const [accessDeniedAction, setAccessDeniedAction] = useState('');
+
+  // 🔥 ACTIVAR SUPRESOR DE ERRORES 403 EN LA CONSOLA
+  useEffect(() => {
+    suppressAxios403Errors();
+  }, []);
+
+  // 🔥 DEBUG: Ver permisos actuales
+  console.log('🔍 ChurchComponentView - Análisis de Permisos:', {
+    userId: user?.id,
+    userFound: !!currentUserWithPermissions,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    roleName: (currentUserWithPermissions as any)?.Role?.name,
+    moduleName: MODULE_NAMES.CHURCH,
+    permisos: { canView, canEdit, canCreate, canDelete, isAdmin },
+    usersLoading,
+    permissionsLoading
+  });
+
+  // 🔥 FUNCIÓN PARA MANEJAR ACCESO DENEGADO
+  const handleAccessDenied = (action: string) => {
+    setAccessDeniedAction(action);
+    setShowAccessDenied(true);
+  };
+
   // Estado para controlar la vista activa
   const [activeTab, setActiveTab] = useState<TabType>('donativos');
   
@@ -271,6 +325,12 @@ const ChurchComponentView = () => {
 
   // Handlers para editar Donativo
   const handleEdit = (donativo: Donativo) => {
+    // 🔥 VERIFICAR PERMISOS ANTES DE EDITAR (Admin siempre puede)
+    if (!canEdit && !isAdmin) {
+      handleAccessDenied('editar este donativo');
+      return;
+    }
+    
     setSelectedDonativo(donativo);
     setEditModalOpen(true);
   };
@@ -297,6 +357,12 @@ const ChurchComponentView = () => {
 
   // Handlers para eliminar Donativo
   const handleDelete = (donativo: Donativo) => {
+    // 🔥 VERIFICAR PERMISOS ANTES DE ELIMINAR (Admin siempre puede)
+    if (!canDelete && !isAdmin) {
+      handleAccessDenied('eliminar este donativo');
+      return;
+    }
+    
     setSelectedDonativo(donativo);
     setDeleteModalOpen(true);
   };
@@ -328,6 +394,12 @@ const ChurchComponentView = () => {
 
   // Handler para botón de registro de Donativo
   const handleRegister = () => {
+    // 🔥 VERIFICAR PERMISOS ANTES DE CREAR (Admin siempre puede)
+    if (!canCreate && !isAdmin) {
+      handleAccessDenied('crear un nuevo donativo');
+      return;
+    }
+    
     setCreateModalOpen(true);
   };
 
@@ -335,6 +407,12 @@ const ChurchComponentView = () => {
 
   // Handler para botón de registro de Reserva
   const handleRegisterReserva = () => {
+    // 🔥 VERIFICAR PERMISOS ANTES DE CREAR (Admin siempre puede)
+    if (!canCreate && !isAdmin) {
+      handleAccessDenied('crear una nueva reserva');
+      return;
+    }
+    
     setCreateReservaModalOpen(true);
   };
 
@@ -356,6 +434,12 @@ const ChurchComponentView = () => {
 
   // Handler para editar Reserva
   const handleEditReserva = (reserva: Reserva) => {
+    // 🔥 VERIFICAR PERMISOS ANTES DE EDITAR (Admin siempre puede)
+    if (!canEdit && !isAdmin) {
+      handleAccessDenied('editar esta reserva');
+      return;
+    }
+    
     setSelectedReserva(reserva);
     setEditReservaModalOpen(true);
   };
@@ -380,6 +464,12 @@ const ChurchComponentView = () => {
 
   // Handler para eliminar Reserva
   const handleDeleteReserva = (reserva: Reserva) => {
+    // 🔥 VERIFICAR PERMISOS ANTES DE ELIMINAR (Admin siempre puede)
+    if (!canDelete && !isAdmin) {
+      handleAccessDenied('eliminar esta reserva');
+      return;
+    }
+    
     setSelectedReserva(reserva);
     setDeleteReservaModalOpen(true);
   };
@@ -634,13 +724,25 @@ const ChurchComponentView = () => {
     <div className="space-y-6"> {/* Añadido para consistencia */}
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold text-red-700">Reservas y Eventos</h2>
-        <button
-          onClick={handleRegisterReserva} // <-- CORREGIDO: Llama al handler de reservas
-          className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-red-700 text-white font-semibold px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-        >
-          <PlusCircle className="w-5 h-5" />
-          Registrar Evento
-        </button>
+        {/* 🔥 BOTÓN PROTEGIDO DE CREAR RESERVA */}
+        {(canCreate || isAdmin) ? (
+          <button
+            onClick={handleRegisterReserva}
+            className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-red-700 text-white font-semibold px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+          >
+            <PlusCircle className="w-5 h-5" />
+            Registrar Evento
+          </button>
+        ) : (
+          <button
+            onClick={() => handleAccessDenied('crear una nueva reserva')}
+            className="flex items-center gap-2 bg-gray-400 text-gray-200 font-semibold px-6 py-3 rounded-full cursor-not-allowed opacity-50"
+            title="Sin permisos para crear"
+          >
+            <Lock className="w-5 h-5" />
+            Registrar Evento
+          </button>
+        )}
       </div>
 
       {renderReservasFilters()}
@@ -673,20 +775,43 @@ const ChurchComponentView = () => {
               <div className="text-gray-700 text-center">{reserva.tiempoInicio}</div>
               <div className="text-gray-700 text-center">{reserva.tiempoFin}</div>
               <div className="flex justify-center items-center gap-3">
-                <button
-                  onClick={() => handleEditReserva(reserva)}
-                  className="p-2 rounded-full bg-gray-100 hover:bg-red-100 text-gray-700 hover:text-red-700 transition-all duration-200 hover:scale-110"
-                  title="Editar"
-                >
-                  <Edit className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => handleDeleteReserva(reserva)}
-                  className="p-2 rounded-full bg-red-100 hover:bg-red-600 text-red-600 hover:text-white transition-all duration-200 hover:scale-110"
-                  title="Eliminar"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
+                {/* 🔥 BOTÓN PROTEGIDO DE EDITAR */}
+                {(canEdit || isAdmin) ? (
+                  <button
+                    onClick={() => handleEditReserva(reserva)}
+                    className="p-2 rounded-full bg-gray-100 hover:bg-red-100 text-gray-700 hover:text-red-700 transition-all duration-200 hover:scale-110"
+                    title="Editar"
+                  >
+                    <Edit className="w-5 h-5" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleAccessDenied('editar esta reserva')}
+                    className="p-2 rounded-full bg-gray-300 text-gray-400 cursor-not-allowed opacity-50"
+                    title="Sin permisos para editar"
+                  >
+                    <Lock className="w-5 h-5" />
+                  </button>
+                )}
+                
+                {/* 🔥 BOTÓN PROTEGIDO DE ELIMINAR */}
+                {(canDelete || isAdmin) ? (
+                  <button
+                    onClick={() => handleDeleteReserva(reserva)}
+                    className="p-2 rounded-full bg-red-100 hover:bg-red-600 text-red-600 hover:text-white transition-all duration-200 hover:scale-110"
+                    title="Eliminar"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleAccessDenied('eliminar esta reserva')}
+                    className="p-2 rounded-full bg-gray-300 text-gray-400 cursor-not-allowed opacity-50"
+                    title="Sin permisos para eliminar"
+                  >
+                    <Lock className="w-5 h-5" />
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -703,6 +828,29 @@ const ChurchComponentView = () => {
     </div>
   );
 
+  // 🔥 VERIFICAR ESTADOS DE CARGA
+  if (usersLoading || permissionsLoading) {
+    return <div className="text-center text-red-800 font-semibold p-8">Cargando permisos...</div>;
+  }
+
+  // 🔥 VERIFICAR SI TIENE PERMISO PARA VER EL MÓDULO
+  if (!canView && !isAdmin) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
+          <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-700 mb-2">Acceso Restringido</h2>
+          <p className="text-gray-600 mb-4">
+            No tienes permisos para ver la gestión de Iglesia.
+          </p>
+          <p className="text-sm text-gray-500">
+            Contacta al administrador para obtener acceso.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Actualizar lógica de renderizado de tabs
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
@@ -713,6 +861,23 @@ const ChurchComponentView = () => {
           <h1 className="text-5xl font-extrabold text-red-700 mb-2">Iglesia</h1>
           <div className="w-24 h-1 bg-gradient-to-r from-red-600 to-red-800 mx-auto rounded-full"></div>
         </div>
+
+        {/* 🔥 INDICADOR DE PERMISOS EN DESARROLLO */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg max-w-3xl mx-auto">
+            <p className="text-sm text-blue-800">
+              <strong>Debug Permisos:</strong> 
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              Usuario: {(currentUserWithPermissions as any)?.name || 'No encontrado'} | 
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              Rol: {(currentUserWithPermissions as any)?.Role?.name || 'Sin rol'} | 
+              Ver: {canView ? '✅' : '❌'} | 
+              Editar: {canEdit ? '✅' : '❌'} | 
+              Crear: {canCreate ? '✅' : '❌'} | 
+              Eliminar: {canDelete ? '✅' : '❌'}
+            </p>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="bg-white rounded-2xl shadow-lg p-2 mb-8 max-w-3xl mx-auto">
@@ -750,13 +915,25 @@ const ChurchComponentView = () => {
             {/* Header Section */}
             <div className="flex justify-between items-center">
               <h2 className="text-3xl font-bold text-red-700">Donativos y Limosnas</h2>
-              <button
-                onClick={handleRegister}
-                className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-red-700 text-white font-semibold px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-              >
-                <PlusCircle className="w-5 h-5" />
-                Registrar Donativo
-              </button>
+              {/* 🔥 BOTÓN PROTEGIDO DE CREAR DONATIVO */}
+              {(canCreate || isAdmin) ? (
+                <button
+                  onClick={handleRegister}
+                  className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-red-700 text-white font-semibold px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                >
+                  <PlusCircle className="w-5 h-5" />
+                  Registrar Donativo
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleAccessDenied('crear un nuevo donativo')}
+                  className="flex items-center gap-2 bg-gray-400 text-gray-200 font-semibold px-6 py-3 rounded-full cursor-not-allowed opacity-50"
+                  title="Sin permisos para crear"
+                >
+                  <Lock className="w-5 h-5" />
+                  Registrar Donativo
+                </button>
+              )}
             </div>
 
             {renderDonativosFilters()}
@@ -803,32 +980,63 @@ const ChurchComponentView = () => {
                       {donativo.descripcion || '-'}
                     </div>
                     <div className="flex justify-center items-center gap-3">
-                      <button
-                        onClick={() => handleEdit(donativo)}
-                        className="
-                          p-2 rounded-full 
-                          bg-gray-100 hover:bg-red-100 
-                          text-gray-700 hover:text-red-700
-                          transition-all duration-200
-                          hover:scale-110
-                        "
-                        title="Editar"
-                      >
-                        <Edit className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(donativo)}
-                        className="
-                          p-2 rounded-full 
-                          bg-red-100 hover:bg-red-600 
-                          text-red-600 hover:text-white
-                          transition-all duration-200
-                          hover:scale-110
-                        "
-                        title="Eliminar"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+                      {/* 🔥 BOTÓN PROTEGIDO DE EDITAR */}
+                      {(canEdit || isAdmin) ? (
+                        <button
+                          onClick={() => handleEdit(donativo)}
+                          className="
+                            p-2 rounded-full 
+                            bg-gray-100 hover:bg-red-100 
+                            text-gray-700 hover:text-red-700
+                            transition-all duration-200
+                            hover:scale-110
+                          "
+                          title="Editar"
+                        >
+                          <Edit className="w-5 h-5" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleAccessDenied('editar este donativo')}
+                          className="
+                            p-2 rounded-full 
+                            bg-gray-300 text-gray-400
+                            cursor-not-allowed opacity-50
+                          "
+                          title="Sin permisos para editar"
+                        >
+                          <Lock className="w-5 h-5" />
+                        </button>
+                      )}
+                      
+                      {/* 🔥 BOTÓN PROTEGIDO DE ELIMINAR */}
+                      {(canDelete || isAdmin) ? (
+                        <button
+                          onClick={() => handleDelete(donativo)}
+                          className="
+                            p-2 rounded-full 
+                            bg-red-100 hover:bg-red-600 
+                            text-red-600 hover:text-white
+                            transition-all duration-200
+                            hover:scale-110
+                          "
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleAccessDenied('eliminar este donativo')}
+                          className="
+                            p-2 rounded-full 
+                            bg-gray-300 text-gray-400
+                            cursor-not-allowed opacity-50
+                          "
+                          title="Sin permisos para eliminar"
+                        >
+                          <Lock className="w-5 h-5" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -934,6 +1142,16 @@ const ChurchComponentView = () => {
         onConfirm={handleDeleteReservaConfirm}
         isPending={isDeletingReserva}
         reservaData={selectedReserva}
+      />
+
+      {/* 🔥 MODAL DE ACCESO DENEGADO */}
+      <AccessDeniedModal
+        isOpen={showAccessDenied}
+        onClose={() => setShowAccessDenied(false)}
+        title="Permisos Insuficientes"
+        message="No tienes permisos para realizar esta acción en el módulo de Iglesia."
+        action={accessDeniedAction}
+        module="Gestión de Iglesia"
       />
     </div>
   );
