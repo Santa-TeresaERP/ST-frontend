@@ -3,18 +3,19 @@
 import React, { useState } from 'react';
 import { X, DollarSign, Calendar, Tag, FileText, Save } from 'lucide-react';
 
-interface ModalCreateDonativoProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit?: (data: DonativoFormData) => void;
-}
-
 interface DonativoFormData {
   nombre: string;
   precio: string;
   tipo: string;
   fecha: string;
   descripcion: string;
+}
+
+interface ModalCreateDonativoProps {
+  isOpen: boolean;
+  onClose: () => void;
+  // Cambiamos el retorno a Promise<void> para poder esperar la operación asíncrona del padre
+  onSubmit?: (data: DonativoFormData) => Promise<void> | void;
 }
 
 const ModalCreateDonativo: React.FC<ModalCreateDonativoProps> = ({ 
@@ -94,17 +95,15 @@ const ModalCreateDonativo: React.FC<ModalCreateDonativoProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Simular llamada a API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Llamar a la función onSubmit si existe
+      // MODIFICACIÓN: Llamar a la función onSubmit del padre y ESPERAR (await) a que termine.
+      // Esto permite que el estado 'isSubmitting' dure lo que tarda la API real.
       if (onSubmit) {
-        onSubmit(formData);
+        await onSubmit(formData);
       }
 
-      console.log('Donativo creado:', formData);
+      console.log('Donativo creado exitosamente:', formData);
 
-      // Resetear formulario
+      // Resetear formulario solo si hubo éxito
       setFormData({
         nombre: '',
         precio: '',
@@ -116,7 +115,8 @@ const ModalCreateDonativo: React.FC<ModalCreateDonativoProps> = ({
       // Cerrar modal
       onClose();
     } catch (error) {
-      console.error('Error al crear donativo:', error);
+      console.error('Error al crear donativo en el modal:', error);
+      // Aquí podrías mostrar un mensaje de error en la UI si la API falla
     } finally {
       setIsSubmitting(false);
     }
@@ -358,10 +358,6 @@ const ModalCreateDonativo: React.FC<ModalCreateDonativoProps> = ({
 
         .animate-fadeIn {
           animation: fadeIn 0.2s ease-out;
-        }
-
-        .animate-slideUp {
-          animation: slideUp 0.3s ease-out;
         }
       `}</style>
     </div>

@@ -23,6 +23,7 @@ import useCreateIncome from "../hook/IncomeChurch/useCreateIncome";
 import useUpdateIncome from "../hook/IncomeChurch/useUpdateIncome";
 import useDeleteIncome from "../hook/IncomeChurch/useDeleteIncome";
 import type { IncomeChurch } from "../types/incomeChurch";
+import useFetchDefaultChurch from "../hook/IncomeChurch/useFetchDefaultChurch";
 
 // NUEVO: Tipo para Reserva
 type Reserva = {
@@ -49,14 +50,11 @@ const ChurchComponentView = () => {
     null
   );
 
-  const {
-    data: donativosData,
-    refetch: refetchIncomes,
-  } = useFetchIncomes();
-  console.log("DATA RECIBIDA DEL HOOK:", donativosData);
+  const { data: donativosData, refetch: refetchIncomes } = useFetchIncomes();
   const { create: createIncome } = useCreateIncome();
   const { update: updateIncome } = useUpdateIncome();
   const { remove: removeIncome, loading: deletingIncome } = useDeleteIncome();
+  const { churchId } = useFetchDefaultChurch();
 
   const donativos: IncomeChurch[] = useMemo(
     () => donativosData || [],
@@ -253,39 +251,57 @@ const ChurchComponentView = () => {
 
   // Handlers para crear Donativo
   const handleCreateSubmit = async (data: any) => {
+    // Validación de seguridad
+    if (!churchId) {
+      console.error("No se ha cargado el ID de la iglesia");
+      return;
+    }
+
     try {
+      // Aquí construimos el objeto EXACTO que pide tu backend
       await createIncome({
-        name: data.nombre,
-        price: Number(data.precio),
-        type: data.tipo,
-        date: data.fecha,
-        idChurch: "TU_ID_IGLESIA", // <--- Recuerda poner el ID real
+        name: data.nombre, // Mapeamos nombre -> name
+        type: data.tipo, // Mapeamos tipo -> type
+        price: Number(data.precio), // Convertimos string -> number
+        // Convertimos la fecha 'YYYY-MM-DD' a ISO 'YYYY-MM-DDTHH:mm:ss.sssZ'
+        date: new Date(data.fecha).toISOString(),
+        idChurch: churchId, // Usamos el ID del hook
       });
-      refetchIncomes(); // ¡Aquí usamos el refetch!
+
+      refetchIncomes();
       setCreateModalOpen(false);
     } catch (error) {
       console.error("Error al crear:", error);
     }
   };
-
   // Handlers para editar Donativo
   const handleEdit = (donativo: IncomeChurch) => {
     setSelectedDonativo(donativo);
     setEditModalOpen(true);
   };
-  const handleEditSubmit = async (id: any, data: any) => {
+  const handleEditSubmit = async (id: string | number, data: any) => {
     try {
+      // 1. Llamamos al hook de actualización
+      // Mapeamos los datos del Formulario (Español) al DTO del Backend (Inglés)
       await updateIncome(String(id), {
         name: data.nombre,
         price: Number(data.precio),
         type: data.tipo,
-        date: data.fecha,
+        // Convertimos la fecha del input (YYYY-MM-DD) a ISO string si es necesario,
+        // o la enviamos tal cual si tu backend acepta YYYY-MM-DD.
+        // Usamos ISO para asegurar consistencia con el Create.
+        date: new Date(data.fecha).toISOString(),
       });
-      refetchIncomes();
+
+      // 2. Refrescamos la tabla para ver los cambios
+      await refetchIncomes();
+
+      // 3. Cerramos el modal (esto se ejecutará si no hubo error en el await anterior)
       setEditModalOpen(false);
       setSelectedDonativo(null);
     } catch (error) {
       console.error("Error al editar:", error);
+      // Opcional: Manejar error visualmente
     }
   };
   const handleDelete = (donativo: IncomeChurch) => {
@@ -295,16 +311,19 @@ const ChurchComponentView = () => {
   // Handlers para eliminar Donativo
   const handleDeleteConfirm = async () => {
     if (!selectedDonativo) return;
-    try {
-      await removeIncome(String(selectedDonativo.id));
-      refetchIncomes();
+
+    // 1. Ejecutamos la eliminación llamando al hook
+    // El hook devuelve 'true' si fue éxito o 'null' si falló
+    const result = await removeIncome(String(selectedDonativo.id));
+
+    // 2. Solo si el resultado fue exitoso, cerramos y refrescamos
+    if (result) {
+      await refetchIncomes(); // Esperamos a que se refresquen los datos
       setDeleteModalOpen(false);
       setSelectedDonativo(null);
-    } catch (error) {
-      console.error("Error al eliminar:", error);
     }
+    // Si falló (result es null), el modal sigue abierto mostrando el error (si tienes manejo de error visual)
   };
-
   // Handler para botón de registro de Donativo
   const handleRegister = () => {
     setCreateModalOpen(true);
@@ -1015,8 +1034,7 @@ const ChurchComponentView = () => {
           setSelectedDonativo(null);
         }}
         onSubmit={handleEditSubmit}
-        // CORRECCIÓN 1: Usamos 'as any' para que acepte el tipo nuevo temporalmente
-        donativoToEdit={selectedDonativo as any}
+        donativoToEdit={selectedDonativo as any} // 'as any' para compatibilidad rápida de tipos
       />
       <ModalDeleteDonativo
         isOpen={isDeleteModalOpen}
@@ -1024,10 +1042,8 @@ const ChurchComponentView = () => {
           setDeleteModalOpen(false);
           setSelectedDonativo(null);
         }}
-        onConfirm={handleDeleteConfirm}
-        // CORRECCIÓN 2: Usamos 'deletingIncome' que viene de tu hook, en vez de 'isDeleting'
-        isPending={deletingIncome}
-        // CORRECCIÓN 3: Usamos 'as any' por la diferencia de tipos (Inglés/Español)
+        onConfirm={handleDeleteConfirm} // Pasamos la función corregida
+        isPending={deletingIncome} // Pasamos el estado de carga del hook
         donativoData={selectedDonativo as any}
       />
 
