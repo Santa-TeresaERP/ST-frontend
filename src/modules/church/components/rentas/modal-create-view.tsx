@@ -2,14 +2,16 @@
 
 import React, { useState } from 'react';
 import { X, DollarSign, Calendar, Tag, Save, Clock } from 'lucide-react';
+import { CreateRentChurchPayload } from '../../types/rentChurch';
 
 interface ModalCreateReservaProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit?: (data: ReservaFormData) => void;
+  // Actualizamos el onSubmit para que reciba el formato que espera el Hook
+  onSubmit?: (data: CreateRentChurchPayload) => Promise<void | any>;
 }
 
-// Interfaz para los datos del formulario de Reserva
+// Mantenemos esta interfaz para el ESTADO interno del formulario (lo que ve el usuario)
 interface ReservaFormData {
   nombre: string;
   precio: string;
@@ -36,14 +38,12 @@ const ModalCreateReserva: React.FC<ModalCreateReservaProps> = ({
   const [errors, setErrors] = useState<Partial<ReservaFormData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Tipos predefinidos de reservas
+  // Tipos deben coincidir exactamente con lo que espera tu Backend ('matrimonio' | 'bautizo' | 'otros')
+  // Mapeamos lo visual a lo técnico
   const tiposReservas = [
-    'Bautizo',
-    'Matrimonio',
-    'Misa Especial',
-    'Confirmación',
-    'Evento Parroquial',
-    'Otro'
+    { label: 'Bautizo', value: 'bautizo' },
+    { label: 'Matrimonio', value: 'matrimonio' },
+    { label: 'Otros', value: 'otros' }
   ];
 
   const handleChange = (
@@ -55,7 +55,6 @@ const ModalCreateReserva: React.FC<ModalCreateReservaProps> = ({
       [name]: value
     }));
     
-    // Limpiar error del campo cuando el usuario empieza a escribir
     if (errors[name as keyof ReservaFormData]) {
       setErrors(prev => ({
         ...prev,
@@ -67,29 +66,12 @@ const ModalCreateReserva: React.FC<ModalCreateReservaProps> = ({
   const validateForm = (): boolean => {
     const newErrors: Partial<ReservaFormData> = {};
 
-    if (!formData.nombre.trim()) {
-      newErrors.nombre = 'El nombre es requerido';
-    }
-
-    if (!formData.precio || Number(formData.precio) <= 0) {
-      newErrors.precio = 'El precio debe ser mayor a 0';
-    }
-
-    if (!formData.tipo) {
-      newErrors.tipo = 'El tipo es requerido';
-    }
-
-    if (!formData.fecha) {
-      newErrors.fecha = 'La fecha es requerida';
-    }
-
-    if (!formData.tiempoInicio) {
-      newErrors.tiempoInicio = 'La hora de inicio es requerida';
-    }
-
-    if (!formData.tiempoFin) {
-      newErrors.tiempoFin = 'La hora de fin es requerida';
-    }
+    if (!formData.nombre.trim()) newErrors.nombre = 'El nombre es requerido';
+    if (!formData.precio || Number(formData.precio) <= 0) newErrors.precio = 'El precio debe ser mayor a 0';
+    if (!formData.tipo) newErrors.tipo = 'El tipo es requerido';
+    if (!formData.fecha) newErrors.fecha = 'La fecha es requerida';
+    if (!formData.tiempoInicio) newErrors.tiempoInicio = 'La hora de inicio es requerida';
+    if (!formData.tiempoFin) newErrors.tiempoFin = 'La hora de fin es requerida';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -98,22 +80,32 @@ const ModalCreateReserva: React.FC<ModalCreateReservaProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsSubmitting(true);
 
     try {
-      // Simular llamada a API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Llamar a la función onSubmit si existe
       if (onSubmit) {
-        onSubmit(formData);
+        // 1. TRANSFORMACIÓN DE DATOS (Mapping)
+        // Convertimos del Formulario (Español) al Payload del API (Inglés)
+        const payload: CreateRentChurchPayload = {
+          name: formData.nombre,
+          price: Number(formData.precio), // Convertimos string a number
+          type: formData.tipo as 'matrimonio' | 'bautizo' | 'otros',
+          date: formData.fecha,
+          startTime: formData.tiempoInicio,
+          endTime: formData.tiempoFin,
+          status: true,
+          // ⚠️ IMPORTANTE: Necesitas el ID de la iglesia real. 
+          // Por ahora lo dejo hardcodeado o podrías pasarlo por props.
+          idChurch: "1" 
+        };
+
+        // 2. Enviamos al padre (donde está el hook useCreateRent)
+        await onSubmit(payload);
       }
 
-      console.log('Reserva creada:', formData);
+      console.log('Reserva creada exitosamente');
 
       // Resetear formulario
       setFormData({
@@ -225,9 +217,9 @@ const ModalCreateReserva: React.FC<ModalCreateReservaProps> = ({
                   disabled={isSubmitting}
                 >
                   <option value="">Seleccionar tipo...</option>
-                  {tiposReservas.map(tipo => (
-                    <option key={tipo} value={tipo}>
-                      {tipo}
+                  {tiposReservas.map(item => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
                     </option>
                   ))}
                 </select>
@@ -381,32 +373,15 @@ const ModalCreateReserva: React.FC<ModalCreateReservaProps> = ({
 
       <style jsx>{`
         @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
-
         @keyframes slideUp {
-          from {
-            transform: translateY(20px);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
         }
-
-        .animate-fadeIn {
-          animation: fadeIn 0.2s ease-out;
-        }
-
-        .animate-slideUp {
-          animation: slideUp 0.3s ease-out;
-        }
+        .animate-fadeIn { animation: fadeIn 0.2s ease-out; }
+        .animate-slideUp { animation: slideUp 0.3s ease-out; }
       `}</style>
     </div>
   );

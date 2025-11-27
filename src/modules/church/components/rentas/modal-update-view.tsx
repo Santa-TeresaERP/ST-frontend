@@ -2,17 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, DollarSign, Calendar, Tag, Save, Clock, Edit } from 'lucide-react';
-
-// Tipos (puedes importarlos de un archivo central si los tienes)
-interface Reserva {
-  id: number;
-  nombre: string;
-  precio: number;
-  tipo: string;
-  fecha: string;
-  tiempoInicio: string;
-  tiempoFin: string;
-}
+import { RentChurch, UpdateRentChurchPayload } from '../../types/rentChurch';
 
 interface ReservaFormData {
   nombre: string;
@@ -26,8 +16,8 @@ interface ReservaFormData {
 interface ModalEditReservaProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit?: (id: number, data: ReservaFormData) => void;
-  reservaToEdit: Reserva | null;
+  onSubmit?: (data: UpdateRentChurchPayload) => Promise<void> | void;
+  reservaToEdit: RentChurch | null;
 }
 
 const ModalEditReserva: React.FC<ModalEditReservaProps> = ({ 
@@ -48,26 +38,23 @@ const ModalEditReserva: React.FC<ModalEditReservaProps> = ({
   const [errors, setErrors] = useState<Partial<ReservaFormData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Tipos predefinidos de reservas
+  // Tipos predefinidos (value debe coincidir con el backend: 'bautizo' | 'matrimonio' | 'otros')
   const tiposReservas = [
-    'Bautizo',
-    'Matrimonio',
-    'Misa Especial',
-    'Confirmación',
-    'Evento Parroquial',
-    'Otro'
+    { label: 'Bautizo', value: 'bautizo' },
+    { label: 'Matrimonio', value: 'matrimonio' },
+    { label: 'Otros', value: 'otros' }
   ];
 
-  // Cargar datos cuando se abre el modal o cambia reservaToEdit
+  // 4. MAPPING: Cargar datos (Inglés -> Español) cuando se abre el modal
   useEffect(() => {
     if (reservaToEdit && isOpen) {
       setFormData({
-        nombre: reservaToEdit.nombre,
-        precio: reservaToEdit.precio.toString(),
-        tipo: reservaToEdit.tipo,
-        fecha: reservaToEdit.fecha,
-        tiempoInicio: reservaToEdit.tiempoInicio,
-        tiempoFin: reservaToEdit.tiempoFin
+        nombre: reservaToEdit.name,
+        precio: reservaToEdit.price.toString(),
+        tipo: reservaToEdit.type,
+        fecha: reservaToEdit.date, // Asumiendo formato YYYY-MM-DD
+        tiempoInicio: reservaToEdit.startTime,
+        tiempoFin: reservaToEdit.endTime
       });
       setErrors({});
     }
@@ -82,7 +69,6 @@ const ModalEditReserva: React.FC<ModalEditReservaProps> = ({
       [name]: value
     }));
     
-    // Limpiar error del campo
     if (errors[name as keyof ReservaFormData]) {
       setErrors(prev => ({
         ...prev,
@@ -115,17 +101,22 @@ const ModalEditReserva: React.FC<ModalEditReservaProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Simular llamada a API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Llamar a la función onSubmit si existe
       if (onSubmit) {
-        onSubmit(reservaToEdit.id, formData);
+        // 5. MAPPING INVERSO: Formulario (Español) -> Payload (Inglés)
+        const payload: UpdateRentChurchPayload = {
+          name: formData.nombre,
+          price: Number(formData.precio),
+          type: formData.tipo as 'matrimonio' | 'bautizo' | 'otros',
+          date: formData.fecha,
+          startTime: formData.tiempoInicio,
+          endTime: formData.tiempoFin,
+          idChurch: reservaToEdit.idChurch 
+        };
+
+        await onSubmit(payload);
       }
 
-      console.log('Reserva actualizada:', { id: reservaToEdit.id, ...formData });
-
-      // Cerrar modal
+      console.log('Reserva actualizada exitosamente');
       onClose();
     } catch (error) {
       console.error('Error al actualizar reserva:', error);
@@ -227,9 +218,9 @@ const ModalEditReserva: React.FC<ModalEditReservaProps> = ({
                   disabled={isSubmitting}
                 >
                   <option value="">Seleccionar tipo...</option>
-                  {tiposReservas.map(tipo => (
-                    <option key={tipo} value={tipo}>
-                      {tipo}
+                  {tiposReservas.map(item => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
                     </option>
                   ))}
                 </select>

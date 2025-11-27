@@ -2,24 +2,14 @@
 
 import React from 'react';
 import { X, Trash2, AlertTriangle } from 'lucide-react';
-
-// Tipos (puedes importarlos de un archivo central)
-interface Reserva {
-  id: number;
-  nombre: string;
-  precio: number;
-  tipo: string;
-  fecha: string;
-  tiempoInicio: string;
-  tiempoFin: string;
-}
+import { RentChurch } from '../../types/rentChurch';
 
 interface ModalDeleteReservaProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   isPending?: boolean;
-  reservaData: Reserva | null;
+  reservaData: RentChurch | null;
 }
 
 const ModalDeleteReserva: React.FC<ModalDeleteReservaProps> = ({ 
@@ -30,9 +20,9 @@ const ModalDeleteReserva: React.FC<ModalDeleteReservaProps> = ({
   reservaData
 }) => {
   
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!isPending) {
-      onConfirm();
+      await onConfirm();
     }
   };
 
@@ -83,7 +73,7 @@ const ModalDeleteReserva: React.FC<ModalDeleteReservaProps> = ({
             </div>
           </div>
 
-          {/* Reserva Info */}
+          {/* Reserva Info - 3. Actualizamos los campos al Inglés (RentChurch) */}
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-3">
             <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
               Detalles del Evento
@@ -92,28 +82,35 @@ const ModalDeleteReserva: React.FC<ModalDeleteReservaProps> = ({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <p className="text-xs text-gray-500 mb-1">ID</p>
-                <p className="font-bold text-gray-800">#{reservaData.id}</p>
+                {/* ID suele ser un string largo en BD modernas, cortamos si es necesario visualmente */}
+                <p className="font-bold text-gray-800 text-xs truncate" title={reservaData.id}>
+                  #{reservaData.id}
+                </p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 mb-1">Precio</p>
-                <p className="font-bold text-red-700">S/. {reservaData.precio.toFixed(2)}</p>
+                {/* Usamos .price */}
+                <p className="font-bold text-red-700">S/. {reservaData.price?.toFixed(2) || '0.00'}</p>
               </div>
             </div>
 
             <div className="border-t border-gray-200 pt-3">
               <p className="text-xs text-gray-500 mb-1">Nombre del Evento</p>
-              <p className="font-semibold text-gray-800">{reservaData.nombre}</p>
+              {/* Usamos .name */}
+              <p className="font-semibold text-gray-800">{reservaData.name}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-3 border-t border-gray-200 pt-3">
               <div>
                 <p className="text-xs text-gray-500 mb-1">Tipo</p>
-                <p className="text-sm text-gray-700">{reservaData.tipo}</p>
+                {/* Usamos .type y capitalizamos la primera letra */}
+                <p className="text-sm text-gray-700 capitalize">{reservaData.type}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 mb-1">Fecha</p>
                 <p className="text-sm text-gray-700">
-                  {new Date(reservaData.fecha).toLocaleDateString('es-PE')}
+                   {/* Usamos .date. Intentamos formatear, asumiendo formato ISO YYYY-MM-DD */}
+                   {reservaData.date ? new Date(reservaData.date).toLocaleDateString('es-PE', { timeZone: 'UTC' }) : '-'}
                 </p>
               </div>
             </div>
@@ -121,11 +118,13 @@ const ModalDeleteReserva: React.FC<ModalDeleteReservaProps> = ({
             <div className="grid grid-cols-2 gap-3 border-t border-gray-200 pt-3">
               <div>
                 <p className="text-xs text-gray-500 mb-1">Hora Inicio</p>
-                <p className="text-sm text-gray-700">{reservaData.tiempoInicio}</p>
+                {/* Usamos .startTime */}
+                <p className="text-sm text-gray-700">{reservaData.startTime}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 mb-1">Hora Fin</p>
-                <p className="text-sm text-gray-700">{reservaData.tiempoFin}</p>
+                {/* Usamos .endTime */}
+                <p className="text-sm text-gray-700">{reservaData.endTime}</p>
               </div>
             </div>
           </div>
@@ -162,32 +161,15 @@ const ModalDeleteReserva: React.FC<ModalDeleteReservaProps> = ({
 
       <style jsx>{`
         @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
-
         @keyframes slideUp {
-          from {
-            transform: translateY(20px);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
         }
-
-        .animate-fadeIn {
-          animation: fadeIn 0.2s ease-out;
-        }
-
-        .animate-slideUp {
-          animation: slideUp 0.3s ease-out;
-        }
+        .animate-fadeIn { animation: fadeIn 0.2s ease-out; }
+        .animate-slideUp { animation: slideUp 0.3s ease-out; }
       `}</style>
     </div>
   );
