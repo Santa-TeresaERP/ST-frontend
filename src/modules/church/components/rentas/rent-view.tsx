@@ -2,14 +2,15 @@
 
 import React, { useState, useMemo } from 'react';
 import { 
-  PlusCircle, Edit, Trash2, Calendar, Search, 
-  Clock, Filter, DollarSign
+  PlusCircle, Edit, Trash2, Filter, Search, 
+  Clock, Calendar
 } from 'lucide-react';
 
 // Hooks
 import useFetchRents from '../../hook/RentChurch/useFetchRents';
 import useUpdateRent from '../../hook/RentChurch/useUpdateRent';
 import useDeleteRent from '../../hook/RentChurch/useDeleteRent';
+import useCreateRent from '../../hook/RentChurch/useCreateRent';
 
 // Modales
 import ModalCreateReserva from './modal-create-view';
@@ -19,11 +20,21 @@ import ModalDeleteReserva from './modal-delete-view';
 // Tipos
 import { RentChurch, UpdateRentChurchPayload } from '../../types/rentChurch';
 
+// UTILIDAD: Formateador de fecha seguro (Evita errores de Hydration/Timezone)
+const formatDateSafe = (dateString: string) => {
+  if (!dateString) return '-';
+  // Asumimos formato YYYY-MM-DD que viene del input date o BD
+  const [year, month, day] = dateString.split('-');
+  if (!year || !month || !day) return dateString; // Retorno fallback
+  return `${day}/${month}/${year}`;
+};
+
 const RentView = () => {
   // Hooks de Datos
   const { data: rentasData, loading, refetch } = useFetchRents();
   const { update } = useUpdateRent();
   const { remove } = useDeleteRent();
+  const { create } = useCreateRent();
 
   // Estados de Interfaz
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,17 +48,25 @@ const RentView = () => {
 
   // Lógica de Filtrado
   const filteredData = useMemo(() => {
-    return rentasData.filter(item => {
-      const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    // Aseguramos que rentasData sea un array para evitar crashes
+    const safeData = Array.isArray(rentasData) ? rentasData : [];
+    
+    return safeData.filter(item => {
+      // Búsqueda segura (valida que name exista)
+      const itemName = item.name ? item.name.toLowerCase() : '';
+      const matchesSearch = itemName.includes(searchTerm.toLowerCase());
+      
+      // Filtro de fecha
       const matchesDate = selectedDate === '' || item.date === selectedDate;
+      
       return matchesSearch && matchesDate;
     });
   }, [rentasData, searchTerm, selectedDate]);
 
-  // Estadísticas (Calculadas dinámicamente)
+  // Estadísticas
   const stats = useMemo(() => {
     const totalEvents = filteredData.length;
-    const totalIncome = filteredData.reduce((acc, curr) => acc + curr.price, 0);
+    const totalIncome = filteredData.reduce((acc, curr) => acc + Number(curr.price || 0), 0);
     const avgPrice = totalEvents > 0 ? totalIncome / totalEvents : 0;
 
     return { totalEvents, totalIncome, avgPrice };
@@ -58,7 +77,7 @@ const RentView = () => {
     if (!selectedReserva) return;
     const result = await update(selectedReserva.id, payload);
     if (result) {
-      refetch();
+      await refetch(); // Esperamos a que recargue
       setEditModalOpen(false);
       setSelectedReserva(null);
     }
@@ -67,15 +86,28 @@ const RentView = () => {
   const handleDeleteConfirm = async () => {
     if (!selectedReserva) return;
     await remove(selectedReserva.id);
-    refetch(); 
+    await refetch(); // Esperamos a que recargue
     setDeleteModalOpen(false);
     setSelectedReserva(null);
+  };
+
+  const handleCreateSuccess = async () => {
+    await refetch(); // Forzamos recarga de datos
+    setCreateModalOpen(false);
+  };
+
+  const handleCreateSubmit = async (payload: any) => {
+    const res = await create(payload);
+    if (res) {
+      await refetch();
+      setCreateModalOpen(false);
+    }
   };
 
   return (
     <div className="animate-fadeIn">
       
-      {/* 1. HEADER SECCIÓN (Igual que Donativos) */}
+      {/* 1. HEADER SECCIÓN */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold text-red-700">Reservas y Eventos</h2>
         <button
@@ -87,7 +119,7 @@ const RentView = () => {
         </button>
       </div>
 
-      {/* 2. FILTROS Y ESTADÍSTICAS (Diseño idéntico a Donativos) */}
+      {/* 2. FILTROS Y ESTADÍSTICAS */}
       <div className="bg-white p-6 rounded-lg shadow-md mb-6 border border-gray-200">
         <div className="flex items-center mb-4">
           <Filter className="text-red-600 mr-2" size={20} />
@@ -133,9 +165,21 @@ const RentView = () => {
             />
           </div>
         </div>
+        
+        {/* Botón limpiar filtros */}
+        {(searchTerm || selectedDate) && (
+          <div className="mt-4 flex justify-end">
+             <button 
+               onClick={() => { setSearchTerm(''); setSelectedDate(''); }}
+               className="text-sm text-red-600 hover:text-red-800 underline"
+             >
+               Limpiar filtros
+             </button>
+          </div>
+        )}
       </div>
 
-      {/* 3. TABLA (Diseño Grid idéntico a Donativos) */}
+      {/* 3. TABLA (Diseño Grid) */}
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
         {loading ? (
           <div className="p-12 text-center flex flex-col items-center justify-center text-gray-500">
@@ -182,9 +226,9 @@ const RentView = () => {
                         </span>
                     </div>
 
-                    {/* Fecha */}
+                    {/* Fecha - Usamos el formateador seguro */}
                     <div className="text-gray-700 text-center text-sm">
-                      {new Date(item.date).toLocaleDateString('es-PE', { timeZone: 'UTC' })}
+                      {formatDateSafe(item.date)}
                     </div>
 
                     {/* Horario */}
@@ -193,9 +237,9 @@ const RentView = () => {
                       {item.startTime} - {item.endTime}
                     </div>
 
-                    {/* Precio */}
+                    {/* Precio - Casteamos a Number para evitar errores de .toFixed */}
                     <div className="text-gray-800 font-medium text-center">
-                      S/. {item.price.toFixed(2)}
+                      S/. {Number(item.price).toFixed(2)}
                     </div>
 
                     {/* Acciones */}
@@ -219,7 +263,7 @@ const RentView = () => {
                 ))
               ) : (
                 <div className="text-center py-12 text-gray-500">
-                  No se encontraron eventos registrados.
+                  {searchTerm || selectedDate ? 'No hay eventos que coincidan con los filtros.' : 'No se encontraron eventos registrados.'}
                 </div>
               )}
             </div>
@@ -231,6 +275,7 @@ const RentView = () => {
       <ModalCreateReserva
         isOpen={isCreateModalOpen}
         onClose={() => { setCreateModalOpen(false); refetch(); }}
+        onSubmit={handleCreateSubmit} // <-- PASADO AL MODAL
       />
       
       <ModalEditReserva

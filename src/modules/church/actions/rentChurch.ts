@@ -4,7 +4,7 @@ import { RentChurch, CreateRentChurchPayload, UpdateRentChurchPayload } from '..
 // Obtener todas las reservas de iglesia
 export const fetchRentChurches = async (): Promise<RentChurch[]> => {
   try {
-    const response = await api.get('/rent-church');
+    const response = await api.get('/rentChurches');
     
     let rawRentChurches = [];
     
@@ -28,7 +28,7 @@ export const fetchRentChurches = async (): Promise<RentChurch[]> => {
 // Obtener una reserva de iglesia por ID
 export const fetchRentChurchById = async (id: string): Promise<RentChurch | null> => {
   try {
-    const response = await api.get(`/rent-church/${id}`);
+    const response = await api.get(`/rentChurches/${id}`);
     
     if (response.data && response.data.data) {
       return response.data.data;
@@ -46,7 +46,7 @@ export const fetchRentChurchById = async (id: string): Promise<RentChurch | null
 // Crear una nueva reserva de iglesia
 export const createRentChurch = async (rentChurchData: CreateRentChurchPayload): Promise<RentChurch> => {
   try {
-    const response = await api.post('/rent-church', rentChurchData);
+    const response = await api.post('/rentChurches', rentChurchData);
     
     if (response.data && response.data.data) {
       return response.data.data;
@@ -65,7 +65,7 @@ export const updateRentChurch = async (
   rentChurchData: UpdateRentChurchPayload
 ): Promise<RentChurch> => {
   try {
-    const response = await api.patch(`/rent-church/${id}`, rentChurchData);
+    const response = await api.patch(`/rentChurches/${id}`, rentChurchData);
     
     if (response.data && response.data.data) {
       return response.data.data;
@@ -81,7 +81,7 @@ export const updateRentChurch = async (
 // Desactivar (soft delete) una reserva de iglesia
 export const deleteRentChurch = async (id: string): Promise<void> => {
   try {
-    await api.put(`/rent-church/${id}`);
+    await api.put(`/rentChurches/${id}`);
   } catch (error) {
     console.error('❌ Error deleting rent church:', error);
     throw error;
