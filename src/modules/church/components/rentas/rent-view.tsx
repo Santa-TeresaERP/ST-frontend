@@ -275,7 +275,8 @@ const RentView = () => {
       <ModalCreateReserva
         isOpen={isCreateModalOpen}
         onClose={() => { setCreateModalOpen(false); refetch(); }}
-        onSubmit={handleCreateSubmit} // <-- PASADO AL MODAL
+        onSubmit={handleCreateSubmit}
+        idChurch="1" // <-- Pasa el ID correcto aquí
       />
       
       <ModalEditReserva

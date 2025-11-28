@@ -7,8 +7,8 @@ import { CreateRentChurchPayload } from '../../types/rentChurch';
 interface ModalCreateReservaProps {
   isOpen: boolean;
   onClose: () => void;
-  // Actualizamos el onSubmit para que reciba el formato que espera el Hook
   onSubmit?: (data: CreateRentChurchPayload) => Promise<void | any>;
+  idChurch?: string; // <-- Agregamos idChurch como propiedad opcional
 }
 
 // Mantenemos esta interfaz para el ESTADO interno del formulario (lo que ve el usuario)
@@ -24,7 +24,8 @@ interface ReservaFormData {
 const ModalCreateReserva: React.FC<ModalCreateReservaProps> = ({ 
   isOpen, 
   onClose,
-  onSubmit 
+  onSubmit,
+  idChurch
 }) => {
   const [formData, setFormData] = useState<ReservaFormData>({
     nombre: '',
@@ -86,28 +87,21 @@ const ModalCreateReserva: React.FC<ModalCreateReservaProps> = ({
 
     try {
       if (onSubmit) {
-        // 1. TRANSFORMACIÓN DE DATOS (Mapping)
-        // Convertimos del Formulario (Español) al Payload del API (Inglés)
         const payload: CreateRentChurchPayload = {
           name: formData.nombre,
-          price: Number(formData.precio), // Convertimos string a number
+          price: Number(formData.precio),
           type: formData.tipo as 'matrimonio' | 'bautizo' | 'otros',
           date: formData.fecha,
           startTime: formData.tiempoInicio,
           endTime: formData.tiempoFin,
           status: true,
-          // ⚠️ IMPORTANTE: Necesitas el ID de la iglesia real. 
-          // Por ahora lo dejo hardcodeado o podrías pasarlo por props.
-          idChurch: "1" 
+          idChurch: idChurch || "1", // <-- Usamos idChurch pasado como prop
         };
 
-        // 2. Enviamos al padre (donde está el hook useCreateRent)
         await onSubmit(payload);
       }
 
       console.log('Reserva creada exitosamente');
-
-      // Resetear formulario
       setFormData({
         nombre: '',
         precio: '',
@@ -116,8 +110,6 @@ const ModalCreateReserva: React.FC<ModalCreateReservaProps> = ({
         tiempoInicio: '',
         tiempoFin: ''
       });
-
-      // Cerrar modal
       onClose();
     } catch (error) {
       console.error('Error al crear reserva:', error);

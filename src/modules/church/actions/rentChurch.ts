@@ -46,12 +46,11 @@ export const fetchRentChurchById = async (id: string): Promise<RentChurch | null
 // Crear una nueva reserva de iglesia
 export const createRentChurch = async (rentChurchData: CreateRentChurchPayload): Promise<RentChurch> => {
   try {
+    console.log('Payload enviado al backend:', rentChurchData); // <-- Agrega este log
     const response = await api.post('/rentChurches', rentChurchData);
-    
     if (response.data && response.data.data) {
       return response.data.data;
     }
-    
     return response.data;
   } catch (error) {
     console.error('❌ Error creating rent church:', error);
