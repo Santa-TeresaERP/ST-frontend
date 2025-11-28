@@ -9,7 +9,7 @@ import { X, Save, AlertCircle } from 'lucide-react';
 // ==========================================================
 import { useUpdateBuysProduct } from '../../../hook/useBuysProducts';
 import { useFetchWarehouses } from '../../../hook/useWarehouses';
-import { useFetchProducts } from '../../../hook/useProducts';
+import { useFetchProductPurchased } from '../../../hook/useProductPurchased';
 import { useFetchSuppliers } from '../../../hook/useSuppliers';
 import { updateBuysProductSchema, UpdateBuysProductFormData } from '../../../schemas/buysProduct.schema';
 import type { BuysProductWithRelations } from '../../../types/buysProduct.d';
@@ -22,7 +22,7 @@ type ModalEditBuysProductProps = {
 const ModalEditBuysProduct: React.FC<ModalEditBuysProductProps> = ({ buysProduct, onClose }) => {
   const { mutate, isPending, isError, error } = useUpdateBuysProduct();
   const { data: warehouses, isLoading: loadingWarehouses } = useFetchWarehouses();
-  const { data: products, isLoading: loadingProducts } = useFetchProducts();
+  const { data: productsPurchased, isLoading: loadingProducts } = useFetchProductPurchased();
   const { data: suppliers, isLoading: loadingSuppliers } = useFetchSuppliers();
 
   const {
@@ -94,12 +94,14 @@ const ModalEditBuysProduct: React.FC<ModalEditBuysProductProps> = ({ buysProduct
             </div>
             
             <div>
-              <label className="block text-gray-700 mb-1 font-medium">Producto<span className="text-red-500">*</span></label>
-              <select {...register('product_id')} className="w-full border border-gray-300 rounded-lg px-4 py-2" disabled={loadingProducts}>
-                <option value="">Seleccione un producto</option>
-                {products?.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              <label className="block text-gray-700 mb-1 font-medium">Producto comprado<span className="text-red-500">*</span></label>
+              <select {...register('product_purchased_id')} className="w-full border border-gray-300 rounded-lg px-4 py-2" disabled={loadingProducts}>
+                <option value="">Seleccione un producto comprado</option>
+                {productsPurchased?.filter((p) => p.status).map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
               </select>
-              {errors.product_id && <p className="text-red-600 text-sm mt-1">{errors.product_id.message}</p>}
+              {errors.product_purchased_id && <p className="text-red-600 text-sm mt-1">{errors.product_purchased_id.message}</p>}
             </div>
 
             <div className="md:col-span-2">

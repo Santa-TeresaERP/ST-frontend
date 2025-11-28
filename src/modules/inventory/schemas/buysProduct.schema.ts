@@ -5,7 +5,7 @@ import { z } from 'zod';
  */
 export const createBuysProductSchema = z.object({
   warehouse_id: z.string().min(1, 'Debe seleccionar un almacén.'),
-  product_id: z.string().min(1, 'Debe seleccionar un producto.'),
+  product_purchased_id: z.string().min(1, 'Debe seleccionar un producto comprado.'),
   supplier_id: z.string().min(1, 'Debe seleccionar un proveedor.'),
   
   quantity: z.coerce.number({ invalid_type_error: 'La cantidad debe ser un número.' })

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const BuysProductValidation = z.object({
   warehouse_id: z.string().uuid('El ID del almacén debe ser un UUID válido').min(1, 'El almacén es obligatorio'),
-  product_id: z.string().uuid('El ID del producto debe ser un UUID válido').min(1, 'El producto es obligatorio'),
+  product_purchased_id: z.string().uuid('El ID del producto comprado debe ser un UUID válido').min(1, 'El producto comprado es obligatorio'),
   supplier_id: z.string().uuid('El ID del proveedor debe ser un UUID válido').min(1, 'El proveedor es obligatorio'),
   quantity: z.number().positive('La cantidad debe ser mayor a 0'),
   unit_price: z.number().positive('El precio unitario debe ser mayor a 0'),

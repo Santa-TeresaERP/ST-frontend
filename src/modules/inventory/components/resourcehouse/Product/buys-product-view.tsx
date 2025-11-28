@@ -11,8 +11,8 @@ import {
 } from "lucide-react";
 import { useFetchBuysProducts, useDeleteBuysProduct, useReactivateBuysProduct } from "@/modules/inventory/hook/useBuysProducts";
 import { useFetchWarehouses } from "@/modules/inventory/hook/useWarehouses";
-import { useFetchProducts } from "@/modules/inventory/hook/useProducts";
 import { useFetchSuppliers } from "@/modules/inventory/hook/useSuppliers";
+import { useFetchProductPurchased } from "@/modules/inventory/hook/useProductPurchased";
 import ModalCreateBuysProduct from './modal-create-buys-product';
 import ModalEditBuysProduct from './modal-edit-buys-product';
 import { formatDateLocal } from '@/core/utils/dateUtils';
@@ -22,7 +22,7 @@ import { MODULE_NAMES } from '@/core/utils/useModulesMap';
 const BuysProductView: React.FC = () => {
   const { data: buysProducts, isLoading, error } = useFetchBuysProducts();
   const { data: warehouses } = useFetchWarehouses();
-  const { data: products } = useFetchProducts();
+  const { data: productsPurchased } = useFetchProductPurchased();
   const { data: suppliers } = useFetchSuppliers();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -56,10 +56,9 @@ const BuysProductView: React.FC = () => {
   }, [warehouses]);
 
   const productsList = useMemo(() => {
-    if (!products) return [];
-    // `ProductAttributes` may not declare `status` but the runtime objects can have it; cast to any to access safely.
-    return products.filter((p: any) => p.status);
-  }, [products]);
+    if (!productsPurchased) return [];
+    return productsPurchased.filter((product) => product.status);
+  }, [productsPurchased]);
 
   const suppliersList = useMemo(() => {
     if (!suppliers) return [];
@@ -72,7 +71,10 @@ const BuysProductView: React.FC = () => {
 
     return buysProducts.filter((buysProduct) => {
       const warehouseName = warehouses?.find((w) => w.id === buysProduct.warehouse_id)?.name?.toLowerCase() || "";
-      const productName = products?.find((p) => p.id === buysProduct.product_id)?.name?.toLowerCase() || "";
+      const productName =
+        buysProduct.product_purchased?.name?.toLowerCase() ||
+        productsPurchased?.find((p) => p.id === buysProduct.product_purchased_id)?.name?.toLowerCase() ||
+        "";
       const supplierName = suppliers?.find((s) => s.id === buysProduct.supplier_id)?.suplier_name?.toLowerCase() || "";
       const searchLower = searchTerm.toLowerCase();
 
@@ -91,7 +93,7 @@ const BuysProductView: React.FC = () => {
 
       // Filtro por producto
       const matchesProduct = productFilter
-        ? buysProduct.product_id === productFilter
+        ? buysProduct.product_purchased_id === productFilter
         : true;
 
       // Filtro por proveedor
@@ -123,7 +125,7 @@ const BuysProductView: React.FC = () => {
 
       return matchesSearchTerm && matchesWarehouse && matchesProduct && matchesSupplier && matchesStatus && matchesDate;
     });
-  }, [buysProducts, searchTerm, warehouseFilter, productFilter, supplierFilter, statusFilter, startDate, endDate, warehouses, products, suppliers]);
+  }, [buysProducts, searchTerm, warehouseFilter, productFilter, supplierFilter, statusFilter, startDate, endDate, warehouses, productsPurchased, suppliers]);
 
   // Calcular totales
   const totals = useMemo(() => {
@@ -264,7 +266,7 @@ const BuysProductView: React.FC = () => {
               className="h-10 bg-white text-gray-900 border border-gray-300 rounded-md w-full px-3"
             >
               <option value="">Todos los productos</option>
-              {productsList.map((product) => (
+                  {productsList.map((product) => (
                 <option key={product.id} value={product.id}>
                   {product.name}
                 </option>
@@ -415,7 +417,9 @@ const BuysProductView: React.FC = () => {
                     {warehouses?.find((w) => w.id === buysProduct.warehouse_id)?.name || "Desconocido"}
                   </td>
                   <td className="px-4 py-2 text-center">
-                    {products?.find((p) => p.id === buysProduct.product_id)?.name || "Desconocido"}
+                    {buysProduct.product_purchased?.name ||
+                      productsList.find((p) => p.id === buysProduct.product_purchased_id)?.name ||
+                      "Desconocido"}
                   </td>
                   <td className="px-4 py-2 text-center">
                     {suppliers?.find((s) => s.id === buysProduct.supplier_id)?.suplier_name || "Desconocido"}

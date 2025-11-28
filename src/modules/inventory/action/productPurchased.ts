@@ -5,7 +5,7 @@ import {
   UpdateProductPurchasedPayload
 } from '../types/productPurchased';
 
-const PRODUCT_PURCHASED_ENDPOINT = '/productPurchased';
+const PRODUCT_PURCHASED_ENDPOINT = '/product_Purchased';
 
 /**
  * Llama a: GET /productPurchased
