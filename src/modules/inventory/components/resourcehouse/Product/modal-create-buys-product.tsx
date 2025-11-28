@@ -3,13 +3,8 @@ import { X, Save, AlertCircle } from 'lucide-react';
 import { useCreateBuysProduct } from '../../../hook/useBuysProducts';
 import { useFetchSuppliers } from '../../../hook/useSuppliers';
 import { BuysProductResponse } from '@/modules/inventory/types/buysProduct';
-
-
-// UUIDs de prueba para pasar la validación de tipado.
-// NOTA: En una aplicación real, estos deben ser seleccionados por el usuario
-// a través de un formulario, usando hooks como useFetchWarehouses y useFetchProducts.
-const MOCK_WAREHOUSE_ID = 'eb4cf140-21c6-420c-a6c3-a8bc5d1af9c4';
-const MOCK_PRODUCT_ID = '01234567-89ab-cdef-0123-456789abcde0';
+import ProductPurchasedSearchInput from './ProductPurchasedSearchInput';
+import { useFetchCategories } from '@/modules/production/hook/useCategories';
 
 type ModalCreateBuysProductProps = {
   onClose: () => void;
@@ -17,7 +12,7 @@ type ModalCreateBuysProductProps = {
 
 const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose }) => {
   // Datos del formulario
-  const [name, setName] = useState('');
+  const [purchaseName, setPurchaseName] = useState('');
   const [supplier_id, setSupplierId] = useState('');
   const [category, setCategory] = useState('');
   const [quantity, setQuantity] = useState<number | ''>('');
@@ -25,16 +20,20 @@ const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose
   const [total_cost, setTotalCost] = useState<number>(0);
   const [entry_date, setEntryDate] = useState('');
 
-  // Estados requeridos por el Payload que asumiremos fijos o preseleccionados temporalmente
-  const [warehouse_id] = useState<string>(MOCK_WAREHOUSE_ID);
-  const [product_id] = useState<string>(MOCK_PRODUCT_ID);
+  const [productPurchasedId, setProductPurchasedId] = useState<string>('');
 
   // Estados de UI
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [productSelectionError, setProductSelectionError] = useState('');
 
   const { mutate, status } = useCreateBuysProduct();
   const { data: suppliers, isLoading: loadingSuppliers } = useFetchSuppliers();
+  const {
+    data: categoriesList,
+    isLoading: loadingCategories,
+    error: categoriesError,
+  } = useFetchCategories();
 
   // Calcular total (Precio Unitario * Cantidad)
   useEffect(() => {
@@ -55,11 +54,14 @@ const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setProductSelectionError('');
     setSuccessMessage('');
 
     // Validaciones
-    if (!name.trim()) {
-      setError('Debe ingresar el nombre de la compra');
+    if (!purchaseName.trim() || !productPurchasedId) {
+      const message = 'Debe seleccionar o crear un producto comprado';
+      setProductSelectionError(message);
+      setError(message);
       return;
     }
     if (!supplier_id) {
@@ -83,22 +85,14 @@ const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose
       return;
     }
     
-    // Si necesitas validar los IDs temporales, puedes hacerlo aquí
-    if (warehouse_id === MOCK_WAREHOUSE_ID || product_id === MOCK_PRODUCT_ID) {
-        // En un caso real, esto sería una validación de formulario, no un error de código
-        console.warn("Usando IDs de Almacén y Producto de prueba. Asegúrese de implementar la selección real.");
-    }
-
-
     // El objeto para mutate ahora incluye todos los campos requeridos:
-    // name, category, warehouse_id, product_id, supplier_id, quantity, unit_price, total_cost, entry_date
+    // name, category, product_purchased_id, supplier_id, quantity, unit_price, total_cost, entry_date
     mutate(
       {
-        name,
+        name: purchaseName,
         supplier_id,
         category,
-        warehouse_id, // Campo requerido agregado
-        product_id,   // Campo requerido agregado
+        product_purchased_id: productPurchasedId,
         quantity: Number(quantity),
         unit_price: Number(unit_price),
         total_cost,
@@ -112,9 +106,17 @@ const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose
             onClose();
           }, 1800);
         },
-        onError: (err: any) => {
-          // Tipado básico para el error de la promesa
-          const errorMessage = err?.response?.data?.error || 'Error al registrar la compra';
+        onError: (err: unknown) => {
+          type ApiError = {
+            response?: {
+              data?: {
+                error?: string;
+              };
+            };
+          };
+
+          const apiError = err as ApiError;
+          const errorMessage = apiError.response?.data?.error || 'Error al registrar la compra';
           setError(errorMessage);
         },
       }
@@ -156,15 +158,16 @@ const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose
 
             {/* Nombre */}
             <div className="md:col-span-2">
-              <label className="block text-gray-700 mb-1 font-medium">
-                Nombre de la compra<span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Ej: Compra de arroz"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+              <ProductPurchasedSearchInput
+                label="Nombre de la compra"
+                placeholder="Buscar o crear un producto comprado..."
+                required
+                onProductSelect={({ id, name }) => {
+                  setProductPurchasedId(id);
+                  setPurchaseName(name);
+                  setProductSelectionError('');
+                }}
+                error={productSelectionError}
               />
             </div>
 
@@ -191,13 +194,32 @@ const ModalCreateBuysProduct: React.FC<ModalCreateBuysProductProps> = ({ onClose
               <label className="block text-gray-700 mb-1 font-medium">
                 Categoría<span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                placeholder="Ej: Alimentos, Limpieza..."
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
-              />
+              {loadingCategories ? (
+                <div className="animate-pulse h-10 bg-gray-200 rounded-lg" />
+              ) : categoriesError ? (
+                <p className="text-sm text-red-500">
+                  No se pudieron cargar las categorías.
+                </p>
+              ) : categoriesList && categoriesList.length > 0 ? (
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                >
+                  <option value="">Seleccione una categoría</option>
+                  {categoriesList
+                    .filter((cat) => cat.status)
+                    .map((cat) => (
+                      <option key={cat.id} value={cat.name}>
+                        {cat.name}
+                      </option>
+                    ))}
+                </select>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  Aún no hay categorías registradas. Cree una desde producción para seleccionarla aquí.
+                </p>
+              )}
             </div>
 
             {/* Cantidad */}

@@ -13,7 +13,7 @@ export default function useGetRent(id: string) {
       const res = await fetchRentChurchById(id);
       setData(res);
     } catch (e: any) {
-      setError(e?.response?.data?.error ?? "Error al cargar la reserva");
+      setError(e?.response?.data?.error ?? "Error al cargar reserva");
     } finally {
       setLoading(false);
     }

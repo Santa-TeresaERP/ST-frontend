@@ -1,38 +1,58 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react'; // Agregamos useEffect por si acaso
 import { X, Trash2, AlertTriangle } from 'lucide-react';
+
+// INTERFAZ ACTUALIZADA: Coincide con tu Backend (inglés)
+interface DonativoData {
+  id: string | number;
+  name: string;   // DB column: name
+  price: number;  // DB column: price
+  type: string;   // DB column: type
+  date: string;   // DB column: date
+}
 
 interface ModalDeleteDonativoProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
-  isPending?: boolean;
-  donativoData: {
-    id: number;
-    nombre: string;
-    precio: number;
-    tipo: string;
-    fecha: string;
-  } | null;
+  onConfirm: () => Promise<void> | void; 
+  isPending?: boolean; // Estado de carga que viene del hook principal
+  donativoData: DonativoData | null;
 }
 
 const ModalDeleteDonativo: React.FC<ModalDeleteDonativoProps> = ({ 
   isOpen, 
   onClose,
   onConfirm,
-  isPending = false,
+  isPending: externalPending = false,
   donativoData
 }) => {
-  
-  const handleConfirm = () => {
-    if (!isPending) {
-      onConfirm();
+  const [isInternalDeleting, setIsInternalDeleting] = useState(false);
+
+  // El modal está cargando si el hook externo dice que carga O si estamos procesando internamente
+  const isLoading = externalPending || isInternalDeleting;
+
+  // Reseteamos el estado interno cuando se abre/cierra el modal
+  useEffect(() => {
+    if (isOpen) setIsInternalDeleting(false);
+  }, [isOpen]);
+
+  const handleConfirm = async () => {
+    if (isLoading) return;
+    
+    setIsInternalDeleting(true);
+    try {
+      // Esperamos a que el padre (ChurchComponentView) termine su lógica
+      await onConfirm();
+      // NOTA: No cerramos aquí, el padre cerrará el modal si tuvo éxito
+    } catch (error) {
+      console.error("Error al eliminar en el modal:", error);
+      setIsInternalDeleting(false); // Si falló, dejamos de cargar para permitir reintentar
     }
   };
 
   const handleClose = () => {
-    if (!isPending) {
+    if (!isLoading) {
       onClose();
     }
   };
@@ -55,9 +75,8 @@ const ModalDeleteDonativo: React.FC<ModalDeleteDonativoProps> = ({
           </div>
           <button
             onClick={handleClose}
-            disabled={isPending}
+            disabled={isLoading}
             className="text-white hover:bg-white/20 p-2 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Cerrar"
           >
             <X className="w-6 h-6" />
           </button>
@@ -65,52 +84,45 @@ const ModalDeleteDonativo: React.FC<ModalDeleteDonativoProps> = ({
 
         {/* Body */}
         <div className="p-6">
-          {/* Warning Alert */}
           <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3">
             <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="font-semibold text-red-800 mb-1">
-                ¿Estás seguro de eliminar este donativo?
+                ¿Estás seguro?
               </h3>
               <p className="text-sm text-red-700">
-                Esta acción no se puede deshacer. El registro será eliminado permanentemente.
+                Se eliminará el registro permanentemente de la base de datos.
               </p>
             </div>
           </div>
 
-          {/* Donativo Info */}
+          {/* Detalles del item a eliminar */}
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-3">
-            <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-              Detalles del Donativo
-            </h4>
-            
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <p className="text-xs text-gray-500 mb-1">ID</p>
-                <p className="font-bold text-gray-800">#{donativoData.id}</p>
+                 <p className="text-xs text-gray-500 mb-1">Monto</p>
+                 {/* Asegúrate de que donativoData.price existe y es numero */}
+                 <p className="font-bold text-red-700 text-lg">
+                   S/. {Number(donativoData.price || 0).toFixed(2)}
+                 </p>
               </div>
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Monto</p>
-                <p className="font-bold text-red-700">S/. {donativoData.precio.toFixed(2)}</p>
-              </div>
-            </div>
-
-            <div className="border-t border-gray-200 pt-3">
-              <p className="text-xs text-gray-500 mb-1">Nombre</p>
-              <p className="font-semibold text-gray-800">{donativoData.nombre}</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 border-t border-gray-200 pt-3">
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Tipo</p>
-                <p className="text-sm text-gray-700">{donativoData.tipo}</p>
-              </div>
-              <div>
+              <div className="text-right">
                 <p className="text-xs text-gray-500 mb-1">Fecha</p>
-                <p className="text-sm text-gray-700">
-                  {new Date(donativoData.fecha).toLocaleDateString('es-PE')}
+                <p className="text-sm text-gray-700 font-medium">
+                  {donativoData.date ? new Date(donativoData.date).toLocaleDateString('es-PE') : '-'}
                 </p>
               </div>
+            </div>
+            
+            <div className="border-t border-gray-200 pt-3">
+              <p className="text-xs text-gray-500 mb-1">Concepto / Nombre</p>
+              <p className="font-semibold text-gray-800">{donativoData.name}</p>
+            </div>
+            
+            <div className="pt-1">
+               <span className="inline-block px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded-md">
+                 {donativoData.type}
+               </span>
             </div>
           </div>
         </div>
@@ -119,59 +131,37 @@ const ModalDeleteDonativo: React.FC<ModalDeleteDonativoProps> = ({
         <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
           <button
             onClick={handleClose}
-            disabled={isPending}
-            className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isLoading}
+            className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 font-medium disabled:opacity-50"
           >
             Cancelar
           </button>
           <button
             onClick={handleConfirm}
-            disabled={isPending}
-            className="px-6 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all duration-200 font-medium shadow-lg hover:shadow-xl flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isLoading}
+            className="px-6 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 font-medium shadow-lg flex items-center gap-2 disabled:opacity-50"
           >
-            {isPending ? (
+            {isLoading ? (
               <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 Eliminando...
               </>
             ) : (
               <>
-                <Trash2 className="w-5 h-5" />
-                Eliminar Donativo
+                <Trash2 className="w-4 h-4" />
+                Eliminar
               </>
             )}
           </button>
         </div>
       </div>
-
+      
+      {/* Estilos para animación simple */}
       <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
-        @keyframes slideUp {
-          from {
-            transform: translateY(20px);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
-        }
-
-        .animate-fadeIn {
-          animation: fadeIn 0.2s ease-out;
-        }
-
-        .animate-slideUp {
-          animation: slideUp 0.3s ease-out;
-        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .animate-fadeIn { animation: fadeIn 0.2s ease-out; }
+        .animate-slideUp { animation: slideUp 0.3s ease-out; }
       `}</style>
     </div>
   );

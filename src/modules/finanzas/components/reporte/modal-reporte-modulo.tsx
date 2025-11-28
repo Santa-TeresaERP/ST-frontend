@@ -11,6 +11,7 @@ import { exportVentasExcel } from "../..//action/exportVentasExcel";
 import { exportRentalsExcel } from "../../action/exportRentalsExcel";
 import { exportMonasteriosExcel } from "../../action/exportMonasterioExcel";
 import { exportMuseoExcel } from "../../action/exportMuseoExcel";
+import { exportIglesiasExcel } from "../../action/exportIglesiaExcel";
 interface ReporteData {
   id: number;
   modulo: string;
@@ -141,6 +142,11 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
         return "⛪";
       default:
         return "📊";
+      case "iglesia":
+      case "iglesias":
+      case "church":
+      case "churches":
+        return "⛪";
     }
   };
   const handleExportExcel = async () => {
@@ -276,7 +282,47 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
       alert("Hubo un error al generar el Excel de Museo");
     }
   };
+  const handleExportExcelIglesias = async () => {
+    try {
+      if (!fechaInicio || !fechaFin) {
+        alert("Selecciona un rango de fechas válido");
+        return;
+      }
 
+      // Normalizar fecha fin (mismo patrón que Monasterios)
+      const endDateObj = new Date(fechaFin);
+      endDateObj.setHours(23, 59, 59, 999);
+
+      const payload = {
+        startDate: fechaInicio,
+        endDate: fechaFin,
+      };
+
+      console.log("Payload enviado al backend (Iglesias):", payload);
+
+      // Llamada al backend
+      const blob = await exportIglesiasExcel(
+        payload.startDate,
+        payload.endDate
+      );
+
+      // Crear enlace de descarga
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `reporte_iglesias_${fechaInicio}_a_${fechaFin}.xlsx`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error al descargar el Excel de Iglesias:", error);
+      alert("Hubo un error al generar el Excel de Iglesias");
+    }
+  };
   return (
     <div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
@@ -416,6 +462,17 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
                   Obtener Excel de departamento de Museo
                 </button>
               )}
+              {["iglesia", "iglesias", "church", "churches"].includes(
+                selectedModulo.toLowerCase()
+              ) && (
+                <button
+                  onClick={handleExportExcelIglesias}
+                  className="flex items-center gap-2 px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-lg shadow-md transition-all"
+                >
+                  <FiDownload size={18} />
+                  Obtener Excel de Iglesias
+                </button>
+              )}
             </div>
 
             {/* Resumen de totales */}
@@ -505,10 +562,16 @@ const ModalInformeModulo: React.FC<ModalInformeModuloProps> = ({
                           }`}
                         >
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {new Date(r.fechaInicio).toISOString().split('T')[0]}
+                            {
+                              new Date(r.fechaInicio)
+                                .toISOString()
+                                .split("T")[0]
+                            }
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                            {r.fechaFin ? new Date(r.fechaFin).toISOString().split('T')[0] : (
+                            {r.fechaFin ? (
+                              new Date(r.fechaFin).toISOString().split("T")[0]
+                            ) : (
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                                 En proceso
                               </span>

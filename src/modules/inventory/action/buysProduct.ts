@@ -36,6 +36,7 @@ export const getBuysProduct = async (id: string): Promise<BuysProductWithRelatio
 // IMPORTANTE: Si existe mismo warehouse_id + product_id, suma cantidades
 export const createBuysProduct = async (payload: CreateBuysProductPayload): Promise<BuysProductResponse> => {
   const response = await api.post<BuysProductResponse>('/buysProduct', payload);
+
   return response.data;
 };
 

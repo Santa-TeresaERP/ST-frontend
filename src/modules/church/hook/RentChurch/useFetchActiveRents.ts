@@ -10,11 +10,11 @@ export default function useFetchActiveRents() {
   const load = async () => {
     try {
       setLoading(true);
-      // Llamamos al action que obtiene el listado
       const res = await fetchRentChurches();
-      setData(res);
+      const activeRents = res.filter((rent) => rent.status);
+      setData(activeRents);
     } catch (e: any) {
-      setError(e?.response?.data?.error ?? "Error al cargar las reservas");
+      setError(e?.response?.data?.error ?? "Error al cargar reservas activas");
     } finally {
       setLoading(false);
     }

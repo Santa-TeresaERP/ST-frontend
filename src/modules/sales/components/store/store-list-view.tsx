@@ -1,10 +1,19 @@
-import React, { useState } from "react";
-import { Plus } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Plus, ShieldAlert, Lock } from "lucide-react";
 import { useFetchStores } from "../../hooks/useStores";
 import { StoreAttributes } from "../../types/store";
 import ModalCreateStore from "./modal-create-store";
 import ModalEditStore from "./modal-edit-store";
 import ModalDeleteStore from "./modal-delete-store";
+
+// 🔥 IMPORTAR SISTEMA DE PERMISOS
+import { 
+  AccessDeniedModal,
+} from '@/core/utils';
+import { useModulePermission, MODULE_NAMES } from '@/core/utils/useModulesMap';
+import { useCurrentUser } from '@/modules/auth/hook/useCurrentUser';
+import { useAuthStore } from '@/core/store/auth';
+import { suppressAxios403Errors } from '@/core/utils/error-suppressor';
 
 interface StoreListViewProps {
   onStoreSelect?: (store: StoreAttributes | null) => void;
@@ -15,6 +24,50 @@ const StoreListView: React.FC<StoreListViewProps> = ({
   onStoreSelect,
   selectedStoreId 
 }) => {
+  // 🔥 OBTENER USUARIO ACTUAL CON SUS PERMISOS
+  const { user } = useAuthStore();
+  const { data: currentUserWithPermissions, isLoading: usersLoading } = useCurrentUser();
+  
+  // 🔥 VERIFICAR PERMISOS DEL MÓDULO VENTAS
+  const { 
+    hasPermission: canView, 
+    isLoading: permissionsLoading 
+  } = useModulePermission(MODULE_NAMES.SALES, 'canRead');
+  
+  const { hasPermission: canEdit } = useModulePermission(MODULE_NAMES.SALES, 'canEdit');
+  const { hasPermission: canCreate } = useModulePermission(MODULE_NAMES.SALES, 'canWrite');
+  const { hasPermission: canDelete } = useModulePermission(MODULE_NAMES.SALES, 'canDelete');
+  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isAdmin = (currentUserWithPermissions as any)?.Role?.name === 'Admin';
+  
+  // Estados para control de acceso denegado
+  const [showAccessDenied, setShowAccessDenied] = useState(false);
+  const [accessDeniedAction, setAccessDeniedAction] = useState('');
+
+  // 🔥 ACTIVAR SUPRESOR DE ERRORES 403 EN LA CONSOLA
+  useEffect(() => {
+    suppressAxios403Errors();
+  }, []);
+
+  // 🔥 DEBUG: Ver permisos actuales
+  console.log('🔍 StoreListView - Análisis de Permisos:', {
+    userId: user?.id,
+    userFound: !!currentUserWithPermissions,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    roleName: (currentUserWithPermissions as any)?.Role?.name,
+    moduleName: MODULE_NAMES.SALES,
+    permisos: { canView, canEdit, canCreate, canDelete, isAdmin },
+    usersLoading,
+    permissionsLoading
+  });
+
+  // 🔥 FUNCIÓN PARA MANEJAR ACCESO DENEGADO
+  const handleAccessDenied = (action: string) => {
+    setAccessDeniedAction(action);
+    setShowAccessDenied(true);
+  };
+
   const { data: stores, isLoading, error, refetch } = useFetchStores();
   const [selectedStore, setSelectedStore] = useState<StoreAttributes | null>(null);
 
@@ -33,18 +86,36 @@ const StoreListView: React.FC<StoreListViewProps> = ({
   const displayStores = storesData;
 
   const handleCreateStore = () => {
+    // 🔥 VERIFICAR PERMISOS ANTES DE CREAR (Admin siempre puede)
+    if (!canCreate && !isAdmin) {
+      handleAccessDenied('crear una nueva tienda');
+      return;
+    }
+    
     setShowCreateModal(true);
   };
 
   // Funciones mantenidas para los modales (aunque no se usen en la UI principal)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleEditStore = (store: StoreAttributes) => {
+    // 🔥 VERIFICAR PERMISOS ANTES DE EDITAR (Admin siempre puede)
+    if (!canEdit && !isAdmin) {
+      handleAccessDenied('editar esta tienda');
+      return;
+    }
+    
     setSelectedStore(store);
     setShowEditModal(true);
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleDeleteStore = (store: StoreAttributes) => {
+    // 🔥 VERIFICAR PERMISOS ANTES DE ELIMINAR (Admin siempre puede)
+    if (!canDelete && !isAdmin) {
+      handleAccessDenied('eliminar esta tienda');
+      return;
+    }
+    
     setSelectedStore(store);
     setShowDeleteModal(true);
   };
@@ -80,10 +151,29 @@ const StoreListView: React.FC<StoreListViewProps> = ({
     handleCloseModals();
   };
 
-  if (isLoading) {
+  // 🔥 VERIFICAR ESTADOS DE CARGA
+  if (isLoading || usersLoading || permissionsLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // 🔥 VERIFICAR SI TIENE PERMISO PARA VER EL MÓDULO
+  if (!canView && !isAdmin) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
+          <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-700 mb-2">Acceso Restringido</h2>
+          <p className="text-gray-600 mb-4">
+            No tienes permisos para ver la gestión de tiendas.
+          </p>
+          <p className="text-sm text-gray-500">
+            Contacta al administrador para obtener acceso.
+          </p>
+        </div>
       </div>
     );
   }
@@ -114,16 +204,45 @@ const StoreListView: React.FC<StoreListViewProps> = ({
 
   return (
     <div className="p-6 space-y-6">
+      {/* 🔥 INDICADOR DE PERMISOS EN DESARROLLO */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            <strong>Debug Permisos:</strong> 
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            Usuario: {(currentUserWithPermissions as any)?.name || 'No encontrado'} | 
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            Rol: {(currentUserWithPermissions as any)?.Role?.name || 'Sin rol'} | 
+            Ver: {canView ? '✅' : '❌'} | 
+            Editar: {canEdit ? '✅' : '❌'} | 
+            Crear: {canCreate ? '✅' : '❌'} | 
+            Eliminar: {canDelete ? '✅' : '❌'}
+          </p>
+        </div>
+      )}
+
       {/* Header con solo el botón */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">Seleccionar Tienda</h2>
-        <button
-          onClick={handleCreateStore}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          Nueva Tienda
-        </button>
+        {/* 🔥 BOTÓN PROTEGIDO DE CREAR TIENDA */}
+        {(canCreate || isAdmin) ? (
+          <button
+            onClick={handleCreateStore}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Nueva Tienda
+          </button>
+        ) : (
+          <button
+            onClick={() => handleAccessDenied('crear una nueva tienda')}
+            className="bg-gray-400 text-gray-200 px-6 py-3 rounded-lg font-semibold cursor-not-allowed opacity-50 flex items-center"
+            title="Sin permisos para crear tiendas"
+          >
+            <Lock className="w-5 h-5 mr-2" />
+            Nueva Tienda
+          </button>
+        )}
       </div>
 
       {/* Store Dropdown */}
@@ -187,6 +306,16 @@ const StoreListView: React.FC<StoreListViewProps> = ({
         storeId={selectedStore?.id || null}
         storeName={selectedStore?.store_name || null}
         onSuccess={handleStoreDeleted}
+      />
+
+      {/* 🔥 MODAL DE ACCESO DENEGADO */}
+      <AccessDeniedModal
+        isOpen={showAccessDenied}
+        onClose={() => setShowAccessDenied(false)}
+        title="Permisos Insuficientes"
+        message="No tienes permisos para realizar esta acción en la gestión de tiendas."
+        action={accessDeniedAction}
+        module="Gestión de Tiendas"
       />
     </div>
   );

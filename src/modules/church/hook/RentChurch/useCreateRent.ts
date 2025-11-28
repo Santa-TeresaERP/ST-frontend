@@ -11,8 +11,7 @@ export default function useCreateRent() {
       setLoading(true);
       return await createRentChurch(payload);
     } catch (e: any) {
-      // Adaptamos el mensaje de error por defecto al contexto de reservas
-      setError(e?.response?.data?.error ?? "Error al crear la reserva");
+      setError(e?.response?.data?.error ?? "Error al crear reserva");
       return null;
     } finally {
       setLoading(false);

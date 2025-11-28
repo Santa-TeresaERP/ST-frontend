@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Product } from './product';
+import { ProductPurchased } from './productPurchased';
 import { WarehouseAttributes } from './warehouse';
 import { Supplier } from './suppliers';
 
@@ -7,7 +7,7 @@ import { Supplier } from './suppliers';
 export const BuysProductSchema = z.object({
   id: z.string().uuid().optional(),
   warehouse_id: z.string().uuid('El ID del almacén debe ser un UUID válido'),
-  product_id: z.string().uuid('El ID del producto debe ser un UUID válido'),
+  product_purchased_id: z.string().uuid('El ID del producto comprado debe ser un UUID válido'),
   quantity: z.number().positive('La cantidad debe ser mayor a 0'),
   unit_price: z.number().positive('El precio unitario debe ser mayor a 0'),
   total_cost: z.number().positive('El costo total debe ser mayor a 0'),
@@ -24,16 +24,16 @@ export type BuysProductAttributes = z.infer<typeof BuysProductSchema>;
 // Tipo extendido que incluye las relaciones cuando el backend las retorna
 export interface BuysProductWithRelations extends BuysProductAttributes {
   warehouse?: WarehouseAttributes;
-  product?: Product;
+  product_purchased?: ProductPurchased;
   supplier?: Supplier;
 }
 
 // Payload para crear una compra de producto
 export interface CreateBuysProductPayload {
   name: string; 
-  category: string
-  warehouse_id: string;
-  product_id: string;
+  category: string;
+  warehouse_id?: string;
+  product_purchased_id: string;
   quantity: number;
   unit_price: number;
   total_cost: number;
@@ -45,7 +45,7 @@ export interface CreateBuysProductPayload {
 // Payload para actualizar una compra de producto
 export interface UpdateBuysProductPayload {
   warehouse_id?: string;
-  product_id?: string;
+  product_purchased_id?: string;
   quantity?: number;
   unit_price?: number;
   total_cost?: number;

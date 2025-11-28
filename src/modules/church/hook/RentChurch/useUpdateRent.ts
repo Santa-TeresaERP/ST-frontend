@@ -11,7 +11,7 @@ export default function useUpdateRent() {
       setLoading(true);
       return await updateRentChurch(id, payload);
     } catch (e: any) {
-      setError(e?.response?.data?.error ?? "Error al actualizar la reserva");
+      setError(e?.response?.data?.error ?? "Error al actualizar reserva");
       return null;
     } finally {
       setLoading(false);

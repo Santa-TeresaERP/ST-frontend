@@ -51,6 +51,9 @@ export const useCreateBuysProduct = () => {
       queryClient.invalidateQueries({ queryKey: ['allBuysProducts'] });
       // También invalidar productos de almacén ya que se crea movimiento
       queryClient.invalidateQueries({ queryKey: ['warehouseProducts'] });
+      // Invalidar products y categories porque createBuysProduct intenta crear un producto no producible
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
     },
   });
 };
