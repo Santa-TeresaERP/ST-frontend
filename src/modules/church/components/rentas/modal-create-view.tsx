@@ -86,18 +86,18 @@ const ModalCreateReserva: React.FC<ModalCreateReservaProps> = ({
     setIsSubmitting(true);
 
     try {
-      if (onSubmit) {
-        const payload: CreateRentChurchPayload = {
-          name: formData.nombre,
-          price: Number(formData.precio),
-          type: formData.tipo as 'matrimonio' | 'bautizo' | 'otros',
-          date: formData.fecha,
-          startTime: formData.tiempoInicio,
-          endTime: formData.tiempoFin,
-          status: true,
-          idChurch: idChurch || "1", // <-- Usamos idChurch pasado como prop
-        };
+      const payload: CreateRentChurchPayload = {
+        name: formData.nombre,
+        price: Number(formData.precio),
+        type: formData.tipo as 'matrimonio' | 'bautizo' | 'otros',
+        date: formData.fecha,
+        startTime: formData.tiempoInicio,
+        endTime: formData.tiempoFin,
+        status: true,
+        idChurch: idChurch || "1",
+      };
 
+      if (onSubmit) {
         await onSubmit(payload);
       }
 

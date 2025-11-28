@@ -37,31 +37,64 @@ const RentView = () => {
   const { create } = useCreateRent();
 
   // Estados de Interfaz
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDate, setSelectedDate] = useState('');
-  
+  const [filters, setFilters] = useState({
+    searchTerm: '',
+    dateFrom: '',
+    dateTo: '',
+    minAmount: '',
+    maxAmount: '',
+    sortBy: 'fecha' as 'fecha' | 'nombre' | 'precio'
+  });
+
   // Estados de Modales
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedReserva, setSelectedReserva] = useState<RentChurch | null>(null);
 
-  // Lógica de Filtrado
+  // Filtrado y orden
   const filteredData = useMemo(() => {
-    // Aseguramos que rentasData sea un array para evitar crashes
-    const safeData = Array.isArray(rentasData) ? rentasData : [];
-    
-    return safeData.filter(item => {
-      // Búsqueda segura (valida que name exista)
-      const itemName = item.name ? item.name.toLowerCase() : '';
-      const matchesSearch = itemName.includes(searchTerm.toLowerCase());
-      
-      // Filtro de fecha
-      const matchesDate = selectedDate === '' || item.date === selectedDate;
-      
-      return matchesSearch && matchesDate;
+    let filtered = Array.isArray(rentasData) ? rentasData : [];
+
+    // Búsqueda
+    if (filters.searchTerm) {
+      filtered = filtered.filter(item =>
+        item.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        item.type.toLowerCase().includes(filters.searchTerm.toLowerCase())
+      );
+    }
+
+    // Fechas
+    if (filters.dateFrom) {
+      filtered = filtered.filter(item => new Date(item.date) >= new Date(filters.dateFrom));
+    }
+    if (filters.dateTo) {
+      filtered = filtered.filter(item => new Date(item.date) <= new Date(filters.dateTo));
+    }
+
+    // Montos
+    if (filters.minAmount) {
+      filtered = filtered.filter(item => Number(item.price) >= Number(filters.minAmount));
+    }
+    if (filters.maxAmount) {
+      filtered = filtered.filter(item => Number(item.price) <= Number(filters.maxAmount));
+    }
+
+    // Ordenar
+    filtered.sort((a, b) => {
+      switch (filters.sortBy) {
+        case 'nombre':
+          return a.name.localeCompare(b.name);
+        case 'precio':
+          return Number(b.price) - Number(a.price);
+        case 'fecha':
+        default:
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+      }
     });
-  }, [rentasData, searchTerm, selectedDate]);
+
+    return filtered;
+  }, [rentasData, filters]);
 
   // Estadísticas
   const stats = useMemo(() => {
@@ -125,58 +158,87 @@ const RentView = () => {
           <Filter className="text-red-600 mr-2" size={20} />
           <h3 className="text-lg font-semibold text-gray-800">Filtros y Estadísticas</h3>
         </div>
-
-        {/* Tarjetas de Estadísticas */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-gradient-to-r from-red-50 to-red-100 p-4 rounded-lg border border-red-200">
-            <p className="text-sm text-red-600 font-medium">Total Eventos</p>
+            <p className="text-sm text-red-600 font-medium">Total Reservas</p>
             <p className="text-2xl font-bold text-red-700">{stats.totalEvents}</p>
           </div>
           <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
-            <p className="text-sm text-blue-600 font-medium">Ingresos Estimados</p>
-            <p className="text-2xl font-bold text-blue-700">S/. {stats.totalIncome.toFixed(2)}</p>
+            <p className="text-sm text-blue-600 font-medium">Monto Total S/.</p>
+            <p className="text-2xl font-bold text-blue-700">{stats.totalIncome.toFixed(2)}</p>
           </div>
           <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
-            <p className="text-sm text-green-600 font-medium">Precio Promedio</p>
-            <p className="text-2xl font-bold text-green-700">S/. {stats.avgPrice.toFixed(2)}</p>
+            <p className="text-sm text-green-600 font-medium">Promedio S/.</p>
+            <p className="text-2xl font-bold text-green-700">{stats.avgPrice.toFixed(2)}</p>
           </div>
         </div>
-
-        {/* Inputs de Filtro */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="relative">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="relative md:col-span-2 lg:col-span-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
             <input
               type="text"
-              placeholder="Buscar evento por nombre..."
+              placeholder="Buscar por nombre o tipo..."
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={filters.searchTerm}
+              onChange={e => setFilters({ ...filters, searchTerm: e.target.value })}
             />
           </div>
-
-          <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+              <input
+                type="date"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                value={filters.dateFrom}
+                onChange={e => setFilters({ ...filters, dateFrom: e.target.value })}
+                title="Fecha desde"
+              />
+            </div>
             <input
               type="date"
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm text-gray-600"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+              value={filters.dateTo}
+              onChange={e => setFilters({ ...filters, dateTo: e.target.value })}
+              title="Fecha hasta"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="relative">
+              <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+              <input
+                type="number"
+                placeholder="Min S/."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                value={filters.minAmount}
+                onChange={e => setFilters({ ...filters, minAmount: e.target.value })}
+              />
+            </div>
+            <input
+              type="number"
+              placeholder="Max S/."
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+              value={filters.maxAmount}
+              onChange={e => setFilters({ ...filters, maxAmount: e.target.value })}
             />
           </div>
         </div>
-        
-        {/* Botón limpiar filtros */}
-        {(searchTerm || selectedDate) && (
-          <div className="mt-4 flex justify-end">
-             <button 
-               onClick={() => { setSearchTerm(''); setSelectedDate(''); }}
-               className="text-sm text-red-600 hover:text-red-800 underline"
-             >
-               Limpiar filtros
-             </button>
-          </div>
-        )}
+        <div className="mt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <select
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            value={filters.sortBy}
+            onChange={e => setFilters({ ...filters, sortBy: e.target.value as 'fecha' | 'nombre' | 'precio' })}
+          >
+            <option value="fecha">Ordenar por fecha</option>
+            <option value="nombre">Ordenar por nombre</option>
+            <option value="precio">Ordenar por monto</option>
+          </select>
+          <button
+            onClick={() => setFilters({ searchTerm: '', dateFrom: '', dateTo: '', minAmount: '', maxAmount: '', sortBy: 'fecha' })}
+            className="px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors duration-200"
+          >
+            Limpiar Filtros
+          </button>
+        </div>
       </div>
 
       {/* 3. TABLA (Diseño Grid) */}
@@ -190,12 +252,13 @@ const RentView = () => {
           <>
             {/* Table Header */}
             <div className="bg-gray-700 text-white">
-              <div className="grid grid-cols-6 gap-4 px-6 py-4">
+              <div className="grid grid-cols-7 gap-4 px-6 py-4">
                 <div className="font-semibold text-center">Nombre</div>
+                <div className="font-semibold text-center">Precio</div>
                 <div className="font-semibold text-center">Tipo</div>
                 <div className="font-semibold text-center">Fecha</div>
-                <div className="font-semibold text-center">Horario</div>
-                <div className="font-semibold text-center">Precio</div>
+                <div className="font-semibold text-center">Tiempo de inicio</div>
+                <div className="font-semibold text-center">Tiempo de fin</div>
                 <div className="font-semibold text-center">Acciones</div>
               </div>
             </div>
@@ -206,7 +269,7 @@ const RentView = () => {
                 filteredData.map((item, index) => (
                   <div 
                     key={item.id} 
-                    className={`grid grid-cols-6 gap-4 px-6 py-5 transition-colors duration-200 items-center ${
+                    className={`grid grid-cols-7 gap-4 px-6 py-5 transition-colors duration-200 items-center ${
                       index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                     } hover:bg-red-50`}
                   >
@@ -214,35 +277,13 @@ const RentView = () => {
                     <div className="text-gray-800 font-medium text-center truncate" title={item.name}>
                       {item.name}
                     </div>
-
-                    {/* Tipo */}
-                    <div className="text-center">
-                       <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wider
-                          ${item.type === 'bautizo' ? 'bg-blue-100 text-blue-700' : 
-                            item.type === 'matrimonio' ? 'bg-purple-100 text-purple-700' : 
-                            'bg-orange-100 text-orange-700'}`}
-                        >
-                          {item.type}
-                        </span>
-                    </div>
-
-                    {/* Fecha - Usamos el formateador seguro */}
-                    <div className="text-gray-700 text-center text-sm">
-                      {formatDateSafe(item.date)}
-                    </div>
-
-                    {/* Horario */}
-                    <div className="text-gray-600 text-sm text-center flex justify-center items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {item.startTime} - {item.endTime}
-                    </div>
-
-                    {/* Precio - Casteamos a Number para evitar errores de .toFixed */}
                     <div className="text-gray-800 font-medium text-center">
                       S/. {Number(item.price).toFixed(2)}
                     </div>
-
-                    {/* Acciones */}
+                    <div className="text-gray-700 text-center">{item.type}</div>
+                    <div className="text-gray-700 text-center">{formatDateSafe(item.date)}</div>
+                    <div className="text-gray-600 text-sm text-center">{item.startTime}</div>
+                    <div className="text-gray-600 text-sm text-center">{item.endTime}</div>
                     <div className="flex justify-center items-center gap-3">
                       <button
                         onClick={() => { setSelectedReserva(item); setEditModalOpen(true); }}
@@ -263,7 +304,7 @@ const RentView = () => {
                 ))
               ) : (
                 <div className="text-center py-12 text-gray-500">
-                  {searchTerm || selectedDate ? 'No hay eventos que coincidan con los filtros.' : 'No se encontraron eventos registrados.'}
+                  No se encontraron reservas que coincidan con los filtros aplicados
                 </div>
               )}
             </div>
@@ -276,7 +317,7 @@ const RentView = () => {
         isOpen={isCreateModalOpen}
         onClose={() => { setCreateModalOpen(false); refetch(); }}
         onSubmit={handleCreateSubmit}
-        idChurch="1" // <-- Pasa el ID correcto aquí
+        idChurch="6a705ffb-ee07-46c6-bc3c-275cdab7966f" // <-- Coloca aquí el ID real de la iglesia
       />
       
       <ModalEditReserva
