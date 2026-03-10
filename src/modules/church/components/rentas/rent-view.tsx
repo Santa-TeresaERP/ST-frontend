@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   PlusCircle, Edit, Trash2, Filter, Search, 
-  Clock, Calendar
+  Clock, Calendar, ShieldAlert, Lock
 } from 'lucide-react';
 
 // Hooks
@@ -20,6 +20,12 @@ import ModalDeleteReserva from './modal-delete-view';
 // Tipos
 import { RentChurch, UpdateRentChurchPayload } from '../../types/rentChurch';
 
+// 🔥 SISTEMA DE PERMISOS
+import { AccessDeniedModal } from '@/core/utils';
+import { useModulePermission, MODULE_NAMES } from '@/core/utils/useModulesMap';
+import { useCurrentUser } from '@/modules/auth/hook/useCurrentUser';
+import { suppressAxios403Errors } from '@/core/utils/error-suppressor';
+
 // UTILIDAD: Formateador de fecha seguro (Evita errores de Hydration/Timezone)
 const formatDateSafe = (dateString: string) => {
   if (!dateString) return '-';
@@ -35,6 +41,31 @@ const RentView = () => {
   const { update } = useUpdateRent();
   const { remove } = useDeleteRent();
   const { create } = useCreateRent();
+
+  // 🔥 SISTEMA DE PERMISOS
+  const { data: currentUserWithPermissions, isLoading: usersLoading } = useCurrentUser();
+
+  const { hasPermission: canView, isLoading: permissionsLoading } = useModulePermission(MODULE_NAMES.CHURCH, 'canRead');
+  const { hasPermission: canEdit } = useModulePermission(MODULE_NAMES.CHURCH, 'canEdit');
+  const { hasPermission: canCreate } = useModulePermission(MODULE_NAMES.CHURCH, 'canWrite');
+  const { hasPermission: canDelete } = useModulePermission(MODULE_NAMES.CHURCH, 'canDelete');
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isAdmin = (currentUserWithPermissions as any)?.Role?.name === 'Admin';
+
+  const [showAccessDenied, setShowAccessDenied] = useState(false);
+  const [accessDeniedAction, setAccessDeniedAction] = useState('');
+
+  // 🔥 ACTIVAR SUPRESOR DE ERRORES 403 EN LA CONSOLA
+  useEffect(() => {
+    suppressAxios403Errors();
+  }, []);
+
+  // 🔥 FUNCIÓN PARA MANEJAR ACCESO DENEGADO
+  const handleAccessDenied = (action: string) => {
+    setAccessDeniedAction(action);
+    setShowAccessDenied(true);
+  };
 
   // Estados de Interfaz
   const [filters, setFilters] = useState({
@@ -137,20 +168,68 @@ const RentView = () => {
     }
   };
 
+  if (usersLoading || permissionsLoading) {
+    return <div className="p-8 text-center text-red-800 font-semibold">Verificando permisos...</div>;
+  }
+
+  if (!canView && !isAdmin) {
+    return (
+      <div className="flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-xl shadow-md text-center max-w-md">
+          <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-700 mb-2">Acceso Restringido</h2>
+          <p className="text-gray-600 mb-4">
+            No tienes permisos para ver las reservas de la iglesia.
+          </p>
+          <p className="text-sm text-gray-500">
+            Contacta al administrador para obtener acceso.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="animate-fadeIn">
       
       {/* 1. HEADER SECCIÓN */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold text-red-700">Reservas y Eventos</h2>
-        <button
-          onClick={() => setCreateModalOpen(true)}
-          className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-red-700 text-white font-semibold px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-        >
-          <PlusCircle className="w-5 h-5" />
-          Registrar Evento
-        </button>
+        {(canCreate || isAdmin) ? (
+          <button
+            onClick={() => setCreateModalOpen(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-red-700 text-white font-semibold px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+          >
+            <PlusCircle className="w-5 h-5" />
+            Registrar Evento
+          </button>
+        ) : (
+          <button
+            onClick={() => handleAccessDenied('registrar eventos')}
+            className="flex items-center gap-2 bg-gray-400 text-gray-200 font-semibold px-6 py-3 rounded-full cursor-not-allowed opacity-50"
+          >
+            <Lock className="w-5 h-5" />
+            Registrar Evento
+          </button>
+        )}
       </div>
+
+      {/* DEBUG PERMISOS */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            <strong>Debug Permisos (Reservas):</strong>{' '}
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            Usuario: {(currentUserWithPermissions as any)?.name || 'No encontrado'} |{' '}
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            Rol: {(currentUserWithPermissions as any)?.Role?.name || 'Sin rol'} |{' '}
+            Ver: {canView ? '✅' : '❌'} |{' '}
+            Editar: {canEdit ? '✅' : '❌'} |{' '}
+            Crear: {canCreate ? '✅' : '❌'} |{' '}
+            Eliminar: {canDelete ? '✅' : '❌'}
+          </p>
+        </div>
+      )}
 
       {/* 2. FILTROS Y ESTADÍSTICAS */}
       <div className="bg-white p-6 rounded-lg shadow-md mb-6 border border-gray-200">
@@ -285,20 +364,40 @@ const RentView = () => {
                     <div className="text-gray-600 text-sm text-center">{item.startTime}</div>
                     <div className="text-gray-600 text-sm text-center">{item.endTime}</div>
                     <div className="flex justify-center items-center gap-3">
-                      <button
-                        onClick={() => { setSelectedReserva(item); setEditModalOpen(true); }}
-                        className="p-2 rounded-full bg-gray-100 hover:bg-red-100 text-gray-700 hover:text-red-700 transition-all duration-200 hover:scale-110"
-                        title="Editar"
-                      >
-                        <Edit className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => { setSelectedReserva(item); setDeleteModalOpen(true); }}
-                        className="p-2 rounded-full bg-red-100 hover:bg-red-600 text-red-600 hover:text-white transition-all duration-200 hover:scale-110"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+                      {(canEdit || isAdmin) ? (
+                        <button
+                          onClick={() => { setSelectedReserva(item); setEditModalOpen(true); }}
+                          className="p-2 rounded-full bg-gray-100 hover:bg-red-100 text-gray-700 hover:text-red-700 transition-all duration-200 hover:scale-110"
+                          title="Editar"
+                        >
+                          <Edit className="w-5 h-5" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleAccessDenied('editar esta reserva')}
+                          className="p-2 rounded-full bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
+                          title="Sin permisos para editar"
+                        >
+                          <Lock className="w-5 h-5" />
+                        </button>
+                      )}
+                      {(canDelete || isAdmin) ? (
+                        <button
+                          onClick={() => { setSelectedReserva(item); setDeleteModalOpen(true); }}
+                          className="p-2 rounded-full bg-red-100 hover:bg-red-600 text-red-600 hover:text-white transition-all duration-200 hover:scale-110"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleAccessDenied('eliminar esta reserva')}
+                          className="p-2 rounded-full bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
+                          title="Sin permisos para eliminar"
+                        >
+                          <Lock className="w-5 h-5" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))
@@ -333,6 +432,16 @@ const RentView = () => {
         onConfirm={handleDeleteConfirm}
         isPending={false}
         reservaData={selectedReserva}
+      />
+
+      {/* 🔥 MODAL DE ACCESO DENEGADO */}
+      <AccessDeniedModal
+        isOpen={showAccessDenied}
+        onClose={() => setShowAccessDenied(false)}
+        title="Permisos Insuficientes"
+        message="No tienes permisos para realizar esta acción en las reservas de la iglesia."
+        action={accessDeniedAction}
+        module="Reservas y Eventos"
       />
     </div>
   );

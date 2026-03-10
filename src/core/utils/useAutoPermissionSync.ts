@@ -44,7 +44,7 @@ export const useAutoPermissionSync = () => {
    * Verificar si necesita sincronización
    */
   const needsPermissionSync = (): boolean => {
-    const token = localStorage.getItem('authToken');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
     if (!token || !user) return false;
     
     // Usuario sin permisos completos
