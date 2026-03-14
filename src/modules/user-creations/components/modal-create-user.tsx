@@ -10,7 +10,7 @@ import { useFetchRoles } from '@/modules/roles/hook/useRoles';
 import { useModulePermission, MODULE_NAMES } from '@/core/utils/useModulesMap';
 import { userSchema } from '@/modules/user-creations/schemas/userValidation';
 import { z } from 'zod';
-import { Save, UserPlus } from "lucide-react";
+import { Eye ,EyeOff, Save, UserPlus } from "lucide-react";
 
 type ModalProps = {
   isOpen: boolean;
@@ -23,6 +23,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const { data: roles, isLoading: isLoadingRoles, error: errorRoles } = useFetchRoles();
   const { hasPermission: canViewRoles } = useModulePermission(MODULE_NAMES.ROLES, 'canRead');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -198,13 +199,22 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
           {/* Contraseña */}
           <div className="space-y-1">
             <Label htmlFor="password" className="uppercase font-semibold text-sm text-gray-700">Contraseña</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              required
-              className={`border border-black rounded-md px-4 py-2 ${errors.password ? "border-red-600" : ""}`}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                required
+                className={`border border-black rounded-md px-4 py-2 ${errors.password ? "border-red-600" : ""}`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+              </button>
+             </div>
             {errors.password && <p className="text-red-600 text-sm">{errors.password}</p>}
           </div>
 
