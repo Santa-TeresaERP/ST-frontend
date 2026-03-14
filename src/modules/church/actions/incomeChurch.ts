@@ -3,13 +3,23 @@ import api from '@/core/config/client';
 import type { CreateIncomeDto, UpdateIncomeDto } from "../types/incomeChurch";
 
 export const fetchIncomes = async () => {
-  const res = await api.get("/churchincome");
-  return res.data.incomes;
+  try {
+    const res = await api.get("/churchincome");
+    return res.data.incomes ?? [];
+  } catch (error) {
+    console.error('❌ Error fetching incomes:', error);
+    return [];
+  }
 };
 
 export const fetchActiveIncomes = async () => {
-  const res = await api.get("/churchincome/active");
-  return res.data.incomes;
+  try {
+    const res = await api.get("/churchincome/active");
+    return res.data.incomes ?? [];
+  } catch (error) {
+    console.error('❌ Error fetching active incomes:', error);
+    return [];
+  }
 };
 
 export const getIncome = async (id: string) => {
