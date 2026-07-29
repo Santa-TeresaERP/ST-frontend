@@ -7,6 +7,7 @@ import { Input } from "../../../app/components/ui/input";
 import { Label } from "../../../app/components/ui/label";
 import { ChangePasswordRequest } from '@/modules/user-creations/types/user';
 import { useChangePassword } from '@/modules/user-creations/hook/useUsers';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface ChangePasswordFormProps {
   isOpen: boolean;
@@ -17,6 +18,8 @@ interface ChangePasswordFormProps {
 const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ isOpen, onClose, user }) => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
   const { mutate: changePasswordMutation, isPending } = useChangePassword();
@@ -76,15 +79,25 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ isOpen, onClose
         <form onSubmit={handleChangePassword} className="space-y-6 px-6 py-6 bg-white">
           <div className="space-y-2">
             <Label htmlFor="currentPassword" className="text-gray-800">Contraseña Actual</Label>
-            <Input
-              id="currentPassword"
-              name="currentPassword"
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              required
-              className="w-full bg-gray-50 border border-gray-300"
-            />
+            <div className="relative">
+              <Input
+                id="currentPassword"
+                name="currentPassword"
+                type={showCurrentPassword ? 'text' : 'password'}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                required
+                className="w-full bg-gray-50 border border-gray-300 pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowCurrentPassword((prev) => !prev)}
+                className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
+                aria-label={showCurrentPassword ? 'Ocultar contraseña actual' : 'Mostrar contraseña actual'}
+              >
+                {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
             {errors.currentPassword && (
               <p className="text-red-600 text-sm">{errors.currentPassword}</p>
             )}
@@ -92,15 +105,25 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ isOpen, onClose
 
           <div className="space-y-2">
             <Label htmlFor="newPassword" className="text-gray-800">Nueva Contraseña</Label>
-            <Input
-              id="newPassword"
-              name="newPassword"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-              className="w-full bg-gray-50 border border-gray-300"
-            />
+            <div className="relative">
+              <Input
+                id="newPassword"
+                name="newPassword"
+                type={showNewPassword ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+                className="w-full bg-gray-50 border border-gray-300 pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword((prev) => !prev)}
+                className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
+                aria-label={showNewPassword ? 'Ocultar nueva contraseña' : 'Mostrar nueva contraseña'}
+              >
+                {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
             {errors.newPassword && (
               <p className="text-red-600 text-sm">{errors.newPassword}</p>
             )}

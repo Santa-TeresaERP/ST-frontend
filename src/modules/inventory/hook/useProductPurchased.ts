@@ -72,7 +72,7 @@ export const useDeleteProductPurchased = () => {
 };
 
 export const useProductPurchasedSearch = () => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const [suggestions, setSuggestions] = useState<ProductPurchasedSearchResult[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<ProductPurchasedSearchResult | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
@@ -88,12 +88,13 @@ export const useProductPurchasedSearch = () => {
 
     const filtered =
       products
-        ?.filter((product) =>
-          product.name.toLowerCase().includes(searchTerm.toLowerCase())
-        )
+        ?.filter((product) => {
+          const productName = product.name ?? '';
+          return productName.toLowerCase().includes(searchTerm.toLowerCase());
+        })
         .map((product) => ({
           id: product.id,
-          name: product.name,
+          name: product.name ?? '',
           description: product.description || null,
           isExisting: true,
         })) || [];
@@ -132,7 +133,7 @@ export const useProductPurchasedSearch = () => {
       };
 
       setSelectedProduct(productResult);
-      setSearchTerm(newProduct.name);
+      setSearchTerm(newProduct.name ?? '');
       setSuggestions([]);
       return productResult;
     } finally {
@@ -143,7 +144,7 @@ export const useProductPurchasedSearch = () => {
   const handleSelectProduct = (product: ProductPurchasedSearchResult) => {
     if (product.isExisting) {
       setSelectedProduct(product);
-      setSearchTerm(product.name);
+      setSearchTerm(product.name ?? '');
       setSuggestions([]);
       return product;
     }

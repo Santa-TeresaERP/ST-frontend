@@ -114,7 +114,7 @@ const ProductPurchasedSearchInput: React.FC<ProductPurchasedSearchInputProps> = 
           ref={inputRef}
           id="product_purchase_search"
           type="text"
-          value={searchTerm}
+          value={searchTerm ?? ''}
           onChange={(e) => {
             setSearchTerm(e.target.value);
             setIsOpen(true);

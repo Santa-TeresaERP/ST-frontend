@@ -714,14 +714,14 @@ const MonasteryComponentView: React.FC = () => {
   const renderOverheads = () => (
     <div className="overflow-hidden">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h2 className="text-3xl font-semibold text-red-700">Gastos Generales</h2>
+        <h2 className="text-3xl font-semibold text-red-700">Cierres de Gastos</h2>
         <div className="flex flex-col sm:flex-row justify-end gap-2 w-full sm:w-auto">
           {(canCreate || isAdmin) && (
             <button
               onClick={() => setCreateOverheadModalOpen(true)}
               className="flex items-center justify-center bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white px-4 py-2 rounded-3xl whitespace-nowrap transition-all duration-300 shadow-lg"
             >
-              <PlusCircle className="mr-2" /> Registrar Gasto General
+              <PlusCircle className="mr-2" /> Realizar Cierre Mensual
             </button>
           )}
         </div>
@@ -737,7 +737,7 @@ const MonasteryComponentView: React.FC = () => {
               <th className="px-4 py-2">Descripción</th>
               <th className="px-4 py-2">Monto</th>
               <th className="px-4 py-2">Fecha</th>
-              <th className="px-4 py-2">Tipo</th>
+              <th className="px-4 py-2">Estado</th>
               <th className="px-4 py-2">Acciones</th>
             </tr>
           </thead>
@@ -751,12 +751,24 @@ const MonasteryComponentView: React.FC = () => {
               <tr key={overhead.id} className="border-b hover:bg-gray-50 transition-colors duration-200">
                 <td className="px-4 py-2 font-medium">{overhead.name}</td>
                 <td className="px-4 py-2">{overhead.description || '-'}</td>
-                <td className="px-4 py-2">S/ {Number(overhead.amount).toFixed(2)}</td>
+                <td className="px-4 py-2">
+                  {Number(overhead.amount) === 0 ? (
+                    <span className="text-amber-700 font-semibold">En Proceso</span>
+                  ) : (
+                    <>S/ {Number(overhead.amount).toFixed(2)}</>
+                  )}
+                </td>
                 <td className="px-4 py-2">{new Date(overhead.date).toLocaleDateString()}</td>
                 <td className="px-4 py-2">
-                  <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-                    {overhead.type}
-                  </span>
+                  {Number(overhead.amount) === 0 ? (
+                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                      En Proceso
+                    </span>
+                  ) : (
+                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                      Finalizado
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-2">
                   <div className="flex items-center justify-center space-x-2">
@@ -876,7 +888,7 @@ const MonasteryComponentView: React.FC = () => {
                   : 'text-red-600 hover:bg-red-50'
               }`}
             >
-              Gastos Generales
+              Cierres de Gastos
             </button>
             <button
               onClick={() => setActiveView('expenses')}
